@@ -8,6 +8,7 @@ import subGroupModel from "../models/subGroup.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
 import { fetchData, getApiLogs } from "../helpers/tallyHelper.js";
 import { getUserFriendlyMessage } from "../helpers/getUserFreindlyMessage.js";
+import { Booking,CheckIn } from "../models/bookingModal.js";
 import mongoose from "mongoose";
 import {
   Godown,
@@ -46,7 +47,7 @@ export const saveDataFromTally = async (req, res) => {
       .find(
         query,
 
-        { _id: 1, party_master_id: 1 }
+        { _id: 1, party_master_id: 1 },
       )
       .lean();
     const matchedAccountGrp = await AccountGroup.find({
@@ -54,15 +55,15 @@ export const saveDataFromTally = async (req, res) => {
       cmp_id,
     });
     const accntgrpMap = Object.fromEntries(
-      matchedAccountGrp.map((item) => [item.accountGroup_id, item._id])
+      matchedAccountGrp.map((item) => [item.accountGroup_id, item._id]),
     );
     const matchedSubGrp = await subGroupModel.find({ Primary_user_id, cmp_id });
     const subGrpMap = Object.fromEntries(
-      matchedSubGrp.map((item) => [item.subGroup_id, item._id])
+      matchedSubGrp.map((item) => [item.subGroup_id, item._id]),
     );
 
     const partyIdMap = Object.fromEntries(
-      matchedParties.map((item) => [item.party_master_id, item._id])
+      matchedParties.map((item) => [item.party_master_id, item._id]),
     );
     const deleted = await TallyData.deleteMany({ Primary_user_id, cmp_id });
 
@@ -101,7 +102,7 @@ export const saveDataFromTally = async (req, res) => {
               !mongoose.Types.ObjectId.isValid(dataItem.Primary_user_id)
             ) {
               throw new Error(
-                `Invalid Primary_user_id: ${dataItem.Primary_user_id}`
+                `Invalid Primary_user_id: ${dataItem.Primary_user_id}`,
               );
             }
             if (!dataItem.cmp_id) {
@@ -118,7 +119,7 @@ export const saveDataFromTally = async (req, res) => {
               throw new Error(`Missing bill_due_date`);
             } else if (!/^\d{4}-\d{2}-\d{2}$/.test(dataItem.bill_due_date)) {
               throw new Error(
-                `Invalid bill_due_date format:${dataItem.bill_due_date}`
+                `Invalid bill_due_date format:${dataItem.bill_due_date}`,
               );
             }
 
@@ -166,7 +167,7 @@ export const saveDataFromTally = async (req, res) => {
               userMessage: getUserFriendlyMessage(error.message, dataItem),
             };
           }
-        })
+        }),
       );
 
       results.push(...chunkResults);
@@ -186,8 +187,8 @@ export const saveDataFromTally = async (req, res) => {
         failed.length === 0
           ? "All data saved successfully"
           : failed.length === data.length
-          ? "All data failed to save"
-          : "Partial save completed",
+            ? "All data failed to save"
+            : "Partial save completed",
       savedCount: successful.length,
       failedCount: failed.length,
       failedItems: failed, // Includes both the dataItem and the error
@@ -302,7 +303,7 @@ export const addBankData = async (req, res) => {
           await partyModel.findByIdAndUpdate(
             existingBankDetail._id,
             modifiedBankDetails,
-            { new: true }
+            { new: true },
           );
           updatedCount++;
         } else {
@@ -340,10 +341,10 @@ export const addBankData = async (req, res) => {
       response.skippedItems = skippedItems;
       response.skippedReasons = {
         missingRequiredFields: skippedItems.filter((item) =>
-          item.reason.includes("Missing required fields")
+          item.reason.includes("Missing required fields"),
         ).length,
         processingErrors: skippedItems.filter((item) =>
-          item.reason.includes("Processing error")
+          item.reason.includes("Processing error"),
         ).length,
       };
     }
@@ -354,8 +355,8 @@ export const addBankData = async (req, res) => {
       totalSuccess > 0
         ? 200
         : skippedItems.length === bankDetailsArray.length
-        ? 400
-        : 207;
+          ? 400
+          : 207;
 
     console.log("response", response?.summary);
     return res.status(statusCode).json(response);
@@ -481,7 +482,7 @@ export const addCashData = async (req, res) => {
           await partyModel.findByIdAndUpdate(
             existingCashDetail._id,
             modifiedCashDetail,
-            { new: true }
+            { new: true },
           );
           updatedCount++;
         } else {
@@ -519,10 +520,10 @@ export const addCashData = async (req, res) => {
       response.skippedItems = skippedItems;
       response.skippedReasons = {
         missingRequiredFields: skippedItems.filter((item) =>
-          item.reason.includes("Missing required fields")
+          item.reason.includes("Missing required fields"),
         ).length,
         processingErrors: skippedItems.filter((item) =>
-          item.reason.includes("Processing error")
+          item.reason.includes("Processing error"),
         ).length,
       };
     }
@@ -533,8 +534,8 @@ export const addCashData = async (req, res) => {
       totalSuccess > 0
         ? 200
         : skippedItems.length === cashDetailsArray.length
-        ? 400
-        : 207;
+          ? 400
+          : 207;
 
     console.log("response", response?.summary);
     return res.status(statusCode).json(response);
@@ -603,10 +604,10 @@ export const saveProductsFromTally = async (req, res) => {
           reason: !product.cmp_id
             ? "Missing cmp_id"
             : !product.Primary_user_id
-            ? "Missing Primary_user_id"
-            : !product.product_master_id
-            ? "Missing product_master_id"
-            : "Missing product_name",
+              ? "Missing Primary_user_id"
+              : !product.product_master_id
+                ? "Missing product_master_id"
+                : "Missing product_name",
         });
         continue;
       }
@@ -695,7 +696,7 @@ export const saveProductsFromTally = async (req, res) => {
     categories.forEach((c) => (categoryMap[c.category_id] = c._id));
     subcategories.forEach((s) => (subcategoryMap[s.subcategory_id] = s._id));
     existingProducts.forEach(
-      (p) => (existingProductMap[p.product_master_id] = p)
+      (p) => (existingProductMap[p.product_master_id] = p),
     );
 
     // Process in larger batches for better throughput
@@ -766,7 +767,7 @@ export const saveProductsFromTally = async (req, res) => {
                 success: false,
                 error: error.message,
                 productId: op.product.product_master_id,
-              }))
+              })),
           );
         } else {
           batchPromises.push(
@@ -781,7 +782,7 @@ export const saveProductsFromTally = async (req, res) => {
                 success: false,
                 error: error.message,
                 productId: op.product.product_master_id,
-              }))
+              })),
           );
         }
       }
@@ -879,7 +880,7 @@ export const updateStock = async (req, res) => {
     // Fetch all required godowns in a single query to create a mapping
     const godowns = await Godown.find(
       { godown_id: { $in: godownIds } },
-      { _id: 1, godown_id: 1 }
+      { _id: 1, godown_id: 1 },
     );
 
     // Create a mapping of godown_id to MongoDB _id
@@ -893,8 +894,8 @@ export const updateStock = async (req, res) => {
     if (missingGodownIds.length > 0) {
       console.warn(
         `Warning: Could not find godowns with ids: ${missingGodownIds.join(
-          ", "
-        )}`
+          ", ",
+        )}`,
       );
     }
 
@@ -1030,7 +1031,7 @@ export const updateStock = async (req, res) => {
                 GodownList: mergedGodowns,
                 product_name: data.product_name,
               },
-            }
+            },
           );
         } else {
           // If product doesn't exist yet, create it with new godowns
@@ -1095,7 +1096,7 @@ export const updateStock = async (req, res) => {
         acc.upsertedCount += result.upsertedCount || 0;
         return acc;
       },
-      { matchedCount: 0, modifiedCount: 0, upsertedCount: 0 }
+      { matchedCount: 0, modifiedCount: 0, upsertedCount: 0 },
     );
 
     // Get summary of modified products (limited to avoid large response)
@@ -1192,7 +1193,7 @@ export const updatePriceLevels = async (req, res) => {
       ...new Set(
         pricelevels
           .filter((item) => item.pricelevel)
-          .map((item) => item.pricelevel.toString())
+          .map((item) => item.pricelevel.toString()),
       ),
     ];
 
@@ -1211,7 +1212,7 @@ export const updatePriceLevels = async (req, res) => {
 
     // Track unmapped price levels
     const unmappedPriceLevels = priceLevelNames.filter(
-      (name) => !priceLevelMap[name]
+      (name) => !priceLevelMap[name],
     );
 
     // Process products with valid price levels
@@ -1286,7 +1287,7 @@ export const updatePriceLevels = async (req, res) => {
             },
           },
         },
-      })
+      }),
     );
 
     // Execute bulk write
@@ -1298,7 +1299,7 @@ export const updatePriceLevels = async (req, res) => {
         product_id: productId,
         product_name: data.product_name,
         updated_pricelevel_count: data.priceLevels.length,
-      })
+      }),
     );
 
     return res.status(200).json({
@@ -1323,8 +1324,8 @@ export const updatePriceLevels = async (req, res) => {
       error.name === "ValidationError"
         ? 400
         : error.name === "MongoError" || error.name === "MongoServerError"
-        ? 503
-        : 500;
+          ? 503
+          : 500;
 
     return res.status(status).json({
       success: false,
@@ -1332,8 +1333,8 @@ export const updatePriceLevels = async (req, res) => {
         status === 400
           ? "Validation error"
           : status === 503
-          ? "Database error"
-          : "An error occurred while updating price levels",
+            ? "Database error"
+            : "An error occurred while updating price levels",
       error: error.message,
     });
   }
@@ -1379,11 +1380,11 @@ export const savePartyFromTally = async (req, res) => {
 
     // Create efficient maps using object literals
     const accountGroupMap = Object.fromEntries(
-      accountGroups.map((group) => [group.accountGroup_id, group._id])
+      accountGroups.map((group) => [group.accountGroup_id, group._id]),
     );
 
     const subGroupMap = Object.fromEntries(
-      subGroups.map((group) => [group.subGroup_id, group._id])
+      subGroups.map((group) => [group.subGroup_id, group._id]),
     );
 
     // Track processed and failed operations
@@ -1481,7 +1482,7 @@ export const savePartyFromTally = async (req, res) => {
             {
               new: true,
               runValidators: true,
-            }
+            },
           );
           updatedCount++;
         } else {
@@ -1493,7 +1494,7 @@ export const savePartyFromTally = async (req, res) => {
       } catch (itemError) {
         console.error(
           `Error processing party ${party.party_master_id}:`,
-          itemError
+          itemError,
         );
         skippedItems.push({
           item: itemIndex,
@@ -1521,19 +1522,19 @@ export const savePartyFromTally = async (req, res) => {
       response.skippedItems = skippedItems;
       response.skippedReasons = {
         missingRequiredFields: skippedItems.filter((item) =>
-          item.reason.includes("Missing required fields")
+          item.reason.includes("Missing required fields"),
         ).length,
         duplicateInRequest: skippedItems.filter((item) =>
-          item.reason.includes("Duplicate party_master_id in request")
+          item.reason.includes("Duplicate party_master_id in request"),
         ).length,
         accountGroupNotFound: skippedItems.filter((item) =>
-          item.reason.includes("Account group not found")
+          item.reason.includes("Account group not found"),
         ).length,
         subGroupNotFound: skippedItems.filter((item) =>
-          item.reason.includes("Sub group not found")
+          item.reason.includes("Sub group not found"),
         ).length,
         processingErrors: skippedItems.filter((item) =>
-          item.reason.includes("Processing error")
+          item.reason.includes("Processing error"),
         ).length,
       };
     }
@@ -1544,8 +1545,8 @@ export const savePartyFromTally = async (req, res) => {
       totalSuccess > 0
         ? 200
         : skippedItems.length === partyToSave.length
-        ? 400
-        : 207;
+          ? 400
+          : 207;
 
     console.log("Party Response:", response?.summary);
     return res.status(statusCode).json(response);
@@ -1647,7 +1648,7 @@ export const saveAdditionalChargesFromTally = async (req, res) => {
           await AdditionalCharges.findByIdAndUpdate(
             existingCharge._id,
             charge,
-            { new: true, runValidators: true }
+            { new: true, runValidators: true },
           );
           updatedCount++;
         } else {
@@ -1659,7 +1660,7 @@ export const saveAdditionalChargesFromTally = async (req, res) => {
       } catch (itemError) {
         console.error(
           `Error processing additional charge ${charge.name}:`,
-          itemError
+          itemError,
         );
         skippedItems.push({
           item: itemIndex,
@@ -1687,10 +1688,10 @@ export const saveAdditionalChargesFromTally = async (req, res) => {
       response.skippedItems = skippedItems;
       response.skippedReasons = {
         missingRequiredFields: skippedItems.filter((item) =>
-          item.reason.includes("Missing required fields")
+          item.reason.includes("Missing required fields"),
         ).length,
         processingErrors: skippedItems.filter((item) =>
-          item.reason.includes("Processing error")
+          item.reason.includes("Processing error"),
         ).length,
       };
     }
@@ -1701,8 +1702,8 @@ export const saveAdditionalChargesFromTally = async (req, res) => {
       totalSuccess > 0
         ? 200
         : skippedItems.length === additionalChargesToSave.length
-        ? 400
-        : 207;
+          ? 400
+          : 207;
 
     console.log("Additional Charges Response:", response?.summary);
     return res.status(statusCode).json(response);
@@ -1807,7 +1808,7 @@ export const addAccountGroups = async (req, res) => {
         // Convert Primary_user_id to ObjectId if it's a string
         if (typeof group.Primary_user_id === "string") {
           group.Primary_user_id = new mongoose.Types.ObjectId(
-            group.Primary_user_id
+            group.Primary_user_id,
           );
         }
 
@@ -1834,7 +1835,7 @@ export const addAccountGroups = async (req, res) => {
       } catch (itemError) {
         console.error(
           `Error processing account group ${group.accountGroup_id}:`,
-          itemError
+          itemError,
         );
         skippedItems.push({
           item: itemIndex,
@@ -1862,13 +1863,13 @@ export const addAccountGroups = async (req, res) => {
       response.skippedItems = skippedItems;
       response.skippedReasons = {
         missingRequiredFields: skippedItems.filter((item) =>
-          item.reason.includes("Missing required fields")
+          item.reason.includes("Missing required fields"),
         ).length,
         duplicateInRequest: skippedItems.filter((item) =>
-          item.reason.includes("Duplicate in request")
+          item.reason.includes("Duplicate in request"),
         ).length,
         processingErrors: skippedItems.filter((item) =>
-          item.reason.includes("Processing error")
+          item.reason.includes("Processing error"),
         ).length,
       };
     }
@@ -1879,8 +1880,8 @@ export const addAccountGroups = async (req, res) => {
       totalSuccess > 0
         ? 200
         : skippedItems.length === accountGroupsToSave.length
-        ? 400
-        : 207;
+          ? 400
+          : 207;
 
     console.log("Account Groups Response:", response?.summary);
     return res.status(statusCode).json(response);
@@ -1986,7 +1987,7 @@ export const addSubGroups = async (req, res) => {
         // Convert Primary_user_id to ObjectId if it's a string
         if (typeof subGroup.Primary_user_id === "string") {
           subGroup.Primary_user_id = new mongoose.Types.ObjectId(
-            subGroup.Primary_user_id
+            subGroup.Primary_user_id,
           );
         }
 
@@ -2023,7 +2024,7 @@ export const addSubGroups = async (req, res) => {
             {
               new: true,
               runValidators: true,
-            }
+            },
           );
           updatedCount++;
         } else {
@@ -2035,7 +2036,7 @@ export const addSubGroups = async (req, res) => {
       } catch (itemError) {
         console.error(
           `Error processing subgroup ${subGroup.subGroup_id}:`,
-          itemError
+          itemError,
         );
         skippedItems.push({
           item: itemIndex,
@@ -2063,16 +2064,16 @@ export const addSubGroups = async (req, res) => {
       response.skippedItems = skippedItems;
       response.skippedReasons = {
         missingRequiredFields: skippedItems.filter((item) =>
-          item.reason.includes("Missing required fields")
+          item.reason.includes("Missing required fields"),
         ).length,
         duplicateInRequest: skippedItems.filter((item) =>
-          item.reason.includes("Duplicate in request")
+          item.reason.includes("Duplicate in request"),
         ).length,
         accountGroupNotFound: skippedItems.filter((item) =>
-          item.reason.includes("Account group not found")
+          item.reason.includes("Account group not found"),
         ).length,
         processingErrors: skippedItems.filter((item) =>
-          item.reason.includes("Processing error")
+          item.reason.includes("Processing error"),
         ).length,
       };
     }
@@ -2083,8 +2084,8 @@ export const addSubGroups = async (req, res) => {
       totalSuccess > 0
         ? 200
         : skippedItems.length === subGroupsToSave.length
-        ? 400
-        : 207;
+          ? 400
+          : 207;
 
     console.log("Sub Groups Response:", response?.summary);
     return res.status(statusCode).json(response);
@@ -2331,7 +2332,7 @@ export const addGodowns = async (req, res) => {
 
     // If no default godown exists, check if one is provided in the request
     const hasDefaultGodownInRequest = data.some(
-      (item) => item.defaultGodown === "true"
+      (item) => item.defaultGodown === "true",
     );
 
     // If no default godown exists in DB and none provided in request, return error
@@ -2527,3 +2528,5 @@ export const givePurchase = async (req, res) => {
   const serialNumber = req.params.SNo;
   return fetchData("purchase", cmp_id, serialNumber, res);
 };
+
+

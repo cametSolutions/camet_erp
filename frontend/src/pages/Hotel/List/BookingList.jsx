@@ -94,6 +94,9 @@ function BookingList() {
     additionalChargeDataBasedOnSelection,
     setAdditionalChargeDataBasedOnSelection,
   ] = useState([]);
+
+  const [additionalChargeIncludeTax, setAdditionalChargeIncludeTax] =
+    useState(true);
   // NEW: State for split payment rows and sources
   const [splitPaymentRows, setSplitPaymentRows] = useState([
     {
@@ -112,8 +115,6 @@ function BookingList() {
       underCategory: "room", // 👈 add this
     },
   ]);
-
-  console.log(additionalChargeDataBasedOnSelection);
 
   const [remarks, setRemarks] = useState("");
   const [transactionNumber, setTransactionNumber] = useState("");
@@ -301,18 +302,18 @@ function BookingList() {
         foodPlanAmount = configurations[0]?.addRateWithTax?.hotelSale
           ? 0
           : foodPlanAmount;
-        console.log(taxAmount);
+
+        console.log(additionalPaxAmount);
 
         return (
           sum + baseAmount + taxAmount + additionalPaxAmount + foodPlanAmount
         );
       }, 0);
 
+      console.log(total, checkoutTotal, advance);
+
       return (
-        total +
-        (checkoutTotal - advance) +
-        Number(checkout?.otherChargeDetails?.amount || 0)
-      );
+        total + checkoutTotal)
     }, 0);
   };
   useEffect(() => {
@@ -349,7 +350,11 @@ function BookingList() {
     }
   }, [location.pathname, cmp_id]);
 
-  const handleDiscountChange = async (discountValue, discountType) => {
+  const handleDiscountChange = async (
+    discountValue,
+    discountType,
+    additionalChargeIncludeTax,
+  ) => {
     const selectedDiscount = additionalChargeData.find(
       (d) => d._id === selectedAdditionalCharge,
     );
@@ -366,11 +371,22 @@ function BookingList() {
       inputValue: discountValue,
       inputType: discountType,
       taxPercentage: selectedDiscount?.taxPercentage,
+      additionalChargeIncludeTax,
     });
-    console.log(result);
+
+    let discountAmount = bookings.reduce((sum, booking) => {
+      return sum + Number(booking?.discountAmount || 0);
+    }, 0);
+    let otherChargeAmountAdded = bookings.reduce((sum, booking) => {
+      return sum + Number(booking?.otherChargeAmount || 0);
+    }, 0);
+
+    console.log(discountAmount,otherChargeAmountAdded,result.finalValue );
+
     setSelectedDataForPayment((prev) => ({
       ...prev,
-      additionalChargeAmount: result.finalValue,
+      additionalChargeAmount:result.finalValue + Math.abs(discountAmount - otherChargeAmountAdded),
+      discountAmount: result.finalValue + discountAmount,
     }));
     setAdditionalChargeDataBasedOnSelection([
       {
@@ -388,7 +404,6 @@ function BookingList() {
     setDiscountValue(Number(discountValue) || 0);
   };
 
-  console.log(additionalChargeDataBasedOnSelection);
   useEffect(() => {
     if (partylist && partylist.partyList.length) {
       setPartylist(partylist.partyList);
@@ -457,6 +472,7 @@ function BookingList() {
       const totalAmount = calculateTotalAmount(
         location?.state?.selectedCheckOut,
       );
+      console.log(  paymentDetails?.paymentDetails?.selectedDataForPayment);
 
       setSelectedDataForPayment(
         paymentDetails?.paymentDetails?.selectedDataForPayment,
@@ -467,35 +483,48 @@ function BookingList() {
     }
   }, [location?.state?.selectedCheckOut]);
 
+
   // ADD THIS: Update total whenever selectedCheckOut changes
   useEffect(() => {
-    if (selectedCheckOut && selectedCheckOut.length > 0) {
+    if (selectedCheckOut && selectedCheckOut.length > 0 && bookings.length > 0) {
       const totalAmount = calculateTotalAmount(selectedCheckOut);
-      console.log(selectedCheckOut.length);
+      console.log(totalAmount);
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
+        console.log(item?.totalAdvance);
         return (
-          total +
-          (Number(item.advanceAmount || 0) +
-            Number(item.bookingId?.advanceAmount || 0))
+          total + Number(item.totalAdvance || 0)
         );
-      }, 0);
-      console.log(advanceAmount);
+        }, 0);
+        console.log(advanceAmount);
+      console.log(bookings);
 
       const restaurantSubTotal = selectedCheckOut.reduce((total, item) => {
         return total + (item.restaurantSubTotal || 0);
       }, 0);
       console.log(restaurantSubTotal);
 
+      let discountAmount = bookings.reduce((sum, booking) => {
+        return sum + Number(booking?.discountAmount || 0);
+      }, 0);
+      let otherChargeAmountAdded = bookings.reduce((sum, booking) => {
+        return sum + Number(booking?.otherChargeAmount || 0);
+      }, 0);
+console.log(discountAmount,otherChargeAmountAdded);
+console.log(totalAmount,advanceAmount,restaurantSubTotal);
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
-        total: totalAmount,
+        total: totalAmount ,
         advanceAmount: advanceAmount,
         restaurantSubTotal: restaurantSubTotal,
-        totalWithRestaurantSubTotal: totalAmount + restaurantSubTotal,
+        totalWithRestaurantSubTotal: totalAmount + restaurantSubTotal + otherChargeAmountAdded - (advanceAmount + discountAmount),
+        additionalChargeAmount: otherChargeAmountAdded || 0,
+        discountAmount: discountAmount,
+        otherChargeAmount: otherChargeAmountAdded,
       }));
     }
   }, [selectedCheckOut]);
 
+  console.log(selectedDataForPayment);
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -877,11 +906,19 @@ function BookingList() {
       setPaymentError("");
     }
   };
+
   const handleSavePayment = async () => {
     console.log("hddd");
     console.log(selectedCheckOut);
     console.log(selectedCheckOut.length);
-    console.log(paymentMode);
+    console.log(additionalChargeDataBasedOnSelection);
+    let additionalChargeArray = selectedCheckOut.flatMap(
+      (item) => item?.otherChargeDetails || [],
+    );
+    additionalChargeArray = [
+      ...additionalChargeArray,
+      ...additionalChargeDataBasedOnSelection,
+    ];
 
     setSaveLoader(true);
     let paymentDetails;
@@ -899,8 +936,7 @@ function BookingList() {
       );
 
       const expectedSplitTotal = Math.abs(
-        Number(selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
-          Number(selectedDataForPayment?.additionalChargeAmount || 0),
+        Number(selectedDataForPayment?.totalWithRestaurantSubTotal || 0)
       );
 
       const expectedRestaurantTotal = Number(
@@ -944,14 +980,13 @@ function BookingList() {
         console.log("isAgent", selectedCustomerData);
         paymentDetails = {
           selectedDataForPayment: selectedDataForPayment,
-          additionalChargeArray: additionalChargeDataBasedOnSelection,
+          additionalChargeArray: additionalChargeArray,
           discountAmount:
-            selectedDataForPayment?.additionalChargeAmount > 0
-              ? selectedDataForPayment?.additionalChargeAmount
+            selectedDataForPayment?.discountAmount > 0
+              ? selectedDataForPayment?.discountAmount
               : 0,
           cashAmount:
-            selectedDataForPayment?.totalWithRestaurantSubTotal -
-            Number(selectedDataForPayment?.additionalChargeAmount || 0),
+            selectedDataForPayment?.totalWithRestaurantSubTotal ,
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
           selectedBank: "",
@@ -965,8 +1000,7 @@ function BookingList() {
               source: selectedCash,
               sourceType: "cash",
               amount:
-                selectedDataForPayment?.totalWithRestaurantSubTotal -
-                Number(selectedDataForPayment?.additionalChargeAmount || 0),
+                selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
               customerName: isAgent
                 ? selectedCustomerData?.guestId?.partyName
                 : selectedCustomerData?.customerId?.partyName ||
@@ -999,15 +1033,14 @@ function BookingList() {
         console.log(selected);
         paymentDetails = {
           selectedDataForPayment: selectedDataForPayment,
-          additionalChargeArray: additionalChargeDataBasedOnSelection,
+          additionalChargeArray: additionalChargeArray,
           discountAmount:
-            selectedDataForPayment?.additionalChargeAmount > 0
-              ? selectedDataForPayment?.additionalChargeAmount
+            selectedDataForPayment?.discountAmount > 0
+              ? selectedDataForPayment?.discountAmount
               : 0,
           cashAmount: cashAmount,
           onlineAmount:
-            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
-            Number(selectedDataForPayment?.additionalChargeAmount || 0),
+            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0),
           selectedCash: "",
           selectedBank: selectedBank,
           paymentMode: paymentMode,
@@ -1054,15 +1087,14 @@ function BookingList() {
       }
       console.log(selectedCreditor);
       paymentDetails = {
-        additionalChargeArray: additionalChargeDataBasedOnSelection,
+        additionalChargeArray: additionalChargeArray,
         selectedDataForPayment: selectedDataForPayment,
         discountAmount:
-          selectedDataForPayment?.additionalChargeAmount > 0
-            ? selectedDataForPayment?.additionalChargeAmount
+          selectedDataForPayment?.discountAmount > 0
+            ? selectedDataForPayment?.discountAmount
             : 0,
         cashAmount:
-          selectedDataForPayment?.totalWithRestaurantSubTotal -
-          Number(selectedDataForPayment?.additionalChargeAmount || 0),
+          selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
         selectedCreditor: selectedCreditor,
         remarks: remarks,
         paymentMode: paymentMode,
@@ -1071,8 +1103,7 @@ function BookingList() {
           bank: 0,
           upi: 0,
           credit:
-            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
-            Number(selectedDataForPayment?.additionalChargeAmount || 0),
+            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) ,
           card: 0,
         },
       };
@@ -1084,8 +1115,7 @@ function BookingList() {
       );
 
       let payment = (
-        (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
-        Number(selectedDataForPayment?.additionalChargeAmount || 0)
+        (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) 
       ).toFixed(2);
       console.log("Paujsdf", totalSplitAmount, payment);
 
@@ -1137,10 +1167,10 @@ function BookingList() {
       console.log(splitPaymentRows);
       paymentDetails = {
         selectedDataForPayment: selectedDataForPayment,
-        additionalChargeArray: additionalChargeDataBasedOnSelection,
+        additionalChargeArray: additionalChargeArray,
         discountAmount:
-          selectedDataForPayment?.additionalChargeAmount > 0
-            ? selectedDataForPayment?.additionalChargeAmount
+          selectedDataForPayment?.discountAmount > 0
+            ? selectedDataForPayment?.discountAmount
             : 0,
         cashAmount: totalCash,
         onlineAmount: totalOnline,
@@ -2322,11 +2352,16 @@ console.log(el)
                     </span>
                   </label>
                   <div className="flex items-center gap-1.5 mb-3">
+                    {/* Amount / % toggle */}
                     <button
                       type="button"
                       onClick={() => {
                         setDiscountType("amount");
-                        handleDiscountChange(discountValue, "amount");
+                        handleDiscountChange(
+                          discountValue,
+                          "amount",
+                          additionalChargeIncludeTax,
+                        );
                       }}
                       className={`px-3 py-1 rounded-lg border text-[11px] font-medium transition-colors ${
                         discountType === "amount"
@@ -2336,11 +2371,16 @@ console.log(el)
                     >
                       Amount
                     </button>
+
                     <button
                       type="button"
                       onClick={() => {
                         setDiscountType("percentage");
-                        handleDiscountChange(discountValue, "percentage");
+                        handleDiscountChange(
+                          discountValue,
+                          "percentage",
+                          additionalChargeIncludeTax,
+                        );
                       }}
                       className={`px-3 py-1 rounded-lg border text-[11px] font-medium transition-colors ${
                         discountType === "percentage"
@@ -2350,6 +2390,44 @@ console.log(el)
                     >
                       %
                     </button>
+
+                    {/* INC / EXC tax toggle */}
+                    {selectedAdditionalCharge ? (
+                      <div className="flex overflow-hidden rounded-lg border border-slate-200 dark:border-neutral-700">
+                        {[
+                          { val: true, label: "INC" },
+                          { val: false, label: "EXC" },
+                        ].map(({ val, label }) => (
+                          <button
+                            key={label}
+                            type="button"
+                            onClick={() => {
+                              setAdditionalChargeIncludeTax(val);
+                              handleDiscountChange(
+                                discountValue,
+                                "amount",
+                                val,
+                              );
+                            }}
+                            className={`flex-1 px-2.5 py-1 text-[11px] font-extrabold tracking-[0.04em] transition ${
+                              additionalChargeIncludeTax === val // ✅ fixed: compare per-button
+                                ? val
+                                  ? "bg-amber-500 text-white"
+                                  : "bg-blue-600 text-white"
+                                : "bg-white dark:bg-neutral-900 text-slate-400"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-neutral-700 px-2.5 py-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                          No Tax
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -2372,7 +2450,10 @@ console.log(el)
                     </div>
                     <div>
                       <label className="block text-[11px] text-gray-500 mb-1">
-                        Amount
+                        Amount (
+                        {additionalChargeDataBasedOnSelection[0]?.finalValue ||
+                          0}
+                        )
                       </label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[12px]">
@@ -2382,7 +2463,11 @@ console.log(el)
                           type="number"
                           value={discountValue}
                           onChange={(e) =>
-                            handleDiscountChange(e.target.value, discountType)
+                            handleDiscountChange(
+                              e.target.value,
+                              discountType,
+                              additionalChargeIncludeTax,
+                            )
                           }
                           className="w-full pl-6 pr-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-200 text-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
                           placeholder="0.00"
@@ -2549,10 +2634,12 @@ console.log(el)
                         (Number(selectedDataForPayment?.total) || 0) +
                         Number(
                           selectedDataForPayment?.restaurantSubTotal || 0,
-                        ) -
-                        Number(
-                          selectedDataForPayment?.additionalChargeAmount || 0,
-                        );
+                        ) + Number(selectedDataForPayment?.otherChargeAmount || 0) -
+                      (Number(
+                          selectedDataForPayment?.discountAmount || 0,
+                        ) + Number(
+                          selectedDataForPayment?.advanceAmount || 0,
+                        ));
 
                       const totalEntered = splitPaymentRows.reduce(
                         (sum, row) => sum + (parseFloat(row.amount) || 0),
@@ -3297,8 +3384,7 @@ console.log(el)
                       <span className="text-gray-700 dark:text-gray-300 font-medium">
                         ₹
                         {(
-                          Number(selectedDataForPayment?.total) +
-                          Number(selectedDataForPayment?.advanceAmount)
+                          Number(selectedDataForPayment?.total)
                         )?.toFixed(2) ||
                           (
                             Number(selectedCheckOut[0]?.balanceToPay) +
@@ -3331,6 +3417,11 @@ console.log(el)
                           selectedCheckOut?.[0]?.restaurantSubTotal ??
                           0,
                       );
+
+                      const dicountAmount = Number(
+                        selectedDataForPayment?.additionalChargeAmount || 0,
+                      );
+
                       return (
                         restaurantTotal > 0 && (
                           <div className="flex justify-between text-[12px] text-gray-500 dark:text-gray-400">
@@ -3343,15 +3434,26 @@ console.log(el)
                       );
                     })()}
 
-                    {Number(
-                      selectedDataForPayment?.additionalChargeAmount || 0,
-                    ) > 0 && (
+                    {Number(selectedDataForPayment?.discountAmount || 0) >
+                      0 && (
                       <div className="flex justify-between text-[12px] text-gray-500 dark:text-gray-400">
                         <span>Discount Amount</span>
                         <span className="text-gray-700 dark:text-gray-300 font-medium">
                           (-) ₹{" "}
                           {Number(
-                            selectedDataForPayment?.additionalChargeAmount || 0,
+                            selectedDataForPayment?.discountAmount || 0,
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    {Number(selectedDataForPayment?.otherChargeAmount || 0) >
+                      0 && (
+                      <div className="flex justify-between text-[12px] text-gray-500 dark:text-gray-400">
+                        <span>Other Charege Amount</span>
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">
+                          (+) ₹{" "}
+                          {Number(
+                            selectedDataForPayment?.otherChargeAmount || 0,
                           ).toFixed(2)}
                         </span>
                       </div>
@@ -3361,14 +3463,18 @@ console.log(el)
                       <span className="text-[13px] font-semibold text-gray-800 dark:text-gray-100">
                         Amount To Pay
                       </span>
+                      
                       <span className="text-[15px] font-bold text-blue-600 dark:text-blue-400">
                         ₹
                         {(
                           selectedDataForPayment?.total +
-                          Number(selectedDataForPayment?.restaurantSubTotal) -
+                          Number(selectedDataForPayment?.restaurantSubTotal) + Number(selectedDataForPayment?.otherChargeAmount)   -
+                        (Number(
+                            selectedDataForPayment?.advanceAmount || 0,
+                          ) +
                           Number(
-                            selectedDataForPayment?.additionalChargeAmount || 0,
-                          )
+                            selectedDataForPayment?.discountAmount || 0,
+                          ))
                         ).toFixed(2) ||
                           (
                             Number(selectedCheckOut[0]?.balanceToPay) +

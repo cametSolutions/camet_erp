@@ -4386,3 +4386,6 @@ export const transferKotBills = async (req, res) => {
     });
   }
 };
+
+
+// function used to delete advance for hotel rooms

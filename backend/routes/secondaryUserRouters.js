@@ -69,7 +69,8 @@ import {
     getHoldCheckIns,releaseHold,getOtherCharges,getFlashReportForDate,
     getTouristReport,getFoodPlanReport,getOccupancyCheckoutReport,
     sendBillEmail,
-    viewReport
+    viewReport,
+    deleteAdvance
 } from '../controllers/hotelController.js'
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot,getKotDash, updateKotStatus, editKot,
@@ -416,6 +417,7 @@ router.get("/sales-register", getSalesRegister);
 router.get("/getRestaurantBillsDetails/:cmp_id", getRestaurantBillsDetails);
 router.get("/getAllChecking/:cmp_id", getAllChecking);
 router.post("/transferKotBills/:cmp_id", transferKotBills);
+router.delete("/deleteAdvance/:id", deleteAdvance);
 router.post('/send-bill-email', sendBillEmail);
 router.get("/viewReport", viewReport);
 // Route to get detailed booking information for a specific room and date

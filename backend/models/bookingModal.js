@@ -108,6 +108,30 @@ const selectedRoomSchema = new mongoose.Schema({
   swappingDateFrom: { type: Date },
   lastRateUpdatedAt: { type: Date, default: Date.now },
   isCheckedOut: { type: Boolean, default: false },
+  discountAmount: Number,
+  otherChargeAmount: Number,
+  discountAmountWithOutTax: {
+    type: Number,
+    default: 0,
+  },
+  otherChargeWithOutTax: {
+    type: Number,
+    default: 0,
+  },
+  otherChargeDetails: [
+    {
+      _id: { type: mongoose.Schema.Types.ObjectId, ref: "AdditionalCharge" },
+      option: { type: String },
+      value: { type: String },
+      action: { type: String },
+      taxPercentage: { type: Number },
+      taxAmt: { type: Number },
+      hsn: { type: String },
+      finalValue: { type: Number },
+      amountType: { type: String },
+      includeTax: { type: Boolean },
+    },
+  ],
 });
 
 const bookingSchema = new mongoose.Schema(
@@ -156,8 +180,8 @@ const bookingSchema = new mongoose.Schema(
     priceLevelRate: String,
     priceLevelId: String,
     discountPercentage: String,
-    discountAmount: String,
     advanceAmount: String,
+    totalAdvance: String,
     totalAmount: String,
     balanceToPay: String,
     addFoodPlanWithRate: { type: Boolean, default: false },
@@ -176,11 +200,13 @@ const bookingSchema = new mongoose.Schema(
       credit: { type: Number, default: 0 },
       card: { type: Number, default: 0 },
     },
-    checkoutpaymenttypedetails: [{
-      customerName: { type: String },
-      mode: { type: String },
-      amount: { type: Number }
-    }],
+    checkoutpaymenttypedetails: [
+      {
+        customerName: { type: String },
+        mode: { type: String },
+        amount: { type: Number },
+      },
+    ],
     grandTotal: String,
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     customerName: String,
@@ -250,11 +276,36 @@ const bookingSchema = new mongoose.Schema(
     grcno: String,
     isHold: { type: Boolean, default: false },
     taggedCheckIns: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
-    holdArray:[],
-    otherChargeDetails: 
-  {
-    amount: {
+    holdArray: [],
+    otherChargeDetails: [
+      {
+        _id: { type: mongoose.Schema.Types.ObjectId, ref: "AdditionalCharge" },
+        option: { type: String },
+        value: { type: String },
+        action: { type: String },
+        taxPercentage: { type: Number },
+        taxAmt: { type: Number },
+        hsn: { type: String },
+        finalValue: { type: Number },
+        amountType: { type: String },
+        includeTax: { type: Boolean },
+      },
+    ],
+    discountAmount: {
       type: Number,
+      default: 0,
+    },
+    otherChargeAmount: {
+      type: Number,
+      default: 0,
+    },
+    discountAmountWithOutTax: {
+      type: Number,
+      default: 0,
+    },
+    otherChargeWithOutTax: {
+      type: Number,
+      default: 0,
     },
     charge: {
       _id: {
@@ -268,7 +319,6 @@ const bookingSchema = new mongoose.Schema(
       taxPercentage: Number
     }
     
-  },
   },
   { timestamps: true },
 );
