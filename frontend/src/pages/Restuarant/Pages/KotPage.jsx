@@ -1411,7 +1411,7 @@ const { data, refetch: refreshHook } = useQuery({
                     const isOrderSelected = (o) =>
                       selectedKot.find((item) => item.id === o._id);
                     const displayItems = order._batchItems ?? order.items;
-
+console.log(order)
                     return (
                       <div
                         key={order._batchCardId}
