@@ -117,7 +117,8 @@ function BookingList() {
 
   const [remarks, setRemarks] = useState("");
   const [transactionNumber, setTransactionNumber] = useState("");
-
+const [fromDate, setFromDate] = useState(new Date().toISOString().split("T")[0]);
+const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
   const ROOM_COLORS = [
     { bg: "#EEEDFE", border: "#AFA9EC", icon: "#534AB7", text: "#3C3489" },
     { bg: "#E1F5EE", border: "#5DCAA5", icon: "#0F6E56", text: "#085041" },
@@ -614,6 +615,11 @@ function BookingList() {
         } else {
           params.append("modal", "checkOut");
         }
+
+      params.append("fromDate", fromDate);
+params.append("toDate", toDate);
+       
+       
         const res = await api.get(
           `/api/sUsers/getBookings/${cmp_id}?${params}`,
           {
@@ -661,7 +667,7 @@ function BookingList() {
       }
     },
 
-    [cmp_id, filterByRoom, roomId, location.pathname],
+    [cmp_id, filterByRoom, roomId, location.pathname,fromDate, toDate],
   );
 
   useEffect(() => {
@@ -2150,11 +2156,20 @@ function BookingList() {
               },
             ]}
           />
-          <SearchBar
-            onType={searchData}
-            toggle={true}
-            from={location.pathname}
-          />
+        
+<SearchBar
+  onType={searchData}
+  toggle={true}
+  from={location.pathname}
+  onDateChange={({ from, to }) => {
+    setFromDate(from);
+    setToDate(to);
+    setPage(1);
+    pageRef.current = 1;
+    setBookings([]);
+    setHasMore(true);
+  }}
+/>
         </div>
 
         {!loader && !isLoading && bookings?.length === 0 && (
