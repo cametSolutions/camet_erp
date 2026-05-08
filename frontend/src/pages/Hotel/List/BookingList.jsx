@@ -651,6 +651,7 @@ console.log(totalAmount,advanceAmount,restaurantSubTotal);
         );
 
         let bookingData = res?.data?.bookingData || [];
+        
         console.log("bookingData", bookingData[0]);
 
         if (location.pathname === "/sUsers/checkInList") {
@@ -1720,7 +1721,6 @@ console.log(el)
             if (selectedCheckOut.length == 0) {
               setSelectedCustomer(el.customerId?._id);
             }
-
             setSelectedCheckOut((prev) => [...prev, el]);
             // setShowEnhancedCheckoutModal(!showEnhancedCheckoutModal)
           }}

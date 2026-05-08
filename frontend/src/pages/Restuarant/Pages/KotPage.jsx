@@ -396,6 +396,7 @@ const { data, refetch: refreshHook } = useQuery({
             ?.toLowerCase()
             .includes(searchQuery.toLowerCase()) ||
           order?.id?.toString().includes(searchQuery) ||
+          order?.salesNumber?.toString().includes(searchQuery) ||
           order.items.some(
             (item) =>
               item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1873,6 +1874,22 @@ console.log(order)
                                     </span>
                                   </div>
                                 )}
+                                    {order.customer?.guestName ? (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs font-bold text-blue-500">
+                                      Guest Name:
+                                    </span>
+                                    <span className="text-xs font-bold text-blue-500">
+                                      {order.customer?.guestName}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs font-bold text-blue-500">
+                                      Direct Sale
+                                    </span>
+                                  </div>
+                               )}
 
                                 <div className="flex items-center gap-1 text-[10px] text-gray-500">
                                   <MdAccessTime className="w-3 h-3 flex-shrink-0" />
