@@ -197,7 +197,7 @@ export const generatePDF = (
         <tr>
           <th>Bill No</th>
           <th>Date</th>
-          <th>Agent Name</th>
+          <th>Guest Name</th>
           <th>Gross Amount</th>
           <th>CGST</th>
           <th>SGST</th>
@@ -458,7 +458,7 @@ const exportToExcel = (
     [
       "Bill No",
       "Date",
-      "Agent Name",
+      "Guest Name",
       "Gross Amount",
       "CGST",
       "SGST",
@@ -871,7 +871,7 @@ console.log(salesData);
       mealPeriodFilter,
     );
   };
-
+console.log(filteredSalesData);
   return (
     <>
       <TitleDiv
