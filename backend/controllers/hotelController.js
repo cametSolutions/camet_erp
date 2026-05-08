@@ -1371,6 +1371,7 @@ export const roomBooking = async (req, res) => {
   }
 };
 
+
 // function used to fetch booking list
 export const getBookings = async (req, res) => {
   try {
@@ -1422,6 +1423,8 @@ export const getBookings = async (req, res) => {
     });
   }
 };
+
+
 const getPaymentStatus = (paymenttypeDetails) => {
   if (!paymenttypeDetails) return "Unpaid";
 
