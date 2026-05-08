@@ -1853,7 +1853,7 @@ const OrdersDashboard = () => {
                                 </div>
                                 {order.salesNumber && (
                                   <div className="flex items-center gap-1">
-                                    <span className="text-xs font-bold text-blue-500">
+                                    <span className="text-xs font-bold text-gray-500">
                                       SNo:
                                     </span>
                                     <span className="text-xs font-bold text-blue-500">
@@ -1863,7 +1863,7 @@ const OrdersDashboard = () => {
                                 )}
                                     {order.customer?.guestName ? (
                                   <div className="flex items-center gap-1">
-                                    <span className="text-xs font-bold text-blue-500">
+                                    <span className="text-xs font-bold text-gray-500">
                                       Guest Name:
                                     </span>
                                     <span className="text-xs font-bold text-blue-500">
@@ -1872,7 +1872,7 @@ const OrdersDashboard = () => {
                                   </div>
                                 ) : (
                                   <div className="flex items-center gap-1">
-                                    <span className="text-xs font-bold text-blue-500">
+                                    <span className="text-xs font-bold text-gray-500">
                                       Direct Sale
                                     </span>
                                   </div>
