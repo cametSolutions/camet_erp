@@ -85,24 +85,22 @@ export const buildDatabaseFilterForBooking = (params) => {
   }
 
   // ✅ Apply date filter FIRST — before searchTerm logic
-  if (params.fromDate && params.toDate) {
-    const start = new Date(params.fromDate);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(params.toDate);
-    end.setHours(23, 59, 59, 999);
+if (params.fromDate && params.toDate) {
+  const fromStr = new Date(params.fromDate).toISOString().split("T")[0]; // "2026-05-08"
+  const toStr = new Date(params.toDate).toISOString().split("T")[0];     // "2026-05-08"
 
-    console.log("📅 Date filter:", { modal: params.modal, start, end });
-
-    if (params.modal === "checkIn") {
-      filter.arrivalDate = { $lte: end };
-      filter.checkOutDate = { $gte: start };
-    } else if (params.modal === "booking") {
-      filter.createdAt = { $gte: start, $lte: end }; // ✅ use createdAt
-    } else {
-      filter.checkOutDate = { $gte: start, $lte: end };
-    }
+  if (params.modal === "booking") {
+    filter.bookingDate = { $gte: fromStr, $lte: toStr }; // string comparison
+  } else if (params.modal === "checkIn") {
+    filter.arrivalDate = { $gte: fromStr, $lte: toStr }; // string comparison
+  } else {
+    // checkOut — use createdAt (proper Date object in DB)
+    filter.createdAt = {
+      $gte: new Date(new Date(params.fromDate).setHours(0, 0, 0, 0)),
+      $lte: new Date(new Date(params.toDate).setHours(23, 59, 59, 999)),
+    };
   }
-
+}
   // searchTerm logic AFTER date filter
   if (params.searchTerm && params.searchTerm !== "completed") {
     if (params.searchTerm !== "pending") {
@@ -160,7 +158,16 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
       selectedModal.countDocuments(filter),
     ]);
 
-
+// In fetchBookingsFromDatabase, after query runs
+const raw = await selectedModal.findOne({ cmp_id: filter.cmp_id }).lean();
+console.log("🔑 ALL FIELD NAMES:", Object.keys(raw || {}));
+console.log("📄 DATE FIELDS:", {
+  createdAt: raw?.createdAt,
+  bookingDate: raw?.bookingDate,
+  arrivalDate: raw?.arrivalDate,
+  checkOutDate: raw?.checkOutDate,
+  date: raw?.date,
+});
   const checkInNumbers = params?.modal == "checkIn" ? bookings.map((b) => b.voucherNumber) :
   params?.modal == "checkOut"? bookings.map((b) => b.checkInId?.voucherNumber) : []
     // 2) Find all related sales in one query
