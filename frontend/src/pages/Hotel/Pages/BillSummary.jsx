@@ -1095,7 +1095,7 @@ console.log(salesData);
                     Date
                   </th>
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
-                    Agent Name
+                    Guest Name
                   </th>
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Gross Amount
