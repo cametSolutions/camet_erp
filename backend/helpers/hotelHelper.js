@@ -164,7 +164,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
     "convertedFrom.checkInNumber": { $in: checkInNumbers },
   })
   .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData");
-  let displayTotal = 0
+
  
 // Build map: checkInNumber -> { totalAmount, paymentSplittingData }
 const totalByCheckIn = {};
@@ -234,23 +234,10 @@ const bookingsWithSales = await Promise.all(
       salesNumber :  b.voucherNumber,
     }) : []
 
-console.log(b.voucherNumber,specificSale.paymentSplittingData.reduce((total, split) => total + Number(split.amount || 0), 0)+ checkInData.totalAmount);
-//  if(params?.modal == "checkOut"){
-//     displayTotal = await salesModel
-//     .find({
-//       cmp_id: filter.cmp_id,
-//       isPostToRoom: false,
-//       isCancelled: false,
-//       "convertedFrom.checkInNumber": b.voucherNumber,
-//     })
-//     .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData");
-
-//     console.log("displayTotal",displayTotal); 
-//   }
 
     return {
       ...b.toObject(),
-      displayTotal: specificSale && 0 ? specificSale.paymentSplittingData.reduce((total, split) => total + Number(split.amount || 0) , 0) + Number(checkInData.totalAmount || 0): 0,
+      displayTotal: specificSale  ? specificSale.paymentSplittingData.reduce((total, split) => total + Number(split.amount || 0) , 0) + Number(checkInData.totalAmount || 0): 0,
       restaurantSubTotal: checkInData.totalAmount,
       restaurantPaymentSplittingData: [
         ...(specificSale?.paymentSplittingData || []),
