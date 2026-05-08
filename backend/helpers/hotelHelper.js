@@ -252,7 +252,7 @@ const bookingsWithSales = await Promise.all(
 
     return {
       ...b.toObject(),
-      displayTotal: specificSale  ? specificSale.paymentSplittingData?.reduce((total, split) => total + Number(split.amount || 0) , 0) + Number(checkInData.totalAmount || 0): 0,
+      displayTotal: (specificSale?.paymentSplittingData?.length > 0  &&  params?.modal === "checkOut" ) ? specificSale.paymentSplittingData.reduce((total, split) => total + Number(split.amount || 0) , 0) + Number(checkInData.totalAmount || 0): 0,
       restaurantSubTotal: checkInData.totalAmount,
       restaurantPaymentSplittingData: [
         ...(specificSale?.paymentSplittingData || []),

@@ -1,7 +1,7 @@
 /* eslint-disable react/jsx-key */
 import React from "react";
 import { IoFastFood } from "react-icons/io5";
-import { MdFoodBank } from "react-icons/md";
+import { MdFoodBank, MdCalculate  } from "react-icons/md";
 import TitleDiv from "../../../../../components/common/TitleDiv";
 import SettingsCard from "../../../../../components/common/SettingsCard";
 import { useSelector, useDispatch } from "react-redux";
@@ -235,6 +235,15 @@ const restuarentSettings = () => {
         toggle: true,
         toggleValue: configurations[0]?.orderTypes?.roomService ?? false,
         dbField: "orderTypes.roomService",
+      },
+       {
+        title: "Complementary include tax",
+        description: "Management of complementary include tax",
+        icon: <MdCalculate />,
+        active: true,
+        toggle: true,
+        toggleValue: configurations[0]?.complementaryWithTax ?? false,
+        dbField: "complementaryWithTax",
       },
     );
   }

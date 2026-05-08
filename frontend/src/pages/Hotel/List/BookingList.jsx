@@ -1716,9 +1716,9 @@ params.append("toDate", toDate);
 
             <div
               className="w-40 text-center text-gray-700 truncate text-xs"
-              title={el?.customerId?.partyName}
+              title={el?.guestId?.partyName}
             >
-              {el?.customerId?.partyName || "-"}
+              {el?.guestId?.partyName || "-"}
             </div>
 
             {/* 🔹 ROOM CLICK */}

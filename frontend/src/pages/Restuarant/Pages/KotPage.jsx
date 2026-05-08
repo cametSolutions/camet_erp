@@ -383,6 +383,7 @@ const OrdersDashboard = () => {
             ?.toLowerCase()
             .includes(searchQuery.toLowerCase()) ||
           order?.id?.toString().includes(searchQuery) ||
+          order?.salesNumber?.toString().includes(searchQuery) ||
           order.items.some(
             (item) =>
               item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1852,7 +1853,7 @@ const OrdersDashboard = () => {
                                 </div>
                                 {order.salesNumber && (
                                   <div className="flex items-center gap-1">
-                                    <span className="text-xs font-bold text-blue-500">
+                                    <span className="text-xs font-bold text-gray-500">
                                       SNo:
                                     </span>
                                     <span className="text-xs font-bold text-blue-500">
@@ -1860,6 +1861,22 @@ const OrdersDashboard = () => {
                                     </span>
                                   </div>
                                 )}
+                                    {order.customer?.guestName ? (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs font-bold text-gray-500">
+                                      Guest Name:
+                                    </span>
+                                    <span className="text-xs font-bold text-blue-500">
+                                      {order.customer?.guestName}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs font-bold text-gray-500">
+                                      Direct Sale
+                                    </span>
+                                  </div>
+                               )}
 
                                 <div className="flex items-center gap-1 text-[10px] text-gray-500">
                                   <MdAccessTime className="w-3 h-3 flex-shrink-0" />
