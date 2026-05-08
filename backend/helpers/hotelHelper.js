@@ -84,36 +84,44 @@ export const buildDatabaseFilterForBooking = (params) => {
     filter["selectedRooms.roomId"] = params.roomId;
   }
 
-  // Add search functionality if search term is provided
+  // ✅ Apply date filter FIRST — before searchTerm logic
+  if (params.fromDate && params.toDate) {
+    const start = new Date(params.fromDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(params.toDate);
+    end.setHours(23, 59, 59, 999);
+
+    console.log("📅 Date filter:", { modal: params.modal, start, end });
+
+    if (params.modal === "checkIn") {
+      filter.arrivalDate = { $lte: end };
+      filter.checkOutDate = { $gte: start };
+    } else if (params.modal === "booking") {
+      filter.createdAt = { $gte: start, $lte: end }; // ✅ use createdAt
+    } else {
+      filter.checkOutDate = { $gte: start, $lte: end };
+    }
+  }
+
+  // searchTerm logic AFTER date filter
   if (params.searchTerm && params.searchTerm !== "completed") {
     if (params.searchTerm !== "pending") {
       filter.$or = [
         { voucherNumber: { $regex: params.searchTerm, $options: "i" } },
         { customerName: { $regex: params.searchTerm, $options: "i" } },
-        {
-          "selectedRooms.roomName": {
-            $regex: params.searchTerm,
-            $options: "i",
-          },
-        },
-        {
-          "selectedRooms.roomNumber": {
-            $regex: params.searchTerm,
-            $options: "i",
-          },
-        },
+        { "selectedRooms.roomName": { $regex: params.searchTerm, $options: "i" } },
+        { "selectedRooms.roomNumber": { $regex: params.searchTerm, $options: "i" } },
       ];
     } else {
-      filter = { ...filter, status: { $exists: false } };
+      // ✅ Keep existing date filter, only add status
+      filter.status = { $exists: false };
     }
   } else if (params.searchTerm === "completed") {
-    if (params.modal === "booking") {
-      filter = { ...filter, status: "checkIn" };
-    }
-    if (params.modal === "checkIn") {
-      filter = { ...filter, status: "checkOut" };
-    }
+    if (params.modal === "booking") filter.status = "checkIn";
+    if (params.modal === "checkIn") filter.status = "checkOut";
   }
+
+  console.log("🔍 Final filter:", JSON.stringify(filter, null, 2));
 
   return filter;
 };
@@ -237,7 +245,7 @@ const bookingsWithSales = await Promise.all(
 
     return {
       ...b.toObject(),
-      displayTotal: specificSale  ? specificSale.paymentSplittingData.reduce((total, split) => total + Number(split.amount || 0) , 0) + Number(checkInData.totalAmount || 0): 0,
+      displayTotal: specificSale  ? specificSale.paymentSplittingData?.reduce((total, split) => total + Number(split.amount || 0) , 0) + Number(checkInData.totalAmount || 0): 0,
       restaurantSubTotal: checkInData.totalAmount,
       restaurantPaymentSplittingData: [
         ...(specificSale?.paymentSplittingData || []),
@@ -282,6 +290,13 @@ export const extractRequestParamsForBookings = (req) => {
   const modal = parseInt(req.query.modal) || 0;
   const roomId = parseInt(req.query.roomId) || 0;
 
+  const today = new Date();
+  
+  const rawFrom = req.query.fromDate;
+  const rawTo = req.query.toDate;
+const fromDate = rawFrom ? new Date(rawFrom) : today;
+const toDate = rawTo ? new Date(rawTo) : today;
+
   return {
     Secondary_user_id: req.sUserId,
     cmp_id: new mongoose.Types.ObjectId(req.params.cmp_id),
@@ -292,6 +307,8 @@ export const extractRequestParamsForBookings = (req) => {
     skip: limit > 0 ? (page - 1) * limit : 0,
     modal: req.query.modal,
     roomId: req.query.roomId || null,
+    fromDate,
+  toDate,
   };
 };
 
