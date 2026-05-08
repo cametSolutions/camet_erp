@@ -364,6 +364,18 @@ export const printDirectHTML = (
           <div class="order-info">
         ${orderData.guestName ? `<div>Guest:${orderData.guestName}</div>` : '<div></div>'}
       </div>
+        </div>
+         <div class="order-info"> Food Plan :
+  ${
+    orderData?.foodPlan?.length > 0
+      ? orderData.foodPlan
+          .map(
+            (plan) => `<div> ${plan?.planType || ""}</div>`
+          )
+          .join("")
+      : "<div></div>"
+  }
+</div>
       <div class="items-header"><span>SL ITEM</span><span>QTY</span></div>
       <div class="divider"></div>
       ${orderData.items.map((item, index) => 

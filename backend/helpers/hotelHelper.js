@@ -153,8 +153,8 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
     ]);
 
 
-    const checkInNumbers = params?.modal == "checkIn" ? bookings.map((b) => b.voucherNumber) :
-     params?.modal == "checkOut"? bookings.map((b) => b.checkInId?.voucherNumber) : []
+  const checkInNumbers = params?.modal == "checkIn" ? bookings.map((b) => b.voucherNumber) :
+  params?.modal == "checkOut"? bookings.map((b) => b.checkInId?.voucherNumber) : []
     // 2) Find all related sales in one query
   const sales = await salesModel
   .find({
@@ -164,7 +164,8 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
     "convertedFrom.checkInNumber": { $in: checkInNumbers },
   })
   .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData");
-
+  let displayTotal = 0
+ 
 // Build map: checkInNumber -> { totalAmount, paymentSplittingData }
 const totalByCheckIn = {};
 const processedSaleIds = new Set();
@@ -233,12 +234,23 @@ const bookingsWithSales = await Promise.all(
       salesNumber :  b.voucherNumber,
     }) : []
 
-if( b.voucherNumber == "CO-823-2025"){
- console.log("checkInDataccccccccccc",specificSale);
-}
+console.log(b.voucherNumber,specificSale.paymentSplittingData.reduce((total, split) => total + Number(split.amount || 0), 0)+ checkInData.totalAmount);
+//  if(params?.modal == "checkOut"){
+//     displayTotal = await salesModel
+//     .find({
+//       cmp_id: filter.cmp_id,
+//       isPostToRoom: false,
+//       isCancelled: false,
+//       "convertedFrom.checkInNumber": b.voucherNumber,
+//     })
+//     .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData");
+
+//     console.log("displayTotal",displayTotal); 
+//   }
 
     return {
       ...b.toObject(),
+      displayTotal: specificSale && 0 ? specificSale.paymentSplittingData.reduce((total, split) => total + Number(split.amount || 0) , 0) + Number(checkInData.totalAmount || 0): 0,
       restaurantSubTotal: checkInData.totalAmount,
       restaurantPaymentSplittingData: [
         ...(specificSale?.paymentSplittingData || []),
