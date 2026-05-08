@@ -206,7 +206,7 @@ useEffect(() => {
       guestDetailedAddress: editData?.guestDetailedAddress,
       guestMobileNumber: editData?.guestMobileNumber,
       balanceToPay: editData?.balanceToPay || 0,
-      advanceAmount: editData?.advanceAmount || 0,
+      advanceAmount:  0,
       previousAdvance: editData?.previousAdvance || 0,
       company: editData?.company || "",
       nextDestination: editData?.nextDestination || "",

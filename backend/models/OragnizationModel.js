@@ -166,6 +166,11 @@ const organizationSchema = new mongoose.Schema(
           default: true,
         },
 
+        complementaryWithTax : {
+          type: Boolean,
+          default: true,
+        },
+
         termsAndConditions: [
           {
             voucher: { type: String, default: "saleOrder" }, // Define the type for clarity

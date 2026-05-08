@@ -1372,6 +1372,7 @@ export const roomBooking = async (req, res) => {
   }
 };
 
+
 // function used to fetch booking list
 export const getBookings = async (req, res) => {
   try {
@@ -1423,6 +1424,8 @@ export const getBookings = async (req, res) => {
     });
   }
 };
+
+
 const getPaymentStatus = (paymenttypeDetails) => {
   if (!paymenttypeDetails) return "Unpaid";
 
@@ -3848,7 +3851,7 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
   try {
     const { cmp_id } = req.params;
     const data = req.body;
-
+console.log("dataaaaaaaaaaa", data);
     let updateData = {};
 
     // Handle different types of updates
@@ -3894,7 +3897,16 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
             data.checked,
         },
       };
-    } else if (data.title === "foodPlaWithRoomRate") {
+    }else if (data.title === "complementaryWithTax") {
+      // Handle existing addRateWithTax toggle updates
+      updateData = {
+        $set: {
+          [`configurations.0.complementaryWithTax`]:
+            data.checked,
+        },
+      };
+    }
+    else if (data.title === "foodPlaWithRoomRate") {
       console.log("foodPlaWithRoomRate");
       // Handle existing addRateWithTax toggle updates
       updateData = {

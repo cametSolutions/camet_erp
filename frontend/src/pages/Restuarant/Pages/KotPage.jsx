@@ -124,22 +124,22 @@ const OrdersDashboard = () => {
   const discountBasedOnGrossAmount =
     org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
 
- const queryClient = useQueryClient(); // ✅ uncomment/move this to here
+  const queryClient = useQueryClient(); // ✅ uncomment/move this to here
 
-const { data, refetch: refreshHook } = useQuery({
-  queryKey: ["kotDash", cmp_id, selectedDate],
-  queryFn: async () => {
-    const res = await api.get(
-      `/api/sUsers/getKotDataDash/${cmp_id}?date=${selectedDate}`,
-      { withCredentials: true },
-    );
-    return res.data;
-  },
-  refetchInterval: 10000,        // ✅ auto-refresh every 10 seconds
-  refetchIntervalInBackground: true, // ✅ refreshes even when tab is not focused
-  staleTime: 5000,
-  enabled: !!cmp_id,
-});
+  const { data, refetch: refreshHook } = useQuery({
+    queryKey: ["kotDash", cmp_id, selectedDate],
+    queryFn: async () => {
+      const res = await api.get(
+        `/api/sUsers/getKotDataDash/${cmp_id}?date=${selectedDate}`,
+        { withCredentials: true },
+      );
+      return res.data;
+    },
+    refetchInterval: 10000, // ✅ auto-refresh every 10 seconds
+    refetchIntervalInBackground: true, // ✅ refreshes even when tab is not focused
+    staleTime: 5000,
+    enabled: !!cmp_id,
+  });
 
   const fetchData = useCallback(async () => {
     if (isLoading) return;
@@ -396,6 +396,7 @@ const { data, refetch: refreshHook } = useQuery({
             ?.toLowerCase()
             .includes(searchQuery.toLowerCase()) ||
           order?.id?.toString().includes(searchQuery) ||
+          order?.salesNumber?.toString().includes(searchQuery) ||
           order.items.some(
             (item) =>
               item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -449,9 +450,10 @@ const { data, refetch: refreshHook } = useQuery({
             };
           }),
         );
-      queryClient.invalidateQueries({ queryKey: ["kotDash", cmp_id, selectedDate] });
-      
-    }
+        queryClient.invalidateQueries({
+          queryKey: ["kotDash", cmp_id, selectedDate],
+        });
+      }
     } catch (error) {
       console.error(
         "Error updating order status:",
@@ -522,7 +524,9 @@ const { data, refetch: refreshHook } = useQuery({
         setOrders((prevOrders) =>
           prevOrders.filter((kot) => kot._id !== selectedOrderForCancel._id),
         );
-  queryClient.invalidateQueries({ queryKey: ["kotDash", cmp_id, selectedDate] });
+        queryClient.invalidateQueries({
+          queryKey: ["kotDash", cmp_id, selectedDate],
+        });
         setShowCancelModal(false);
         setCancelReason(""); // clear reason field
         setSelectedOrderForCancel(null);
@@ -847,7 +851,9 @@ const { data, refetch: refreshHook } = useQuery({
       setSaveLoader(false);
       setCashAmount(0);
       setOnlineAmount(0);
-      queryClient.invalidateQueries({ queryKey: ["kotDash", cmp_id, selectedDate] });
+      queryClient.invalidateQueries({
+        queryKey: ["kotDash", cmp_id, selectedDate],
+      });
       setPaymentMode("single");
       setSelectedCreditor("");
       setSelectedKot([]);
@@ -1042,7 +1048,9 @@ const { data, refetch: refreshHook } = useQuery({
 
   console.log(paymentMethod);
   const handleSaveSales = (status) => {
-    queryClient.invalidateQueries({ queryKey: ["kotDash", cmp_id, selectedDate] }); // ✅
+    queryClient.invalidateQueries({
+      queryKey: ["kotDash", cmp_id, selectedDate],
+    }); // ✅
     setConformationModal(false);
     setSelectedDataForPayment(previewForSales);
     if (isPostToRoom && status) {
@@ -1411,7 +1419,7 @@ const { data, refetch: refreshHook } = useQuery({
                     const isOrderSelected = (o) =>
                       selectedKot.find((item) => item.id === o._id);
                     const displayItems = order._batchItems ?? order.items;
-console.log(order)
+                    console.log(order);
                     return (
                       <div
                         key={order._batchCardId}
@@ -1865,11 +1873,27 @@ console.log(order)
                                 </div>
                                 {order.salesNumber && (
                                   <div className="flex items-center gap-1">
-                                    <span className="text-xs font-bold text-blue-500">
+                                    <span className="text-xs font-bold text-gray-500">
                                       SNo:
                                     </span>
                                     <span className="text-xs font-bold text-blue-500">
                                       #{order.salesNumber}
+                                    </span>
+                                  </div>
+                                )}
+                                {order.customer?.guestName ? (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs font-bold text-gray-500">
+                                      Guest Name:
+                                    </span>
+                                    <span className="text-xs font-bold text-blue-500">
+                                      {order.customer?.guestName}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs font-bold text-gray-500">
+                                      Direct Sale
                                     </span>
                                   </div>
                                 )}
