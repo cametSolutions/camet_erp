@@ -4371,6 +4371,36 @@ export const getHotelSalesDetails = async (req, res) => {
           preserveNullAndEmptyArrays: true,
         },
       },
+      // Checkin lookup to get roomName
+{
+  $lookup: {
+    from: "checkins",
+    let: {
+      checkInNum: { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] }
+    },
+    pipeline: [
+      {
+        $match: {
+          $expr: { $eq: ["$voucherNumber", "$$checkInNum"] }
+        }
+      },
+      {
+        $project: {
+          voucherNumber: 1,
+          guestName: 1,
+          "selectedRooms.roomName": 1
+        }
+      }
+    ],
+    as: "checkInData"
+  }
+},
+{
+  $unwind: {
+    path: "$checkInData",
+    preserveNullAndEmptyArrays: true
+  }
+},
 
       // 3️⃣ KOT lookup (convertedFrom.id → ObjectId)
       {
@@ -4648,7 +4678,9 @@ export const getHotelSalesDetails = async (req, res) => {
         businessClassification: sale.businessClassification,
         tableNumber: sale.tableNumber || "",
         waiterName: sale.waiterName || "",
-        roomNumber: sale.roomNumber || "",
+      roomNumber: sale.checkInData?.selectedRooms?.[0]?.roomName 
+            || sale.roomNumber 
+            || "",
         guestName: gusestName || "",
         itemCount: sale.items?.length || 0,
         isHotelSale: sale.isHotelSale || false,
