@@ -6315,10 +6315,9 @@ console.log("checkins", checkins);
       additionalPaxTotal += additionalPaxCount;
 
       (doc?.selectedRooms || []).forEach((room) => {
-        console.log("swapping",room.isSwapped)
         if(room.isSwapped) return
         const pax = Number(room?.pax || 0);
-        const tariff = Number(room?.baseAmount ||
+        const tariff = Number(Math.round(room.priceLevelRate) || room?.baseAmount ||
           room?.amountAfterTax ||
             room?.totalAmount ||
             room?.baseAmountWithTax ||
