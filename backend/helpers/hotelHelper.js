@@ -84,36 +84,42 @@ export const buildDatabaseFilterForBooking = (params) => {
     filter["selectedRooms.roomId"] = params.roomId;
   }
 
-  // Add search functionality if search term is provided
+  // ✅ Apply date filter FIRST — before searchTerm logic
+if (params.fromDate && params.toDate) {
+  const fromStr = new Date(params.fromDate).toISOString().split("T")[0]; // "2026-05-08"
+  const toStr = new Date(params.toDate).toISOString().split("T")[0];     // "2026-05-08"
+
+  if (params.modal === "booking") {
+    filter.bookingDate = { $gte: fromStr, $lte: toStr }; // string comparison
+  } else if (params.modal === "checkIn") {
+    filter.arrivalDate = { $gte: fromStr, $lte: toStr }; // string comparison
+  } else {
+    // checkOut — use createdAt (proper Date object in DB)
+    filter.createdAt = {
+      $gte: new Date(new Date(params.fromDate).setHours(0, 0, 0, 0)),
+      $lte: new Date(new Date(params.toDate).setHours(23, 59, 59, 999)),
+    };
+  }
+}
+  // searchTerm logic AFTER date filter
   if (params.searchTerm && params.searchTerm !== "completed") {
     if (params.searchTerm !== "pending") {
       filter.$or = [
         { voucherNumber: { $regex: params.searchTerm, $options: "i" } },
         { customerName: { $regex: params.searchTerm, $options: "i" } },
-        {
-          "selectedRooms.roomName": {
-            $regex: params.searchTerm,
-            $options: "i",
-          },
-        },
-        {
-          "selectedRooms.roomNumber": {
-            $regex: params.searchTerm,
-            $options: "i",
-          },
-        },
+        { "selectedRooms.roomName": { $regex: params.searchTerm, $options: "i" } },
+        { "selectedRooms.roomNumber": { $regex: params.searchTerm, $options: "i" } },
       ];
     } else {
-      filter = { ...filter, status: { $exists: false } };
+      // ✅ Keep existing date filter, only add status
+      filter.status = { $exists: false };
     }
   } else if (params.searchTerm === "completed") {
-    if (params.modal === "booking") {
-      filter = { ...filter, status: "checkIn" };
-    }
-    if (params.modal === "checkIn") {
-      filter = { ...filter, status: "checkOut" };
-    }
+    if (params.modal === "booking") filter.status = "checkIn";
+    if (params.modal === "checkIn") filter.status = "checkOut";
   }
+
+  console.log("🔍 Final filter:", JSON.stringify(filter, null, 2));
 
   return filter;
 };
@@ -152,9 +158,18 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
       selectedModal.countDocuments(filter),
     ]);
 
-
-    const checkInNumbers = params?.modal == "checkIn" ? bookings.map((b) => b.voucherNumber) :
-     params?.modal == "checkOut"? bookings.map((b) => b.checkInId?.voucherNumber) : []
+// In fetchBookingsFromDatabase, after query runs
+const raw = await selectedModal.findOne({ cmp_id: filter.cmp_id }).lean();
+console.log("🔑 ALL FIELD NAMES:", Object.keys(raw || {}));
+console.log("📄 DATE FIELDS:", {
+  createdAt: raw?.createdAt,
+  bookingDate: raw?.bookingDate,
+  arrivalDate: raw?.arrivalDate,
+  checkOutDate: raw?.checkOutDate,
+  date: raw?.date,
+});
+  const checkInNumbers = params?.modal == "checkIn" ? bookings.map((b) => b.voucherNumber) :
+  params?.modal == "checkOut"? bookings.map((b) => b.checkInId?.voucherNumber) : []
     // 2) Find all related sales in one query
   const sales = await salesModel
   .find({
@@ -164,7 +179,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
     "convertedFrom.checkInNumber": { $in: checkInNumbers },
   })
   .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData");
-  let displayTotal = 0
+
  
 // Build map: checkInNumber -> { totalAmount, paymentSplittingData }
 const totalByCheckIn = {};
@@ -234,26 +249,10 @@ const bookingsWithSales = await Promise.all(
       salesNumber :  b.voucherNumber,
     }) : []
 
-if( b.voucherNumber == "CO-823-2025"){
- console.log("checkInDataccccccccccc",specificSale);
-}
-
- if(params?.modal == "checkOut"){
-    displayTotal = await salesModel
-    .find({
-      cmp_id: filter.cmp_id,
-      isPostToRoom: false,
-      isCancelled: false,
-      "convertedFrom.checkInNumber": { $in: checkInNumbers },
-    })
-    .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData");
-
-    console.log("displayTotal",displayTotal); 
-  }
 
     return {
       ...b.toObject(),
-      displayTotal: displayTotal.length > 0 ? displayTotal.reduce((total, sale) => total + Number(sale.finalAmount || 0), 0) : 0,
+      displayTotal: specificSale  ? specificSale.paymentSplittingData?.reduce((total, split) => total + Number(split.amount || 0) , 0) + Number(checkInData.totalAmount || 0): 0,
       restaurantSubTotal: checkInData.totalAmount,
       restaurantPaymentSplittingData: [
         ...(specificSale?.paymentSplittingData || []),
@@ -298,6 +297,13 @@ export const extractRequestParamsForBookings = (req) => {
   const modal = parseInt(req.query.modal) || 0;
   const roomId = parseInt(req.query.roomId) || 0;
 
+  const today = new Date();
+  
+  const rawFrom = req.query.fromDate;
+  const rawTo = req.query.toDate;
+const fromDate = rawFrom ? new Date(rawFrom) : today;
+const toDate = rawTo ? new Date(rawTo) : today;
+
   return {
     Secondary_user_id: req.sUserId,
     cmp_id: new mongoose.Types.ObjectId(req.params.cmp_id),
@@ -308,6 +314,8 @@ export const extractRequestParamsForBookings = (req) => {
     skip: limit > 0 ? (page - 1) * limit : 0,
     modal: req.query.modal,
     roomId: req.query.roomId || null,
+    fromDate,
+  toDate,
   };
 };
 

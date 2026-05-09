@@ -1097,7 +1097,7 @@ console.log(filteredSalesData);
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Guest Name
                   </th>
-                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
+                    <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Room Name
                   </th>
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">

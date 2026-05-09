@@ -118,7 +118,8 @@ function BookingList() {
 
   const [remarks, setRemarks] = useState("");
   const [transactionNumber, setTransactionNumber] = useState("");
-
+const [fromDate, setFromDate] = useState(new Date().toISOString().split("T")[0]);
+const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
   const ROOM_COLORS = [
     { bg: "#EEEDFE", border: "#AFA9EC", icon: "#534AB7", text: "#3C3489" },
     { bg: "#E1F5EE", border: "#5DCAA5", icon: "#0F6E56", text: "#085041" },
@@ -643,6 +644,11 @@ console.log(totalAmount,advanceAmount,restaurantSubTotal);
         } else {
           params.append("modal", "checkOut");
         }
+
+      params.append("fromDate", fromDate);
+params.append("toDate", toDate);
+       
+       
         const res = await api.get(
           `/api/sUsers/getBookings/${cmp_id}?${params}`,
           {
@@ -651,6 +657,7 @@ console.log(totalAmount,advanceAmount,restaurantSubTotal);
         );
 
         let bookingData = res?.data?.bookingData || [];
+        
         console.log("bookingData", bookingData[0]);
 
         if (location.pathname === "/sUsers/checkInList") {
@@ -689,7 +696,7 @@ console.log(totalAmount,advanceAmount,restaurantSubTotal);
       }
     },
 
-    [cmp_id, filterByRoom, roomId, location.pathname],
+    [cmp_id, filterByRoom, roomId, location.pathname,fromDate, toDate],
   );
 
   useEffect(() => {
@@ -1720,7 +1727,6 @@ console.log(el)
             if (selectedCheckOut.length == 0) {
               setSelectedCustomer(el.customerId?._id);
             }
-
             setSelectedCheckOut((prev) => [...prev, el]);
             // setShowEnhancedCheckoutModal(!showEnhancedCheckoutModal)
           }}
@@ -2180,11 +2186,20 @@ console.log(el)
               },
             ]}
           />
-          <SearchBar
-            onType={searchData}
-            toggle={true}
-            from={location.pathname}
-          />
+        
+<SearchBar
+  onType={searchData}
+  toggle={true}
+  from={location.pathname}
+  onDateChange={({ from, to }) => {
+    setFromDate(from);
+    setToDate(to);
+    setPage(1);
+    pageRef.current = 1;
+    setBookings([]);
+    setHasMore(true);
+  }}
+/>
         </div>
 
         {!loader && !isLoading && bookings?.length === 0 && (

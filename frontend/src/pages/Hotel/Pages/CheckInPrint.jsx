@@ -133,7 +133,7 @@ const handlePrint = async () => {
   };
 
   const nameInfo = getNameParts(selectedCheckin?.customerName || selectedCheckin?.customerId?.partyName);
-
+console.log(selectedCheckin)
   return (
     <>
      <div className="sticky top-0 z-20 no-print">
@@ -238,19 +238,19 @@ const handlePrint = async () => {
           {/* Row 1: Title, Surname, First Name, Purpose */}
           <div className="flex border-b border-black">
             <div className="w-24 p-1.5 bg-gray-100 border-r border-black text-xs font-semibold">MRS./MS./MR.</div>
-            <div className="w-32 p-1.5 bg-gray-100 border-r border-black text-xs font-semibold">SURNAME</div>
-            <div className="flex-1 p-1.5 bg-gray-100 border-r border-black text-xs font-semibold">FIRST NAME</div>
+            <div className="w-32 p-1.5 bg-gray-100 border-r border-black text-xs font-semibold">GUESTNAME</div>
+           
             <div className="w-36 p-1.5 bg-gray-100 text-xs font-semibold">PURPOSE OF VISIT</div>
           </div>
           <div className="flex border-b border-black">
             <div className="w-24 p-1.5 border-r border-black text-xs">{nameInfo.title}</div>
-            <div className="w-32 p-1.5 border-r border-black text-xs">{nameInfo.surname}</div>
-            <div className="flex-1 p-1.5 border-r border-black text-xs">
+            <div className="w-32 p-1.5 border-r border-black text-xs">{selectedCheckin.guestName}</div>
+            {/* <div className="flex-1 p-1.5 border-r border-black text-xs">
               {nameInfo.firstName || selectedCheckin?.customerName || selectedCheckin?.customerId?.partyName || ''}
               {selectedCheckin?.customerId?.gstNumber && (
                 <div className="text-xs text-gray-600 mt-0.5">GSTNO: {selectedCheckin.customerId.gstNumber}</div>
               )}
-            </div>
+            </div> */}
             <div className="w-36 p-1.5 text-xs">{selectedCheckin?.visitOfPurpose?.purpose || 'BUSINESS'}</div>
           </div>
 
@@ -261,8 +261,16 @@ const handlePrint = async () => {
             <div className="w-40 p-1.5 bg-gray-100 text-xs font-semibold">NEXT DESTINATION</div>
           </div>
           <div className="flex border-b border-black">
-            <div className="w-32 p-1.5 border-r border-black text-xs">{selectedCheckin?.company || ''}</div>
-            <div className="flex-1 p-1.5 border-r border-black text-xs">{selectedCheckin?.agentId?.name || ''}</div>
+           <div className="w-32 p-1.5 border-r border-black text-xs">
+    {selectedCheckin?.guestId?.gsntno
+      ? selectedCheckin?.guestId?.company || ''
+      : selectedCheckin?.company || ''}
+  </div>
+  <div className="flex-1 p-1.5 border-r border-black text-xs">
+    {selectedCheckin?.guestId?.gsntno
+      ? selectedCheckin?.guestId?.agentId?.name || selectedCheckin?.guestId?.travelAgent || ''
+      : selectedCheckin?.agentId?.name || ''}
+  </div>
             <div className="w-40 p-1.5 text-xs">{selectedCheckin?.nextDestination || ''}</div>
           </div>
 
@@ -273,10 +281,11 @@ const handlePrint = async () => {
           </div>
           <div className="flex border-b border-black">
             <div className="flex-1 p-1.5 border-r border-black text-xs">
-              {selectedCheckin?.detailedAddress || selectedCheckin?.customerId?.address || ''}
-              {selectedCheckin?.state && <>, {selectedCheckin.state}</>}
-              {selectedCheckin?.country && `, ${selectedCheckin.country}`}
-              {selectedCheckin?.pinCode && ` - ${selectedCheckin.pinCode}`}
+              {selectedCheckin?.guestId?.billingAddress || selectedCheckin?.customerId?.address || ''}
+              {selectedCheckin?.guestId?.state && <>, {selectedCheckin.guestId?.state}</>}
+              {selectedCheckin?.guestId?.country && `, ${selectedCheckin.guestId?.country}`}
+              {selectedCheckin?.guestId?.pinCode && ` - ${selectedCheckin.guestId?.pinCode}`}
+                {selectedCheckin?.guestId?.gstNo && ` - ${selectedCheckin.guestId?.gstNo}`} 
             </div>
             <div className="w-32 p-1.5 text-xs">
               {selectedCheckin?.dateOfBirth ? formatDate(selectedCheckin.dateOfBirth) : ''}
