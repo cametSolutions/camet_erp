@@ -9,7 +9,9 @@ function SearchBar({ onType, toggle, from, onDateChange }) {
   const [checked, setChecked] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
-  const [fromDate, setFromDate] = useState(today);
+   const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(new Date().getDate() - 30)
+  const [fromDate, setFromDate] = useState(thirtyDaysAgo.toISOString().split("T")[0]);
   const [toDate, setToDate] = useState(today);
 
   const handleCheckboxChange = () => {
