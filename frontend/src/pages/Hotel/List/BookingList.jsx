@@ -117,8 +117,10 @@ function BookingList() {
 
   const [remarks, setRemarks] = useState("");
   const [transactionNumber, setTransactionNumber] = useState("");
-const [fromDate, setFromDate] = useState(new Date().toISOString().split("T")[0]);
-const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(new Date().getDate() - 30)
+  const [fromDate, setFromDate] = useState(thirtyDaysAgo.toISOString().split("T")[0]);
+   const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
   const ROOM_COLORS = [
     { bg: "#EEEDFE", border: "#AFA9EC", icon: "#534AB7", text: "#3C3489" },
     { bg: "#E1F5EE", border: "#5DCAA5", icon: "#0F6E56", text: "#085041" },
@@ -1574,7 +1576,7 @@ params.append("toDate", toDate);
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
       <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
         <div className="w-18 text-center">SL.NO</div>
-        <div className="w-32 text-center">BOOKING DATE</div>
+        <div className="w-32 text-center">{location.pathname == "/sUsers/checkOutList" ? "CHECKOUT DATE" :"BOOKING DATE"}</div>
         <div className="w-32 text-center">
           {location.pathname == "/sUsers/checkOutList"
             ? "CHECKOUT NO"
@@ -1587,7 +1589,7 @@ params.append("toDate", toDate);
 
       <div className="hidden md:flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider">
         <div className="w-10 text-center">SL.NO</div>
-        <div className="w-28 text-center">BOOKING DATE</div>
+        <div className="w-28 text-center">{location.pathname == "/sUsers/checkOutList" ? "CHECKOUT DATE" :"BOOKING DATE"}</div>
         <div className="w-32 text-center">
           {location.pathname === "/sUsers/checkOutList"
             ? "CHECKOUT NO"
@@ -1707,7 +1709,7 @@ params.append("toDate", toDate);
             </div>
 
             <div className="w-28 text-center text-gray-600 text-xs">
-              {formatDate(el?.bookingDate)}
+              {location.pathname == "/sUsers/checkOutList" ? formatDate(el?.checkOutDate) : formatDate(el?.bookingDate)}
             </div>
 
             <div className="w-32 text-center text-gray-700 font-semibold text-xs">
