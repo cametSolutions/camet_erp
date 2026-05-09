@@ -90,14 +90,14 @@ if (params.fromDate && params.toDate) {
   const toStr = new Date(params.toDate).toISOString().split("T")[0];     // "2026-05-08"
 
   if (params.modal === "booking") {
-    filter.bookingDate = { $gte: fromStr, $lte: toStr }; // string comparison
+    filter.arrivalDate = { $gte: fromStr, $lte: toStr }; // string comparison
   } else if (params.modal === "checkIn") {
     filter.arrivalDate = { $gte: fromStr, $lte: toStr }; // string comparison
   } else {
     // checkOut — use createdAt (proper Date object in DB)
-    filter.createdAt = {
-      $gte: new Date(new Date(params.fromDate).setHours(0, 0, 0, 0)),
-      $lte: new Date(new Date(params.toDate).setHours(23, 59, 59, 999)),
+    filter.checkOutDate = {
+      $gte: fromStr,
+      $lte: toStr,
     };
   }
 }
@@ -252,10 +252,10 @@ const bookingsWithSales = await Promise.all(
 
     return {
       ...b.toObject(),
-      displayTotal: specificSale  ? specificSale.paymentSplittingData?.reduce((total, split) => total + Number(split.amount || 0) , 0) + Number(checkInData.totalAmount || 0): 0,
+      displayTotal: (specificSale?.paymentSplittingData?.length > 0  &&  params?.modal === "checkOut" ) ? specificSale.paymentSplittingData.reduce((total, split) => total + Number(split.amount || 0) , 0) + Number(checkInData.totalAmount || 0): 0,
       restaurantSubTotal: checkInData.totalAmount,
       restaurantPaymentSplittingData: [
-        ...(specificSale?.paymentSplittingData || []),
+        ...(specificSale?.paymentSplittingData || []), 
         ...(checkInData.paymentSplittingData || []),
       ],
     };
@@ -315,7 +315,7 @@ const toDate = rawTo ? new Date(rawTo) : today;
     modal: req.query.modal,
     roomId: req.query.roomId || null,
     fromDate,
-  toDate,
+    toDate,
   };
 };
 
