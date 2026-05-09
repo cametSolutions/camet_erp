@@ -6176,24 +6176,112 @@ export const getOccupancyCheckoutReport = async (req, res) => {
 
     fromDate = fromDate || "";
     toDate = toDate || "";
+const match = {
+  cmp_id: new mongoose.Types.ObjectId(cmp_id),
+};
 
-    const match = {
-      cmp_id: new mongoose.Types.ObjectId(cmp_id),
-      status: { $ne: "checkOut" },
-    };
+const pipeline = [
+  { $match: match },
 
-    if (fromDate && toDate) {
-      match.arrivalDate = {
-        $gte: fromDate,
-        $lte: toDate,
-      };
-    } else if (fromDate) {
-      match.arrivalDate = { $gte: fromDate };
-    } else if (toDate) {
-      match.arrivalDate = { $lte: toDate };
-    }
+  {
+    $lookup: {
+      from: "checkouts",
+      let: { checkInId: "$_id" },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $eq: ["$checkInId", "$$checkInId"],
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            checkOutDate: 1,
+            checkoutTime: 1,
+          },
+        },
+      ],
+      as: "checkoutDetails",
+    },
+  },
 
-    const checkins = await CheckIn.find(match).lean();
+  {
+    $addFields: {
+      rawNewChecoutDate: {
+        $ifNull: [
+          { $first: "$checkoutDetails.checkOutDate" },
+          "$checkOutDate",
+        ],
+      },
+
+      newCheckoutTime: {
+        $ifNull: [
+          { $first: "$checkoutDetails.checkoutTime" },
+          "$checkOutTime",
+        ],
+      },
+    },
+  },
+
+  {
+    $addFields: {
+      arrivalDateObj: {
+        $dateFromString: {
+          dateString: "$arrivalDate",
+          onError: null,
+          onNull: null,
+        },
+      },
+
+      newChecoutDate: {
+        $dateFromString: {
+          dateString: "$rawNewChecoutDate",
+          onError: null,
+          onNull: null,
+        },
+      },
+    },
+  },
+
+  {
+    $project: {
+      checkoutDetails: 0,
+      rawNewChecoutDate: 0,
+    },
+  },
+];
+
+if (fromDate && toDate) {
+  const startDate = new Date(fromDate);
+
+  const endDate = new Date(toDate);
+  endDate.setDate(endDate.getDate());
+
+  pipeline.push({
+    $match: {
+      $or: [
+        {
+          status: "checkOut",
+          newChecoutDate: {
+            $gt: startDate,
+            // $lt: endDate,
+          },
+        },
+        {
+          status: { $ne: "checkOut" },
+          arrivalDateObj: {
+            // $gte: startDate,
+            $lte: endDate,
+          },
+        },
+      ],
+    },
+  });
+}
+const checkins = await CheckIn.aggregate(pipeline);
+console.log("checkins", checkins);
 
     const allRooms = await roomModal
       .find(
@@ -6227,6 +6315,8 @@ export const getOccupancyCheckoutReport = async (req, res) => {
       additionalPaxTotal += additionalPaxCount;
 
       (doc?.selectedRooms || []).forEach((room) => {
+        console.log("swapping",room.isSwapped)
+        if(room.isSwapped) return
         const pax = Number(room?.pax || 0);
         const tariff = Number(room?.baseAmount ||
           room?.amountAfterTax ||
@@ -6272,7 +6362,6 @@ export const getOccupancyCheckoutReport = async (req, res) => {
         planMap[planName].pax += pax;
         planMap[planName].addnl += additionalPaxCount;
         planMap[planName].total += pax + additionalPaxCount;
-
         rows.push({
           slNo: rows.length + 1,
           room: room?.roomName || "",
@@ -6282,7 +6371,8 @@ export const getOccupancyCheckoutReport = async (req, res) => {
           pax,
           arrivalDate: doc?.arrivalDate || "",
           arrivalTime: doc?.arrivalTime || "",
-          departureDate: doc?.checkOutDate || "",
+          departureDate: doc?.newChecoutDate || doc?.checkOutDate || "",
+          departureTime: doc?.newCheckoutTime || doc?.checkOutTime  ||"",
           plan: planName,
           tariff,
           discountPercent: Number(doc?.discountPercentage || 0),

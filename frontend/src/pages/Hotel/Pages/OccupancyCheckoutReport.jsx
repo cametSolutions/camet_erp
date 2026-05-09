@@ -43,8 +43,6 @@ const OccupancyCheckoutReport = () => {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   };
 
@@ -60,6 +58,7 @@ const OccupancyCheckoutReport = () => {
           cmp_id,
         },
       });
+      console.log(response);
 
       const result = response?.data;
 
@@ -113,7 +112,7 @@ const OccupancyCheckoutReport = () => {
       Company: item.company,
       Pax: item.pax,
       Arrival: `${item.arrivalDate || ""} ${item.arrivalTime || ""}`.trim(),
-      Departure: item.departureDate,
+      Departure:`${item.departureDate || ""} ${item.departureTime || ""}`.trim(),
       Plan: item.plan,
       Tariff: item.tariff,
       "Disc %": item.discountPercent,
@@ -405,10 +404,10 @@ const OccupancyCheckoutReport = () => {
                       <td className="px-1.5 py-1.5">{row.company}</td>
                       <td className="px-1.5 py-1.5 text-right">{row.pax}</td>
                       <td className="px-1.5 py-1.5">
-                        {formatDateTime(row.arrivalDate)}
+                        {formatDateTime(row.arrivalDate) + " " + row.arrivalTime}
                       </td>
                       <td className="px-1.5 py-1.5">
-                        {formatDateTime(row.departureDate)}
+                        {formatDateTime(row.departureDate) + " " + row.departureTime}
                       </td>
                       <td className="px-1.5 py-1.5">{row.plan}</td>
                       <td className="px-1.5 py-1.5 text-right">{row.tariff}</td>
