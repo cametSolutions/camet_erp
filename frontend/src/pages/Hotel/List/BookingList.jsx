@@ -313,8 +313,7 @@ const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
 
       console.log(total, checkoutTotal, advance);
 
-      return (
-        total + checkoutTotal)
+      return total + checkoutTotal;
     }, 0);
   };
   useEffect(() => {
@@ -382,11 +381,12 @@ const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
       return sum + Number(booking?.otherChargeAmount || 0);
     }, 0);
 
-    console.log(discountAmount,otherChargeAmountAdded,result.finalValue );
+    console.log(discountAmount, otherChargeAmountAdded, result.finalValue);
 
     setSelectedDataForPayment((prev) => ({
       ...prev,
-      additionalChargeAmount:result.finalValue + Math.abs(discountAmount - otherChargeAmountAdded),
+      additionalChargeAmount:
+        result.finalValue + Math.abs(discountAmount - otherChargeAmountAdded),
       discountAmount: result.finalValue + discountAmount,
     }));
     setAdditionalChargeDataBasedOnSelection([
@@ -473,7 +473,7 @@ const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
       const totalAmount = calculateTotalAmount(
         location?.state?.selectedCheckOut,
       );
-      console.log(  paymentDetails?.paymentDetails?.selectedDataForPayment);
+      console.log(paymentDetails?.paymentDetails?.selectedDataForPayment);
 
       setSelectedDataForPayment(
         paymentDetails?.paymentDetails?.selectedDataForPayment,
@@ -484,19 +484,20 @@ const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
     }
   }, [location?.state?.selectedCheckOut]);
 
-
   // ADD THIS: Update total whenever selectedCheckOut changes
   useEffect(() => {
-    if (selectedCheckOut && selectedCheckOut.length > 0 && bookings.length > 0) {
+    if (
+      selectedCheckOut &&
+      selectedCheckOut.length > 0 &&
+      bookings.length > 0
+    ) {
       const totalAmount = calculateTotalAmount(selectedCheckOut);
       console.log(totalAmount);
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
         console.log(item?.totalAdvance);
-        return (
-          total + Number(item.totalAdvance || 0)
-        );
-        }, 0);
-        console.log(advanceAmount);
+        return total + Number(item.totalAdvance || 0);
+      }, 0);
+      console.log(advanceAmount);
       console.log(bookings);
 
       const restaurantSubTotal = selectedCheckOut.reduce((total, item) => {
@@ -510,14 +511,18 @@ const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
       let otherChargeAmountAdded = bookings.reduce((sum, booking) => {
         return sum + Number(booking?.otherChargeAmount || 0);
       }, 0);
-console.log(discountAmount,otherChargeAmountAdded);
-console.log(totalAmount,advanceAmount,restaurantSubTotal);
+      console.log(discountAmount, otherChargeAmountAdded);
+      console.log(totalAmount, advanceAmount, restaurantSubTotal);
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
-        total: totalAmount ,
+        total: totalAmount,
         advanceAmount: advanceAmount,
         restaurantSubTotal: restaurantSubTotal,
-        totalWithRestaurantSubTotal: totalAmount + restaurantSubTotal + otherChargeAmountAdded - (advanceAmount + discountAmount),
+        totalWithRestaurantSubTotal:
+          totalAmount +
+          restaurantSubTotal +
+          otherChargeAmountAdded -
+          (advanceAmount + discountAmount),
         additionalChargeAmount: otherChargeAmountAdded || 0,
         discountAmount: discountAmount,
         otherChargeAmount: otherChargeAmountAdded,
@@ -657,7 +662,7 @@ params.append("toDate", toDate);
         );
 
         let bookingData = res?.data?.bookingData || [];
-        
+
         console.log("bookingData", bookingData[0]);
 
         if (location.pathname === "/sUsers/checkInList") {
@@ -944,7 +949,7 @@ params.append("toDate", toDate);
       );
 
       const expectedSplitTotal = Math.abs(
-        Number(selectedDataForPayment?.totalWithRestaurantSubTotal || 0)
+        Number(selectedDataForPayment?.totalWithRestaurantSubTotal || 0),
       );
 
       const expectedRestaurantTotal = Number(
@@ -993,8 +998,7 @@ params.append("toDate", toDate);
             selectedDataForPayment?.discountAmount > 0
               ? selectedDataForPayment?.discountAmount
               : 0,
-          cashAmount:
-            selectedDataForPayment?.totalWithRestaurantSubTotal ,
+          cashAmount: selectedDataForPayment?.totalWithRestaurantSubTotal,
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
           selectedBank: "",
@@ -1007,8 +1011,7 @@ params.append("toDate", toDate);
                   selectedCheckOut[0]?.customerId,
               source: selectedCash,
               sourceType: "cash",
-              amount:
-                selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
+              amount: selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
               customerName: isAgent
                 ? selectedCustomerData?.guestId?.partyName
                 : selectedCustomerData?.customerId?.partyName ||
@@ -1048,7 +1051,7 @@ params.append("toDate", toDate);
               : 0,
           cashAmount: cashAmount,
           onlineAmount:
-            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0),
+            selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
           selectedCash: "",
           selectedBank: selectedBank,
           paymentMode: paymentMode,
@@ -1101,8 +1104,7 @@ params.append("toDate", toDate);
           selectedDataForPayment?.discountAmount > 0
             ? selectedDataForPayment?.discountAmount
             : 0,
-        cashAmount:
-          selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
+        cashAmount: selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
         selectedCreditor: selectedCreditor,
         remarks: remarks,
         paymentMode: paymentMode,
@@ -1110,8 +1112,7 @@ params.append("toDate", toDate);
           cash: 0,
           bank: 0,
           upi: 0,
-          credit:
-            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) ,
+          credit: selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
           card: 0,
         },
       };
@@ -1123,7 +1124,7 @@ params.append("toDate", toDate);
       );
 
       let payment = (
-        (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) 
+        selectedDataForPayment?.totalWithRestaurantSubTotal || 0
       ).toFixed(2);
       console.log("Paujsdf", totalSplitAmount, payment);
 
@@ -1686,7 +1687,7 @@ params.append("toDate", toDate);
       if (!dateString) return "-";
       return new Date(dateString).toLocaleDateString("en-GB");
     };
-console.log(el)
+    console.log(el);
     return (
       <div style={style} className="border-b border-gray-200 bg-white">
         {/* 🔹 MAIN ROW */}
@@ -1813,9 +1814,11 @@ console.log(el)
 
             <div className="w-28 text-center text-gray-800 font-semibold text-xs">
               ₹
-              {el?.displayTotal > 0 ? el?.displayTotal : el?.grandTotal
-                ? formatCurrency(el.roomTotal).replace("₹", "")
-                : "00.00"}
+              {el?.displayTotal > 0
+                ? el?.displayTotal
+                : el?.grandTotal
+                  ? formatCurrency(el.roomTotal).replace("₹", "")
+                  : "00.00"}
             </div>
 
             {/* 🔹 ACTION BUTTONS */}
@@ -2650,12 +2653,10 @@ console.log(el)
                         (Number(selectedDataForPayment?.total) || 0) +
                         Number(
                           selectedDataForPayment?.restaurantSubTotal || 0,
-                        ) + Number(selectedDataForPayment?.otherChargeAmount || 0) -
-                      (Number(
-                          selectedDataForPayment?.discountAmount || 0,
-                        ) + Number(
-                          selectedDataForPayment?.advanceAmount || 0,
-                        ));
+                        ) +
+                        Number(selectedDataForPayment?.otherChargeAmount || 0) -
+                        (Number(selectedDataForPayment?.discountAmount || 0) +
+                          Number(selectedDataForPayment?.advanceAmount || 0));
 
                       const totalEntered = splitPaymentRows.reduce(
                         (sum, row) => sum + (parseFloat(row.amount) || 0),
@@ -3399,9 +3400,7 @@ console.log(el)
                       <span>Total Amount</span>
                       <span className="text-gray-700 dark:text-gray-300 font-medium">
                         ₹
-                        {(
-                          Number(selectedDataForPayment?.total)
-                        )?.toFixed(2) ||
+                        {Number(selectedDataForPayment?.total)?.toFixed(2) ||
                           (
                             Number(selectedCheckOut[0]?.balanceToPay) +
                             Number(selectedCheckOut[0]?.advance)
@@ -3479,18 +3478,15 @@ console.log(el)
                       <span className="text-[13px] font-semibold text-gray-800 dark:text-gray-100">
                         Amount To Pay
                       </span>
-                      
+
                       <span className="text-[15px] font-bold text-blue-600 dark:text-blue-400">
                         ₹
                         {(
                           selectedDataForPayment?.total +
-                          Number(selectedDataForPayment?.restaurantSubTotal) + Number(selectedDataForPayment?.otherChargeAmount)   -
-                        (Number(
-                            selectedDataForPayment?.advanceAmount || 0,
-                          ) +
-                          Number(
-                            selectedDataForPayment?.discountAmount || 0,
-                          ))
+                          Number(selectedDataForPayment?.restaurantSubTotal) +
+                          Number(selectedDataForPayment?.otherChargeAmount) -
+                          (Number(selectedDataForPayment?.advanceAmount || 0) +
+                            Number(selectedDataForPayment?.discountAmount || 0))
                         ).toFixed(2) ||
                           (
                             Number(selectedCheckOut[0]?.balanceToPay) +
