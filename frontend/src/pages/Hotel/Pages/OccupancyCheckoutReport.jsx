@@ -395,9 +395,17 @@ const OccupancyCheckoutReport = () => {
                     </td>
                   </tr>
                 ) : report.rows.length ? (
-                  report.rows.map((row) => (
-                    <tr key={row.slNo} className="border-b border-slate-200">
-                      <td className="px-1.5 py-1.5">{row.slNo}</td>
+  report.rows
+    .slice()
+    .sort((a, b) => {
+      const roomA = isNaN(a.room) ? a.room : Number(a.room);
+      const roomB = isNaN(b.room) ? b.room : Number(b.room);
+      if (typeof roomA === "number" && typeof roomB === "number") return roomA - roomB;
+      return String(roomA).localeCompare(String(roomB));
+    })
+    .map((row) => (
+      <tr key={row.slNo} className="border-b border-slate-200">
+        <td className="px-1.5 py-1.5">{row.slNo}</td>
                       <td className="px-1.5 py-1.5">{row.room}</td>
                       <td className="px-1.5 py-1.5">{row.grcNo}</td>
                       <td className="px-1.5 py-1.5">{row.guestName}</td>
