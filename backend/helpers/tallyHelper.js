@@ -121,27 +121,43 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
         }
       });
     }
-let checkoutMap = new Map();
 
-if (type === "sales" && checkoutNumber.length > 0) {
-  const checkout = await CheckOut.find({
-    cmp_id: new mongoose.Types.ObjectId(cmp_id),
-    voucherNumber: {
-      $in: checkoutNumber,
-    },
-  })
-    .select("voucherNumber foodPlan -_id")
-    .lean();
+    let checkoutMap = new Map();
 
-  checkout.forEach((doc) => {
-    if (doc?.voucherNumber) {
-      checkoutMap.set(
-        doc.voucherNumber.toString(),
-        Array.isArray(doc.foodPlan) ? doc.foodPlan : []
-      );
+    if (type === "sales" && checkoutNumber.length > 0) {
+      const checkout = await CheckOut.find({
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+        voucherNumber: {
+          $in: checkoutNumber,
+        },
+      })
+        .select("voucherNumber selectedRooms -_id")
+        .lean();
+
+      checkout.forEach((doc) => {
+        if (!doc?.voucherNumber) return;
+
+        const selectedRooms = Array.isArray(doc.selectedRooms)
+          ? doc.selectedRooms
+          : [];
+
+        const totalFoodPlanAmount = selectedRooms.reduce(
+          (total, room) => total + Number(room?.foodPlanAmountWithTax || 0),
+          0,
+        );
+
+        const taxableFoodPlanAmount = selectedRooms.reduce(
+          (total, room) => total + Number(room?.foodPlanAmountWithOutTax || 0),
+          0,
+        );
+
+        checkoutMap.set(doc.voucherNumber.toString(), {
+          totalFoodPlanAmount,
+          taxableFoodPlanAmount,
+          foodPlanTaxAmount: totalFoodPlanAmount - taxableFoodPlanAmount,
+        });
+      });
     }
-  });
-}
 
     // For receipt and payment, return full data without processing
     if (type === "receipt" || type === "payment") {
@@ -174,14 +190,21 @@ if (type === "sales" && checkoutNumber.length > 0) {
           document.series_id.toString(),
         );
       }
-   if (
+     if (
   type === "sales" &&
   document.salesNumber &&
   checkoutMap.has(document.salesNumber.toString())
 ) {
-  processedDocument.foodPlanDetails = checkoutMap.get(
-    document.salesNumber.toString()
-  );
+  const foodPlanDetails = checkoutMap.get(document.salesNumber.toString());
+
+  processedDocument.totalFoodPlanAmount =
+    foodPlanDetails.totalFoodPlanAmount || 0;
+
+  processedDocument.taxableFoodPlanAmount =
+    foodPlanDetails.taxableFoodPlanAmount || 0;
+
+  processedDocument.foodPlanTaxAmount =
+    foodPlanDetails.foodPlanTaxAmount || 0;
 }
       // Skip processing if no items array
       if (!Array.isArray(document.items)) {
