@@ -6294,7 +6294,12 @@ export const getOccupancyCheckoutReport = async (req, res) => {
                 $gt: startDate,
                 // $lt: endDate,
               },
+              arrivalDateObj: {
+                // $gte: startDate,
+                $lte: endDate,
+              },
             },
+            
             {
               status: { $ne: "checkOut" },
               arrivalDateObj: {
