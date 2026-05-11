@@ -6232,7 +6232,13 @@ export const getOccupancyCheckoutReport = async (req, res) => {
 
       (doc?.selectedRooms || []).forEach((room) => {
         const pax = Number(room?.pax || 0);
-        const tariff = Number(room?.priceLevelRate || 0);
+        const tariff = Number(room?.baseAmount ||
+          room?.amountAfterTax ||
+            room?.totalAmount ||
+            room?.baseAmountWithTax ||
+            
+            0,
+        );
 
         roomRevenue += tariff;
         occupiedRoomNames.add(room?.roomName);
