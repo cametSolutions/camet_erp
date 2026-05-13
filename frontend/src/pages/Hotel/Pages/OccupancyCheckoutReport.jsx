@@ -4,12 +4,15 @@ import { saveAs } from "file-saver";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
 import TitleDiv from "@/components/common/TitleDiv";
-
+// Add below any existing helpers at the top:
+const getToday = () => new Date().toISOString().slice(0, 10);
 const OccupancyCheckoutReport = () => {
-  const [filters, setFilters] = useState({
-    fromDate: new Date().toISOString().slice(0, 10),
-    toDate: new Date().toISOString().slice(0, 10),
-  });
+ // Replace initial filters state:
+const [filters, setFilters] = useState({
+  fromDate: getToday(),  // ✅ was ""
+  toDate: getToday(),
+});
+
   const [report, setReport] = useState({
     summary: {},
     planSummary: [],
@@ -86,9 +89,10 @@ const OccupancyCheckoutReport = () => {
     }
   };
 
-  useEffect(() => {
-    fetchReport();
-  }, []);
+ // Replace useEffect:
+useEffect(() => {
+  fetchReport();
+}, [filters.fromDate, filters.toDate]); // ✅ re-fetches when dates change
 
   const handleChange = (e) => {
     const { name, value } = e.target;

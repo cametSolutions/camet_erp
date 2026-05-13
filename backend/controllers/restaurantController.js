@@ -1255,7 +1255,8 @@ export const updateKotPayment = async (req, res) => {
         isComplimentary = false,
         isManuallyComplimentary = false, // ✅ NEW: Discount amount
         discountBasedOnGrossAmount,
-        note,
+        note, 
+         complementaryWithTax = false,
       } = req.body;
 
       discountAmount = Number(req?.body?.additionalCharges[0]?.finalValue || 0);
@@ -1361,6 +1362,7 @@ export const updateKotPayment = async (req, res) => {
         isComplimentary,
         isManuallyComplimentary,
         isPostToRoom,
+          complementaryWithTax, 
       );
       // ✅ Calculate with DISCOUNT
       const originalTotal = Number(kotData?.total || 0);
@@ -1921,6 +1923,7 @@ async function createSalesVoucher(
   additionalChargesArray = null,
   discountBasedOnGrossAmount,
   session,
+    complementaryWithTax = false,
 ) {
   // console.log("additionalChargesArray", additionalChargesArray);
   // ✅ FIXED: Use SUBTOTAL (BEFORE discount)
@@ -1931,6 +1934,29 @@ async function createSalesVoucher(
 
   console.log("kotData", paymentSplittingArray);
   // ✅ Calculate totals
+
+    let items = kotData?.items || [];
+
+  if (isComplimentary && !complementaryWithTax) {
+    items = items.map((item) => {
+      const taxAmount =
+        Number(item.totalIgstAmt || 0) ||
+        Number(item.igstAmount || 0) ||
+        Number(item.taxAmount || 0);
+
+      return {
+        ...item,
+        igstAmount: 0,
+        cgstAmount: 0,
+        sgstAmount: 0,
+        totalIgstAmt: 0,
+        taxAmount: 0,
+        total: Number(item.total || 0) - taxAmount,
+        individualTotal: Number(item.individualTotal || 0) - taxAmount,
+      };
+    });
+  }
+
   const totalAdditionalCharges = additionalCharges?.reduce((sum, charge) => {
     console.log("charge", charge);
     return (
@@ -1970,7 +1996,7 @@ async function createSalesVoucher(
 
         party,
         partyAccount: selectedParty.accountGroup?.accountGroup,
-        items: kotData?.items,
+        items: items,
         despatchDetails: {}, // ✅ Added missing
         address: kotData?.customer,
 

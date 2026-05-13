@@ -1510,19 +1510,70 @@ params.append("toDate", toDate);
         })),
       };
     });
+// ── paste this block right before the dispatch call ──────────────────
+      const customerGroups = {};
 
+    roomAssignments.forEach((d) => {
+      // customer is stored as selectedCustomer in checkout objects
+      const custId = String(
+        d?.selectedCustomer?._id ||
+        d?.customerId?._id ||
+        d?.customerId ||
+        ""
+      );
+
+      if (!customerGroups[custId]) {
+        customerGroups[custId] = { ...d };
+        customerGroups[custId].selectedRooms = [...(d.selectedRooms || [])];
+        customerGroups[custId].allCheckInIds = [...(d.allCheckInIds || [d._id])];
+        customerGroups[custId].advanceAmount = Number(d.advanceAmount || 0);
+      } else {
+        customerGroups[custId].selectedRooms.push(...(d.selectedRooms || []));
+        customerGroups[custId].allCheckInIds.push(...(d.allCheckInIds || [d._id]));
+        customerGroups[custId].advanceAmount += Number(d.advanceAmount || 0);
+      }
+    });
+
+    const finalRoomAssignments =
+      checkoutMode === "single"
+        ? Object.values(customerGroups)
+        : roomAssignments;
+        console.log("roomAssignments sample:", JSON.stringify(roomAssignments[0], null, 2));
+    dispatch(
+      setPrintDetails({
+        selectedCheckOut: finalRoomAssignments, // ✅ changed
+        customerId: checkoutData[0]?.customerId?._id,
+        isForPreview: false,
+        checkoutMode,
+        checkinIds: checkinids,
+        roomAssignments: finalRoomAssignments, // ✅ changed
+        isPartialCheckout: checkoutData.some((co) => co.isPartialCheckout),
+      }),
+    );
+
+    navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+      state: {
+        selectedCheckOut: finalRoomAssignments, // ✅ changed
+        customerId: checkoutData[0]?.customerId?._id,
+        isForPreview: true,
+        checkoutMode,
+        checkinIds: checkinids,
+        roomAssignments: finalRoomAssignments, // ✅ changed
+        isPartialCheckout: checkoutData.some((co) => co.isPartialCheckout),
+      },
+    });
     console.log(updatedCheckoutData);
     console.log(checkoutData[0]);
     console.log(checkoutMode);
 
     dispatch(
       setPrintDetails({
-        selectedCheckOut: roomAssignments,
+        selectedCheckOut: finalRoomAssignments,
         customerId: checkoutData[0]?.customerId?._id,
         isForPreview: false,
         checkoutMode,
         checkinIds: checkinids,
-        roomAssignments: roomAssignments,
+        roomAssignments: finalRoomAssignments,
         isPartialCheckout: checkoutData.some((co) => co.isPartialCheckout),
       }),
     );
@@ -1530,12 +1581,12 @@ params.append("toDate", toDate);
     console.log("Hhhhhhhh");
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
-        selectedCheckOut: roomAssignments,
+        selectedCheckOut: finalRoomAssignments,
         customerId: checkoutData[0]?.customerId?._id,
         isForPreview: true,
         checkoutMode,
         checkinIds: checkinids,
-        roomAssignments: roomAssignments,
+        roomAssignments: finalRoomAssignments,
         isPartialCheckout: checkoutData.some((co) => co.isPartialCheckout),
       },
     });
