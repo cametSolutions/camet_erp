@@ -1383,8 +1383,6 @@ export const updateKotPayment = async (req, res) => {
         );
       }
       if (party?.paymentType != "party" && paymentMethod != "credit") {
-        console.log("undddd");
-
         await saveSettlement(
           paymentDetails,
           selectedParty,
@@ -1397,6 +1395,40 @@ export const updateKotPayment = async (req, res) => {
           session,
         );
       }
+    let findCredit =
+  paymentDetails.splitRow?.length > 0
+    ? paymentDetails.splitRow.filter(
+        (item) => item.type === "credit"
+      )
+    : [];
+
+console.log("findCredit", findCredit);
+
+if (findCredit.length > 0) {
+  for (const item of findCredit) {
+
+    if (!item.source) continue;
+
+    let selected = await Party.findOne({
+      cmp_id,
+      _id: item.source,
+    }).session(session);
+ let modifiedParty =await mapPartyData(selected);
+
+    await buildReceipt({
+      cmp_id,
+      selectedParty:modifiedParty ,
+      advanceObject: tallyData,
+      saleData: savedVoucherData[0],
+      amount: item?.amount,
+      paymentDetails,
+      paymentMethod : "credit",
+      req,
+      session,
+    });
+  }
+}
+    
       if (paymentMethod == "credit") {
         await buildReceipt({
           cmp_id,
@@ -1719,7 +1751,7 @@ async function getSelectedParty(
         partyId = paymentDetails?.selectedBank;
       }
     } else {
-      partyId = paymentDetails?.selectedCash;
+      partyId = paymentDetails?.splitRow.find((it) => it.type == "credit")?.source;
     }
   }
   console.log("partyId", partyId);
@@ -1732,7 +1764,6 @@ async function getSelectedParty(
 }
 
 async function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
-  console.log("hhhhhhhhhhhhhhhh", paymentDetails, cashAmt, onlineAmt);
   const arr = [];
   if (paymentDetails?.paymentMode === "credit" && cashAmt > 0) {
     arr.push({
@@ -1748,6 +1779,7 @@ async function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
     let referral = await partyModel.findOne({
       _id: paymentDetails?.selectedCash,
     });
+
     arr.push({
       type: "cash",
       amount: cashAmt,
@@ -1765,6 +1797,10 @@ async function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
       ref_id: paymentDetails?.selectedBank,
       reference_name: referral?.partyName,
     });
+  }
+
+  if(paymentDetails?.paymentMode === "split") {
+    arr.push(...paymentDetails?.splitRow);
   }
   return arr;
 }
@@ -2007,8 +2043,6 @@ async function saveSettlement(
   session,
 ) {
   if (paymentDetails?.paymentMode === "single") {
-    console.log("hhh");
-    console.log("bbbbbbbbbbbbbbbbbbbbbb", req);
     await saveSettlementData(
       selectedParty,
       cmp_id,
@@ -2024,38 +2058,25 @@ async function saveSettlement(
       session,
     );
   } else {
-    if (cashAmt > 0) {
-      await saveSettlementData(
+    console.log("paymentDetails", paymentDetails);
+    paymentDetails.splitRow.forEach(async (split) => {
+      let selectedParty =await partyModel.findById(split.source);
+       await saveSettlementData(
         selectedParty,
         cmp_id,
-        "cash",
+        split.type,
         "sales",
         "Sales",
         savedVoucher?.salesNumber,
         savedVoucher?._id,
-        cashAmt,
+        split.amount,
         new Date(),
         // selectedParty?.partyName,
         req,
         session,
       );
-    }
-    if (onlineAmt > 0) {
-      await saveSettlementData(
-        selectedParty,
-        cmp_id,
-        "bank",
-        "sales",
-        "Sales",
-        savedVoucher?.salesNumber,
-        savedVoucher?._id,
-        onlineAmt,
-        new Date(),
-        // selectedParty?.partyName,
-        req,
-        session,
-      );
-    }
+    })
+  
   }
 }
 

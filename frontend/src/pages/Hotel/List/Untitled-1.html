@@ -1,0 +1,10 @@
+<div className="w-36 text-center text-gray-600 text-xs">
+              
+              {location.pathname == "/sUsers/checkOutList" ? formatDate(el?.checkOutDate) : formatDate(el?.arrivalDate)}
+              <span>({location.pathname == "/sUsers/checkOutList" ? el?.checkOutTime : el.arrivalTime})</span>
+            </div> 
+            
+            
+            const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(new Date().getDate() - 30)
+  const [fromDate, setFromDate] = useState(thirtyDaysAgo.toISOString().split("T")[0]);

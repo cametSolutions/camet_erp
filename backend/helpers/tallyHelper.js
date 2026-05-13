@@ -10,6 +10,7 @@ import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 import OrganizationModel from "../models/OragnizationModel.js";
 
 import mongoose from "mongoose";
+import { CheckOut } from "../models/bookingModal.js";
 
 export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
   let model;
@@ -82,11 +83,17 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
       ...new Set(
         data
           .filter((doc) => doc.series_id)
-          .map((doc) => doc.series_id.toString())
+          .map((doc) => doc.series_id.toString()),
       ),
     ];
 
-    console.log("Series IDs:", seriesIds);
+    const checkoutNumber = [
+      ...new Set(
+        data
+          .filter((doc) => doc.salesNumber)
+          .map((doc) => doc.salesNumber.toString()),
+      ),
+    ];
 
     // Fetch all series documents in one query
     let seriesMap = new Map();
@@ -115,7 +122,42 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
       });
     }
 
-    console.log("Series Map:", seriesMap);
+    let checkoutMap = new Map();
+
+    if (type === "sales" && checkoutNumber.length > 0) {
+      const checkout = await CheckOut.find({
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+        voucherNumber: {
+          $in: checkoutNumber,
+        },
+      })
+        .select("voucherNumber selectedRooms -_id")
+        .lean();
+
+      checkout.forEach((doc) => {
+        if (!doc?.voucherNumber) return;
+
+        const selectedRooms = Array.isArray(doc.selectedRooms)
+          ? doc.selectedRooms
+          : [];
+
+        const totalFoodPlanAmount = selectedRooms.reduce(
+          (total, room) => total + Number(room?.foodPlanAmountWithTax || 0),
+          0,
+        );
+
+        const taxableFoodPlanAmount = selectedRooms.reduce(
+          (total, room) => total + Number(room?.foodPlanAmountWithOutTax || 0),
+          0,
+        );
+
+        checkoutMap.set(doc.voucherNumber.toString(), {
+          totalFoodPlanAmount,
+          taxableFoodPlanAmount,
+          foodPlanTaxAmount: totalFoodPlanAmount - taxableFoodPlanAmount,
+        });
+      });
+    }
 
     // For receipt and payment, return full data without processing
     if (type === "receipt" || type === "payment") {
@@ -145,10 +187,25 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
       // Attach series details if available
       if (document.series_id && seriesMap.has(document.series_id.toString())) {
         processedDocument.seriesDetails = seriesMap.get(
-          document.series_id.toString()
+          document.series_id.toString(),
         );
       }
+     if (
+  type === "sales" &&
+  document.salesNumber &&
+  checkoutMap.has(document.salesNumber.toString())
+) {
+  const foodPlanDetails = checkoutMap.get(document.salesNumber.toString());
 
+  processedDocument.totalFoodPlanAmount =
+    foodPlanDetails.totalFoodPlanAmount || 0;
+
+  processedDocument.taxableFoodPlanAmount =
+    foodPlanDetails.taxableFoodPlanAmount || 0;
+
+  processedDocument.foodPlanTaxAmount =
+    foodPlanDetails.foodPlanTaxAmount || 0;
+}
       // Skip processing if no items array
       if (!Array.isArray(document.items)) {
         return processedDocument;
@@ -160,7 +217,7 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
         // Filter Priceleveles array to match document's priceLevel
         if (Array.isArray(item.Priceleveles) && document.priceLevel) {
           processedItem.Priceleveles = item.Priceleveles.filter(
-            (price) => price.pricelevel === document.priceLevel
+            (price) => price.pricelevel === document.priceLevel,
           );
         }
 
@@ -168,7 +225,7 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
         if (Array.isArray(item.GodownList)) {
           if (item.hasGodownOrBatch === true) {
             processedItem.GodownList = item.GodownList.filter(
-              (godown) => godown.added === true
+              (godown) => godown.added === true,
             );
           }
         }
@@ -211,6 +268,6 @@ export const getApiLogs = async (cmp_id, dataName) => {
   console.log(
     `${dataName} added By ${
       company.name || "N/A"
-    }  (${cmp_id}) company at standard time ${standardTime} and indian time ${indianTime}`
+    }  (${cmp_id}) company at standard time ${standardTime} and indian time ${indianTime}`,
   );
 };
