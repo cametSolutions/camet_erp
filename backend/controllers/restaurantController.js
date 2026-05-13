@@ -1256,7 +1256,7 @@ export const updateKotPayment = async (req, res) => {
         isManuallyComplimentary = false, // ✅ NEW: Discount amount
         discountBasedOnGrossAmount,
         note, 
-         complementaryWithTax = false,
+        complementaryWithTax = false,
       } = req.body;
 
       discountAmount = Number(req?.body?.additionalCharges[0]?.finalValue || 0);
@@ -1362,7 +1362,7 @@ export const updateKotPayment = async (req, res) => {
         isComplimentary,
         isManuallyComplimentary,
         isPostToRoom,
-          complementaryWithTax, 
+        complementaryWithTax, 
       );
       // ✅ Calculate with DISCOUNT
       const originalTotal = Number(kotData?.total || 0);
@@ -1771,6 +1771,8 @@ async function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
     arr.push({
       type: "credit",
       amount: cashAmt,
+      source:paymentDetails?.selectedCreditor?._id,
+      subsource: paymentDetails?.selectedCreditor?.partyName,
       ref_id: paymentDetails?.selectedCreditor?._id,
       reference_name: paymentDetails?.selectedCreditor?.partyName,
       credit_reference_type: paymentDetails?.selectedCreditor?.partyName,
@@ -1785,6 +1787,8 @@ async function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
     arr.push({
       type: "cash",
       amount: cashAmt,
+      source: paymentDetails?.selectedCash,
+      subsource: referral?.partyName,
       ref_id: paymentDetails?.selectedCash,
       reference_name: referral?.partyName,
     });
