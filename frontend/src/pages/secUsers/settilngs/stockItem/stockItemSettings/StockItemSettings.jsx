@@ -15,6 +15,8 @@ import { LiaMoneyCheckAltSolid } from "react-icons/lia";
 import { updateConfiguration } from "../../../../../../slices/secSelectedOrgSlice.js";
 import { IoFastFoodOutline } from "react-icons/io5";
 import { useDispatch } from "react-redux";
+import { TbCalculatorFilled } from "react-icons/tb";
+
 const StockItemSettings = () => {
   const dispatch = useDispatch();
   const { industry, _id, configurations } = useSelector(
@@ -125,6 +127,16 @@ const StockItemSettings = () => {
             toggle: true,
             toggleValue: configurations[0]?.addRateWithTax?.hotelSale,
             dbField: "hotelSale",
+          },
+          {
+            title: "Discount based on amount include tax.",
+            description: "Better tax calculations for better organization",
+            icon: <TbCalculatorFilled />,
+            to: "sec",
+            active: true,
+            toggle: true,
+            toggleValue: configurations[0]?.discountBasedOnGrossAmountInHotel,
+            dbField: "discountBasedOnGrossAmountInHotel",
           },
           {
             title: "Default Print",

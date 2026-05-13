@@ -304,67 +304,79 @@ const HotelFlashReportPage = () => {
     <div className="min-h-screen bg-gray-100 p-4 md:p-6">
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="border-b border-gray-200 p-4 md:p-6">
-          <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Hotel Flash Report
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Select from date and to date, then load the report.
-              </p>
-            </div>
+         {/* Toolbar */}
+<div className="mb-5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm print:hidden md:p-4">
+  <div className="flex flex-wrap items-end justify-between gap-3 w-full">
 
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 mb-1">
-                  From Date
-                </label>
-                <input
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  className="border border-gray-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+    {/* LEFT — Heading */}
+    <div>
+      <h1 className="text-base font-bold tracking-tight text-slate-900 md:text-lg uppercase">
+        Hotel Flash Report
+      </h1>
+      <p className="text-xs text-slate-500 mt-0.5">
+        Select from date and to date, then load the report.
+      </p>
+    </div>
 
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 mb-1">
-                  To Date
-                </label>
-                <input
-                  type="date"
-                  value={toDate}
-                  min={fromDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                  className="border border-gray-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+    {/* RIGHT — Dates + Buttons */}
+    <div className="flex flex-wrap items-end gap-2">
 
-              <button
-                onClick={fetchReport}
-                disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
-              >
-                {loading ? "Loading..." : "Load Report"}
-              </button>
+      {/* From Date */}
+      <div className="flex flex-col gap-1 w-36">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          From Date
+        </label>
+        <input
+          type="date"
+          value={fromDate}
+          onChange={(e) => setFromDate(e.target.value)}
+          className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none transition focus:border-teal-600"
+        />
+      </div>
 
-              <button
-                onClick={handlePrint}
-                disabled={!reportData}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
-              >
-                Print
-              </button>
+      {/* To Date */}
+      <div className="flex flex-col gap-1 w-36">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          To Date
+        </label>
+        <input
+          type="date"
+          value={toDate}
+          min={fromDate}
+          onChange={(e) => setToDate(e.target.value)}
+          className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none transition focus:border-teal-600"
+        />
+      </div>
 
-              <button
-                onClick={handleExportExcel}
-                disabled={!reportData}
-                className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md disabled:opacity-50"
-              >
-                Export Excel
-              </button>
-            </div>
-          </div>
+      {/* Load Report */}
+      <button
+        onClick={fetchReport}
+        disabled={loading}
+        className="inline-flex h-9 items-center justify-center rounded-lg bg-teal-700 px-4 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        {loading ? "Loading..." : "Load Report"}
+      </button>
+
+      {/* Print */}
+      <button
+        onClick={handlePrint}
+        disabled={!reportData}
+        className="inline-flex h-9 items-center justify-center rounded-lg bg-slate-200 px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Print
+      </button>
+
+      {/* Export Excel */}
+      <button
+        onClick={handleExportExcel}
+        disabled={!reportData}
+        className="inline-flex h-9 items-center justify-center rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Export Excel
+      </button>
+    </div>
+  </div>
+</div>
         </div>
 
         <div className="p-4 md:p-6">

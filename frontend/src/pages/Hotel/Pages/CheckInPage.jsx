@@ -32,13 +32,13 @@ function CheckInPage() {
     }
   }, [data])
  
-  useEffect(() => {
-    if (bookingData) {
-      bookingData.previousAdvance = Number(bookingData?.advanceAmount || 0)
-      bookingData.totalAdvance = Number(bookingData?.advanceAmount || 0)
-      bookingData.advanceAmount = 0
-    }
-  }, [bookingData])
+  // useEffect(() => {
+  //   if (bookingData) {
+  //     bookingData.previousAdvance = Number(bookingData?.advanceAmount || 0)
+  //     bookingData.totalAdvance = Number(bookingData?.advanceAmount || 0)
+  //     bookingData.advanceAmount = 0
+  //   }
+  // }, [bookingData])
   
 console.log("HHH")
   const handleSubmit = async (data, paymentData,paymenttypeDetails) => {
