@@ -1372,7 +1372,6 @@ export const roomBooking = async (req, res) => {
   }
 };
 
-
 // function used to fetch booking list
 export const getBookings = async (req, res) => {
   try {
@@ -1424,7 +1423,6 @@ export const getBookings = async (req, res) => {
     });
   }
 };
-
 
 const getPaymentStatus = (paymenttypeDetails) => {
   if (!paymenttypeDetails) return "Unpaid";
@@ -3851,7 +3849,7 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
   try {
     const { cmp_id } = req.params;
     const data = req.body;
-console.log("dataaaaaaaaaaa", data);
+    console.log("dataaaaaaaaaaa", data);
     let updateData = {};
 
     // Handle different types of updates
@@ -3897,16 +3895,14 @@ console.log("dataaaaaaaaaaa", data);
             data.checked,
         },
       };
-    }else if (data.title === "complementaryWithTax") {
+    } else if (data.title === "complementaryWithTax") {
       // Handle existing addRateWithTax toggle updates
       updateData = {
         $set: {
-          [`configurations.0.complementaryWithTax`]:
-            data.checked,
+          [`configurations.0.complementaryWithTax`]: data.checked,
         },
       };
-    }
-    else if (data.title === "foodPlaWithRoomRate") {
+    } else if (data.title === "foodPlaWithRoomRate") {
       console.log("foodPlaWithRoomRate");
       // Handle existing addRateWithTax toggle updates
       updateData = {
@@ -4371,35 +4367,35 @@ export const getHotelSalesDetails = async (req, res) => {
         },
       },
       // Checkin lookup to get roomName
-{
-  $lookup: {
-    from: "checkins",
-    let: {
-      checkInNum: { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] }
-    },
-    pipeline: [
       {
-        $match: {
-          $expr: { $eq: ["$voucherNumber", "$$checkInNum"] }
-        }
+        $lookup: {
+          from: "checkins",
+          let: {
+            checkInNum: { $arrayElemAt: ["$convertedFrom.checkInNumber", 0] },
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$voucherNumber", "$$checkInNum"] },
+              },
+            },
+            {
+              $project: {
+                voucherNumber: 1,
+                guestName: 1,
+                "selectedRooms.roomName": 1,
+              },
+            },
+          ],
+          as: "checkInData",
+        },
       },
       {
-        $project: {
-          voucherNumber: 1,
-          guestName: 1,
-          "selectedRooms.roomName": 1
-        }
-      }
-    ],
-    as: "checkInData"
-  }
-},
-{
-  $unwind: {
-    path: "$checkInData",
-    preserveNullAndEmptyArrays: true
-  }
-},
+        $unwind: {
+          path: "$checkInData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
 
       // 3️⃣ KOT lookup (convertedFrom.id → ObjectId)
       {
@@ -4683,9 +4679,10 @@ export const getHotelSalesDetails = async (req, res) => {
         businessClassification: sale.businessClassification,
         tableNumber: sale.tableNumber || "",
         waiterName: sale.waiterName || "",
-      roomNumber: sale.checkInData?.selectedRooms?.[0]?.roomName 
-            || sale.roomNumber 
-            || "",
+        roomNumber:
+          sale.checkInData?.selectedRooms?.[0]?.roomName ||
+          sale.roomNumber ||
+          "",
         guestName: gusestName || "",
         itemCount: sale.items?.length || 0,
         isHotelSale: sale.isHotelSale || false,
@@ -6213,112 +6210,117 @@ export const getOccupancyCheckoutReport = async (req, res) => {
 
     fromDate = fromDate || "";
     toDate = toDate || "";
-const match = {
-  cmp_id: new mongoose.Types.ObjectId(cmp_id),
-};
+    const match = {
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+    };
 
-const pipeline = [
-  { $match: match },
+    const pipeline = [
+      { $match: match },
 
-  {
-    $lookup: {
-      from: "checkouts",
-      let: { checkInId: "$_id" },
-      pipeline: [
-        {
-          $match: {
-            $expr: {
-              $eq: ["$checkInId", "$$checkInId"],
+      {
+        $lookup: {
+          from: "checkouts",
+          let: { checkInId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ["$checkInId", "$$checkInId"],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                checkOutDate: 1,
+                checkoutTime: 1,
+              },
+            },
+          ],
+          as: "checkoutDetails",
+        },
+      },
+
+      {
+        $addFields: {
+          rawNewChecoutDate: {
+            $ifNull: [
+              { $first: "$checkoutDetails.checkOutDate" },
+              "$checkOutDate",
+            ],
+          },
+
+          newCheckoutTime: {
+            $ifNull: [
+              { $first: "$checkoutDetails.checkoutTime" },
+              "$checkOutTime",
+            ],
+          },
+        },
+      },
+
+      {
+        $addFields: {
+          arrivalDateObj: {
+            $dateFromString: {
+              dateString: "$arrivalDate",
+              onError: null,
+              onNull: null,
+            },
+          },
+
+          newChecoutDate: {
+            $dateFromString: {
+              dateString: "$rawNewChecoutDate",
+              onError: null,
+              onNull: null,
             },
           },
         },
-        {
-          $project: {
-            _id: 0,
-            checkOutDate: 1,
-            checkoutTime: 1,
-          },
-        },
-      ],
-      as: "checkoutDetails",
-    },
-  },
-
-  {
-    $addFields: {
-      rawNewChecoutDate: {
-        $ifNull: [
-          { $first: "$checkoutDetails.checkOutDate" },
-          "$checkOutDate",
-        ],
       },
 
-      newCheckoutTime: {
-        $ifNull: [
-          { $first: "$checkoutDetails.checkoutTime" },
-          "$checkOutTime",
-        ],
-      },
-    },
-  },
-
-  {
-    $addFields: {
-      arrivalDateObj: {
-        $dateFromString: {
-          dateString: "$arrivalDate",
-          onError: null,
-          onNull: null,
+      {
+        $project: {
+          checkoutDetails: 0,
+          rawNewChecoutDate: 0,
         },
       },
+    ];
 
-      newChecoutDate: {
-        $dateFromString: {
-          dateString: "$rawNewChecoutDate",
-          onError: null,
-          onNull: null,
+    if (fromDate && toDate) {
+      const startDate = new Date(fromDate);
+
+      const endDate = new Date(toDate);
+      endDate.setDate(endDate.getDate());
+
+      pipeline.push({
+        $match: {
+          $or: [
+            {
+              status: "checkOut",
+              newChecoutDate: {
+                $gt: startDate,
+                // $lt: endDate,
+              },
+              arrivalDateObj: {
+                // $gte: startDate,
+                $lte: endDate,
+              },
+            },
+            
+            {
+              status: { $ne: "checkOut" },
+              arrivalDateObj: {
+                // $gte: startDate,
+                $lte: endDate,
+              },
+            },
+          ],
         },
-      },
-    },
-  },
-
-  {
-    $project: {
-      checkoutDetails: 0,
-      rawNewChecoutDate: 0,
-    },
-  },
-];
-
-if (fromDate && toDate) {
-  const startDate = new Date(fromDate);
-
-  const endDate = new Date(toDate);
-  endDate.setDate(endDate.getDate());
-
-  pipeline.push({
-    $match: {
-      $or: [
-        {
-          status: "checkOut",
-          newChecoutDate: {
-            $gt: startDate,
-            // $lt: endDate,
-          },
-        },
-        {
-          status: { $ne: "checkOut" },
-          arrivalDateObj: {
-            // $gte: startDate,
-            $lte: endDate,
-          },
-        },
-      ],
-    },
-  });
-}
-const checkins = await CheckIn.aggregate(pipeline);
-console.log("checkins", checkins);
+      });
+    }
+    const checkins = await CheckIn.aggregate(pipeline);
+    console.log("checkins", checkins);
 
     const allRooms = await roomModal
       .find(
@@ -6353,13 +6355,14 @@ console.log("checkins", checkins);
       additionalPaxTotal += additionalPaxCount;
 
       (doc?.selectedRooms || []).forEach((room) => {
-        if(room.isSwapped) return
+        if (room.isSwapped) return;
         const pax = Number(room?.pax || 0);
-        const tariff = Number(Math.round(room.priceLevelRate) || room?.baseAmount ||
-          room?.amountAfterTax ||
+        const tariff = Number(
+          Math.round(room.priceLevelRate) ||
+            room?.baseAmount ||
+            room?.amountAfterTax ||
             room?.totalAmount ||
             room?.baseAmountWithTax ||
-            
             0,
         );
 
@@ -6437,7 +6440,7 @@ console.log("checkins", checkins);
           arrivalDate: doc?.arrivalDate || "",
           arrivalTime: doc?.arrivalTime || "",
           departureDate: doc?.newChecoutDate || doc?.checkOutDate || "",
-          departureTime: doc?.newCheckoutTime || doc?.checkOutTime  ||"",
+          departureTime: doc?.newCheckoutTime || doc?.checkOutTime || "",
           plan: planName,
           tariff,
           discountPercent: 0,

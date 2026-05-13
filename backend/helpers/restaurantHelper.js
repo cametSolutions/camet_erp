@@ -84,10 +84,10 @@ export const buildReceipt = async ({
   req,
   session,
 }) => {
-  console.log("saleData", saleData);
-  const billData = [
+  
+  const billData =  [
     {
-      _id: advanceObject._id,
+      _id: advanceObject?._id || saleData._id.toString(),
       bill_no: saleData?.salesNumber,
       billId: saleData._id.toString(),
       bill_date: new Date(),
