@@ -123,6 +123,12 @@ const OrdersDashboard = () => {
   const discountBasedOnGrossAmount =
     org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
 
+
+    // Add this alongside the other org config extractions (near discountBasedOnGrossAmount):
+const complementaryWithTax =
+  org?.configurations?.[0]?.complementaryWithTax ?? false;
+ 
+ 
   const { data, refreshHook } = useFetch(
     `/api/sUsers/getKotDataDash/${cmp_id}?date=${selectedDate}`,
   );
@@ -788,6 +794,7 @@ const OrdersDashboard = () => {
         // discountAmount: previewDiscount,
         note,
         discountBasedOnGrossAmount: discountBasedOnGrossAmount,
+          complementaryWithTax: complementaryWithTax, 
       };
 
       console.log(payment);

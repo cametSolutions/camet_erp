@@ -12,15 +12,22 @@ const fmt = (n) =>
     maximumFractionDigits: 2,
   });
 
+// Replace the today constant and add get29DaysAgo:
 const today = new Date().toISOString().split("T")[0];
+
+const get29DaysAgo = () => {
+  const date = new Date();
+  date.setDate(date.getDate() - 29);
+  return date.toISOString().split("T")[0];
+};
 
 export default function HotelReport() {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization?.secSelectedOrg?._id
   );
 
-  const [fromDate, setFromDate] = useState(today);
-  const [toDate, setToDate] = useState(today);
+const [fromDate, setFromDate] = useState(get29DaysAgo()); // ✅ was today
+const [toDate, setToDate] = useState(today);
   const [reportData, setReportData] = useState([]);
   const [itemSummary, setItemSummary] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -59,11 +66,12 @@ export default function HotelReport() {
     }
   };
 
-  useEffect(() => {
-    if (cmp_id) {
-      fetchReport();
-    }
-  }, [cmp_id]);
+ // Replace useEffect:
+useEffect(() => {
+  if (cmp_id) {
+    fetchReport();
+  }
+}, [cmp_id]); // ✅ already correct — fetches on mount when cmp_id is ready
 
   const grandTotals = useMemo(() => {
     return reportData.reduce(

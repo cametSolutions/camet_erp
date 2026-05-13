@@ -5,14 +5,19 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { useSelector } from "react-redux";
 import TitleDiv from "@/components/common/TitleDiv";
-
 const getToday = () => new Date().toISOString().slice(0, 10);
 
+const get29DaysAgo = () => {
+  const date = new Date();
+  date.setDate(date.getDate() - 29);
+  return date.toISOString().slice(0, 10);
+};
+
 const TouristReport = () => {
-  const [filters, setFilters] = useState({
-    fromDate: getToday(),
-    toDate: getToday(),
-  });
+ const [filters, setFilters] = useState({
+  fromDate: get29DaysAgo(),  // ✅ 29 days ago
+  toDate: getToday(),
+});
  const cmp_id = useSelector(
          (state) => state.secSelectedOrganization.secSelectedOrg._id
        );
@@ -100,9 +105,9 @@ const TouristReport = () => {
     }
   };
 
-  useEffect(() => {
-    fetchReport();
-  }, []);
+ useEffect(() => {
+  fetchReport();
+}, [filters.fromDate, filters.toDate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
