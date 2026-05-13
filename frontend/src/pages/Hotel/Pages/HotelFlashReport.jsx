@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState ,useEffect } from "react";
 import {
   Document,
   Page,
@@ -189,10 +189,19 @@ const HotelFlashReportPage = () => {
   const { _id: cmp_id } =
     useSelector((s) => s.secSelectedOrganization.secSelectedOrg) || {};
 
-  const today = new Date().toISOString().slice(0, 10);
+ const today = new Date().toISOString().slice(0, 10);
 
-  const [fromDate, setFromDate] = useState(today);
-  const [toDate, setToDate] = useState(today);
+const get29DaysAgo = () => {
+  const date = new Date();
+  date.setDate(date.getDate() - 29);
+  return date.toISOString().slice(0, 10);
+};
+
+// Update initial state:
+const [fromDate, setFromDate] = useState(get29DaysAgo()); // ✅ was today
+const [toDate, setToDate] = useState(today);
+
+
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -229,6 +238,9 @@ const HotelFlashReportPage = () => {
       setLoading(false);
     }
   };
+  useEffect(() => {
+  fetchReport();
+}, []);
 
   const handlePrint = async () => {
     if (!reportData) return;
@@ -302,58 +314,61 @@ const HotelFlashReportPage = () => {
     XLSX.writeFile(wb, `Hotel-Flash-Report-${d.fromDate}-to-${d.toDate}.xlsx`);
   };
 
-  return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-6">
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="border-b border-gray-200 p-4 md:p-6">
-          <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Hotel Flash Report
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Select from date and to date, then load the report.
-              </p>
+return (
+  <div className="min-h-screen bg-slate-100 p-3 md:p-6 print:bg-white print:p-0">
+    <div className="mx-auto max-w-7xl">
+
+      {/* Toolbar */}
+      <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:hidden md:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+              Hotel Flash Report
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Select date range and load the report
+            </p>
+          </div>
+
+          <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3 lg:w-auto">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                From Date
+              </label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-teal-600"
+              />
             </div>
 
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 mb-1">
-                  From Date
-                </label>
-                <input
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  className="border border-gray-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                To Date
+              </label>
+              <input
+                type="date"
+                value={toDate}
+                min={fromDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-teal-600"
+              />
+            </div>
 
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 mb-1">
-                  To Date
-                </label>
-                <input
-                  type="date"
-                  value={toDate}
-                  min={fromDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                  className="border border-gray-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
+            <div className="flex flex-wrap items-end gap-2">
               <button
                 onClick={fetchReport}
                 disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-teal-700 px-4 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {loading ? "Loading..." : "Load Report"}
+                {loading ? "Loading..." : "Get Report"}
               </button>
 
               <button
                 onClick={handlePrint}
                 disabled={!reportData}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-slate-200 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Print
               </button>
@@ -361,119 +376,105 @@ const HotelFlashReportPage = () => {
               <button
                 onClick={handleExportExcel}
                 disabled={!reportData}
-                className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md disabled:opacity-50"
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Export Excel
               </button>
             </div>
           </div>
         </div>
-
-        <div className="p-4 md:p-6">
-          {error && (
-            <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-600">
-              {error}
-            </div>
-          )}
-
-          {!reportData && !loading && !error && (
-            <div className="py-16 text-center text-gray-500">
-              Select the date range and click Load Report
-            </div>
-          )}
-
-          {reportData && (
-            <div className="max-w-5xl mx-auto bg-white border border-gray-300 shadow-sm">
-              <div className="px-6 pt-6 text-center">
-                <h2 className="text-3xl font-bold uppercase text-gray-900">
-                  {reportData.companyName}
-                </h2>
-                <p className="text-base font-semibold text-gray-800 underline">
-                  Hotel Flash Report
-                </p>
-              </div>
-
-              <div className="px-6 pt-4 pb-2 text-sm text-gray-700">
-                Report From {formatDate(reportData.fromDate)} To{" "}
-                {formatDate(reportData.toDate)}
-              </div>
-
-              <div className="px-6 pb-6 overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-t border-b-2 border-gray-400">
-                      <th className="px-3 py-2 text-left text-sm font-semibold text-gray-900">
-                        Particulars
-                      </th>
-                      <th className="px-3 py-2 text-right text-sm font-semibold text-gray-900">
-                        {reportData.dayLabel}
-                      </th>
-                      <th className="px-3 py-2 text-right text-sm font-semibold text-gray-900">
-                        {reportData.monthLabel}
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    <tr>
-                      <td colSpan="3" className="px-3 py-3 text-sm font-bold text-gray-900">
-                        ROOM STATISTICS:-
-                      </td>
-                    </tr>
-                    <DataRow label="(A) Total Rooms" d={reportData.totalRooms} m={reportData.totalRooms} />
-                    <DataRow label="(B) Blocked Rooms" d={reportData.blockedRooms} m={reportData.blockedRooms} />
-                    <DataRow label="(C) Total Saleable (A-B)" d={reportData.saleableRooms} m={reportData.saleableRooms} />
-                    <DataRow label="(D) Occupied Rooms (Paid)" d={reportData.occupiedPaid} m={reportData.occupiedPaid} />
-                    <DataRow label="(E) Occupied Rooms (Comp/House Use)" d={reportData.occupiedComp} m={reportData.occupiedComp} />
-                    <DataRow label="(F) Total Occupied Rooms (D+E)" d={reportData.totalOccupied} m={reportData.totalOccupied} />
-                    <DataRow label="(G) No of Pax - Domestic" d={reportData.paxDomestic} m={reportData.paxDomestic} />
-                    <DataRow label="(H) No of Pax - Foreigners" d={reportData.paxForeign} m={reportData.paxForeign} />
-                    <DataRow label="(I) Total Pax (G+H)" d={reportData.totalPax} m={reportData.totalPax} />
-                    <DataRow label="(J) No of Adults" d={reportData.adults} m={reportData.adults} />
-                    <DataRow label="(K) No of Children" d={reportData.children} m={reportData.children} />
-                    <DataRow label="(L) No of Males" d={reportData.males} m={reportData.males} />
-                    <DataRow label="(M) No of Females" d={reportData.females} m={reportData.females} />
-                    <DataRow label="(N) No Shows" d={reportData.noShows} m={reportData.noShows} />
-                    <DataRow label="(O) % of Occupancy (D/A)%" d={reportData.occPercent} m={reportData.occPercent} isPercent />
-                    <DataRow label="(P) ARR (Total Rooms)" d={reportData.arrTotalRooms} m={reportData.arrTotalRooms} />
-                    <DataRow label="(Q) ARR (Saleable Rooms)" d={reportData.arrSaleableRooms} m={reportData.arrSaleableRooms} />
-                    <DataRow label="(R) ARR (Occupied Rooms)" d={reportData.arrOccupiedRooms} m={reportData.arrOccupiedRooms} />
-
-                    <tr>
-                      <td colSpan="3" className="px-3 py-3 text-sm font-bold text-gray-900">
-                        ROOM REVENUE
-                      </td>
-                    </tr>
-                    <DataRow label="Apartment Charges (Accrued)" d={reportData.roomApartment} m={reportData.roomApartment} />
-                    <DataRow label="Extra Bed Charges (Accrued)" d={reportData.roomExtraBed} m={reportData.roomExtraBed} />
-                    <DataRow label="Total : ROOM REVENUE" d={reportData.roomTotal} m={reportData.roomTotal} bold />
-
-                    <tr>
-                      <td colSpan="3" className="px-3 py-3 text-sm font-bold text-gray-900">
-                        F&B REVENUE
-                      </td>
-                    </tr>
-                    <DataRow label="Plan Rate (Accrued)" d={reportData.fbPlanRate} m={reportData.fbPlanRate} />
-                    <DataRow label="Rustic Room Service" d={reportData.fbRoomService} m={reportData.fbRoomService} />
-                    <DataRow label="Rustic Barn Restaurant" d={reportData.fbRestaurant} m={reportData.fbRestaurant} />
-                    <DataRow label="Total : F&B REVENUE" d={reportData.fbTotal} m={reportData.fbTotal} bold />
-
-                    <tr>
-                      <td colSpan="3" className="px-3 py-3 text-sm font-bold text-gray-900">
-                        OTHER REVENUES
-                      </td>
-                    </tr>
-                    <DataRow label="MOD REVENUES" d={reportData.modRevenues} m={reportData.modRevenues} />
-                    <DataRow label="Grand Total" d={reportData.grandTotal} m={reportData.grandTotal} bold />
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 print:hidden">
+          {error}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!reportData && !loading && !error && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-16 text-center text-slate-500 shadow-sm">
+          Select the date range and click Get Report
+        </div>
+      )}
+
+      {/* Report */}
+      {reportData && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:rounded-none print:border-0 print:p-4 print:shadow-none md:p-7">
+          <div className="text-center mb-4">
+            <h2 className="text-2xl font-bold uppercase text-slate-900 md:text-3xl">
+              {reportData.companyName}
+            </h2>
+            <p className="text-base font-semibold text-slate-700 underline">
+              Hotel Flash Report
+            </p>
+          </div>
+
+          <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between text-sm text-slate-700">
+            <div>
+              Report From {formatDate(reportData.fromDate)} To {formatDate(reportData.toDate)}
+            </div>
+            <div className="text-left md:text-right">
+              <p className="text-xs font-medium text-slate-500">Print Date & Time</p>
+              <p className="text-sm font-semibold text-slate-800">
+                {new Date().toLocaleDateString("en-GB")} {new Date().toLocaleTimeString("en-GB")}
+              </p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-y-[3px] border-slate-800">
+                  <th className="px-3 py-2 text-left font-bold text-slate-900">Particulars</th>
+                  <th className="px-3 py-2 text-right font-bold text-slate-900">{reportData.dayLabel}</th>
+                  <th className="px-3 py-2 text-right font-bold text-slate-900">{reportData.monthLabel}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colSpan="3" className="px-3 py-3 text-sm font-bold text-slate-900">ROOM STATISTICS:-</td></tr>
+                <DataRow label="(A) Total Rooms" d={reportData.totalRooms} m={reportData.totalRooms} />
+                <DataRow label="(B) Blocked Rooms" d={reportData.blockedRooms} m={reportData.blockedRooms} />
+                <DataRow label="(C) Total Saleable (A-B)" d={reportData.saleableRooms} m={reportData.saleableRooms} />
+                <DataRow label="(D) Occupied Rooms (Paid)" d={reportData.occupiedPaid} m={reportData.occupiedPaid} />
+                <DataRow label="(E) Occupied Rooms (Comp/House Use)" d={reportData.occupiedComp} m={reportData.occupiedComp} />
+                <DataRow label="(F) Total Occupied Rooms (D+E)" d={reportData.totalOccupied} m={reportData.totalOccupied} />
+                <DataRow label="(G) No of Pax - Domestic" d={reportData.paxDomestic} m={reportData.paxDomestic} />
+                <DataRow label="(H) No of Pax - Foreigners" d={reportData.paxForeign} m={reportData.paxForeign} />
+                <DataRow label="(I) Total Pax (G+H)" d={reportData.totalPax} m={reportData.totalPax} />
+                <DataRow label="(J) No of Adults" d={reportData.adults} m={reportData.adults} />
+                <DataRow label="(K) No of Children" d={reportData.children} m={reportData.children} />
+                <DataRow label="(L) No of Males" d={reportData.males} m={reportData.males} />
+                <DataRow label="(M) No of Females" d={reportData.females} m={reportData.females} />
+                <DataRow label="(N) No Shows" d={reportData.noShows} m={reportData.noShows} />
+                <DataRow label="(O) % of Occupancy (D/A)%" d={reportData.occPercent} m={reportData.occPercent} isPercent />
+                <DataRow label="(P) ARR (Total Rooms)" d={reportData.arrTotalRooms} m={reportData.arrTotalRooms} />
+                <DataRow label="(Q) ARR (Saleable Rooms)" d={reportData.arrSaleableRooms} m={reportData.arrSaleableRooms} />
+                <DataRow label="(R) ARR (Occupied Rooms)" d={reportData.arrOccupiedRooms} m={reportData.arrOccupiedRooms} />
+
+                <tr><td colSpan="3" className="px-3 py-3 text-sm font-bold text-slate-900">ROOM REVENUE</td></tr>
+                <DataRow label="Apartment Charges (Accrued)" d={reportData.roomApartment} m={reportData.roomApartment} />
+                <DataRow label="Extra Bed Charges (Accrued)" d={reportData.roomExtraBed} m={reportData.roomExtraBed} />
+                <DataRow label="Total : ROOM REVENUE" d={reportData.roomTotal} m={reportData.roomTotal} bold />
+
+                <tr><td colSpan="3" className="px-3 py-3 text-sm font-bold text-slate-900">F&B REVENUE</td></tr>
+                <DataRow label="Plan Rate (Accrued)" d={reportData.fbPlanRate} m={reportData.fbPlanRate} />
+                <DataRow label="Rustic Room Service" d={reportData.fbRoomService} m={reportData.fbRoomService} />
+                <DataRow label="Rustic Barn Restaurant" d={reportData.fbRestaurant} m={reportData.fbRestaurant} />
+                <DataRow label="Total : F&B REVENUE" d={reportData.fbTotal} m={reportData.fbTotal} bold />
+
+                <tr><td colSpan="3" className="px-3 py-3 text-sm font-bold text-slate-900">OTHER REVENUES</td></tr>
+                <DataRow label="MOD REVENUES" d={reportData.modRevenues} m={reportData.modRevenues} />
+                <DataRow label="Grand Total" d={reportData.grandTotal} m={reportData.grandTotal} bold />
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
-  );
+  </div>
+);
 };
 
 export default HotelFlashReportPage;

@@ -4,12 +4,15 @@ import { saveAs } from "file-saver";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
 import TitleDiv from "@/components/common/TitleDiv";
-
+// Add below any existing helpers at the top:
+const getToday = () => new Date().toISOString().slice(0, 10);
 const OccupancyCheckoutReport = () => {
-  const [filters, setFilters] = useState({
-    fromDate: new Date().toISOString().slice(0, 10),
-    toDate: new Date().toISOString().slice(0, 10),
-  });
+ // Replace initial filters state:
+const [filters, setFilters] = useState({
+  fromDate: getToday(),  // ✅ was ""
+  toDate: getToday(),
+});
+
   const [report, setReport] = useState({
     summary: {},
     planSummary: [],
@@ -42,8 +45,6 @@ const OccupancyCheckoutReport = () => {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   };
 
@@ -59,6 +60,7 @@ const OccupancyCheckoutReport = () => {
           cmp_id,
         },
       });
+      console.log(response);
 
       const result = response?.data;
 
@@ -85,9 +87,10 @@ const OccupancyCheckoutReport = () => {
     }
   };
 
-  useEffect(() => {
-    fetchReport();
-  }, []);
+ // Replace useEffect:
+useEffect(() => {
+  fetchReport();
+}, [filters.fromDate, filters.toDate]); // ✅ re-fetches when dates change
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -114,7 +117,7 @@ const OccupancyCheckoutReport = () => {
       Company: item.company,
       Pax: item.pax,
       Arrival: `${item.arrivalDate || ""} ${item.arrivalTime || ""}`.trim(),
-      Departure: item.departureDate,
+      Departure:`${item.departureDate || ""} ${item.departureTime || ""}`.trim(),
       Plan: item.plan,
       Tariff: item.tariff,
       "Disc %": item.discountPercent,
@@ -395,19 +398,27 @@ const OccupancyCheckoutReport = () => {
                     </td>
                   </tr>
                 ) : report.rows.length ? (
-                  report.rows.map((row) => (
-                    <tr key={row.slNo} className="border-b border-slate-200">
-                      <td className="px-1.5 py-1.5">{row.slNo}</td>
+  report.rows
+    .slice()
+    .sort((a, b) => {
+      const roomA = isNaN(a.room) ? a.room : Number(a.room);
+      const roomB = isNaN(b.room) ? b.room : Number(b.room);
+      if (typeof roomA === "number" && typeof roomB === "number") return roomA - roomB;
+      return String(roomA).localeCompare(String(roomB));
+    })
+    .map((row) => (
+      <tr key={row.slNo} className="border-b border-slate-200">
+        <td className="px-1.5 py-1.5">{row.slNo}</td>
                       <td className="px-1.5 py-1.5">{row.room}</td>
                       <td className="px-1.5 py-1.5">{row.grcNo}</td>
                       <td className="px-1.5 py-1.5">{row.guestName}</td>
                       <td className="px-1.5 py-1.5">{row.company}</td>
                       <td className="px-1.5 py-1.5 text-right">{row.pax}</td>
                       <td className="px-1.5 py-1.5">
-                        {formatDateTime(row.arrivalDate)}
+                        {formatDateTime(row.arrivalDate) + " " + row.arrivalTime}
                       </td>
                       <td className="px-1.5 py-1.5">
-                        {formatDateTime(row.departureDate)}
+                        {formatDateTime(row.departureDate) + " " + row.departureTime}
                       </td>
                       <td className="px-1.5 py-1.5">{row.plan}</td>
                       <td className="px-1.5 py-1.5 text-right">{row.tariff}</td>

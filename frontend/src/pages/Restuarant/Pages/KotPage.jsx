@@ -107,23 +107,6 @@ const OrdersDashboard = () => {
   const [dataForBatchWisePrint, setDataForBatchWisePrint] = useState(null);
   const [selectedMode, setSelectedMode] = useState(null);
   const [isSpecific, setIsSpecific] = useState(false);
-  const [splitPaymentRows, setSplitPaymentRows] = useState([
-  { source: "", amount: "", remarks: "", refNo: "" }
-]);
-
-const addSplitPaymentRow = () =>
-  setSplitPaymentRows((prev) => [
-    ...prev,
-    { source: "", amount: "", remarks: "", refNo: "" },
-  ]);
-
-const removeSplitPaymentRow = (index) =>
-  setSplitPaymentRows((prev) => prev.filter((_, i) => i !== index));
-
-const updateSplitPaymentRow = (index, field, value) =>
-  setSplitPaymentRows((prev) =>
-    prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
-  );
   const toggleExpand = (id) =>
     setExpandedOrders((prev) => ({ ...prev, [id]: !prev[id] }));
 
@@ -140,7 +123,8 @@ const updateSplitPaymentRow = (index, field, value) =>
 
   const discountBasedOnGrossAmount =
     org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
-
+const complementaryWithTax =
+  org?.configurations?.[0]?.complementaryWithTax ?? false;
   const queryClient = useQueryClient(); // ✅ uncomment/move this to here
 
   const { data, refetch: refreshHook } = useQuery({
@@ -821,6 +805,7 @@ const updateSplitPaymentRow = (index, field, value) =>
         // discountAmount: previewDiscount,
         note,
         discountBasedOnGrossAmount: discountBasedOnGrossAmount,
+          complementaryWithTax: complementaryWithTax, 
       };
 
       console.log(payment);
@@ -1230,19 +1215,6 @@ const updateSplitPaymentRow = (index, field, value) =>
     setSpecificSelectedKotItemWise(data);
   };
 
-
-  const combinedSources = [
-  ...(cashOrBank?.cashDetails?.map((c) => ({
-    id: c._id,
-    name: `${c.partyName} - ${c.under}`,
-    type: "cash",
-  })) || []),
-  ...(cashOrBank?.bankDetails?.map((b) => ({
-    id: b._id,
-    name: `${b.partyName} - ${b.under}`,
-    type: "bank",
-  })) || []),
-];
   return (
     <>
       {showVoucherPdf && (
@@ -2764,322 +2736,166 @@ const updateSplitPaymentRow = (index, field, value) =>
                 )}
 
                 {/* Split Payment Amount Inputs */}
-{paymentMode === "split" && (
-  <div>
-    <label className="block text-[12px] font-semibold text-gray-700 dark:text-gray-300 mb-2">
-      Split Payment Details
-    </label>
+                {paymentMode === "split" && (
+                  <div className="mb-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Split Payment Amounts
+                    </label>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 w-16">
+                          <Banknote className="w-4 h-4 text-gray-600" />
+                          <span className="text-xs font-medium">Cash:</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              value={cashAmount}
+                              onChange={(e) => {
+                                if (
+                                  Number(e.target.value) +
+                                    Number(onlineAmount || 0) <=
+                                  Number(selectedDataForPayment?.total)
+                                ) {
+                                  setCashAmount(e.target.value);
+                                  setPaymentError("");
+                                  return;
+                                } else {
+                                  setPaymentError(
+                                    "Sum of cash and online amount should be less than or equal to order total.",
+                                  );
+                                }
+                              }}
+                              className="w-full pl-6 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                              placeholder="0.00"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+                      </div>
 
-    {(() => {
-      // ✅ Restaurant: only use selectedDataForPayment.total
-      const orderTotal = Number(selectedDataForPayment?.total) || 0;
+                      {/* Cash Payment Dropdown - Show when cash amount > 0 */}
+                      {cashAmount > 0 && (
+                        <div className="ml-20">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Select Cash
+                          </label>
+                          <select
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                            value={selectedCash}
+                            onChange={(e) => setSelectedCash(e.target.value)}
+                          >
+                            <option value="" disabled>
+                              Select Cash
+                            </option>
+                            {cashOrBank?.cashDetails?.map((cashier) => (
+                              <option key={cashier._id} value={cashier._id}>
+                                {cashier.partyName} - {cashier.under}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
-      const totalEntered = splitPaymentRows.reduce(
-        (sum, row) => sum + (parseFloat(row.amount) || 0),
-        0,
-      );
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 w-16">
+                          <CreditCard className="w-4 h-4 text-gray-600" />
+                          <span className="text-xs font-medium">Gpay:</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              value={onlineAmount}
+                              onChange={(e) => {
+                                if (
+                                  Number(e.target.value) + Number(cashAmount) <=
+                                  Number(selectedDataForPayment?.total)
+                                ) {
+                                  setOnlineAmount(e.target.value);
+                                  setPaymentError("");
+                                  return;
+                                } else {
+                                  setPaymentError(
+                                    "Sum of cash and online amount should be less than or equal to order total.",
+                                  );
+                                }
+                              }}
+                              className="w-full pl-6 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                              placeholder="0.00"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+                      </div>
 
-      const difference = parseFloat(
-        (orderTotal - totalEntered).toFixed(2),
-      );
-      const isFullyPaid = difference <= 0;
+                      {/* Online Payment Dropdown - Show when online amount > 0 */}
+                      {onlineAmount > 0 && (
+                        <div className="ml-20">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Select Bank
+                          </label>
+                          <select
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                            value={selectedBank}
+                            onChange={(e) => setSelectedBank(e.target.value)}
+                          >
+                            <option value="" disabled>
+                              Select Bank
+                            </option>
+                            {cashOrBank?.bankDetails?.map((cashier) => (
+                              <option key={cashier._id} value={cashier._id}>
+                                {cashier.partyName} - {cashier.under}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
-      // ✅ Restaurant: no customer field required — only source + amount
-      const lastRow = splitPaymentRows[splitPaymentRows.length - 1];
-      const lastRowValid =
-        lastRow &&
-        lastRow.source?.trim() !== "" &&
-        parseFloat(lastRow.amount) > 0;
-
-      const incompleteFields = (row) => {
-        const missing = [];
-        if (!row.source?.trim()) missing.push("source");
-        if (!(parseFloat(row.amount) > 0)) missing.push("amount");
-        return missing;
-      };
-
-      return (
-        <>
-          {isFullyPaid && (
-            <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-xl">
-              <svg className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              <span className="text-[12px] font-medium text-green-700 dark:text-green-300">
-                Full amount allocated — no further entries allowed.
-              </span>
-            </div>
-          )}
-
-          {/* ✅ Column headers — same style as hotel, no Customer column */}
-          <div className="grid grid-cols-8 gap-2 mb-1.5 px-1">
-            <div className="col-span-4 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-              Source
-            </div>
-            <div className="col-span-3 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-              Amount
-            </div>
-            <div className="col-span-1"></div>
-          </div>
-
-          <div className="space-y-2.5">
-            {splitPaymentRows.map((row, index) => {
-              const sourceObj = combinedSources.find((s) => s.id === row.source);
-              const sourceType = sourceObj?.type || "";
-
-              const rowLocked =
-                isFullyPaid && index !== splitPaymentRows.length - 1;
-
-              const isLastRow = index === splitPaymentRows.length - 1;
-              const missing =
-                isLastRow && !lastRowValid ? incompleteFields(row) : [];
-              const missingSource = missing.includes("source");
-              const missingAmount = missing.includes("amount");
-
-              return (
-                <div
-                  key={index}
-                  className={`border rounded-xl p-3 transition-colors ${
-                    rowLocked
-                      ? "bg-gray-100 dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 opacity-70"
-                      : "bg-gray-50 dark:bg-neutral-800 border-gray-100 dark:border-neutral-700"
-                  }`}
-                >
-                  {/* ✅ Under tags — kept same hotel style, only "food" for restaurant */}
-                  <div className="flex items-center gap-2 flex-wrap mb-2">
-                    <span className="text-[11px] text-gray-400 font-medium">Under:</span>
-                    {["food"].map((category) => (
-                      <button
-                        key={category}
-                        type="button"
-                        disabled={rowLocked}
-                        onClick={() =>
-                          updateSplitPaymentRow(
-                            index,
-                            "underCategory",
-                            row.underCategory === category ? "" : category,
-                          )
-                        }
-                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors capitalize ${
-                          rowLocked
-                            ? "opacity-60 cursor-not-allowed bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-400"
-                            : row.underCategory === category
-                              ? "bg-orange-100 border-orange-300 text-orange-700 dark:bg-orange-950 dark:border-orange-700 dark:text-orange-300"
-                              : "bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-500 dark:text-gray-400 hover:border-gray-300"
-                        }`}
-                      >
-                        🍽 Food
-                      </button>
-                    ))}
-                    {row.underCategory && (
-                      <span className="text-[11px] text-gray-400 italic">
-                        Selected:{" "}
-                        <span className="font-semibold text-gray-600 dark:text-gray-300 capitalize">
-                          {row.underCategory}
-                        </span>
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Source + Amount + Delete row */}
-                  <div className="grid grid-cols-8 gap-2 items-center">
-                    {/* Source */}
-                    <div className="col-span-4">
-                      <select
-                        disabled={rowLocked}
-                        value={row.source}
-                        onChange={(e) =>
-                          updateSplitPaymentRow(index, "source", e.target.value)
-                        }
-                        className={`w-full px-2 py-1.5 border rounded-lg text-[11px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                          rowLocked
-                            ? "border-gray-200 dark:border-neutral-600 bg-gray-100 dark:bg-neutral-800 text-gray-400 cursor-not-allowed"
-                            : missingSource
-                              ? "border-red-400 dark:border-red-500 bg-red-50 dark:bg-red-950 text-gray-800 dark:text-gray-200 ring-1 ring-red-300"
-                              : "border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-200"
-                        }`}
-                      >
-                        <option value="">Source</option>
-                        {combinedSources.map((source) => (
-                          <option key={source.id} value={source.id}>
-                            {source.name} ({source?.type})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Amount */}
-                    <div className="col-span-3">
-                      <div className="relative">
-                        <span
-                          className={`absolute left-2 top-1/2 -translate-y-1/2 text-[11px] ${
-                            rowLocked
-                              ? "text-gray-300 dark:text-gray-600"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          ₹
-                        </span>
-                        <input
-                          type="number"
-                          disabled={rowLocked}
-                          value={row.amount}
-                          onChange={(e) => {
-                            const newVal = parseFloat(e.target.value) || 0;
-                            const otherRowsTotal = splitPaymentRows.reduce(
-                              (sum, r, i) =>
-                                i === index ? sum : sum + (parseFloat(r.amount) || 0),
-                              0,
-                            );
-                            const maxAllowed = parseFloat(
-                              (orderTotal - otherRowsTotal).toFixed(2),
-                            );
-                            const clamped = Math.min(newVal, maxAllowed);
-                            updateSplitPaymentRow(
-                              index,
-                              "amount",
-                              clamped > 0 ? clamped : e.target.value,
-                            );
-                          }}
-                          className={`w-full pl-5 pr-2 py-1.5 border rounded-lg text-[11px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                            rowLocked
-                              ? "border-gray-200 dark:border-neutral-600 bg-gray-100 dark:bg-neutral-800 text-gray-400 cursor-not-allowed"
-                              : missingAmount
-                                ? "border-red-400 dark:border-red-500 bg-red-50 dark:bg-red-950 text-gray-800 dark:text-gray-200 ring-1 ring-red-300"
-                                : "border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-200"
-                          }`}
-                          placeholder="0.00"
-                          min="0"
-                          step="0.01"
-                        />
+                      {/* Payment Summary for Split */}
+                      <div className="bg-gray-50 p-2 rounded-lg border">
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <span>Total Entered:</span>
+                          <span>
+                            ₹
+                            {(
+                              parseFloat(cashAmount || 0) +
+                              parseFloat(onlineAmount || 0)
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-xs font-medium">
+                          <span>Order Total:</span>
+                          <span>₹{selectedDataForPayment?.total}</span>
+                        </div>
+                        {parseFloat(cashAmount || 0) +
+                          parseFloat(onlineAmount || 0) !==
+                          selectedDataForPayment?.total && (
+                          <div className="flex justify-between text-xs text-amber-600 mt-1">
+                            <span>Difference:</span>
+                            <span>
+                              ₹
+                              {Math.round(
+                                selectedDataForPayment?.total -
+                                  (parseFloat(cashAmount || 0) +
+                                    parseFloat(onlineAmount || 0)),
+                              ).toFixed(2)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
-
-                    {/* Delete */}
-                    <div className="col-span-1 flex justify-center">
-                      {splitPaymentRows.length > 1 && (
-                        <button
-                          onClick={() => removeSplitPaymentRow(index)}
-                          className="w-6 h-6 rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
-                          title="Remove row"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
                   </div>
-
-                  {/* Cash → Remarks */}
-                  {sourceType === "cash" && (
-                    <div className="mt-2.5">
-                      <label className="block text-[11px] text-gray-500 mb-1">Remarks</label>
-                      <input
-                        type="text"
-                        disabled={rowLocked}
-                        value={row.remarks || ""}
-                        onChange={(e) =>
-                          updateSplitPaymentRow(index, "remarks", e.target.value)
-                        }
-                        className={`w-full px-3 py-1.5 border rounded-lg text-[11px] focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          rowLocked
-                            ? "bg-gray-100 dark:bg-neutral-800 border-gray-200 dark:border-neutral-600 text-gray-400 cursor-not-allowed"
-                            : "bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-800 dark:text-gray-200"
-                        }`}
-                        placeholder="Remarks"
-                      />
-                    </div>
-                  )}
-
-                  {/* Bank → Ref No + Remarks */}
-                  {sourceType === "bank" && (
-                    <div className="grid grid-cols-2 gap-2 mt-2.5">
-                      {["refNo", "remarks"].map((field) => (
-                        <div key={field}>
-                          <label className="block text-[11px] text-gray-500 mb-1">
-                            {field === "refNo" ? "Ref. No" : "Remarks"}
-                          </label>
-                          <input
-                            type="text"
-                            disabled={rowLocked}
-                            value={row[field] || ""}
-                            onChange={(e) =>
-                              updateSplitPaymentRow(index, field, e.target.value)
-                            }
-                            className={`w-full px-2 py-1.5 border rounded-lg text-[11px] focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                              rowLocked
-                                ? "bg-gray-100 dark:bg-neutral-800 border-gray-200 dark:border-neutral-600 text-gray-400 cursor-not-allowed"
-                                : "bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-800 dark:text-gray-200"
-                            }`}
-                            placeholder={field === "refNo" ? "Ref. No" : "Remarks"}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Add Row */}
-          {!isFullyPaid && (
-            <div className="mt-2">
-              <button
-                onClick={() => { if (lastRowValid) addSplitPaymentRow(); }}
-                className={`flex items-center gap-1.5 text-[12px] font-medium transition-colors ${
-                  lastRowValid
-                    ? "text-blue-600 hover:text-blue-700 cursor-pointer"
-                    : "text-gray-400 cursor-not-allowed"
-                }`}
-                title={!lastRowValid ? "Fill Source and Amount first" : ""}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add Payment Row
-              </button>
-              {!lastRowValid && (
-                <p className="mt-1 text-[11px] text-red-500 dark:text-red-400 flex items-center gap-1">
-                  <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                  Source and Amount are required before adding a new row.
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Summary */}
-          <div className="bg-gray-50 dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700 rounded-xl p-3 mt-3 space-y-1.5">
-            <div className="flex justify-between text-[12px] text-gray-500 dark:text-gray-400">
-              <span>Total Entered</span>
-              <span>₹ {totalEntered.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-[12px] font-medium text-gray-700 dark:text-gray-300 pt-1 border-t border-gray-200 dark:border-neutral-700">
-              <span>Order Total</span>
-              <span>₹ {orderTotal.toFixed(2)}</span>
-            </div>
-            <div className={`flex justify-between text-[12px] font-semibold pt-1 border-t border-gray-200 dark:border-neutral-700 ${
-              isFullyPaid
-                ? "text-green-600 dark:text-green-400"
-                : "text-amber-600 dark:text-amber-400"
-            }`}>
-              <span>Difference</span>
-              <span className="flex items-center gap-1">
-                {isFullyPaid && (
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
                 )}
-                ₹ {difference.toFixed(2)}
-              </span>
-            </div>
-          </div>
-        </>
-      );
-    })()}
-  </div>
-)}
                 {paymentMode === "credit" && (
                   <div className="mb-3">
                     <div className="flex items-center justify-between mb-3">
