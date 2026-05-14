@@ -1383,11 +1383,11 @@ export const getBookings = async (req, res) => {
       filter,
       params,
     );
+  
 
     // ✅ Process bookings to add payment status and travel agent info
     const processedBookings = bookings.map((booking) => {
       const processed = booking.toObject ? booking.toObject() : { ...booking };
-
       // ✅ Add payment status (shows payment type names, not amounts)
       processed.paymentStatus = getPaymentStatus(processed.paymenttypeDetails);
 
@@ -1413,7 +1413,7 @@ export const getBookings = async (req, res) => {
 
       return processed;
     });
-
+  console.log("bookingss", processedBookings[0]?.selectedRooms[0]?.dateTariffs);
     return sendBookingsResponse(res, processedBookings, totalBookings, params);
   } catch (error) {
     console.error("Error in getBookings:", error);

@@ -118,9 +118,11 @@ function BookingList() {
   const [remarks, setRemarks] = useState("");
   const [transactionNumber, setTransactionNumber] = useState("");
   const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(new Date().getDate() - 30)
-  const [fromDate, setFromDate] = useState(thirtyDaysAgo.toISOString().split("T")[0]);
-   const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
+  thirtyDaysAgo.setDate(new Date().getDate() - 30);
+  const [fromDate, setFromDate] = useState(
+    thirtyDaysAgo.toISOString().split("T")[0],
+  );
+  const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
   const ROOM_COLORS = [
     { bg: "#EEEDFE", border: "#AFA9EC", icon: "#534AB7", text: "#3C3489" },
     { bg: "#E1F5EE", border: "#5DCAA5", icon: "#0F6E56", text: "#085041" },
@@ -226,11 +228,17 @@ function BookingList() {
         Number(checkout?.bookingId?.advanceAmount || 0);
 
       const hasSwapping = rooms.some((r) => r?.swappingDateFrom);
-
       const checkoutTotal = rooms.reduce((sum, room) => {
+        // if (room.dateTariffs) {
+          
+        // }
+        console.log(room?.amountAfterTax);
+
         if (!hasSwapping) {
           return sum + Number(room?.amountAfterTax || 0);
         }
+
+ console.log(room);
 
         let stayDays = Number(room?.stayDays || 1);
 
@@ -318,6 +326,7 @@ function BookingList() {
       );
     }, 0);
   };
+
   useEffect(() => {
     if (location.pathname === "/sUsers/bookingList") {
       const fetchStatus = async () => {
@@ -472,7 +481,12 @@ function BookingList() {
 
   // ADD THIS: Update total whenever selectedCheckOut changes
   useEffect(() => {
-    if (selectedCheckOut && selectedCheckOut.length > 0) {
+    if (
+      selectedCheckOut &&
+      selectedCheckOut.length > 0 &&
+      bookings.length > 0
+    ) {
+      console.log(selectedCheckOut);
       const totalAmount = calculateTotalAmount(selectedCheckOut);
       console.log(selectedCheckOut.length);
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
@@ -618,10 +632,9 @@ function BookingList() {
           params.append("modal", "checkOut");
         }
 
-      params.append("fromDate", fromDate);
-params.append("toDate", toDate);
-       
-       
+        params.append("fromDate", fromDate);
+        params.append("toDate", toDate);
+
         const res = await api.get(
           `/api/sUsers/getBookings/${cmp_id}?${params}`,
           {
@@ -669,7 +682,7 @@ params.append("toDate", toDate);
       }
     },
 
-    [cmp_id, filterByRoom, roomId, location.pathname,fromDate, toDate],
+    [cmp_id, filterByRoom, roomId, location.pathname, fromDate, toDate],
   );
 
   useEffect(() => {
@@ -1479,26 +1492,27 @@ params.append("toDate", toDate);
         })),
       };
     });
-// ── paste this block right before the dispatch call ──────────────────
-      const customerGroups = {};
+    // ── paste this block right before the dispatch call ──────────────────
+    const customerGroups = {};
 
     roomAssignments.forEach((d) => {
       // customer is stored as selectedCustomer in checkout objects
       const custId = String(
-        d?.selectedCustomer?._id ||
-        d?.customerId?._id ||
-        d?.customerId ||
-        ""
+        d?.selectedCustomer?._id || d?.customerId?._id || d?.customerId || "",
       );
 
       if (!customerGroups[custId]) {
         customerGroups[custId] = { ...d };
         customerGroups[custId].selectedRooms = [...(d.selectedRooms || [])];
-        customerGroups[custId].allCheckInIds = [...(d.allCheckInIds || [d._id])];
+        customerGroups[custId].allCheckInIds = [
+          ...(d.allCheckInIds || [d._id]),
+        ];
         customerGroups[custId].advanceAmount = Number(d.advanceAmount || 0);
       } else {
         customerGroups[custId].selectedRooms.push(...(d.selectedRooms || []));
-        customerGroups[custId].allCheckInIds.push(...(d.allCheckInIds || [d._id]));
+        customerGroups[custId].allCheckInIds.push(
+          ...(d.allCheckInIds || [d._id]),
+        );
         customerGroups[custId].advanceAmount += Number(d.advanceAmount || 0);
       }
     });
@@ -1507,7 +1521,10 @@ params.append("toDate", toDate);
       checkoutMode === "single"
         ? Object.values(customerGroups)
         : roomAssignments;
-        console.log("roomAssignments sample:", JSON.stringify(roomAssignments[0], null, 2));
+    console.log(
+      "roomAssignments sample:",
+      JSON.stringify(roomAssignments[0], null, 2),
+    );
     dispatch(
       setPrintDetails({
         selectedCheckOut: finalRoomAssignments, // ✅ changed
@@ -1627,7 +1644,11 @@ params.append("toDate", toDate);
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
       <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
         <div className="w-18 text-center">SL.NO</div>
-        <div className="w-32 text-center">{location.pathname == "/sUsers/checkOutList" ? "CHECKOUT DATE" :"BOOKING DATE"}</div>
+        <div className="w-32 text-center">
+          {location.pathname == "/sUsers/checkOutList"
+            ? "CHECKOUT DATE"
+            : "BOOKING DATE"}
+        </div>
         <div className="w-32 text-center">
           {location.pathname == "/sUsers/checkOutList"
             ? "CHECKOUT NO"
@@ -1640,7 +1661,11 @@ params.append("toDate", toDate);
 
       <div className="hidden md:flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider">
         <div className="w-10 text-center">SL.NO</div>
-        <div className="w-28 text-center">{location.pathname == "/sUsers/checkOutList" ? "CHECKOUT DATE" :"BOOKING DATE"}</div>
+        <div className="w-28 text-center">
+          {location.pathname == "/sUsers/checkOutList"
+            ? "CHECKOUT DATE"
+            : "BOOKING DATE"}
+        </div>
         <div className="w-32 text-center">
           {location.pathname === "/sUsers/checkOutList"
             ? "CHECKOUT NO"
@@ -1760,7 +1785,9 @@ params.append("toDate", toDate);
             </div>
 
             <div className="w-28 text-center text-gray-600 text-xs">
-              {location.pathname == "/sUsers/checkOutList" ? formatDate(el?.checkOutDate) : formatDate(el?.bookingDate)}
+              {location.pathname == "/sUsers/checkOutList"
+                ? formatDate(el?.checkOutDate)
+                : formatDate(el?.bookingDate)}
             </div>
 
             <div className="w-32 text-center text-gray-700 font-semibold text-xs">
@@ -2212,20 +2239,20 @@ params.append("toDate", toDate);
               },
             ]}
           />
-        
-<SearchBar
-  onType={searchData}
-  toggle={true}
-  from={location.pathname}
-  onDateChange={({ from, to }) => {
-    setFromDate(from);
-    setToDate(to);
-    setPage(1);
-    pageRef.current = 1;
-    setBookings([]);
-    setHasMore(true);
-  }}
-/>
+
+          <SearchBar
+            onType={searchData}
+            toggle={true}
+            from={location.pathname}
+            onDateChange={({ from, to }) => {
+              setFromDate(from);
+              setToDate(to);
+              setPage(1);
+              pageRef.current = 1;
+              setBookings([]);
+              setHasMore(true);
+            }}
+          />
         </div>
 
         {!loader && !isLoading && bookings?.length === 0 && (

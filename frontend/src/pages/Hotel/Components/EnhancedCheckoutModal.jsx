@@ -56,6 +56,7 @@ export default function EnhancedCheckoutModal({
               const originalStayDays = room.stayDays || 1;
 
               const originalBaseAmount = room.baseAmount || 0;
+              console.log(originalBaseAmount);
               const originalTaxAmount = room.taxAmount || 0;
               const originalFoodPlanWithTax = room.foodPlanAmountWithTax || 0;
               const originalFoodPlanWithoutTax =
