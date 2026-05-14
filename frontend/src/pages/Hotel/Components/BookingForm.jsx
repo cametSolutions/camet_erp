@@ -160,6 +160,7 @@ const [idProof, setIdProof] = useState({
 
 useEffect(() => {
   if (editData) {
+       console.log("editData", editData);
     setSelectedParty(editData?.customerId);
     setSelectedGuest(editData?.guestId);
     setHotelAgent(editData?.agentId);
