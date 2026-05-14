@@ -875,7 +875,7 @@ const complementaryWithTax =
         // discountAmount: previewDiscount,
         note,
         discountBasedOnGrossAmount: discountBasedOnGrossAmount,
-          complementaryWithTax: complementaryWithTax, 
+        complementaryWithTax: complementaryWithTax, 
       };
 
       console.log(payment);
