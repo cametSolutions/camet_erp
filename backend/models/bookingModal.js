@@ -78,10 +78,9 @@ const selectedRoomSchema = new mongoose.Schema({
     Primary_user_id: mongoose.Schema.Types.ObjectId,
   },
   dateTariffs: {
-    type: Map,
-    of: Number,
-    default: {},
-  },
+  type: Object,
+  default: {},
+},
   pax: Number,
   priceLevelRate: String,
   stayDays: Number,

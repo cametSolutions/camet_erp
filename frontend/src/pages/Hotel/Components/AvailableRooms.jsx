@@ -133,6 +133,7 @@ function AvailableRooms({
       if (formData?.selectedRooms?.length > 0) {
         const updatedBookings = await Promise.all(
           formData.selectedRooms.map(async (booking) => {
+            console.log(booking);
             const normalizedBooking = {
               roomId: booking.roomId || booking._id,
               roomName: booking.roomName,
@@ -168,11 +169,13 @@ function AvailableRooms({
               otherChargeDetails: booking.otherChargeDetails,
               discountAmount: booking.discountAmount,
               otherChargeAmount: booking.otherChargeAmount,
+
             };
             const taxCalculation = await calculateTax(normalizedBooking);
             return taxCalculation;
           }),
         );
+        console.log(updatedBookings);
         setBookings(updatedBookings);
       } else if (rooms?.length > 0 && selectedRoomId) {
         let specificRoom = rooms.find((room) => room._id === selectedRoomId);

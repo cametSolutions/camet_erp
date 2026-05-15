@@ -436,16 +436,19 @@ const HotelDashboard = () => {
     }
   };
 
-  const handleRoomSwapConfirm = async () => {
-    try {
-      // Refresh rooms data after successful swap
-      await fetchRooms(selectedDate);
-      setShowRoomSwapModal(false);
-      setSelectedRoomData(null);
-    } catch (error) {
-      console.error("Error refreshing data after room swap:", error);
-    }
-  };
+// ✅ FIXED — fetches both room statuses AND booking details together
+const handleRoomSwapConfirm = async () => {
+  try {
+    await Promise.all([
+      fetchRooms(selectedDate),
+      fetchDateBasedData(selectedDate), // ✅ refreshes tooltipData with new booking info
+    ]);
+    setShowRoomSwapModal(false);
+    setSelectedRoomData(null);
+  } catch (error) {
+    console.error("Error refreshing data after room swap", error);
+  }
+};
 
   // Calculate status counts
   const getStatusCounts = () => {
