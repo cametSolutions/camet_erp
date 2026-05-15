@@ -37,6 +37,7 @@ import {
   ArrowLeftRight,
   Pause,
   Play,
+  FileCheck
 } from "lucide-react";
 import useFetch from "@/customHook/useFetch";
 import PrintModal from "../Components/PrintModal";
@@ -2908,7 +2909,7 @@ function BookingList() {
                                     </div>
 
                                     {/* Source */}
-                                    <div className="col-span-4">
+                                    <div className="col-span-3">
                                       <select
                                         disabled={rowLocked}
                                         value={row.source}
@@ -2996,6 +2997,19 @@ function BookingList() {
                                         />
                                       </div>
                                     </div>
+                                    {row.underCategory === "food" && (
+                                      <div className="col-span-1 flex justify-center">
+                                        <button
+                                          onClick={() =>
+                                            removeSplitPaymentRow(index)
+                                          }
+                                          className="w-6 h-6 rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+                                          title="Remove row"
+                                        >
+                                          <FileCheck  className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                    )}
 
                                     {/* Delete — always allowed so user can free up allocation */}
                                     <div className="col-span-1 flex justify-center">
