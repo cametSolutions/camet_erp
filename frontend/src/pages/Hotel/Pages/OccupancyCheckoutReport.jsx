@@ -118,11 +118,13 @@ useEffect(() => {
       "Guest Name": item.guestName,
       Company: item.company,
       Pax: item.pax,
+      ExtraPax : item.additionalPax,
       Arrival: `${item.arrivalDate || ""} ${item.arrivalTime || ""}`.trim(),
       Departure:
         `${item.departureDate || ""} ${item.departureTime || ""}`.trim(),
       Plan: item.plan,
       Tariff: item.tariff,
+      TariffWithPax: item.tariff,
       "Disc %": item.discountPercent,
       "Discount Amount": item.discountAmount,
     }));
@@ -380,10 +382,13 @@ useEffect(() => {
                     <th className="px-1.5 py-1.5">Guest Name</th>
                     <th className="px-1.5 py-1.5">Company</th>
                     <th className="px-1.5 py-1.5 text-right">Pax</th>
+                    <th className="px-1.5 py-1.5">Ex Person</th>
                     <th className="px-1.5 py-1.5">Arrival</th>
                     <th className="px-1.5 py-1.5">Departure</th>
                     <th className="px-1.5 py-1.5">Plan</th>
                     <th className="px-1.5 py-1.5 text-right">Tariff</th>
+                    <th className="px-1.5 py-1.5 text-right">Extra Person</th>
+                     <th className="px-1.5 py-1.5 text-right">Total Tariff</th>
                     <th className="px-1.5 py-1.5 text-right">Disc %</th>
                     <th className="px-1.5 py-1.5 text-right">Discount Amt.</th>
                   </tr>
@@ -424,6 +429,9 @@ useEffect(() => {
                           <td className="px-1.5 py-1.5 text-right">
                             {row.pax}
                           </td>
+                            <td className="px-1.5 py-1.5 text-center">
+                            {row.additionalPax}
+                          </td>
                           <td className="px-1.5 py-1.5">
                             {formatDateTime(row.arrivalDate) +
                               " " +
@@ -437,6 +445,12 @@ useEffect(() => {
                           <td className="px-1.5 py-1.5">{row.plan}</td>
                           <td className="px-1.5 py-1.5 text-right">
                             {row.tariff}
+                          </td>
+                            <td className="px-1.5 py-1.5 text-right">
+                            {row.extraPersonTariff}
+                          </td>
+                           <td className="px-1.5 py-1.5 text-right">
+                            {row.totalTariffWithPax}
                           </td>
                           <td className="px-1.5 py-1.5 text-right">
                             {row.discountPercent}
