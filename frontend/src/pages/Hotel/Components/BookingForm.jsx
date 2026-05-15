@@ -160,6 +160,7 @@ const [idProof, setIdProof] = useState({
 
 useEffect(() => {
   if (editData) {
+       console.log("editData", editData);
     setSelectedParty(editData?.customerId);
     setSelectedGuest(editData?.guestId);
     setHotelAgent(editData?.agentId);
@@ -228,6 +229,7 @@ useEffect(() => {
       otherChargeDetails: editData?.otherChargeDetails || [],
       addFoodPlanWithRate: editData?.addFoodPlanWithRate,
       roomSwapHistory: editData?.roomSwapHistory || [],
+      addTaxWithRate: editData?.addTaxWithRate || false,
     }));
 
     setIncludeFoodRateWithRoom(editData?.addFoodPlanWithRate);
@@ -273,7 +275,7 @@ useEffect(() => {
   // on change function
   const handleChange = (e) => {
     const { name, value } = e.target;
-
+console.log(name, value)
     if (name === "country") setCountry(value);
 
     if (name === "arrivalDate") {
@@ -348,7 +350,7 @@ useEffect(() => {
       const checkout = new Date(formData.checkOutDate);
 
       // Check if currentDate is within the range
-      if (current >= arrival && current < checkout) {
+      if (current >= arrival && current <= checkout) {
         setFormData((prev) => ({ ...prev, [name]: value }));
       } else {
         // Optional: alert or toast if not valid
@@ -695,11 +697,11 @@ console.log(party);
         setFormData((prev) => ({
           ...prev,
           guestName: search,
-          guestId: "",
-          guestCountry: "",
-          guestState: "",
-          guestPinCode: "",
-          guestDetailedAddress: "",
+          // guestId: "",
+          // guestCountry: "",
+          // guestState: "",
+          // guestPinCode: "",
+          // guestDetailedAddress: "",
         }));
       }
 
@@ -1398,23 +1400,17 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
     const previousAdvance = Number(editData?.previousAdvance || 0);
     const grandTotal = Number(formData?.grandTotal || 0);
     const totalAdvance = Number(editData?.totalAdvance || 0 ) + Number(value || 0);
-    const maxAllowed = grandTotal - previousAdvance;
 
-    console.log("advanceAmount", advanceAmount);
-    console.log("grandTotal", grandTotal);
-    console.log("previousAdvance", editData?.totalAdvance);
-    console.log("totalAdvance", totalAdvance);
+    // if (advanceAmount > maxAllowed) {
+    //   setErrorObject((prev) => ({
+    //     ...prev,
+    //     advanceAmount:
+    //       "Advance amount should be less than or equal to grand total",
+    //   }));
+    //   return;
+    // }
 
-    if (advanceAmount > maxAllowed) {
-      setErrorObject((prev) => ({
-        ...prev,
-        advanceAmount:
-          "Advance amount should be less than or equal to grand total",
-      }));
-      return;
-    }
-
-    setErrorObject((prev) => ({ ...prev, advanceAmount: "" }));
+    // setErrorObject((prev) => ({ ...prev, advanceAmount: "" }));
 
     if (isFor === "deliveryNote" || isFor === "sales") {
       console.log("advanceAmount", advanceAmount);

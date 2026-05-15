@@ -94,9 +94,6 @@ function BookingList() {
     additionalChargeDataBasedOnSelection,
     setAdditionalChargeDataBasedOnSelection,
   ] = useState([]);
-
-  const [additionalChargeIncludeTax, setAdditionalChargeIncludeTax] =
-    useState(true);
   // NEW: State for split payment rows and sources
   const [splitPaymentRows, setSplitPaymentRows] = useState([
     {
@@ -116,12 +113,16 @@ function BookingList() {
     },
   ]);
 
+  console.log(additionalChargeDataBasedOnSelection);
+
   const [remarks, setRemarks] = useState("");
   const [transactionNumber, setTransactionNumber] = useState("");
   const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(new Date().getDate() - 30)
-  const [fromDate, setFromDate] = useState(thirtyDaysAgo.toISOString().split("T")[0]);
-   const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
+  thirtyDaysAgo.setDate(new Date().getDate() - 30);
+  const [fromDate, setFromDate] = useState(
+    thirtyDaysAgo.toISOString().split("T")[0],
+  );
+  const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
   const ROOM_COLORS = [
     { bg: "#EEEDFE", border: "#AFA9EC", icon: "#534AB7", text: "#3C3489" },
     { bg: "#E1F5EE", border: "#5DCAA5", icon: "#0F6E56", text: "#085041" },
@@ -227,11 +228,17 @@ function BookingList() {
         Number(checkout?.bookingId?.advanceAmount || 0);
 
       const hasSwapping = rooms.some((r) => r?.swappingDateFrom);
-
       const checkoutTotal = rooms.reduce((sum, room) => {
+        // if (room.dateTariffs) {
+          
+        // }
+        console.log(room?.amountAfterTax);
+
         if (!hasSwapping) {
           return sum + Number(room?.amountAfterTax || 0);
         }
+
+ console.log(room);
 
         let stayDays = Number(room?.stayDays || 1);
 
@@ -305,19 +312,21 @@ function BookingList() {
         foodPlanAmount = configurations[0]?.addRateWithTax?.hotelSale
           ? 0
           : foodPlanAmount;
-
-        console.log(additionalPaxAmount);
+        console.log(taxAmount);
 
         return (
           sum + baseAmount + taxAmount + additionalPaxAmount + foodPlanAmount
         );
       }, 0);
 
-      console.log(total, checkoutTotal, advance);
-
-      return total + checkoutTotal;
+      return (
+        total +
+        (checkoutTotal - advance) +
+        Number(checkout?.otherChargeDetails?.amount || 0)
+      );
     }, 0);
   };
+
   useEffect(() => {
     if (location.pathname === "/sUsers/bookingList") {
       const fetchStatus = async () => {
@@ -352,11 +361,7 @@ function BookingList() {
     }
   }, [location.pathname, cmp_id]);
 
-  const handleDiscountChange = async (
-    discountValue,
-    discountType,
-    additionalChargeIncludeTax,
-  ) => {
+  const handleDiscountChange = async (discountValue, discountType) => {
     const selectedDiscount = additionalChargeData.find(
       (d) => d._id === selectedAdditionalCharge,
     );
@@ -373,23 +378,11 @@ function BookingList() {
       inputValue: discountValue,
       inputType: discountType,
       taxPercentage: selectedDiscount?.taxPercentage,
-      additionalChargeIncludeTax,
     });
-
-    let discountAmount = bookings.reduce((sum, booking) => {
-      return sum + Number(booking?.discountAmount || 0);
-    }, 0);
-    let otherChargeAmountAdded = bookings.reduce((sum, booking) => {
-      return sum + Number(booking?.otherChargeAmount || 0);
-    }, 0);
-
-    console.log(discountAmount, otherChargeAmountAdded, result.finalValue);
-
+    console.log(result);
     setSelectedDataForPayment((prev) => ({
       ...prev,
-      additionalChargeAmount:
-        result.finalValue + Math.abs(discountAmount - otherChargeAmountAdded),
-      discountAmount: result.finalValue + discountAmount,
+      additionalChargeAmount: result.finalValue,
     }));
     setAdditionalChargeDataBasedOnSelection([
       {
@@ -407,6 +400,7 @@ function BookingList() {
     setDiscountValue(Number(discountValue) || 0);
   };
 
+  console.log(additionalChargeDataBasedOnSelection);
   useEffect(() => {
     if (partylist && partylist.partyList.length) {
       setPartylist(partylist.partyList);
@@ -475,7 +469,6 @@ function BookingList() {
       const totalAmount = calculateTotalAmount(
         location?.state?.selectedCheckOut,
       );
-      console.log(paymentDetails?.paymentDetails?.selectedDataForPayment);
 
       setSelectedDataForPayment(
         paymentDetails?.paymentDetails?.selectedDataForPayment,
@@ -493,46 +486,33 @@ function BookingList() {
       selectedCheckOut.length > 0 &&
       bookings.length > 0
     ) {
+      console.log(selectedCheckOut);
       const totalAmount = calculateTotalAmount(selectedCheckOut);
-      console.log(totalAmount);
+      console.log(selectedCheckOut.length);
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
-        console.log(item?.totalAdvance);
-        return total + Number(item.totalAdvance || 0);
+        return (
+          total +
+          (Number(item.advanceAmount || 0) +
+            Number(item.bookingId?.advanceAmount || 0))
+        );
       }, 0);
       console.log(advanceAmount);
-      console.log(bookings);
 
       const restaurantSubTotal = selectedCheckOut.reduce((total, item) => {
         return total + (item.restaurantSubTotal || 0);
       }, 0);
       console.log(restaurantSubTotal);
 
-      let discountAmount = bookings.reduce((sum, booking) => {
-        return sum + Number(booking?.discountAmount || 0);
-      }, 0);
-      let otherChargeAmountAdded = bookings.reduce((sum, booking) => {
-        return sum + Number(booking?.otherChargeAmount || 0);
-      }, 0);
-      console.log(discountAmount, otherChargeAmountAdded);
-      console.log(totalAmount, advanceAmount, restaurantSubTotal);
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
         total: totalAmount,
         advanceAmount: advanceAmount,
         restaurantSubTotal: restaurantSubTotal,
-        totalWithRestaurantSubTotal:
-          totalAmount +
-          restaurantSubTotal +
-          otherChargeAmountAdded -
-          (advanceAmount + discountAmount),
-        additionalChargeAmount: otherChargeAmountAdded || 0,
-        discountAmount: discountAmount,
-        otherChargeAmount: otherChargeAmountAdded,
+        totalWithRestaurantSubTotal: totalAmount + restaurantSubTotal,
       }));
     }
   }, [selectedCheckOut]);
 
-  console.log(selectedDataForPayment);
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -652,10 +632,9 @@ function BookingList() {
           params.append("modal", "checkOut");
         }
 
-      params.append("fromDate", fromDate);
-params.append("toDate", toDate);
-       
-       
+        params.append("fromDate", fromDate);
+        params.append("toDate", toDate);
+
         const res = await api.get(
           `/api/sUsers/getBookings/${cmp_id}?${params}`,
           {
@@ -664,7 +643,7 @@ params.append("toDate", toDate);
         );
 
         let bookingData = res?.data?.bookingData || [];
-
+        
         console.log("bookingData", bookingData[0]);
 
         if (location.pathname === "/sUsers/checkInList") {
@@ -703,7 +682,7 @@ params.append("toDate", toDate);
       }
     },
 
-    [cmp_id, filterByRoom, roomId, location.pathname,fromDate, toDate],
+    [cmp_id, filterByRoom, roomId, location.pathname, fromDate, toDate],
   );
 
   useEffect(() => {
@@ -921,19 +900,11 @@ params.append("toDate", toDate);
       setPaymentError("");
     }
   };
-
   const handleSavePayment = async () => {
     console.log("hddd");
     console.log(selectedCheckOut);
     console.log(selectedCheckOut.length);
-    console.log(additionalChargeDataBasedOnSelection);
-    let additionalChargeArray = selectedCheckOut.flatMap(
-      (item) => item?.otherChargeDetails || [],
-    );
-    additionalChargeArray = [
-      ...additionalChargeArray,
-      ...additionalChargeDataBasedOnSelection,
-    ];
+    console.log(paymentMode);
 
     setSaveLoader(true);
     let paymentDetails;
@@ -951,7 +922,8 @@ params.append("toDate", toDate);
       );
 
       const expectedSplitTotal = Math.abs(
-        Number(selectedDataForPayment?.totalWithRestaurantSubTotal || 0),
+        Number(selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
+          Number(selectedDataForPayment?.additionalChargeAmount || 0),
       );
 
       const expectedRestaurantTotal = Number(
@@ -995,12 +967,14 @@ params.append("toDate", toDate);
         console.log("isAgent", selectedCustomerData);
         paymentDetails = {
           selectedDataForPayment: selectedDataForPayment,
-          additionalChargeArray: additionalChargeArray,
+          additionalChargeArray: additionalChargeDataBasedOnSelection,
           discountAmount:
-            selectedDataForPayment?.discountAmount > 0
-              ? selectedDataForPayment?.discountAmount
+            selectedDataForPayment?.additionalChargeAmount > 0
+              ? selectedDataForPayment?.additionalChargeAmount
               : 0,
-          cashAmount: selectedDataForPayment?.totalWithRestaurantSubTotal,
+          cashAmount:
+            selectedDataForPayment?.totalWithRestaurantSubTotal -
+            Number(selectedDataForPayment?.additionalChargeAmount || 0),
           onlineAmount: onlineAmount,
           selectedCash: selectedCash,
           selectedBank: "",
@@ -1013,7 +987,9 @@ params.append("toDate", toDate);
                   selectedCheckOut[0]?.customerId,
               source: selectedCash,
               sourceType: "cash",
-              amount: selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
+              amount:
+                selectedDataForPayment?.totalWithRestaurantSubTotal -
+                Number(selectedDataForPayment?.additionalChargeAmount || 0),
               customerName: isAgent
                 ? selectedCustomerData?.guestId?.partyName
                 : selectedCustomerData?.customerId?.partyName ||
@@ -1046,14 +1022,15 @@ params.append("toDate", toDate);
         console.log(selected);
         paymentDetails = {
           selectedDataForPayment: selectedDataForPayment,
-          additionalChargeArray: additionalChargeArray,
+          additionalChargeArray: additionalChargeDataBasedOnSelection,
           discountAmount:
-            selectedDataForPayment?.discountAmount > 0
-              ? selectedDataForPayment?.discountAmount
+            selectedDataForPayment?.additionalChargeAmount > 0
+              ? selectedDataForPayment?.additionalChargeAmount
               : 0,
           cashAmount: cashAmount,
           onlineAmount:
-            selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
+            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
+            Number(selectedDataForPayment?.additionalChargeAmount || 0),
           selectedCash: "",
           selectedBank: selectedBank,
           paymentMode: paymentMode,
@@ -1100,13 +1077,15 @@ params.append("toDate", toDate);
       }
       console.log(selectedCreditor);
       paymentDetails = {
-        additionalChargeArray: additionalChargeArray,
+        additionalChargeArray: additionalChargeDataBasedOnSelection,
         selectedDataForPayment: selectedDataForPayment,
         discountAmount:
-          selectedDataForPayment?.discountAmount > 0
-            ? selectedDataForPayment?.discountAmount
+          selectedDataForPayment?.additionalChargeAmount > 0
+            ? selectedDataForPayment?.additionalChargeAmount
             : 0,
-        cashAmount: selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
+        cashAmount:
+          selectedDataForPayment?.totalWithRestaurantSubTotal -
+          Number(selectedDataForPayment?.additionalChargeAmount || 0),
         selectedCreditor: selectedCreditor,
         remarks: remarks,
         paymentMode: paymentMode,
@@ -1114,7 +1093,9 @@ params.append("toDate", toDate);
           cash: 0,
           bank: 0,
           upi: 0,
-          credit: selectedDataForPayment?.totalWithRestaurantSubTotal || 0,
+          credit:
+            (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
+            Number(selectedDataForPayment?.additionalChargeAmount || 0),
           card: 0,
         },
       };
@@ -1126,7 +1107,8 @@ params.append("toDate", toDate);
       );
 
       let payment = (
-        selectedDataForPayment?.totalWithRestaurantSubTotal || 0
+        (selectedDataForPayment?.totalWithRestaurantSubTotal || 0) -
+        Number(selectedDataForPayment?.additionalChargeAmount || 0)
       ).toFixed(2);
       console.log("Paujsdf", totalSplitAmount, payment);
 
@@ -1178,10 +1160,10 @@ params.append("toDate", toDate);
       console.log(splitPaymentRows);
       paymentDetails = {
         selectedDataForPayment: selectedDataForPayment,
-        additionalChargeArray: additionalChargeArray,
+        additionalChargeArray: additionalChargeDataBasedOnSelection,
         discountAmount:
-          selectedDataForPayment?.discountAmount > 0
-            ? selectedDataForPayment?.discountAmount
+          selectedDataForPayment?.additionalChargeAmount > 0
+            ? selectedDataForPayment?.additionalChargeAmount
             : 0,
         cashAmount: totalCash,
         onlineAmount: totalOnline,
@@ -1510,19 +1492,74 @@ params.append("toDate", toDate);
         })),
       };
     });
+    // ── paste this block right before the dispatch call ──────────────────
+    const customerGroups = {};
 
+    roomAssignments.forEach((d) => {
+      // customer is stored as selectedCustomer in checkout objects
+      const custId = String(
+        d?.selectedCustomer?._id || d?.customerId?._id || d?.customerId || "",
+      );
+
+      if (!customerGroups[custId]) {
+        customerGroups[custId] = { ...d };
+        customerGroups[custId].selectedRooms = [...(d.selectedRooms || [])];
+        customerGroups[custId].allCheckInIds = [
+          ...(d.allCheckInIds || [d._id]),
+        ];
+        customerGroups[custId].advanceAmount = Number(d.advanceAmount || 0);
+      } else {
+        customerGroups[custId].selectedRooms.push(...(d.selectedRooms || []));
+        customerGroups[custId].allCheckInIds.push(
+          ...(d.allCheckInIds || [d._id]),
+        );
+        customerGroups[custId].advanceAmount += Number(d.advanceAmount || 0);
+      }
+    });
+
+    const finalRoomAssignments =
+      checkoutMode === "single"
+        ? Object.values(customerGroups)
+        : roomAssignments;
+    console.log(
+      "roomAssignments sample:",
+      JSON.stringify(roomAssignments[0], null, 2),
+    );
+    dispatch(
+      setPrintDetails({
+        selectedCheckOut: finalRoomAssignments, // ✅ changed
+        customerId: checkoutData[0]?.customerId?._id,
+        isForPreview: false,
+        checkoutMode,
+        checkinIds: checkinids,
+        roomAssignments: finalRoomAssignments, // ✅ changed
+        isPartialCheckout: checkoutData.some((co) => co.isPartialCheckout),
+      }),
+    );
+
+    navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+      state: {
+        selectedCheckOut: finalRoomAssignments, // ✅ changed
+        customerId: checkoutData[0]?.customerId?._id,
+        isForPreview: true,
+        checkoutMode,
+        checkinIds: checkinids,
+        roomAssignments: finalRoomAssignments, // ✅ changed
+        isPartialCheckout: checkoutData.some((co) => co.isPartialCheckout),
+      },
+    });
     console.log(updatedCheckoutData);
     console.log(checkoutData[0]);
     console.log(checkoutMode);
 
     dispatch(
       setPrintDetails({
-        selectedCheckOut: roomAssignments,
+        selectedCheckOut: finalRoomAssignments,
         customerId: checkoutData[0]?.customerId?._id,
         isForPreview: false,
         checkoutMode,
         checkinIds: checkinids,
-        roomAssignments: roomAssignments,
+        roomAssignments: finalRoomAssignments,
         isPartialCheckout: checkoutData.some((co) => co.isPartialCheckout),
       }),
     );
@@ -1530,12 +1567,12 @@ params.append("toDate", toDate);
     console.log("Hhhhhhhh");
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
-        selectedCheckOut: roomAssignments,
+        selectedCheckOut: finalRoomAssignments,
         customerId: checkoutData[0]?.customerId?._id,
         isForPreview: true,
         checkoutMode,
         checkinIds: checkinids,
-        roomAssignments: roomAssignments,
+        roomAssignments: finalRoomAssignments,
         isPartialCheckout: checkoutData.some((co) => co.isPartialCheckout),
       },
     });
@@ -1607,7 +1644,11 @@ params.append("toDate", toDate);
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
       <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
         <div className="w-18 text-center">SL.NO</div>
-        <div className="w-32 text-center">{location.pathname == "/sUsers/checkOutList" ? "CHECKOUT DATE" :"BOOKING DATE"}</div>
+        <div className="w-32 text-center">
+          {location.pathname == "/sUsers/checkOutList"
+            ? "CHECKOUT DATE"
+            : "BOOKING DATE"}
+        </div>
         <div className="w-32 text-center">
           {location.pathname == "/sUsers/checkOutList"
             ? "CHECKOUT NO"
@@ -1620,7 +1661,11 @@ params.append("toDate", toDate);
 
       <div className="hidden md:flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider">
         <div className="w-10 text-center">SL.NO</div>
-        <div className="w-28 text-center">{location.pathname == "/sUsers/checkOutList" ? "CHECKOUT DATE" :"BOOKING DATE"}</div>
+        <div className="w-28 text-center">
+          {location.pathname == "/sUsers/checkOutList"
+            ? "CHECKOUT DATE"
+            : "BOOKING DATE"}
+        </div>
         <div className="w-32 text-center">
           {location.pathname === "/sUsers/checkOutList"
             ? "CHECKOUT NO"
@@ -1689,7 +1734,7 @@ params.append("toDate", toDate);
       if (!dateString) return "-";
       return new Date(dateString).toLocaleDateString("en-GB");
     };
-    console.log(el);
+
     return (
       <div style={style} className="border-b border-gray-200 bg-white">
         {/* 🔹 MAIN ROW */}
@@ -1740,7 +1785,9 @@ params.append("toDate", toDate);
             </div>
 
             <div className="w-28 text-center text-gray-600 text-xs">
-              {location.pathname == "/sUsers/checkOutList" ? formatDate(el?.checkOutDate) : formatDate(el?.bookingDate)}
+              {location.pathname == "/sUsers/checkOutList"
+                ? formatDate(el?.checkOutDate)
+                : formatDate(el?.bookingDate)}
             </div>
 
             <div className="w-32 text-center text-gray-700 font-semibold text-xs">
@@ -1792,9 +1839,12 @@ params.append("toDate", toDate);
               ₹{el?.selectedRooms?.[0]?.foodPlanAmountWithOutTax || "0.00"}
             </div>
 
-            <div className="w-28 text-center text-gray-600 text-xs font-medium">
-              {getTravelAgentName(el) || el?.agentId?.partyName}
-            </div>
+          <div
+  className="w-28 text-center text-gray-600 text-xs font-medium truncate cursor-default"
+  title={getTravelAgentName(el) || el?.agentId?.partyName || "-"}
+>
+  {getTravelAgentName(el) || el?.agentId?.partyName || "-"}
+</div>
 
             {isCheckoutList && (
               <div className="w-28 text-center text-gray-600 text-xs font-medium">
@@ -1816,11 +1866,9 @@ params.append("toDate", toDate);
 
             <div className="w-28 text-center text-gray-800 font-semibold text-xs">
               ₹
-              {el?.displayTotal > 0
-                ? el?.displayTotal
-                : el?.grandTotal
-                  ? formatCurrency(el.roomTotal).replace("₹", "")
-                  : "00.00"}
+              {el?.displayTotal > 0 ? el?.displayTotal : el?.grandTotal
+                ? formatCurrency(el.roomTotal).replace("₹", "")
+                : "00.00"}
             </div>
 
             {/* 🔹 ACTION BUTTONS */}
@@ -2191,20 +2239,20 @@ params.append("toDate", toDate);
               },
             ]}
           />
-        
-<SearchBar
-  onType={searchData}
-  toggle={true}
-  from={location.pathname}
-  onDateChange={({ from, to }) => {
-    setFromDate(from);
-    setToDate(to);
-    setPage(1);
-    pageRef.current = 1;
-    setBookings([]);
-    setHasMore(true);
-  }}
-/>
+
+          <SearchBar
+            onType={searchData}
+            toggle={true}
+            from={location.pathname}
+            onDateChange={({ from, to }) => {
+              setFromDate(from);
+              setToDate(to);
+              setPage(1);
+              pageRef.current = 1;
+              setBookings([]);
+              setHasMore(true);
+            }}
+          />
         </div>
 
         {!loader && !isLoading && bookings?.length === 0 && (
@@ -2373,16 +2421,11 @@ params.append("toDate", toDate);
                     </span>
                   </label>
                   <div className="flex items-center gap-1.5 mb-3">
-                    {/* Amount / % toggle */}
                     <button
                       type="button"
                       onClick={() => {
                         setDiscountType("amount");
-                        handleDiscountChange(
-                          discountValue,
-                          "amount",
-                          additionalChargeIncludeTax,
-                        );
+                        handleDiscountChange(discountValue, "amount");
                       }}
                       className={`px-3 py-1 rounded-lg border text-[11px] font-medium transition-colors ${
                         discountType === "amount"
@@ -2392,16 +2435,11 @@ params.append("toDate", toDate);
                     >
                       Amount
                     </button>
-
                     <button
                       type="button"
                       onClick={() => {
                         setDiscountType("percentage");
-                        handleDiscountChange(
-                          discountValue,
-                          "percentage",
-                          additionalChargeIncludeTax,
-                        );
+                        handleDiscountChange(discountValue, "percentage");
                       }}
                       className={`px-3 py-1 rounded-lg border text-[11px] font-medium transition-colors ${
                         discountType === "percentage"
@@ -2411,44 +2449,6 @@ params.append("toDate", toDate);
                     >
                       %
                     </button>
-
-                    {/* INC / EXC tax toggle */}
-                    {selectedAdditionalCharge ? (
-                      <div className="flex overflow-hidden rounded-lg border border-slate-200 dark:border-neutral-700">
-                        {[
-                          { val: true, label: "INC" },
-                          { val: false, label: "EXC" },
-                        ].map(({ val, label }) => (
-                          <button
-                            key={label}
-                            type="button"
-                            onClick={() => {
-                              setAdditionalChargeIncludeTax(val);
-                              handleDiscountChange(
-                                discountValue,
-                                "amount",
-                                val,
-                              );
-                            }}
-                            className={`flex-1 px-2.5 py-1 text-[11px] font-extrabold tracking-[0.04em] transition ${
-                              additionalChargeIncludeTax === val // ✅ fixed: compare per-button
-                                ? val
-                                  ? "bg-amber-500 text-white"
-                                  : "bg-blue-600 text-white"
-                                : "bg-white dark:bg-neutral-900 text-slate-400"
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-neutral-700 px-2.5 py-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300">
-                          No Tax
-                        </span>
-                      </div>
-                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -2471,10 +2471,7 @@ params.append("toDate", toDate);
                     </div>
                     <div>
                       <label className="block text-[11px] text-gray-500 mb-1">
-                        Amount (
-                        {additionalChargeDataBasedOnSelection[0]?.finalValue ||
-                          0}
-                        )
+                        Amount
                       </label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[12px]">
@@ -2484,11 +2481,7 @@ params.append("toDate", toDate);
                           type="number"
                           value={discountValue}
                           onChange={(e) =>
-                            handleDiscountChange(
-                              e.target.value,
-                              discountType,
-                              additionalChargeIncludeTax,
-                            )
+                            handleDiscountChange(e.target.value, discountType)
                           }
                           className="w-full pl-6 pr-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-gray-800 dark:text-gray-200 text-[12px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
                           placeholder="0.00"
@@ -2655,10 +2648,10 @@ params.append("toDate", toDate);
                         (Number(selectedDataForPayment?.total) || 0) +
                         Number(
                           selectedDataForPayment?.restaurantSubTotal || 0,
-                        ) +
-                        Number(selectedDataForPayment?.otherChargeAmount || 0) -
-                        (Number(selectedDataForPayment?.discountAmount || 0) +
-                          Number(selectedDataForPayment?.advanceAmount || 0));
+                        ) -
+                        Number(
+                          selectedDataForPayment?.additionalChargeAmount || 0,
+                        );
 
                       const totalEntered = splitPaymentRows.reduce(
                         (sum, row) => sum + (parseFloat(row.amount) || 0),
@@ -3402,7 +3395,10 @@ params.append("toDate", toDate);
                       <span>Total Amount</span>
                       <span className="text-gray-700 dark:text-gray-300 font-medium">
                         ₹
-                        {Number(selectedDataForPayment?.total)?.toFixed(2) ||
+                        {(
+                          Number(selectedDataForPayment?.total) +
+                          Number(selectedDataForPayment?.advanceAmount)
+                        )?.toFixed(2) ||
                           (
                             Number(selectedCheckOut[0]?.balanceToPay) +
                             Number(selectedCheckOut[0]?.advance)
@@ -3434,11 +3430,6 @@ params.append("toDate", toDate);
                           selectedCheckOut?.[0]?.restaurantSubTotal ??
                           0,
                       );
-
-                      const dicountAmount = Number(
-                        selectedDataForPayment?.additionalChargeAmount || 0,
-                      );
-
                       return (
                         restaurantTotal > 0 && (
                           <div className="flex justify-between text-[12px] text-gray-500 dark:text-gray-400">
@@ -3451,26 +3442,15 @@ params.append("toDate", toDate);
                       );
                     })()}
 
-                    {Number(selectedDataForPayment?.discountAmount || 0) >
-                      0 && (
+                    {Number(
+                      selectedDataForPayment?.additionalChargeAmount || 0,
+                    ) > 0 && (
                       <div className="flex justify-between text-[12px] text-gray-500 dark:text-gray-400">
                         <span>Discount Amount</span>
                         <span className="text-gray-700 dark:text-gray-300 font-medium">
                           (-) ₹{" "}
                           {Number(
-                            selectedDataForPayment?.discountAmount || 0,
-                          ).toFixed(2)}
-                        </span>
-                      </div>
-                    )}
-                    {Number(selectedDataForPayment?.otherChargeAmount || 0) >
-                      0 && (
-                      <div className="flex justify-between text-[12px] text-gray-500 dark:text-gray-400">
-                        <span>Other Charege Amount</span>
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">
-                          (+) ₹{" "}
-                          {Number(
-                            selectedDataForPayment?.otherChargeAmount || 0,
+                            selectedDataForPayment?.additionalChargeAmount || 0,
                           ).toFixed(2)}
                         </span>
                       </div>
@@ -3480,15 +3460,14 @@ params.append("toDate", toDate);
                       <span className="text-[13px] font-semibold text-gray-800 dark:text-gray-100">
                         Amount To Pay
                       </span>
-
                       <span className="text-[15px] font-bold text-blue-600 dark:text-blue-400">
                         ₹
                         {(
                           selectedDataForPayment?.total +
-                          Number(selectedDataForPayment?.restaurantSubTotal) +
-                          Number(selectedDataForPayment?.otherChargeAmount) -
-                          (Number(selectedDataForPayment?.advanceAmount || 0) +
-                            Number(selectedDataForPayment?.discountAmount || 0))
+                          Number(selectedDataForPayment?.restaurantSubTotal) -
+                          Number(
+                            selectedDataForPayment?.additionalChargeAmount || 0,
+                          )
                         ).toFixed(2) ||
                           (
                             Number(selectedCheckOut[0]?.balanceToPay) +

@@ -166,7 +166,7 @@ const drawFooter = (doc, pageInBill, totalPagesInBill) => {
 };
 
 // ─── Guest Info Block ─────────────────────────────────────────────────────────
-const drawGuestInfo = (doc, billData, startY) => {
+const drawGuestInfo = (doc, billData, startY ,isForPreview) => {
   const pageWidth = doc.internal.pageSize.width;
   const contentW = pageWidth - 2 * MARGIN;
   const blockH = 38;
@@ -193,12 +193,14 @@ const drawGuestInfo = (doc, billData, startY) => {
     doc.setFont("helvetica", "normal");
     doc.text(`: ${value || ""}`, x + lw, y);
   };
-
+console.log(isForPreview)
   // Row 1
+  if(!isForPreview){
+    
   cell(lx, ly, "GRC No", billData?.guest?.grcNo || "");
-  cell(rx, ry, "Bill No", billData?.guest?.billNo || "", labelWR);
-  ly += ls; ry += ls;
-
+ cell(rx, ry, "Bill No", billData?.guest?.billNo || "", labelWR);
+ ly += ls; ry += ls;
+  }
   // Row 2
   cell(lx, ly, "GUEST", billData?.guest?.name || "");
   cell(rx, ry, "Date", billData?.stay?.billDate || "", labelWR);
@@ -206,18 +208,20 @@ const drawGuestInfo = (doc, billData, startY) => {
 
   // Row 3 – Address (may wrap) + Arrival
   doc.setFont("helvetica", "bold");
+   if (!isForPreview) {
   doc.text("Address", lx, ly);
   doc.setFont("helvetica", "normal");
+
   const addrMaxW = leftW - labelW - 6;
   const addrLines = doc.splitTextToSize(`: ${billData?.guest?.address || ""}`, addrMaxW);
   doc.text(addrLines, lx + labelW, ly);
   cell(rx, ry, "Arrival", billData?.stay?.arrival || "", labelWR);
   const addrH = Math.max(addrLines.length * 3.5, ls);
   ly += addrH; ry += ls;
-
+ }
   // Row 4
-  cell(lx, ly, "Phone", billData?.guest?.phone || "");
-  cell(rx, ry, "Departure", billData?.stay?.departure || "", labelWR);
+  !isForPreview && cell(lx, ly, "Phone", billData?.guest?.phone || "");
+ cell(rx, ry, "Departure", billData?.stay?.departure || "", labelWR);
   ly += ls; ry += ls;
 
   // Row 5
@@ -226,16 +230,16 @@ const drawGuestInfo = (doc, billData, startY) => {
   ly += ls; ry += ls;
 
   // Row 6 – conditional GST / Travel Agent  +  Tariff
-  if (billData?.guest?.gstNo) {
+  if (billData?.guest?.gstNo && !isForPreview) {
     cell(lx, ly, "GST No", billData?.guest?.gstNo || "");
-  } else if (billData?.guest?.travelAgent) {
+  } else if (billData?.guest?.travelAgent && !isForPreview) {
     cell(lx, ly, "Travel Agent", billData?.guest?.travelAgent || "", 24);
   }
   cell(rx, ry, "Tariff", String(billData?.stay?.tariff || ""), labelWR);
   ly += ls; ry += ls;
 
   // Row 7 – Company (if GST) + No. of Days
-  if (billData?.guest?.gstNo && billData?.guest?.companyName) {
+  if (billData?.guest?.gstNo && billData?.guest?.companyName && !isForPreview) {
     cell(lx, ly, "Company", billData?.guest?.companyName || "", 22);
   }
   cell(rx, ry, "No. of Days", String(billData?.stay?.days || ""), labelWR);
@@ -361,6 +365,7 @@ const drawSummaryAndPayment = (doc, billData, startY, isForPreview, paymentModeD
       Number(billData.summary.cgst).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
     ]);
   }
+  
 
   if (Number(billData?.summary?.restaurant || 0) > 0) {
     summaryRows.push([
@@ -529,6 +534,31 @@ const drawSummaryAndPayment = (doc, billData, startY, isForPreview, paymentModeD
   return Math.max(doc.lastAutoTable.finalY, startY) + 2;
 };
 
+const drawWatermark = (doc) => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  doc.saveGraphicsState();
+
+  doc.setGState(new doc.GState({ opacity: .2 }));
+  doc.setTextColor(150, 150, 150);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(52);
+
+  doc.text(
+    "PROFORMA INVOICE",
+    pageWidth - 80,
+    pageHeight -80,
+    {
+      align: "center",
+      angle: 45,
+    }
+  );
+
+  doc.restoreGraphicsState();
+};
+
 // ─── Draw one complete bill ───────────────────────────────────────────────────
 const drawSingleBill = async (
   doc,
@@ -544,7 +574,7 @@ const drawSingleBill = async (
   let y = await drawHeader(doc, billData, base64Logo);
 
   // 2. Guest info block
-  y = drawGuestInfo(doc, billData, y);
+  y = drawGuestInfo(doc, billData, y ,isForPreview);
 
   // 3. Charges table (handles page breaks internally)
   y = await drawChargesTable(doc, billData, y, base64Logo, billStartPage);
@@ -559,6 +589,9 @@ const drawSingleBill = async (
   // 5. Summary + Payment tables
   drawSummaryAndPayment(doc, billData, y, isForPreview, paymentModeDetails);
 
+  if (isForPreview) {
+  drawWatermark(doc);
+}
   // 6. Fix all page numbers for this bill now that we know total pages
   const finalPage = doc.internal.getCurrentPageInfo().pageNumber;
   const totalPagesInBill = finalPage - billStartPage + 1;
@@ -648,8 +681,8 @@ export const handleBillPrintInvoice = async (
 export const handleBillDownloadPDF = async (
   billDataOrArray,
   organization,
+  paymentModeDetails = [],
   isForPreview = false,
-  paymentModeDetails = []
 ) => {
   console.log(paymentModeDetails);
   await generateBillPrintPDF(

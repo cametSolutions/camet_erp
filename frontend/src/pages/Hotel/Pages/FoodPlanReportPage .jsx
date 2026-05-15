@@ -7,6 +7,12 @@ import { useSelector } from "react-redux";
 import TitleDiv from "@/components/common/TitleDiv";
 
 const getToday = () => new Date().toISOString().slice(0, 10);
+// Add this helper below getToday():
+const get29DaysAgo = () => {
+  const date = new Date();
+  date.setDate(date.getDate() - 29);
+  return date.toISOString().slice(0, 10);
+};
 
 const formatDisplayDate = (value) => {
   if (!value) return "";
@@ -21,8 +27,9 @@ const formatDisplayDate = (value) => {
 
 
 const FoodPlanReportPage = () => {
-  const [filters, setFilters] = useState({
-  fromDate: getToday(),
+ // Replace initial filters state:
+const [filters, setFilters] = useState({
+  fromDate: get29DaysAgo(),  // ✅ 29 days ago
   toDate: getToday(),
 });
 
@@ -73,11 +80,12 @@ const FoodPlanReportPage = () => {
     }
   };
 
-  useEffect(() => {
-    fetchReport();
-  }, []);
+  // Replace useEffect:
+useEffect(() => {
+  fetchReport();
+}, [filters.fromDate, filters.toDate]); // ✅ re-fetches when dates change
 
-  const handleChange = (e) => {
+const handleChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
   };

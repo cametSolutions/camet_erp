@@ -168,7 +168,8 @@ const OrdersDashboard = () => {
 
   const discountBasedOnGrossAmount =
     org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
-
+const complementaryWithTax =
+  org?.configurations?.[0]?.complementaryWithTax ?? false;
   const queryClient = useQueryClient(); // ✅ uncomment/move this to here
 
   const { data, refetch: refreshHook } = useQuery({
@@ -874,6 +875,7 @@ const OrdersDashboard = () => {
         // discountAmount: previewDiscount,
         note,
         discountBasedOnGrossAmount: discountBasedOnGrossAmount,
+        complementaryWithTax: complementaryWithTax, 
       };
 
       console.log(payment);

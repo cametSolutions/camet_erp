@@ -111,10 +111,10 @@ const HotelBillPrint = () => {
 
   useEffect(() => {
     if (selectedCheckOut?.length > 0) {
-      console.log(selectedCheckOut);
+      console.log(isForPreview);
       if (!isForPreview) {
         const rawData =
-          selectedCheckOut[0].restaurantPaymentSplittingData || [];
+          selectedCheckOut[0].checkoutpaymenttypedetails || [];
         console.log(rawData);
         // ✅ Convert to normal array
         const cleanData = rawData.map((item) =>
@@ -1268,9 +1268,9 @@ console.log(doc?.additionalPaxDetails);
     if (!multi.length) return;
     console.log(paymentModeDetails);
     if (!isPrint) {
-      handleBillDownloadPDF(multi, organization, paymentModeDetails); // pass array
+      handleBillDownloadPDF(multi, organization, paymentModeDetails , isForPreview); // pass array
     } else {
-      handleBillPrintInvoice(multi, organization, paymentModeDetails); // pass array
+      handleBillPrintInvoice(multi, organization, paymentModeDetails, isForPreview); // pass array
     }
   };
 
@@ -1574,22 +1574,46 @@ ${hotelName}`;
         className="font-sans bg-gray-100 p-5 min-h-screen"
         ref={printReference}
       >
+        
         {/* Render one complete bill per selectedCheckOut doc */}
         {bills.map((billData, pageIdx) => (
-          <div
-            key={pageIdx}
-            style={{
-              maxWidth: "21cm",
-              margin: "0 auto",
-              padding: "0.5cm",
-              backgroundColor: "white",
-              fontFamily: "Arial, sans-serif",
-              fontSize: "11px",
-              lineHeight: "1.1",
-              color: "#000",
-              pageBreakAfter: pageIdx < bills.length - 1 ? "always" : "auto",
-            }}
-          >
+        <div
+  key={pageIdx}
+  style={{
+    maxWidth: "21cm",
+    margin: "0 auto",
+    padding: "0.5cm",
+    backgroundColor: "white",
+    fontFamily: "Arial, sans-serif",
+    fontSize: "11px",
+    lineHeight: "1.1",
+    color: "#000",
+    pageBreakAfter: pageIdx < bills.length - 1 ? "always" : "auto",
+    position: "relative",   // ← add
+    overflow: "hidden",     // ← add
+  }}
+>
+  {/* Watermark */}
+  {isForPreview && (
+    <div style={{
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%) rotate(-45deg)",
+      fontSize: "80px",
+      fontWeight: "bold",
+      color: "rgba(0, 0, 0, 0.08)",
+      whiteSpace: "nowrap",
+      pointerEvents: "none",
+      zIndex: 0,
+      userSelect: "none",
+      letterSpacing: "8px",
+      width: "200%",
+      textAlign: "center",
+    }}>
+      PROFORMA INVOICE
+    </div>
+  )}
             {/* Header */}
             <div
               className="page-header flex"
@@ -1681,8 +1705,10 @@ ${hotelName}`;
                 }}
               >
                 <tbody>
+                  {!isForPreview && (
                   <tr>
-                    <td
+                    
+                     <td
                       style={{
                         width: "15%",
                         padding: "2px 0",
@@ -1690,7 +1716,8 @@ ${hotelName}`;
                       }}
                     >
                       GRC No
-                    </td>
+                    </td>  
+                   
                     <td style={{ width: "15%", padding: "2px 0" }}>
                       {billData?.guest?.grcNo}
                     </td>
@@ -1719,6 +1746,8 @@ ${hotelName}`;
                       {billData?.stay?.billDate}
                     </td>
                   </tr>
+                   )}
+                   
                   <tr>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       GUEST
@@ -1739,7 +1768,10 @@ ${hotelName}`;
                       {billData?.stay?.departure}
                     </td>
                   </tr>
+                  
                   <tr>
+                    {!isForPreview && (
+                      <>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       Address
                     </td>
@@ -1757,14 +1789,19 @@ ${hotelName}`;
                           <div key={index}>{line.trim()}</div>
                         ))}
                     </td>
-
+  
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       Plan
                     </td>
                     <td style={{ padding: "2px 0" }}>
                       {billData?.stay?.plan} Pax {billData?.stay?.pax}
                     </td>
+                                      </>
+)}
                   </tr>
+                  
+                  {!isForPreview && (
+                     <>
                   <tr>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       Phone
@@ -1783,7 +1820,6 @@ ${hotelName}`;
                     </td>
                     <td style={{ padding: "2px 0" }}>{billData?.stay?.days}</td>
                   </tr>
-
                   <tr>
                     {billData?.guest?.gstNo && (
                       <>
@@ -1806,7 +1842,9 @@ ${hotelName}`;
                       </>
                     )}
                   </tr>
-                  {billData?.guest?.gstNo && (
+                 </>
+                      )}
+                  {billData?.guest?.gstNo && !isForPreview && (
                     <>
                       <tr>
                         <td style={{ padding: "2px 0", fontWeight: "bold" }}>
@@ -2512,7 +2550,7 @@ ${hotelName}`;
                     minWidth: "120px",
                   }}
                 >
-                  Original Bill
+                  {isForPreview ? "Proforma Invoice" : "Original Bill"}
                   <br />
                   Page {pageIdx + 1}
                 </div>
