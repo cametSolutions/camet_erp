@@ -179,7 +179,7 @@ console.log(data);
     const names = foodPlanArray?.map((item) => item.planType).join(", ");
 
     return  names?.length > 0 ? `Food Paln: ${names}` : null;
-  };
+  }; 
 
   const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
   const discount = Number(
@@ -521,6 +521,7 @@ ${orgName}`;
 
   const paymentSplits = data?.paymentSplittingData || [];
   const prettyType = (type) => {
+    console.log("type", type);
     if (!type) return "";
     const map = { cash: "Cash", upi: "UPI", card: "Card", bank: "Bank" };
     return map[type] || type.toUpperCase();
@@ -533,7 +534,7 @@ ${orgName}`;
       .map((p) => (
         <>
           <div key={p.type} style={{ fontSize: "10px", fontWeight: "bold" }}>
-            {prettyType(p.type)} : ₹ {Math.round(p.amount).toFixed(2)}
+            {p.subsource} : ₹ {Math.round(p.amount).toFixed(2)}
           </div>
           {p?.credit_reference_type && (
             <div key={p.type} style={{ fontSize: "10px", fontWeight: "bold" }}>

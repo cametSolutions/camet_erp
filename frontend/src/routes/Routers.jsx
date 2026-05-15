@@ -1,463 +1,468 @@
-import { Route, Routes } from "react-router-dom"
-import { lazy, Suspense } from "react"
-const ProtectedSecRoute = lazy(() => import("./ProtectedSecRoute"))
-import SuspenseLoader from "@/components/common/SuspenseLoader"
-import { ErrorTestComponent } from "@/components/errorBoundaries/ErrorTestComponent"
-import OutstandingListOfAccVoucherEdit from "@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucherEdit"
-
+import { Route, Routes } from "react-router-dom";
+import { lazy, Suspense } from "react";
+const ProtectedSecRoute = lazy(() => import("./ProtectedSecRoute"));
+import SuspenseLoader from "@/components/common/SuspenseLoader";
+import { ErrorTestComponent } from "@/components/errorBoundaries/ErrorTestComponent";
+import OutstandingListOfAccVoucherEdit from "@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucherEdit";
 
 // Lazy load all components
-const SecHome = lazy(() => import("../pages/secUsers/SecHome"))
+const SecHome = lazy(() => import("../pages/secUsers/SecHome"));
 const Outstanding = lazy(
-  () => import("../pages/voucherReports/outstanding/Outstanding")
-)
-const TouristReport = lazy(
-  () => import("../pages/Hotel/Pages/TouristReport ")
-)
-const FoodPlanReportPage  = lazy(
-  () => import("../pages/Hotel/Pages/FoodPlanReportPage ")
-)
-const OccupancyCheckoutReport  = lazy(
-  () => import("../pages/Hotel/Pages/OccupancyCheckoutReport")
-)
+  () => import("../pages/voucherReports/outstanding/Outstanding"),
+);
+const TouristReport = lazy(() => import("../pages/Hotel/Pages/TouristReport "));
+const FoodPlanReportPage = lazy(
+  () => import("../pages/Hotel/Pages/FoodPlanReportPage "),
+);
+const OccupancyCheckoutReport = lazy(
+  () => import("../pages/Hotel/Pages/OccupancyCheckoutReport"),
+);
 
 const OutstandingDetails = lazy(
-  () => import("../pages/voucherReports/outstanding/OutstandingDetails")
-)
-const PaymentSec = lazy(() => import("../pages/secUsers/Payment"))
+  () => import("../pages/voucherReports/outstanding/OutstandingDetails"),
+);
+const PaymentSec = lazy(() => import("../pages/secUsers/Payment"));
 const Transaction = lazy(
-  () => import("../pages/voucherReports/DayBook/Transaction")
-)
-const EditOrg = lazy(() => import("../pages/masters/organization/EditOrg"))
-const DashboardSec = lazy(() => import("../pages/secUsers/dashboard/Dashboard"))
-const Hsn = lazy(() => import("../pages/masters/hsn/Hsn"))
-const Demo = lazy(() => import("../pages/secUsers/Demo"))
+  () => import("../pages/voucherReports/DayBook/Transaction"),
+);
+const EditOrg = lazy(() => import("../pages/masters/organization/EditOrg"));
+const DashboardSec = lazy(
+  () => import("../pages/secUsers/dashboard/Dashboard"),
+);
+const Hsn = lazy(() => import("../pages/masters/hsn/Hsn"));
+const Demo = lazy(() => import("../pages/secUsers/Demo"));
 const RetailersList = lazy(
-  () => import("../pages/masters/secondaryUsers/RetailersList")
-)
-const HsnList = lazy(() => import("../pages/masters/hsn/HsnList"))
-const EditHsn = lazy(() => import("../pages/masters/hsn/EditHsn"))
+  () => import("../pages/masters/secondaryUsers/RetailersList"),
+);
+const HsnList = lazy(() => import("../pages/masters/hsn/HsnList"));
+const EditHsn = lazy(() => import("../pages/masters/hsn/EditHsn"));
 const PartyListSecondary = lazy(
-  () => import("../pages/masters/party/PartyListSecondary")
-)
+  () => import("../pages/masters/party/PartyListSecondary"),
+);
 const AddPartySecondary = lazy(
-  () => import("../pages/masters/party/AddPartySecondary")
-)
+  () => import("../pages/masters/party/AddPartySecondary"),
+);
 const ProductListSecondary = lazy(
-  () => import("../pages/masters/product/ProductListSecondary")
-)
+  () => import("../pages/masters/product/ProductListSecondary"),
+);
 const EditPartySecondary = lazy(
-  () => import("../pages/masters/party/EditPartySecondary")
-)
+  () => import("../pages/masters/party/EditPartySecondary"),
+);
 const AddProductSecondary = lazy(
-  () => import("../pages/masters/product/AddProductSecondary")
-)
+  () => import("../pages/masters/product/AddProductSecondary"),
+);
 const EditProductSecondary = lazy(
-  () => import("../pages/masters/product/EditProductSecondary")
-)
+  () => import("../pages/masters/product/EditProductSecondary"),
+);
 const EditSecUsers = lazy(
-  () => import("../pages/masters/secondaryUsers/EditSecUsers")
-)
+  () => import("../pages/masters/secondaryUsers/EditSecUsers"),
+);
 const AddChargesListSecondary = lazy(
   () =>
-    import("../pages/secUsers/settilngs/serviceLedger/AddChargesListSecondary")
-)
+    import("../pages/secUsers/settilngs/serviceLedger/AddChargesListSecondary"),
+);
 const AdditionalChargesSecondary = lazy(
   () =>
-    import("../pages/secUsers/settilngs/serviceLedger/AdditionalChargesSecondary")
-)
+    import("../pages/secUsers/settilngs/serviceLedger/AdditionalChargesSecondary"),
+);
 const OrderConfigurationsSecondary = lazy(
-  () => import("../pages/secUsers/OrderConfigurationsSecondary")
-)
-const SearchParty = lazy(() => import("../pages/secUsers/SearchParty"))
+  () => import("../pages/secUsers/OrderConfigurationsSecondary"),
+);
+const SearchParty = lazy(() => import("../pages/secUsers/SearchParty"));
 
 // Error Pages
-const ErrorPage = lazy(() => import("../pages/errorPages/Notfound"))
-const Notfound = lazy(() => import("../pages/errorPages/Notfound"))
-const ServerError = lazy(() => import("../pages/errorPages/ServerError"))
+const ErrorPage = lazy(() => import("../pages/errorPages/Notfound"));
+const Notfound = lazy(() => import("../pages/errorPages/Notfound"));
+const ServerError = lazy(() => import("../pages/errorPages/ServerError"));
 
 // Product Sub Details
 const AddBrand = lazy(
-  () => import("../pages/masters/product/productSubDetails/AddBrand")
-)
+  () => import("../pages/masters/product/productSubDetails/AddBrand"),
+);
 const AddCategory = lazy(
-  () => import("../pages/masters/product/productSubDetails/AddCategory")
-)
+  () => import("../pages/masters/product/productSubDetails/AddCategory"),
+);
 const AddRestuarentCategory = lazy(
   () =>
-    import("@/pages/masters/product/productSubDetails/AddRestuarentCategory")
-)
+    import("@/pages/masters/product/productSubDetails/AddRestuarentCategory"),
+);
 const ComplementaryCashOrBank = lazy(
   () =>
-    import("../pages/masters/product/productSubDetails/ComplementaryCashOrBank")
-)
+    import("../pages/masters/product/productSubDetails/ComplementaryCashOrBank"),
+);
 const AddSubCategory = lazy(
-  () => import("../pages/masters/product/productSubDetails/AddSubCategory")
-)
+  () => import("../pages/masters/product/productSubDetails/AddSubCategory"),
+);
 const AddGodown = lazy(
-  () => import("../pages/masters/product/productSubDetails/AddGodown")
-)
+  () => import("../pages/masters/product/productSubDetails/AddGodown"),
+);
 const AddPriceLevel = lazy(
-  () => import("../pages/masters/product/productSubDetails/AddPriceLevel")
-)
-const SearchGodown = lazy(() => import("../pages/secUsers/SearchGodown"))
+  () => import("../pages/masters/product/productSubDetails/AddPriceLevel"),
+);
+const SearchGodown = lazy(() => import("../pages/secUsers/SearchGodown"));
 const AddbatchInPurchase = lazy(
-  () => import("../pages/secUsers/AddbatchInPurchase")
-)
-const ReceiptPrintOut = lazy(() => import("../pages/secUsers/ReceiptPrintOut"))
-const SelectVouchers = lazy(() => import("../pages/secUsers/SelectVouchers"))
-const PaymentPrintOut = lazy(() => import("../pages/secUsers/PaymentPrintOut"))
+  () => import("../pages/secUsers/AddbatchInPurchase"),
+);
+const ReceiptPrintOut = lazy(() => import("../pages/secUsers/ReceiptPrintOut"));
+const SelectVouchers = lazy(() => import("../pages/secUsers/SelectVouchers"));
+const PaymentPrintOut = lazy(() => import("../pages/secUsers/PaymentPrintOut"));
 // const OutstandingListOfReceiptForEdit = lazy(() => import('../pages/secUsers/OutstandingListOfReceiptForEdit'))
 const OutstandingListOfPaymentForEdit = lazy(
-  () => import("../pages/secUsers/OutstandingListOfPaymentForEdit")
-)
+  () => import("../pages/secUsers/OutstandingListOfPaymentForEdit"),
+);
 
 // Reports
-const Reports = lazy(() => import("../pages/secUsers/Reports"))
+const Reports = lazy(() => import("../pages/secUsers/Reports"));
 const PartyStatement = lazy(
-  () => import("../pages/voucherReports/PartyStatement/PartyStatement")
-)
-const DateRange = lazy(() => import("../components/Filters/DateRange"))
+  () => import("../pages/voucherReports/PartyStatement/PartyStatement"),
+);
+const DateRange = lazy(() => import("../components/Filters/DateRange"));
 const VouchersList = lazy(
-  () => import("../components/common/Reports/VouchersList")
-)
+  () => import("../components/common/Reports/VouchersList"),
+);
 const SalesSummary = lazy(
-  () => import("../pages/secUsers/Reports/salesSummary/SalesSummary")
-)
+  () => import("../pages/secUsers/Reports/salesSummary/SalesSummary"),
+);
 const SummaryReport = lazy(
-  () => import("@/pages/secUsers/Reports/SummaryReport")
-)
+  () => import("@/pages/secUsers/Reports/SummaryReport"),
+);
 const SaleRegisterPage = lazy(
-  () => import("@/pages/secUsers/Reports/SaleRegisterPage")
-)
+  () => import("@/pages/secUsers/Reports/SaleRegisterPage"),
+);
 const PartyFilterList = lazy(
-  () => import("../components/Filters/party/PartyFilterList")
-)
+  () => import("../components/Filters/party/PartyFilterList"),
+);
 const StatusFilterList = lazy(
-  () => import("../components/Filters/status/StatusFilterList")
-)
+  () => import("../components/Filters/status/StatusFilterList"),
+);
 const OrderSummary = lazy(
-  () => import("../pages/secUsers/Reports/orderSummary/OrderSummary")
-)
+  () => import("../pages/secUsers/Reports/orderSummary/OrderSummary"),
+);
 
 const Categoryreportres = lazy(
-  () => import("../pages/secUsers/Reports/Categoryreportres")
-)
+  () => import("../pages/secUsers/Reports/Categoryreportres"),
+);
 
 const Itemwisereport = lazy(
-  () => import("../pages/secUsers/Reports/Itemwisereport")
-)
+  () => import("../pages/secUsers/Reports/Itemwisereport"),
+);
 // Cash/Bank Management
 const BalancePage = lazy(
-  () => import("../pages/masters/cashOrBank/BalancePage")
-)
+  () => import("../pages/masters/cashOrBank/BalancePage"),
+);
 const BalanceDetails = lazy(
-  () => import("../pages/masters/cashOrBank/BalanceDetails")
-)
-const SourceList = lazy(() => import("../pages/secUsers/SourceList"))
+  () => import("../pages/masters/cashOrBank/BalanceDetails"),
+);
+const SourceList = lazy(() => import("../pages/secUsers/SourceList"));
 const SourceTransactions = lazy(
-  () => import("../pages/masters/cashOrBank/SourceTransactions")
-)
-const AddCash = lazy(() => import("../pages/masters/cashOrBank/AddCash"))
+  () => import("../pages/masters/cashOrBank/SourceTransactions"),
+);
+const AddCash = lazy(() => import("../pages/masters/cashOrBank/AddCash"));
 const BankingManagement = lazy(
-  () => import("@/pages/masters/cashOrBank/BankingManagement")
-)
+  () => import("@/pages/masters/cashOrBank/BankingManagement"),
+);
 
 // Settings
 const SettingsList = lazy(
-  () => import("../pages/secUsers/settilngs/SettingsList")
-)
+  () => import("../pages/secUsers/settilngs/SettingsList"),
+);
 const StockItem = lazy(
-  () => import("../pages/secUsers/settilngs/stockItem/StockItem")
-)
+  () => import("../pages/secUsers/settilngs/stockItem/StockItem"),
+);
 const PartySettings = lazy(
-  () => import("../pages/secUsers/settilngs/PartySettings")
-)
+  () => import("../pages/secUsers/settilngs/PartySettings"),
+);
 const DateEntrySettings = lazy(
-  () => import("../pages/secUsers/settilngs/DateEntrySettings")
-)
+  () => import("../pages/secUsers/settilngs/DateEntrySettings"),
+);
 const OutstandingSettings = lazy(
-  () => import("../pages/secUsers/settilngs/OutstandingSettings")
-)
+  () => import("../pages/secUsers/settilngs/OutstandingSettings"),
+);
 const StockItemSettings = lazy(
   () =>
-    import("../pages/secUsers/settilngs/stockItem/stockItemSettings/StockItemSettings")
-)
+    import("../pages/secUsers/settilngs/stockItem/stockItemSettings/StockItemSettings"),
+);
 const VoucherSettings = lazy(
-  () => import("../pages/secUsers/settilngs/dataEntry/VoucherSettings")
-)
+  () => import("../pages/secUsers/settilngs/dataEntry/VoucherSettings"),
+);
 const OrderSettings = lazy(
-  () => import("../pages/secUsers/settilngs/dataEntry/OrderSettings")
-)
+  () => import("../pages/secUsers/settilngs/dataEntry/OrderSettings"),
+);
 const InvoiceSettings = lazy(
-  () => import("../pages/secUsers/settilngs/dataEntry/InvoiceSettings")
-)
+  () => import("../pages/secUsers/settilngs/dataEntry/InvoiceSettings"),
+);
 const EmailSettings = lazy(
   () =>
-    import("../pages/secUsers/settilngs/dataEntry/voucherSettings/EmailSettings")
-)
+    import("../pages/secUsers/settilngs/dataEntry/voucherSettings/EmailSettings"),
+);
 
 // Barcode
 const BarcodeList = lazy(
   () =>
-    import("../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeList")
-)
+    import("../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeList"),
+);
 const BarcodeCreationDetails = lazy(
   () =>
-    import("../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeCreationDetails")
-)
+    import("../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeCreationDetails"),
+);
 const BarcodePrintOn = lazy(
   () =>
-    import("../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodePrintOn")
-)
+    import("../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodePrintOn"),
+);
 const BarcodePrintOff = lazy(
   () =>
-    import("../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodePrintOff")
-)
+    import("../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodePrintOff"),
+);
 const BarcodeFormat = lazy(
   () =>
-    import("../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeFormat")
-)
+    import("../pages/secUsers/settilngs/stockItem/stockItemSettings/barcode/BarcodeFormat"),
+);
 const BarcodeScan = lazy(
-  () => import("../components/secUsers/barcodeScanning/BarcodeScan")
-)
+  () => import("../components/secUsers/barcodeScanning/BarcodeScan"),
+);
 
 // Print Configuration
 const PrintConfiguration = lazy(
   () =>
-    import("../pages/secUsers/settilngs/PrintConfiguration/PrintConfiguration")
-)
+    import("../pages/secUsers/settilngs/PrintConfiguration/PrintConfiguration"),
+);
 const SaleOrderPrintConfiguration = lazy(
   () =>
-    import("../pages/secUsers/settilngs/PrintConfiguration/SaleOrderPrintConfiguration")
-)
+    import("../pages/secUsers/settilngs/PrintConfiguration/SaleOrderPrintConfiguration"),
+);
 const SalePrintConfiguration = lazy(
   () =>
-    import("../pages/secUsers/settilngs/PrintConfiguration/SalePrintConfiguration")
-)
+    import("../pages/secUsers/settilngs/PrintConfiguration/SalePrintConfiguration"),
+);
 const LetterHeadUploadPage = lazy(
   () =>
-    import("@/pages/secUsers/settilngs/PrintConfiguration/LetterHeadUploadPage")
-)
+    import("@/pages/secUsers/settilngs/PrintConfiguration/LetterHeadUploadPage"),
+);
 
 // Invoice and Order Common Settings
 const DespatchTitleSettings = lazy(
   () =>
-    import("../pages/secUsers/settilngs/dataEntry/invoiceAndOrderCommon/DespatchTitleSettings")
-)
+    import("../pages/secUsers/settilngs/dataEntry/invoiceAndOrderCommon/DespatchTitleSettings"),
+);
 const TermsAndConditionSettings = lazy(
   () =>
-    import("../pages/secUsers/settilngs/dataEntry/invoiceAndOrderCommon/TermsAndConditionSettings")
-)
+    import("../pages/secUsers/settilngs/dataEntry/invoiceAndOrderCommon/TermsAndConditionSettings"),
+);
 
 // Orders and Sales
 const PendingOrders = lazy(
-  () => import("../pages/secUsers/orderPendings/PendingOrders")
-)
+  () => import("../pages/secUsers/orderPendings/PendingOrders"),
+);
 const SalesSummaryTable = lazy(
-  () => import("../pages/secUsers/Reports/salesSummary/SalesSummaryTable")
-)
+  () => import("../pages/secUsers/Reports/salesSummary/SalesSummaryTable"),
+);
 const KotRegisterPage = lazy(
-  () => import("../pages/secUsers/Reports/KotRegisterPage")
-)
+  () => import("../pages/secUsers/Reports/KotRegisterPage"),
+);
 
 const OutstandingSummary = lazy(
-  () => import("../pages/secUsers/OutstandingSummary")
-)
+  () => import("../pages/secUsers/OutstandingSummary"),
+);
 const SalesSummaryTransactions = lazy(
-  () => import("@/pages/secUsers/Reports/salesSummary/SalesSummaryTransactions")
-)
+  () =>
+    import("@/pages/secUsers/Reports/salesSummary/SalesSummaryTransactions"),
+);
 
 // Party and Organization Management
 const AddSubGroup = lazy(
-  () => import("../pages/secUsers/settilngs/partySettings/AddSubGroup")
-)
+  () => import("../pages/secUsers/settilngs/partySettings/AddSubGroup"),
+);
 const AddOpening = lazy(
-  () => import("@/pages/secUsers/openings/PartyOpening/AddOpening")
-)
+  () => import("@/pages/secUsers/openings/PartyOpening/AddOpening"),
+);
 const AddOrganisation = lazy(
-  () => import("../pages/masters/organization/AddOrganisation")
-)
+  () => import("../pages/masters/organization/AddOrganisation"),
+);
 const OrganizationList = lazy(
-  () => import("../pages/masters/organization/OrganisationList")
-)
+  () => import("../pages/masters/organization/OrganisationList"),
+);
 const AddSecUsers = lazy(
-  () => import("../pages/masters/secondaryUsers/AddSecUsers")
-)
+  () => import("../pages/masters/secondaryUsers/AddSecUsers"),
+);
 
 // Voucher Management
 const VoucherAddCount = lazy(
-  () => import("@/pages/voucher/voucherCreation/VoucherAddCount")
-)
+  () => import("@/pages/voucher/voucherCreation/VoucherAddCount"),
+);
 const VoucherInitialPage = lazy(
-  () => import("@/pages/voucher/voucherCreation/voucherInitialPage")
-)
+  () => import("@/pages/voucher/voucherCreation/voucherInitialPage"),
+);
 const VoucherDetails = lazy(
-  () => import("@/pages/voucher/voucherDetails/VoucherDetails")
-)
+  () => import("@/pages/voucher/voucherDetails/VoucherDetails"),
+);
 const VoucherInitialPageEdit = lazy(
-  () => import("@/pages/voucher/voucherCreation/voucherInitialPageEdit")
-)
+  () => import("@/pages/voucher/voucherCreation/voucherInitialPageEdit"),
+);
 const BillToVoucher = lazy(
-  () => import("@/pages/voucher/voucherCreation/BillToVoucher")
-)
+  () => import("@/pages/voucher/voucherCreation/BillToVoucher"),
+);
 const EditItemVoucher = lazy(
-  () => import("@/pages/voucher/voucherCreation/EditItemVoucher")
-)
+  () => import("@/pages/voucher/voucherCreation/EditItemVoucher"),
+);
 const PaymentSplitting = lazy(
-  () => import("@/pages/voucher/voucherCreation/PaymentSplitting")
-)
+  () => import("@/pages/voucher/voucherCreation/PaymentSplitting"),
+);
 
 // Voucher PDF
 const VoucherPdfInitiator = lazy(
-  () => import("@/pages/voucher/voucherPdf/VoucherPdfInitiator")
-)
+  () => import("@/pages/voucher/voucherPdf/VoucherPdfInitiator"),
+);
 const VoucherPdfInitiatorThreeInch = lazy(
-  () => import("@/pages/voucher/voucherPdf/VoucherPdfInitiatorThreeInch")
-)
+  () => import("@/pages/voucher/voucherPdf/VoucherPdfInitiatorThreeInch"),
+);
 
-const VoucherPdfInitiatorThreeInch2= lazy(
-  () => import("@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdfFormat2")
-)
+const VoucherPdfInitiatorThreeInch2 = lazy(
+  () =>
+    import("@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdfFormat2"),
+);
 
 const WarrantyCard = lazy(
-  () => import("@/pages/voucher/voucherPdf/warrantyCard/WarrantyCard")
-)
+  () => import("@/pages/voucher/voucherPdf/warrantyCard/WarrantyCard"),
+);
 
 // Accounting Voucher
 const AccVoucherInitialPage = lazy(
   () =>
-    import("@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPage")
-)
+    import("@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPage"),
+);
 const OutstandingListOfAccVoucher = lazy(
   () =>
-    import("@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucher")
-)
+    import("@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucher"),
+);
 const AccVoucherDetails = lazy(
-  () => import("@/pages/accountingVoucher/voucherDetails/AccVoucherDetails")
-)
+  () => import("@/pages/accountingVoucher/voucherDetails/AccVoucherDetails"),
+);
 const AccVoucherInitialPageEdit = lazy(
   () =>
-    import("@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPageEdit")
-)
+    import("@/pages/accountingVoucher/voucherCreation/AccVoucherInitialPageEdit"),
+);
 
 // Stock Register
 const StockRegister = lazy(
-  () => import("@/pages/voucherReports/stockRegister/StockRegister")
-)
+  () => import("@/pages/voucherReports/stockRegister/StockRegister"),
+);
 const StockRegisterDetails = lazy(
-  () => import("@/pages/voucherReports/stockRegister/StockRegisterDetails")
-)
+  () => import("@/pages/voucherReports/stockRegister/StockRegisterDetails"),
+);
 
 // Voucher Series Settings
 const VoucherSeriesSettings = lazy(
   () =>
-    import("@/pages/secUsers/settilngs/dataEntry/voucherSettings/VoucherSeriesSettings")
-)
+    import("@/pages/secUsers/settilngs/dataEntry/voucherSettings/VoucherSeriesSettings"),
+);
 const VoucherSeriesForm = lazy(
   () =>
-    import("@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesForm")
-)
+    import("@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesForm"),
+);
 const VoucherSeriesList = lazy(
   () =>
-    import("@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesList")
-)
+    import("@/pages/secUsers/settilngs/dataEntry/voucherSettings/voucherSeries/VoucherSeriesList"),
+);
 
 // Hotel Management
-const HotelDashboard = lazy(() => import("@/pages/Hotel/Pages/HotelDashboard"))
+const HotelDashboard = lazy(() => import("@/pages/Hotel/Pages/HotelDashboard"));
 const AddAdditionalPax = lazy(
-  () => import("@/pages/Hotel/Pages/AddAdditionalPax")
-)
-const VisitOfPurpose = lazy(() => import("@/pages/Hotel/Pages/VisitOfPurpose"))
-const IdProof = lazy(() => import("@/pages/Hotel/Pages/IdProof"))
-const FoodPlan = lazy(() => import("@/pages/Hotel/Pages/FoodPlan"))
+  () => import("@/pages/Hotel/Pages/AddAdditionalPax"),
+);
+const VisitOfPurpose = lazy(() => import("@/pages/Hotel/Pages/VisitOfPurpose"));
+const IdProof = lazy(() => import("@/pages/Hotel/Pages/IdProof"));
+const FoodPlan = lazy(() => import("@/pages/Hotel/Pages/FoodPlan"));
 const RoomRegistration = lazy(
-  () => import("@/pages/Hotel/Pages/RoomRegistration")
-)
-const RoomList = lazy(() => import("@/pages/Hotel/Pages/RoomList"))
-const EditRoom = lazy(() => import("@/pages/Hotel/Pages/EditRoom"))
-const BookingPage = lazy(() => import("@/pages/Hotel/Pages/BookingPage"))
-const CheckInPage = lazy(() => import("@/pages/Hotel/Pages/CheckInPage"))
-const CheckOut = lazy(() => import("@/pages/Hotel/Pages/CheckOut"))
-const BookingList = lazy(() => import("@/pages/Hotel/List/BookingList"))
-const EditBooking = lazy(() => import("@/pages/Hotel/Pages/EditBooking"))
-const EditChecking = lazy(() => import("@/pages/Hotel/Pages/EditChecking"))
+  () => import("@/pages/Hotel/Pages/RoomRegistration"),
+);
+const RoomList = lazy(() => import("@/pages/Hotel/Pages/RoomList"));
+const EditRoom = lazy(() => import("@/pages/Hotel/Pages/EditRoom"));
+const BookingPage = lazy(() => import("@/pages/Hotel/Pages/BookingPage"));
+const CheckInPage = lazy(() => import("@/pages/Hotel/Pages/CheckInPage"));
+const CheckOut = lazy(() => import("@/pages/Hotel/Pages/CheckOut"));
+const BookingList = lazy(() => import("@/pages/Hotel/List/BookingList"));
+const EditBooking = lazy(() => import("@/pages/Hotel/Pages/EditBooking"));
+const EditChecking = lazy(() => import("@/pages/Hotel/Pages/EditChecking"));
 
 // Warranty Card Settings
 const WarrantyCardList = lazy(
   () =>
-    import("@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/WarrantyCardList")
-)
+    import("@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/WarrantyCardList"),
+);
 const AddWarrantyCard = lazy(
   () =>
-    import("@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/AddWarrantyCard")
-)
+    import("@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/AddWarrantyCard"),
+);
 const EditWarrantyCard = lazy(
   () =>
-    import("@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/EditWarrantyCard ")
-)
+    import("@/pages/secUsers/settilngs/dataEntry/invoiceSettings/WarrantyCard/EditWarrantyCard "),
+);
 
 // Retailer Configuration
 const ConfigureRetailer = lazy(
   () =>
-    import("@/pages/masters/secondaryUsers/RetailerConfiguration/ConfigureRetailer")
-)
+    import("@/pages/masters/secondaryUsers/RetailerConfiguration/ConfigureRetailer"),
+);
 const AllocateCompany = lazy(
   () =>
-    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateCompany")
-)
+    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateCompany"),
+);
 const AllocateTransaction = lazy(
   () =>
-    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateTransaction")
-)
+    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateTransaction"),
+);
 const AllocatePriceLevel = lazy(
   () =>
-    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocatePriceLevel")
-)
+    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocatePriceLevel"),
+);
 const AllocateGodown = lazy(
   () =>
-    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateGodown")
-)
+    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateGodown"),
+);
 const AllocationSeriesList = lazy(
   () =>
-    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocationSeriesList")
-)
+    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocationSeriesList"),
+);
 const AllocateVoucherSeries = lazy(
   () =>
-    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateVoucherSeries")
-)
+    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateVoucherSeries"),
+);
 const AllocateSubGroup = lazy(
   () =>
-    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateSubGroup")
-)
+    import("@/pages/masters/secondaryUsers/RetailerConfiguration/AllocateSubGroup"),
+);
 
 // Restaurant Management
 const RestaurantDashboard = lazy(
-  () => import("@/pages/Restuarant/Pages/RestaurantDashboard")
-)
-const KotPage = lazy(() => import("@/pages/Restuarant/Pages/KotPage"))
+  () => import("@/pages/Restuarant/Pages/RestaurantDashboard"),
+);
+const KotPage = lazy(() => import("@/pages/Restuarant/Pages/KotPage"));
 const RestuarentSettings = lazy(
   () =>
-    import("@/pages/secUsers/settilngs/stockItem/stockItemSettings/RestuarentSettings")
-)
+    import("@/pages/secUsers/settilngs/stockItem/stockItemSettings/RestuarentSettings"),
+);
 const AddSubRestuarentCategory = lazy(
   () =>
-    import("@/pages/masters/product/productSubDetails/AddsubRestuarentCategory")
-)
+    import("@/pages/masters/product/productSubDetails/AddsubRestuarentCategory"),
+);
 
-const EditCheckOut = lazy(() => import("@/pages/Hotel/Pages/EditCheckOut"))
-const ItemList = lazy(() => import("@/pages/Restuarant/Pages/ItemList"))
-const EditItem = lazy(() => import("@/pages/Restuarant/Pages/EditItem"))
+const EditCheckOut = lazy(() => import("@/pages/Hotel/Pages/EditCheckOut"));
+const ItemList = lazy(() => import("@/pages/Restuarant/Pages/ItemList"));
+const EditItem = lazy(() => import("@/pages/Restuarant/Pages/EditItem"));
 const ItemRegistration = lazy(
-  () => import("@/pages/Restuarant/Pages/ItemRegistration")
-)
-const TableMaster = lazy(() => import("@/pages/Restuarant/Masters/TableMaster"))
+  () => import("@/pages/Restuarant/Pages/ItemRegistration"),
+);
+const TableMaster = lazy(
+  () => import("@/pages/Restuarant/Masters/TableMaster"),
+);
 const TableSelection = lazy(
-  () => import("@/pages/Restuarant/Pages/TableSelection")
-)
-const CheckOutPrint = lazy(() => import("@/pages/Hotel/Pages/CheckOutPrint"))
-const BillPrint = lazy(() => import("@/pages/Hotel/Pages/BillPrint"))
-const HotelFlashReport =lazy(()=>import("@/pages/Hotel/Pages/HotelFlashReport"))
+  () => import("@/pages/Restuarant/Pages/TableSelection"),
+);
+const CheckOutPrint = lazy(() => import("@/pages/Hotel/Pages/CheckOutPrint"));
+const BillPrint = lazy(() => import("@/pages/Hotel/Pages/BillPrint"));
+const HotelFlashReport = lazy(
+  () => import("@/pages/Hotel/Pages/HotelFlashReport"),
+);
 const SummaryDashboard = lazy(
   () => import("@/pages/Hotel/Pages/SummaryDashboard")
 )
@@ -466,8 +471,8 @@ const CheckInPrint = lazy(() => import("@/pages/Hotel/Pages/CheckInPrint"))
 const ViewReport = lazy(() => import("@/pages/Hotel/Pages/viewReport"))
 const Checkoutpdf = lazy(() => import("@/pages/Hotel/Pages/Checkoutpdf"))
 const ReceiptInvoicepage = lazy(
-  () => import("@/pages/Hotel/Pages/ReceiptInvoicepage")
-)
+  () => import("@/pages/Hotel/Pages/ReceiptInvoicepage"),
+);
 const Routers = () => {
   return (
     <Suspense fallback={<SuspenseLoader />}>
@@ -765,7 +770,7 @@ const Routers = () => {
             </ProtectedSecRoute>
           }
         ></Route>
-            <Route
+        <Route
           path="/sUsers/shareSalesThreeInch2/:isFinalized"
           element={
             <ProtectedSecRoute>
@@ -1819,7 +1824,7 @@ const Routers = () => {
             </ProtectedSecRoute>
           }
         ></Route>
-          <Route
+        <Route
           path="/sUsers/AllocateTransaction"
           element={
             <ProtectedSecRoute>
@@ -2130,7 +2135,7 @@ const Routers = () => {
           }
         />
 
- <Route
+        <Route
           path="/sUsers/HotelFlashReport"
           element={
             <ProtectedSecRoute>
@@ -2170,7 +2175,7 @@ const Routers = () => {
             </ProtectedSecRoute>
           }
         />
-         <Route
+        <Route
           path="/sUsers/categoryprint"
           element={
             <ProtectedSecRoute>
@@ -2178,7 +2183,7 @@ const Routers = () => {
             </ProtectedSecRoute>
           }
         />
-         <Route
+        <Route
           path="/sUsers/itemwisereport"
           element={
             <ProtectedSecRoute>
@@ -2186,17 +2191,58 @@ const Routers = () => {
             </ProtectedSecRoute>
           }
         />
-            <Route path="/sUsers/tourist-report" element={ <ProtectedSecRoute><TouristReport /></ProtectedSecRoute>} />
-              <Route path="/sUsers/foodplan-report" element={ <ProtectedSecRoute><FoodPlanReportPage /></ProtectedSecRoute>} />
-               <Route path="/sUsers/occupancy-checkout-report" element={ <ProtectedSecRoute><OccupancyCheckoutReport /></ProtectedSecRoute>} />
-         <Route path="/sUsers/register" element={ <ProtectedSecRoute><KotRegisterPage /></ProtectedSecRoute>} />   
-        
-        <Route path="/sUsers/sales-register" element={<ProtectedSecRoute><SaleRegisterPage /></ProtectedSecRoute>} />
-   <Route path="/sUsers/viewReport" element={<ProtectedSecRoute><ViewReport /></ProtectedSecRoute>} />
+        <Route
+          path="/sUsers/tourist-report"
+          element={
+            <ProtectedSecRoute>
+              <TouristReport />
+            </ProtectedSecRoute>
+          }
+        />
+        <Route
+          path="/sUsers/foodplan-report"
+          element={
+            <ProtectedSecRoute>
+              <FoodPlanReportPage />
+            </ProtectedSecRoute>
+          }
+        />
+        <Route
+          path="/sUsers/occupancy-checkout-report"
+          element={
+            <ProtectedSecRoute>
+              <OccupancyCheckoutReport />
+            </ProtectedSecRoute>
+          }
+        />
+        <Route
+          path="/sUsers/register"
+          element={
+            <ProtectedSecRoute>
+              <KotRegisterPage />
+            </ProtectedSecRoute>
+          }
+        />
 
+        <Route
+          path="/sUsers/sales-register"
+          element={
+            <ProtectedSecRoute>
+              <SaleRegisterPage />
+            </ProtectedSecRoute>
+          }
+        />
+        <Route
+          path="/sUsers/viewReport"
+          element={
+            <ProtectedSecRoute>
+              <ViewReport />
+            </ProtectedSecRoute>
+          }
+        />
       </Routes>
     </Suspense>
-  )
-}
+  );
+};
 
-export default Routers
+export default Routers;
