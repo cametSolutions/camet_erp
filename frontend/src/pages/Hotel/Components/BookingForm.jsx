@@ -1400,23 +1400,17 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
     const previousAdvance = Number(editData?.previousAdvance || 0);
     const grandTotal = Number(formData?.grandTotal || 0);
     const totalAdvance = Number(editData?.totalAdvance || 0 ) + Number(value || 0);
-    const maxAllowed = grandTotal - previousAdvance;
 
-    console.log("advanceAmount", advanceAmount);
-    console.log("grandTotal", grandTotal);
-    console.log("previousAdvance", editData?.totalAdvance);
-    console.log("totalAdvance", totalAdvance);
+    // if (advanceAmount > maxAllowed) {
+    //   setErrorObject((prev) => ({
+    //     ...prev,
+    //     advanceAmount:
+    //       "Advance amount should be less than or equal to grand total",
+    //   }));
+    //   return;
+    // }
 
-    if (advanceAmount > maxAllowed) {
-      setErrorObject((prev) => ({
-        ...prev,
-        advanceAmount:
-          "Advance amount should be less than or equal to grand total",
-      }));
-      return;
-    }
-
-    setErrorObject((prev) => ({ ...prev, advanceAmount: "" }));
+    // setErrorObject((prev) => ({ ...prev, advanceAmount: "" }));
 
     if (isFor === "deliveryNote" || isFor === "sales") {
       console.log("advanceAmount", advanceAmount);
