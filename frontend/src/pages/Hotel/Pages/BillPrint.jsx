@@ -1031,10 +1031,10 @@ console.log(dateWiseLines);
 
     const basePax =
       (doc.selectedRooms || []).reduce(
-        (acc, curr) => acc + Number(curr.pax || 0),
+        (acc, curr) => acc + curr.isSwapped ? 0 : Number(curr.pax || 0),
         0,
       ) || 1;
-
+console.log(doc?.additionalPaxDetails);
     const additionalPaxCount = (doc.additionalPaxDetails || []).length;
 
     const totalPax = basePax + additionalPaxCount;
