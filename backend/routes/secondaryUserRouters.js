@@ -70,6 +70,7 @@ import {
     getTouristReport,getFoodPlanReport,getOccupancyCheckoutReport,
     sendBillEmail,
     viewReport,
+    getRestaurantSales,
     deleteAdvance
 } from '../controllers/hotelController.js'
 import {
@@ -420,6 +421,7 @@ router.post("/transferKotBills/:cmp_id", transferKotBills);
 router.delete("/deleteAdvance/:id", deleteAdvance);
 router.post('/send-bill-email', sendBillEmail);
 router.get("/viewReport", viewReport);
+router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
 // Route to get detailed booking information for a specific room and date
 
 export default router

@@ -6931,3 +6931,47 @@ export const viewReport = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
+export const getRestaurantSales = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+
+    const { checkInNumbers } = req.query;
+
+    console.log("selectedCheckIns", checkInNumbers, cmp_id);
+
+    if (!Array.isArray(checkInNumbers)) {
+      return res.status(400).json({
+        success: false,
+        message: "selectedCheckIns must be an array",
+      });
+    }
+
+    const salesData = await Promise.all(
+      checkInNumbers.map(async (element) => {
+        return await salesModel.find({
+          cmp_id,
+          "convertedFrom.checkInNumber": {
+            $exists: true,
+            $in: checkInNumbers,
+          },
+        });
+      }),
+    );
+    console.log(salesData.length);
+    const flattenedData = salesData.flat();
+
+    return res.status(200).json({
+      success: true,
+      data: flattenedData,
+    });
+  } catch (error) {
+    console.log("getRestaurantSales error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};

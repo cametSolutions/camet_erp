@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo , lazy } from "react";
 import api from "../../../api/api";
 import { toast } from "sonner";
 import { FaEdit } from "react-icons/fa";
@@ -12,6 +12,7 @@ import Swal from "sweetalert2";
 import EnhancedCheckoutModal from "../Components/EnhancedCheckoutModal";
 import HoldModal from "../Components/HoldModal";
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
+const PaymentAllocation = lazy( () => import("../Components/PaymentAllocation"));
 import {
   setPaymentDetails,
   setSelectedParty,
@@ -37,7 +38,7 @@ import {
   ArrowLeftRight,
   Pause,
   Play,
-  FileCheck
+  Settings 
 } from "lucide-react";
 import useFetch from "@/customHook/useFetch";
 import PrintModal from "../Components/PrintModal";
@@ -123,6 +124,8 @@ function BookingList() {
   const [fromDate, setFromDate] = useState(
     thirtyDaysAgo.toISOString().split("T")[0],
   );
+  const [restaurantSaleManageMent,setRestaurantSaleManageMent] = useState(false)
+
   const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
   const ROOM_COLORS = [
     { bg: "#EEEDFE", border: "#AFA9EC", icon: "#534AB7", text: "#3C3489" },
@@ -3000,13 +3003,11 @@ function BookingList() {
                                     {row.underCategory === "food" && (
                                       <div className="col-span-1 flex justify-center">
                                         <button
-                                          onClick={() =>
-                                            removeSplitPaymentRow(index)
-                                          }
+                                          onClick={()=>setRestaurantSaleManageMent(true) }
                                           className="w-6 h-6 rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
-                                          title="Remove row"
+                                          title="Restaurant Bill Management"
                                         >
-                                          <FileCheck  className="w-3.5 h-3.5" />
+                                          <Settings  className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                     )}
@@ -3562,12 +3563,23 @@ function BookingList() {
             cmp_id={cmp_id}
           />
         )}
+        {restaurantSaleManageMent && (
+          <PaymentAllocation
+            isOpen={restaurantSaleManageMent}
+            onClose={()=>setRestaurantSaleManageMent(false)}
+            onConfirm={()=> console.log("hai")}
+            selectedCheckIns={selectedCheckOut}
+            applicableAmount={selectedDataForPayment?.restaurantSubTotal}
+            cmp_id={cmp_id}
+          />
+        )}
 
         {isLoading && !loader && (
           <div className="flex justify-center items-center py-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           </div>
         )}
+        
       </div>
     </>
   );
