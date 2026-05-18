@@ -150,6 +150,7 @@ function BookingList() {
   const [restaurantBillTransfer, setShowRestaurantBillTransfer] =
     useState(false);
   const { roomId, roomName, filterByRoom } = location.state || {};
+  
   const paymentDetails = useSelector((state) => state.paymentSlice);
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
@@ -238,7 +239,7 @@ function BookingList() {
           return sum + Number(room?.amountAfterTax || 0);
         }
 
- console.log(room);
+
 
         let stayDays = Number(room?.stayDays || 1);
 
