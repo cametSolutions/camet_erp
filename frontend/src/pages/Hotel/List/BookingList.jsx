@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo , lazy } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo, lazy } from "react";
 import api from "../../../api/api";
 import { toast } from "sonner";
 import { FaEdit } from "react-icons/fa";
@@ -12,7 +12,7 @@ import Swal from "sweetalert2";
 import EnhancedCheckoutModal from "../Components/EnhancedCheckoutModal";
 import HoldModal from "../Components/HoldModal";
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
-const PaymentAllocation = lazy( () => import("../Components/PaymentAllocation"));
+const PaymentAllocation = lazy(() => import("../Components/PaymentAllocation"));
 import {
   setPaymentDetails,
   setSelectedParty,
@@ -21,6 +21,7 @@ import {
   setOnlinepartyName,
   setOnlineType,
   setPrintDetails,
+  setRestaurantTag,
   removeAll,
 } from "../../../../slices/hotelSlices/paymentSlice.js";
 import { VariableSizeList as List } from "react-window";
@@ -38,7 +39,7 @@ import {
   ArrowLeftRight,
   Pause,
   Play,
-  Settings 
+  Settings,
 } from "lucide-react";
 import useFetch from "@/customHook/useFetch";
 import PrintModal from "../Components/PrintModal";
@@ -124,7 +125,8 @@ function BookingList() {
   const [fromDate, setFromDate] = useState(
     thirtyDaysAgo.toISOString().split("T")[0],
   );
-  const [restaurantSaleManageMent,setRestaurantSaleManageMent] = useState(false)
+  const [restaurantSaleManageMent, setRestaurantSaleManageMent] =
+    useState(false);
 
   const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
   const ROOM_COLORS = [
@@ -134,7 +136,10 @@ function BookingList() {
     { bg: "#E6F1FB", border: "#85B7EB", icon: "#185FA5", text: "#0C447C" },
     { bg: "#FBEAF0", border: "#ED93B1", icon: "#993556", text: "#72243E" },
   ];
-
+  const [
+    restaurantSideDiscountAdjustmentArray,
+    setRestaurantSideDiscountAdjustmentArray,
+  ] = useState([]);
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -234,7 +239,7 @@ function BookingList() {
       const hasSwapping = rooms.some((r) => r?.swappingDateFrom);
       const checkoutTotal = rooms.reduce((sum, room) => {
         // if (room.dateTariffs) {
-          
+
         // }
         console.log(room?.amountAfterTax);
 
@@ -242,7 +247,7 @@ function BookingList() {
           return sum + Number(room?.amountAfterTax || 0);
         }
 
- console.log(room);
+        console.log(room);
 
         let stayDays = Number(room?.stayDays || 1);
 
@@ -330,6 +335,8 @@ function BookingList() {
       );
     }, 0);
   };
+
+  console.log(restaurantSideDiscountAdjustmentArray);
 
   useEffect(() => {
     if (location.pathname === "/sUsers/bookingList") {
@@ -452,6 +459,9 @@ function BookingList() {
       setcheckinids(location?.state?.cheinids);
       setPaymentMode(paymentDetails?.paymentMode);
       setRemarks(paymentDetails?.paymentDetails?.remarks);
+      setRestaurantSideDiscountAdjustmentArray(
+        paymentDetails?.restaurantSideDiscountAdjustmentArray,
+      )
 
       if (paymentDetails?.paymentMode === "split") {
         setSplitPaymentRows(paymentDetails?.splitPayment);
@@ -506,12 +516,24 @@ function BookingList() {
         return total + (item.restaurantSubTotal || 0);
       }, 0);
       console.log(restaurantSubTotal);
+      let taggedTotal = 0;
+
+      if (restaurantSideDiscountAdjustmentArray.length > 0) {
+        taggedTotal = restaurantSideDiscountAdjustmentArray.reduce(
+          (total, item) => {
+            return total + (item.finalValue || 0);
+          },
+          0,
+        );
+      }
+      restaurantSideDiscountAdjustmentArray;
 
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
         total: totalAmount,
         advanceAmount: advanceAmount,
-        restaurantSubTotal: restaurantSubTotal,
+        restaurantSubTotal: Math.round(restaurantSubTotal - taggedTotal),
+        restaurantActualTotal: restaurantSubTotal,
         totalWithRestaurantSubTotal: totalAmount + restaurantSubTotal,
       }));
     }
@@ -647,7 +669,7 @@ function BookingList() {
         );
 
         let bookingData = res?.data?.bookingData || [];
-        
+
         console.log("bookingData", bookingData[0]);
 
         if (location.pathname === "/sUsers/checkInList") {
@@ -1203,6 +1225,7 @@ function BookingList() {
       dispatch(setSelectedSplitPayment(splitPaymentRows));
       dispatch(setOnlinepartyName(selectedonlinePartyname));
       dispatch(setOnlineType(selectedOnlinetype));
+      dispatch(setRestaurantTag(additionalChargeDataBasedOnSelection));
       setIsPartial(false);
       proceedToCheckout(dateandstaysdata, processedCheckoutData);
     } else {
@@ -1843,12 +1866,12 @@ function BookingList() {
               ₹{el?.selectedRooms?.[0]?.foodPlanAmountWithOutTax || "0.00"}
             </div>
 
-          <div
-  className="w-28 text-center text-gray-600 text-xs font-medium truncate cursor-default"
-  title={getTravelAgentName(el) || el?.agentId?.partyName || "-"}
->
-  {getTravelAgentName(el) || el?.agentId?.partyName || "-"}
-</div>
+            <div
+              className="w-28 text-center text-gray-600 text-xs font-medium truncate cursor-default"
+              title={getTravelAgentName(el) || el?.agentId?.partyName || "-"}
+            >
+              {getTravelAgentName(el) || el?.agentId?.partyName || "-"}
+            </div>
 
             {isCheckoutList && (
               <div className="w-28 text-center text-gray-600 text-xs font-medium">
@@ -1870,9 +1893,11 @@ function BookingList() {
 
             <div className="w-28 text-center text-gray-800 font-semibold text-xs">
               ₹
-              {el?.displayTotal > 0 ? el?.displayTotal : el?.grandTotal
-                ? formatCurrency(el.roomTotal).replace("₹", "")
-                : "00.00"}
+              {el?.displayTotal > 0
+                ? el?.displayTotal
+                : el?.grandTotal
+                  ? formatCurrency(el.roomTotal).replace("₹", "")
+                  : "00.00"}
             </div>
 
             {/* 🔹 ACTION BUTTONS */}
@@ -2211,7 +2236,30 @@ function BookingList() {
     }
   };
 
-  console.log(selectedCheckOut);
+  const handlePaymentAllocationInRestaurant = (data) => {
+    if (!data) {
+      setRestaurantSideDiscountAdjustmentArray(data);
+      setSelectedDataForPayment((prevData) => ({
+        ...prevData,
+        restaurantSubTotal: selectedDataForPayment?.restaurantActualTotal,
+      }));
+    } else {
+      setRestaurantSideDiscountAdjustmentArray(data);
+      let resturantTotal = data.reduce(
+        (acc, item) => acc + Number(item?.finalValue || 0),
+        0,
+      );
+      setSelectedDataForPayment((prevData) => ({
+        ...prevData,
+        restaurantSubTotal: Math.round(
+          Number(prevData?.restaurantSubTotal || 0) -
+            Number(resturantTotal || 0),
+        ),
+      }));
+
+      setRestaurantSaleManageMent(false);
+    }
+  };
 
   return (
     <>
@@ -3003,13 +3051,18 @@ function BookingList() {
                                     {row.underCategory === "food" && (
                                       <div className="col-span-1 flex justify-center">
                                         <button
-                                          onClick={()=>setRestaurantSaleManageMent(true) }
+                                          onClick={() => {
+                                            setRestaurantSaleManageMent(true);
+                                            handlePaymentAllocationInRestaurant(
+                                              null,
+                                            );
+                                          }}
                                           className="w-6 h-6 rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
                                           title="Restaurant Bill Management"
                                         >
-                                          <Settings  className="w-3.5 h-3.5" />
+                                          <Settings className="w-3.5 h-3.5" />
                                         </button>
-                                    </div>
+                                      </div>
                                     )}
 
                                     {/* Delete — always allowed so user can free up allocation */}
@@ -3566,11 +3619,15 @@ function BookingList() {
         {restaurantSaleManageMent && (
           <PaymentAllocation
             isOpen={restaurantSaleManageMent}
-            onClose={()=>setRestaurantSaleManageMent(false)}
-            onConfirm={()=> console.log("hai")}
+            onClose={() => setRestaurantSaleManageMent(false)}
+            onConfirm={handlePaymentAllocationInRestaurant}
             selectedCheckIns={selectedCheckOut}
             applicableAmount={selectedDataForPayment?.restaurantSubTotal}
             cmp_id={cmp_id}
+            otherCharges={additionalChargeData}
+            restaurantSideDiscountAdjustmentArray={
+              restaurantSideDiscountAdjustmentArray
+            }
           />
         )}
 
@@ -3579,7 +3636,6 @@ function BookingList() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           </div>
         )}
-        
       </div>
     </>
   );
