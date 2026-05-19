@@ -20,7 +20,7 @@ export default function TariffHistory({
   useEffect(() => {
     if (isOpen && booking) {
       const history = [];
-      console.log(booking?.dateTariffs);
+      console.log(booking);
       if (booking.dateTariffs) {
         Object.entries(booking.dateTariffs).forEach(([date, rate]) => {
           history.push({
