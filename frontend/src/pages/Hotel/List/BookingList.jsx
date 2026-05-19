@@ -258,7 +258,7 @@ function BookingList() {
           const arrivalDate = normalizeToDate(checkout?.arrivalDate);
 
           stayDays = Math.floor(
-            (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
+            (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) ,
           );
 
           if (stayDays <= 0) {
