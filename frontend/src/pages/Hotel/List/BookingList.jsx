@@ -159,6 +159,7 @@ function BookingList() {
   const [restaurantBillTransfer, setShowRestaurantBillTransfer] =
     useState(false);
   const { roomId, roomName, filterByRoom } = location.state || {};
+  
   const paymentDetails = useSelector((state) => state.paymentSlice);
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
@@ -247,7 +248,6 @@ function BookingList() {
           return sum + Number(room?.amountAfterTax || 0);
         }
 
-        console.log(room);
 
         let stayDays = Number(room?.stayDays || 1);
 
@@ -266,7 +266,7 @@ function BookingList() {
           const arrivalDate = normalizeToDate(checkout?.arrivalDate);
 
           stayDays = Math.floor(
-            (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
+            (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) ,
           );
 
           if (stayDays <= 0) {
@@ -1806,6 +1806,160 @@ function BookingList() {
             // setShowEnhancedCheckoutModal(!showEnhancedCheckoutModal)
           }}
         >
+
+<div className="flex items-center w-full md:hidden">
+
+  {/* SL No */}
+  <div className="w-18 text-center text-gray-700 font-medium text-xs">
+    {index + 1}
+  </div>
+
+  {/* Date */}
+  <div className="w-32 text-center text-gray-600 text-xs">
+    {location.pathname.includes("checkOutList")
+      ? formatDate(el?.checkOutDate)
+      : formatDate(el?.bookingDate)}
+  </div>
+
+  {/* Voucher No */}
+  <div className="w-32 text-center text-gray-700 font-semibold text-xs">
+    {el?.voucherNumber || "-"}
+  </div>
+
+  {/* ✅ ACTIONS — exact copy of desktop actions */}
+  <div className="w-32 flex flex-wrap items-center justify-center gap-1">
+
+    {((location.pathname === "/sUsers/bookingList" &&
+      el?.status != "checkIn") ||
+      (el?.status != "checkOut" &&
+        location.pathname != "/sUsers/checkInList" &&
+        location.pathname != "/sUsers/checkOutList")) && (
+      <button
+        onClick={(e) => handleCheckin(e, el)}
+        className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+      >
+        CheckIn
+      </button>
+    )}
+
+    {location.pathname === "/sUsers/checkInList" && (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate("/sUsers/CheckInPrint", {
+            state: {
+              selectedCheckOut: [el],
+              customerId: el.customerId._id,
+            },
+          });
+        }}
+        className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+        title="Print Registration Card"
+      >
+        Print
+      </button>
+    )}
+
+    {el?.status === "checkIn" &&
+      location.pathname === "/sUsers/bookingList" && (
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+        >
+          CheckedIn
+        </button>
+    )}
+
+    {el?.status === "checkOut" &&
+      location.pathname === "/sUsers/checkInList" && (
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+        >
+          CheckedOut
+        </button>
+    )}
+
+    {location.pathname === "/sUsers/checkOutList" && (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setSelectedCustomer(el.customerId?._id);
+          setSelectedCheckOut([el]);
+          const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+          navigate(
+            hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
+            {
+              state: {
+                selectedCheckOut: bookings?.filter(
+                  (item) => item.voucherNumber === el.voucherNumber
+                ),
+                customerId: el.customerId?._id,
+                isForPreview: false,
+              },
+            }
+          );
+        }}
+        className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+      >
+        Print
+      </button>
+    )}
+
+    {(el?.status != "checkIn" &&
+      location.pathname == "/sUsers/bookingList") ||
+    (el?.status != "checkOut" &&
+      location.pathname == "/sUsers/checkInList") ? (
+      <div className="flex items-center gap-1">
+        <FaEdit
+          title="Edit"
+          className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (location.pathname === "/sUsers/bookingList") {
+              navigate("/sUsers/editBooking", { state: el });
+            } else {
+              navigate("/sUsers/editChecking", { state: el });
+            }
+          }}
+        />
+        <MdDelete
+          title="Delete"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete(el._id);
+          }}
+          className="text-red-500 cursor-pointer hover:text-red-700 text-sm"
+        />
+      </div>
+    ) : null}
+
+    {location.pathname === "/sUsers/bookingList" &&
+      el?.status !== "checkIn" &&
+      el?.status !== "cancelled" && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCancelBooking(el._id, el.voucherNumber);
+          }}
+          className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+          title="Cancel booking"
+        >
+          <MdCancel />
+        </button>
+    )}
+
+    {el?.status === "cancelled" && (
+      <span className="bg-red-100 text-red-700 font-semibold py-1 px-2 rounded text-xs">
+        Cancelled
+      </span>
+    )}
+
+  </div>
+</div>
+
+
+
           <div className="hidden md:flex items-center w-full">
             <div className="w-10 text-center text-gray-700 font-medium">
               {index + 1}
@@ -2265,17 +2419,25 @@ function BookingList() {
     <>
       <div className="flex-1 bg-slate-50 h-screen overflow-hidden">
         <div className="sticky top-0 z-20">
-          <TitleDiv
-            loading={loader}
-            title={
-              location.pathname === "/sUsers/checkInList"
-                ? filterByRoom
-                  ? `Check In List - Room ${roomName}`
-                  : "Hotel Check In List"
-                : location.pathname === "/sUsers/bookingList"
-                  ? "Hotel Booking List"
-                  : "Hotel Check Out List"
-            }
+         <TitleDiv
+  loading={loader}
+  title={
+    location.pathname === "/sUsers/checkInList"
+      ? filterByRoom
+        ? `Check In List - Room ${roomName}`
+        : "Hotel Check In List"
+      : location.pathname === "/sUsers/bookingList"
+      ? "Hotel Booking List"
+      : "Hotel Check Out List"
+  }
+  // ✅ ADD THIS:
+  from={
+    location.pathname === "/sUsers/checkInList"
+      ? "/sUsers/hotelDashboard"
+      : location.pathname === "/sUsers/bookingList"
+      ? "/sUsers/hotelDashboard"
+      : "/sUsers/hotelDashboard"
+  }
             dropdownContents={[
               {
                 title:
