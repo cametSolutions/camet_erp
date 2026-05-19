@@ -2,7 +2,15 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-
+import {
+  GridIcon ,
+  PrinterIcon ,
+  CreditCardIcon ,
+  ShareIcon,
+  CheckCircleIcon ,
+  CheckCircle,
+  DownloadIcon 
+} from "lucide-react";
 import api from "@/api/api";
 
 import TitleDiv from "@/components/common/TitleDiv";
@@ -12,10 +20,9 @@ import {
   handleBillPrintInvoice,
   handleBillDownloadPDF,
   generateBillPDFAsBase64,
-  } from "../PrintSide/generateBillPrintPDF";
+} from "../PrintSide/generateBillPrintPDF";
 
-
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
 import { constructNow } from "date-fns";
 const HotelBillPrint = () => {
   // Router and Redux state
@@ -113,8 +120,7 @@ const HotelBillPrint = () => {
     if (selectedCheckOut?.length > 0) {
       console.log(isForPreview);
       if (!isForPreview) {
-        const rawData =
-          selectedCheckOut[0].checkoutpaymenttypedetails || [];
+        const rawData = selectedCheckOut[0].checkoutpaymenttypedetails || [];
         console.log(rawData);
         // ✅ Convert to normal array
         const cleanData = rawData.map((item) =>
@@ -236,14 +242,14 @@ const HotelBillPrint = () => {
       const swapDate = room?.swappingDateFrom
         ? new Date(room.swappingDateFrom).toISOString().split("T")[0]
         : "";
-console.log(swapDate);
+      console.log(swapDate);
       if (room.isSwapped && room.swappingDateFrom) {
         console.log(room.roomName);
         const swappingDate = normalizeToDate(room.swappingDateFrom);
         const arrivalDate = normalizeToDate(doc.arrivalDate);
 
         fullDaysAre = Math.floor(
-          (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) 
+          (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24),
         );
 
         if (fullDaysAre <= 0) {
@@ -292,8 +298,12 @@ console.log(swapDate);
         const formattedDate = currentDate
           .toLocaleDateString("en-GB")
           .replace(/\//g, "-");
-        const subArray = room?.otherChargeDetails.filter((item) => item.action === "sub");
-        const addArray = room?.otherChargeDetails.filter((item) => item.action === "add");
+        const subArray = room?.otherChargeDetails.filter(
+          (item) => item.action === "sub",
+        );
+        const addArray = room?.otherChargeDetails.filter(
+          (item) => item.action === "add",
+        );
 
         result.push({
           date: formattedDate,
@@ -525,7 +535,7 @@ console.log(swapDate);
       .toFixed(2);
     console.log(foodPlanAmountWithTax);
     console.log(planAmount);
-console.log(dateWiseLines);
+    console.log(dateWiseLines);
 
     let roomTariffTotal = !doc?.addFoodPlanWithRate
       ? dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0)
@@ -708,23 +718,23 @@ console.log(dateWiseLines);
           }
         }
 
-        if(fullDayCharges[0].subArray.length > 0){
-            fullDayCharges[0].subArray.map((item, index) => {
-                   charges.push({
+        if (fullDayCharges[0].subArray.length > 0) {
+          fullDayCharges[0].subArray.map((item, index) => {
+            charges.push({
               // date: roomArrivalDate, // Use arrival date for full day taxes
               description: `Room Discount ${item?.option} @ ${item?.taxPercentage}%`,
               docNo: "-",
-              amount: - item.finalValue.toFixed(2),
+              amount: -item.finalValue.toFixed(2),
               taxes: item?.taxAmt.toFixed(2),
               advance: "",
               roomName,
             });
-            })
-          }
+          });
+        }
 
-           if(fullDayCharges[0].addArray.length > 0){
-            fullDayCharges[0].addArray.map((item, index) => {
-                   charges.push({
+        if (fullDayCharges[0].addArray.length > 0) {
+          fullDayCharges[0].addArray.map((item, index) => {
+            charges.push({
               // date: roomArrivalDate, // Use arrival date for full day taxes
               description: `Other Charge ${item?.option} @ ${item?.taxPercentage}%`,
               docNo: "-",
@@ -733,8 +743,8 @@ console.log(dateWiseLines);
               advance: "",
               roomName,
             });
-            })
-          }
+          });
+        }
 
         // 3. Add HALF DAY room rent charges with CHECKOUT DATE
         halfDayCharges?.forEach((item) => {
@@ -1001,7 +1011,7 @@ console.log(dateWiseLines);
       doc?.otherChargeDetails &&
       Object.keys(doc?.otherChargeDetails).length > 0
     ) {
-      otherChargeAmount = doc?.otherChargeAmount 
+      otherChargeAmount = doc?.otherChargeAmount;
     }
     const grandTotal =
       Number(roomTariffTotal) +
@@ -1017,7 +1027,7 @@ console.log(dateWiseLines);
           doc.discountAmount ||
           0,
       );
-    const netPay = (grandTotal - advanceTotal);
+    const netPay = grandTotal - advanceTotal;
 
     // Compose hotel/guest info per doc
     const guestRooms = (doc.selectedRooms || [])
@@ -1031,10 +1041,10 @@ console.log(dateWiseLines);
 
     const basePax =
       (doc.selectedRooms || []).reduce(
-        (acc, curr) => acc + curr.isSwapped ? 0 : Number(curr.pax || 0),
+        (acc, curr) => (acc + curr.isSwapped ? 0 : Number(curr.pax || 0)),
         0,
       ) || 1;
-console.log(doc?.additionalPaxDetails);
+    console.log(doc?.additionalPaxDetails);
     const additionalPaxCount = (doc.additionalPaxDetails || []).length;
 
     const totalPax = basePax + additionalPaxCount;
@@ -1064,16 +1074,17 @@ console.log(doc?.additionalPaxDetails);
           paymentDetails?.paymentDetails?.selectedCreditor?.partyName;
       }
     }
-    let discount = paymentDetails?.paymentDetails?.discountAmount || doc.discountAmount || 0;
+    let discount =
+      paymentDetails?.paymentDetails?.discountAmount || doc.discountAmount || 0;
     console.log(discount);
     console.log(doc.discountAmount);
     let roomWiseDiscount = doc.selectedRooms.reduce((acc, curr) => {
       return acc + Number(curr.discountAmount || 0);
-    },0)
+    }, 0);
     let otherChargesAmount = doc.selectedRooms.reduce((acc, curr) => {
       return acc + Number(curr.otherChargeAmount || 0);
-    },0)
-    console.log(roomWiseDiscount, otherChargesAmount,discount);
+    }, 0);
+    console.log(roomWiseDiscount, otherChargesAmount, discount);
     console.log(paymentDetails?.paymentDetails);
     console.log(doc);
 
@@ -1117,7 +1128,10 @@ console.log(doc?.additionalPaxDetails);
       charges: chargesWithBalance,
       summary: {
         roomRent: (
-          (Number(roomTariffTotal || 0) + Number(additionalPaxAmount || 0) + Number(otherChargesAmount || 0)) - Number(roomWiseDiscount || 0)
+          Number(roomTariffTotal || 0) +
+          Number(additionalPaxAmount || 0) +
+          Number(otherChargesAmount || 0) -
+          Number(roomWiseDiscount || 0)
         ).toFixed(2),
         discount: discount,
         sgst: sgstAmount,
@@ -1268,73 +1282,86 @@ console.log(doc?.additionalPaxDetails);
     if (!multi.length) return;
     console.log(paymentModeDetails);
     if (!isPrint) {
-      handleBillDownloadPDF(multi, organization, paymentModeDetails , isForPreview); // pass array
+      handleBillDownloadPDF(
+        multi,
+        organization,
+        paymentModeDetails,
+        isForPreview,
+      ); // pass array
     } else {
-      handleBillPrintInvoice(multi, organization, paymentModeDetails, isForPreview); // pass array
+      handleBillPrintInvoice(
+        multi,
+        organization,
+        paymentModeDetails,
+        isForPreview,
+      ); // pass array
     }
   };
 
-const handleShareBill = async (option, message, ccEmails, toEmail) => {
-  if (!bills?.length) throw new Error("No bill data available");
-  const firstBill = bills[0];
+  const handleShareBill = async (option, message, ccEmails, toEmail) => {
+    if (!bills?.length) throw new Error("No bill data available");
+    const firstBill = bills[0];
 
-  if (option === "WhatsApp") {
-    handleBillDownloadPDF(bills, organization, paymentModeDetails);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    const encodedText = encodeURIComponent(message);
-    window.open(`https://wa.me/?text=${encodedText}`, "_blank");
-    return true;
-  }
+    if (option === "WhatsApp") {
+      handleBillDownloadPDF(bills, organization, paymentModeDetails);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const encodedText = encodeURIComponent(message);
+      window.open(`https://wa.me/?text=${encodedText}`, "_blank");
+      return true;
+    }
 
-  if (option === "Mail") {
-    // Generate PDF as base64
-    const pdfBase64 = await generateBillPDFAsBase64(
-      bills,
-      organization,
-      paymentModeDetails,
-      isForPreview
-    );
+    if (option === "Mail") {
+      // Generate PDF as base64
+      const pdfBase64 = await generateBillPDFAsBase64(
+        bills,
+        organization,
+        paymentModeDetails,
+        isForPreview,
+      );
 
-    if (!pdfBase64) throw new Error("Failed to generate PDF");
+      if (!pdfBase64) throw new Error("Failed to generate PDF");
 
-    const res = await api.post(
-      "/api/sUsers/send-bill-email",
-      {
-        toEmail,
-        ccEmails,
-        message,
-        billNo: firstBill?.guest?.billNo,
-        guestName: firstBill?.guest?.name,
-        organizationName: organization?.name,
-        pdfBase64,
-        pdfFileName: `Bill-${firstBill?.guest?.billNo || "Invoice"}.pdf`,
-      },
-      { withCredentials: true }
-    );
+      const res = await api.post(
+        "/api/sUsers/send-bill-email",
+        {
+          toEmail,
+          ccEmails,
+          message,
+          billNo: firstBill?.guest?.billNo,
+          guestName: firstBill?.guest?.name,
+          organizationName: organization?.name,
+          pdfBase64,
+          pdfFileName: `Bill-${firstBill?.guest?.billNo || "Invoice"}.pdf`,
+        },
+        { withCredentials: true },
+      );
 
-    if (!res.data?.success) throw new Error(res.data?.message || "Failed to send email");
-    return true;
-  }
-};
+      if (!res.data?.success)
+        throw new Error(res.data?.message || "Failed to send email");
+      return true;
+    }
+  };
 
- const handleShareClick = async () => {
+  const handleShareClick = async () => {
     if (!bills?.length) {
-      toast.error('No bill data to share');
+      toast.error("No bill data to share");
       return;
     }
 
-    const firstBill  = bills[0];
-    const guestName  = firstBill?.guest?.name || 'Guest';
-    const billNo     = firstBill?.guest?.billNo || '';
-    const roomNo     = firstBill?.guest?.roomNo || '';
-    const arrival    = firstBill?.stay?.arrival || '';
-    const departure  = firstBill?.stay?.departure || '';
-    const netPay     = Number(firstBill?.payment?.netPay || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
-    const hotelName  = organization?.name || '';
-    const hotelPhone = organization?.mobile || '';
+    const firstBill = bills[0];
+    const guestName = firstBill?.guest?.name || "Guest";
+    const billNo = firstBill?.guest?.billNo || "";
+    const roomNo = firstBill?.guest?.roomNo || "";
+    const arrival = firstBill?.stay?.arrival || "";
+    const departure = firstBill?.stay?.departure || "";
+    const netPay = Number(firstBill?.payment?.netPay || 0).toLocaleString(
+      "en-IN",
+      { minimumFractionDigits: 2 },
+    );
+    const hotelName = organization?.name || "";
+    const hotelPhone = organization?.mobile || "";
 
-    const defaultMessage =
-`Dear ${guestName},
+    const defaultMessage = `Dear ${guestName},
 
 Thank you for choosing ${hotelName}!
 
@@ -1353,25 +1380,25 @@ Warm Regards,
 ${hotelName}`;
 
     const { value: option } = await Swal.fire({
-      title: 'Share through',
-      input: 'radio',
-      inputOptions: { WhatsApp: 'WhatsApp', Mail: 'Mail' },
-      confirmButtonText: 'Next',
-      confirmButtonColor: '#000000',
+      title: "Share through",
+      input: "radio",
+      inputOptions: { WhatsApp: "WhatsApp", Mail: "Mail" },
+      confirmButtonText: "Next",
+      confirmButtonColor: "#000000",
       showCancelButton: true,
-      cancelButtonText: 'Cancel',
-      cancelButtonColor: '#dd3333',
-      inputValidator: (v) => !v && 'Please select an option!',
+      cancelButtonText: "Cancel",
+      cancelButtonColor: "#dd3333",
+      inputValidator: (v) => !v && "Please select an option!",
     });
 
     if (!option) return;
 
-    let toEmail  = '';
+    let toEmail = "";
     let ccEmails = [];
 
-    if (option === 'Mail') {
+    if (option === "Mail") {
       const { value: emailData, isDismissed } = await Swal.fire({
-        title: 'Email Details',
+        title: "Email Details",
         html: `
           <div style="text-align:left; padding:10px;">
             <label style="display:block; margin-bottom:6px; font-weight:bold; font-size:14px;">
@@ -1400,32 +1427,51 @@ ${hotelName}`;
           </div>
         `,
         showCancelButton: true,
-        cancelButtonColor: '#dd3333',
-        confirmButtonText: 'Next',
-        confirmButtonColor: '#000000',
-        width: '540px',
+        cancelButtonColor: "#dd3333",
+        confirmButtonText: "Next",
+        confirmButtonColor: "#000000",
+        width: "540px",
         focusConfirm: false,
         preConfirm: () => {
-          const to = document.getElementById('swal-to').value.trim();
-          const cc = document.getElementById('swal-cc').value.trim();
+          const to = document.getElementById("swal-to").value.trim();
+          const cc = document.getElementById("swal-cc").value.trim();
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!to) { Swal.showValidationMessage('Please enter recipient email'); return false; }
-          if (!emailRegex.test(to)) { Swal.showValidationMessage('Please enter a valid email address'); return false; }
+          if (!to) {
+            Swal.showValidationMessage("Please enter recipient email");
+            return false;
+          }
+          if (!emailRegex.test(to)) {
+            Swal.showValidationMessage("Please enter a valid email address");
+            return false;
+          }
           if (cc) {
-            const invalid = cc.split(',').map((e) => e.trim()).filter((e) => e && !emailRegex.test(e));
-            if (invalid.length) { Swal.showValidationMessage(`Invalid CC email(s): ${invalid.join(', ')}`); return false; }
+            const invalid = cc
+              .split(",")
+              .map((e) => e.trim())
+              .filter((e) => e && !emailRegex.test(e));
+            if (invalid.length) {
+              Swal.showValidationMessage(
+                `Invalid CC email(s): ${invalid.join(", ")}`,
+              );
+              return false;
+            }
           }
           return { to, cc };
         },
       });
 
       if (isDismissed || !emailData) return;
-      toEmail  = emailData.to;
-      ccEmails = emailData.cc ? emailData.cc.split(',').map((e) => e.trim()).filter(Boolean) : [];
+      toEmail = emailData.to;
+      ccEmails = emailData.cc
+        ? emailData.cc
+            .split(",")
+            .map((e) => e.trim())
+            .filter(Boolean)
+        : [];
     }
 
     const { value: finalMessage, isDismissed: msgDismissed } = await Swal.fire({
-      title: 'Compose Message',
+      title: "Compose Message",
       html: `
         <div style="text-align:left; padding:10px;">
           <label style="display:block; margin-bottom:6px; font-weight:bold; font-size:14px;">
@@ -1439,14 +1485,17 @@ ${hotelName}`;
         </div>
       `,
       showCancelButton: true,
-      cancelButtonColor: '#dd3333',
-      confirmButtonText: 'Send',
-      confirmButtonColor: '#000000',
-      width: '660px',
+      cancelButtonColor: "#dd3333",
+      confirmButtonText: "Send",
+      confirmButtonColor: "#000000",
+      width: "660px",
       focusConfirm: false,
       preConfirm: () => {
-        const msg = document.getElementById('swal-message').value;
-        if (!msg?.trim()) { Swal.showValidationMessage('Please enter a message'); return false; }
+        const msg = document.getElementById("swal-message").value;
+        if (!msg?.trim()) {
+          Swal.showValidationMessage("Please enter a message");
+          return false;
+        }
         return msg;
       },
     });
@@ -1454,12 +1503,12 @@ ${hotelName}`;
     if (msgDismissed || !finalMessage) return;
 
     Swal.fire({
-      title: option === 'Mail' ? 'Sending Email...' : 'Preparing WhatsApp...',
+      title: option === "Mail" ? "Sending Email..." : "Preparing WhatsApp...",
       html: `
         <div style="text-align:center; padding:16px;">
           <p>Please wait...</p>
-          ${option === 'Mail' && toEmail ? `<p style="color:gray; font-size:13px; margin-top:8px;">To: ${toEmail}</p>` : ''}
-          ${ccEmails.length ? `<p style="color:gray; font-size:13px;">CC: ${ccEmails.join(', ')}</p>` : ''}
+          ${option === "Mail" && toEmail ? `<p style="color:gray; font-size:13px; margin-top:8px;">To: ${toEmail}</p>` : ""}
+          ${ccEmails.length ? `<p style="color:gray; font-size:13px;">CC: ${ccEmails.join(", ")}</p>` : ""}
         </div>
       `,
       allowOutsideClick: false,
@@ -1469,17 +1518,20 @@ ${hotelName}`;
     try {
       await handleShareBill(option, finalMessage, ccEmails, toEmail);
       Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: option === 'Mail' ? 'Email sent successfully!' : 'PDF downloaded! Opening WhatsApp...',
-        confirmButtonColor: '#000000',
+        icon: "success",
+        title: "Success!",
+        text:
+          option === "Mail"
+            ? "Email sent successfully!"
+            : "PDF downloaded! Opening WhatsApp...",
+        confirmButtonColor: "#000000",
       });
     } catch (error) {
       Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: error.message || 'Failed to share. Please try again.',
-        confirmButtonColor: '#000000',
+        icon: "error",
+        title: "Error",
+        text: error.message || "Failed to share. Please try again.",
+        confirmButtonColor: "#000000",
       });
     }
   };
@@ -1574,46 +1626,47 @@ ${hotelName}`;
         className="font-sans bg-gray-100 p-5 min-h-screen"
         ref={printReference}
       >
-        
         {/* Render one complete bill per selectedCheckOut doc */}
         {bills.map((billData, pageIdx) => (
-        <div
-  key={pageIdx}
-  style={{
-    maxWidth: "21cm",
-    margin: "0 auto",
-    padding: "0.5cm",
-    backgroundColor: "white",
-    fontFamily: "Arial, sans-serif",
-    fontSize: "11px",
-    lineHeight: "1.1",
-    color: "#000",
-    pageBreakAfter: pageIdx < bills.length - 1 ? "always" : "auto",
-    position: "relative",   // ← add
-    overflow: "hidden",     // ← add
-  }}
->
-  {/* Watermark */}
-  {isForPreview && (
-    <div style={{
-      position: "absolute",
-      top: "50%",
-      left: "50%",
-      transform: "translate(-50%, -50%) rotate(-45deg)",
-      fontSize: "80px",
-      fontWeight: "bold",
-      color: "rgba(0, 0, 0, 0.08)",
-      whiteSpace: "nowrap",
-      pointerEvents: "none",
-      zIndex: 0,
-      userSelect: "none",
-      letterSpacing: "8px",
-      width: "200%",
-      textAlign: "center",
-    }}>
-      PROFORMA INVOICE
-    </div>
-  )}
+          <div
+            key={pageIdx}
+            style={{
+              maxWidth: "21cm",
+              margin: "0 auto",
+              padding: "0.5cm",
+              backgroundColor: "white",
+              fontFamily: "Arial, sans-serif",
+              fontSize: "11px",
+              lineHeight: "1.1",
+              color: "#000",
+              pageBreakAfter: pageIdx < bills.length - 1 ? "always" : "auto",
+              position: "relative", // ← add
+              overflow: "hidden", // ← add
+            }}
+          >
+            {/* Watermark */}
+            {isForPreview && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%) rotate(-45deg)",
+                  fontSize: "80px",
+                  fontWeight: "bold",
+                  color: "rgba(0, 0, 0, 0.08)",
+                  whiteSpace: "nowrap",
+                  pointerEvents: "none",
+                  zIndex: 0,
+                  userSelect: "none",
+                  letterSpacing: "8px",
+                  width: "200%",
+                  textAlign: "center",
+                }}
+              >
+                PROFORMA INVOICE
+              </div>
+            )}
             {/* Header */}
             <div
               className="page-header flex"
@@ -1706,48 +1759,47 @@ ${hotelName}`;
               >
                 <tbody>
                   {!isForPreview && (
-                  <tr>
-                    
-                     <td
-                      style={{
-                        width: "15%",
-                        padding: "2px 0",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      GRC No
-                    </td>  
-                   
-                    <td style={{ width: "15%", padding: "2px 0" }}>
-                      {billData?.guest?.grcNo}
-                    </td>
-                    <td
-                      style={{
-                        width: "15%",
-                        padding: "2px 0",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Bill No
-                    </td>
-                    <td style={{ width: "15%", padding: "2px 0" }}>
-                      {billData?.guest?.billNo}
-                    </td>
-                    <td
-                      style={{
-                        width: "10%",
-                        padding: "2px 0",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Date
-                    </td>
-                    <td style={{ width: "30%", padding: "2px 0" }}>
-                      {billData?.stay?.billDate}
-                    </td>
-                  </tr>
-                   )}
-                   
+                    <tr>
+                      <td
+                        style={{
+                          width: "15%",
+                          padding: "2px 0",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        GRC No
+                      </td>
+
+                      <td style={{ width: "15%", padding: "2px 0" }}>
+                        {billData?.guest?.grcNo}
+                      </td>
+                      <td
+                        style={{
+                          width: "15%",
+                          padding: "2px 0",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Bill No
+                      </td>
+                      <td style={{ width: "15%", padding: "2px 0" }}>
+                        {billData?.guest?.billNo}
+                      </td>
+                      <td
+                        style={{
+                          width: "10%",
+                          padding: "2px 0",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Date
+                      </td>
+                      <td style={{ width: "30%", padding: "2px 0" }}>
+                        {billData?.stay?.billDate}
+                      </td>
+                    </tr>
+                  )}
+
                   <tr>
                     <td style={{ padding: "2px 0", fontWeight: "bold" }}>
                       GUEST
@@ -1768,82 +1820,88 @@ ${hotelName}`;
                       {billData?.stay?.departure}
                     </td>
                   </tr>
-                  
+
                   <tr>
                     {!isForPreview && (
                       <>
-                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                      Address
-                    </td>
-                    <td
-                      colSpan="3"
-                      style={{
-                        padding: "2px 0",
-                        fontSize: "10px",
-                        lineHeight: "1.2",
-                      }}
-                    >
-                      {billData?.guest?.address
-                        ?.split(",")
-                        .map((line, index) => (
-                          <div key={index}>{line.trim()}</div>
-                        ))}
-                    </td>
-  
-                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                      Plan
-                    </td>
-                    <td style={{ padding: "2px 0" }}>
-                      {billData?.stay?.plan} Pax {billData?.stay?.pax}
-                    </td>
-                                      </>
-)}
+                        <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                          Address
+                        </td>
+                        <td
+                          colSpan="3"
+                          style={{
+                            padding: "2px 0",
+                            fontSize: "10px",
+                            lineHeight: "1.2",
+                          }}
+                        >
+                          {billData?.guest?.address
+                            ?.split(",")
+                            .map((line, index) => (
+                              <div key={index}>{line.trim()}</div>
+                            ))}
+                        </td>
+
+                        <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                          Plan
+                        </td>
+                        <td style={{ padding: "2px 0" }}>
+                          {billData?.stay?.plan} Pax {billData?.stay?.pax}
+                        </td>
+                      </>
+                    )}
                   </tr>
-                  
+
                   {!isForPreview && (
-                     <>
-                  <tr>
-                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                      Phone
-                    </td>
-                    <td style={{ padding: "2px 0" }}>
-                      {billData?.guest?.phone}
-                    </td>
-                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                      Tariff
-                    </td>
-                    <td style={{ padding: "2px 0" }}>
-                      {billData?.stay?.tariff}
-                    </td>
-                    <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                      No. of Days
-                    </td>
-                    <td style={{ padding: "2px 0" }}>{billData?.stay?.days}</td>
-                  </tr>
-                  <tr>
-                    {billData?.guest?.gstNo && (
-                      <>
+                    <>
+                      <tr>
                         <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                          GST No
+                          Phone
                         </td>
                         <td style={{ padding: "2px 0" }}>
-                          {billData?.guest?.gstNo}
+                          {billData?.guest?.phone}
                         </td>
-                      </>
-                    )}
-                    {billData?.guest?.travelAgent && (
-                      <>
                         <td style={{ padding: "2px 0", fontWeight: "bold" }}>
-                          Travel Agent
+                          Tariff
                         </td>
                         <td style={{ padding: "2px 0" }}>
-                          {billData?.guest?.travelAgent}
+                          {billData?.stay?.tariff}
                         </td>
-                      </>
-                    )}
-                  </tr>
-                 </>
-                      )}
+                        <td style={{ padding: "2px 0", fontWeight: "bold" }}>
+                          No. of Days
+                        </td>
+                        <td style={{ padding: "2px 0" }}>
+                          {billData?.stay?.days}
+                        </td>
+                      </tr>
+                      <tr>
+                        {billData?.guest?.gstNo && (
+                          <>
+                            <td
+                              style={{ padding: "2px 0", fontWeight: "bold" }}
+                            >
+                              GST No
+                            </td>
+                            <td style={{ padding: "2px 0" }}>
+                              {billData?.guest?.gstNo}
+                            </td>
+                          </>
+                        )}
+                        {billData?.guest?.travelAgent && (
+                          <>
+                            <td
+                              style={{ padding: "2px 0", fontWeight: "bold" }}
+                            >
+                              Travel Agent
+                            </td>
+                            <td style={{ padding: "2px 0" }}>
+                              {billData?.guest?.travelAgent}
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    </>
+                  )}
                   {billData?.guest?.gstNo && !isForPreview && (
                     <>
                       <tr>
@@ -2575,7 +2633,7 @@ ${hotelName}`;
       </div>
 
       {/* Action buttons */}
-      <div className="no-print w-full flex justify-center">
+      {/* <div className="no-print w-full flex justify-center">
         <div className="no-print flex flex-wrap gap-3 mb-4 p-4">
           <button
             onClick={() => handlePrintPDF(false)}
@@ -2583,7 +2641,12 @@ ${hotelName}`;
           >
             📄 Download PDF
           </button>
-
+          <button
+            onClick={handleSplitPayment}
+            className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 transition-colors"
+          >
+            💳 Arrange Print
+          </button>
           <button
             onClick={handleSplitPayment}
             className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-500 transition-colors"
@@ -2591,14 +2654,13 @@ ${hotelName}`;
             💳 Split Payment
           </button>
 
+          <button
+            onClick={handleShareClick}
+            className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-green-600 transition-colors"
+          >
+            Share
+          </button>
 
-   <button
-          onClick={handleShareClick}
-          className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-green-600 transition-colors"
-        >
-          Share
-        </button>
-        
           {isForPreview && (
             <button
               onClick={() => {
@@ -2633,7 +2695,79 @@ ${hotelName}`;
             🖨️ Print Invoice
           </button>
         </div>
-      </div>
+      </div> */}
+      <div className="no-print w-full flex justify-center">
+  <div className="flex flex-wrap gap-2 p-4 bg-gray-50 dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-700">
+
+    {/* Primary action stands out */}
+    <button
+      onClick={() => handlePrintPDF(false)}
+      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium
+                 bg-black text-white hover:opacity-80 active:scale-95 transition-all"
+    >
+      <DownloadIcon className="w-4 h-4" />
+      Download PDF
+    </button>
+
+    <button
+      onClick={() => handlePrintPDF(true)}
+      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium
+                 border border-gray-300 dark:border-zinc-600 hover:bg-gray-100 dark:hover:bg-zinc-800 active:scale-95 transition-all"
+    >
+      <PrinterIcon className="w-4 h-4 text-gray-500" />
+      Print Invoice
+    </button>
+
+    {/* Visual separator */}
+    <div className="w-px bg-gray-200 dark:bg-zinc-700 self-stretch mx-1" />
+
+    <button onClick={handleSplitPayment} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 dark:border-zinc-600 hover:bg-gray-100 dark:hover:bg-zinc-800 active:scale-95 transition-all">
+      <GridIcon className="w-4 h-4 text-gray-500" />
+      Arrange Print
+    </button>
+
+    <button onClick={handleSplitPayment} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 dark:border-zinc-600 hover:bg-gray-100 dark:hover:bg-zinc-800 active:scale-95 transition-all">
+      <CreditCardIcon className="w-4 h-4 text-gray-500" />
+      Split Payment
+    </button>
+
+    <div className="w-px bg-gray-200 dark:bg-zinc-700 self-stretch mx-1" />
+
+    <button onClick={handleShareClick} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 dark:border-zinc-600 hover:bg-gray-100 dark:hover:bg-zinc-800 active:scale-95 transition-all">
+      <ShareIcon className="w-4 h-4 text-gray-500" />
+      Share
+    </button>
+
+    {isForPreview && (
+      <button   onClick={() => {
+                // For preview confirm, use first bill's netPay as balanceToPay
+
+                let balanceToPay = 0;
+                bills?.forEach((item) => (balanceToPay += item.payment.netPay));
+                console.log(balanceToPay);
+                const firstDoc = selectedCheckOut[0];
+                navigate("/sUsers/checkInList", {
+                  state: {
+                    selectedCheckOut,
+                    selectedCustomer: firstDoc?.customerId,
+                    balanceToPay,
+                    kotData,
+                    checkoutmode,
+                    cheinids,
+                    isForPreview,
+                  },
+                });
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium
+                 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-400
+                 hover:bg-green-50 dark:hover:bg-green-900/20 active:scale-95 transition-all">
+        <CheckCircleIcon className="w-4 h-4" />
+        Confirm
+      </button>
+    )}
+
+  </div>
+</div>
     </>
   );
 };
