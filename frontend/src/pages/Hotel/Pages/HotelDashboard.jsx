@@ -1383,7 +1383,7 @@ console.log(baseStatus);
                 {selectedRoomData.status === "occupied" ? (
                   <>
                     <option value="editChecking">Edit Tarrif Rate</option>
-                    <option value="checkOut">CheckOut</option>
+                    {/* <option value="checkOut">CheckOut</option> */}
                     <option value="swapRoom">Swap Room</option>
                   </>
                 ) : (

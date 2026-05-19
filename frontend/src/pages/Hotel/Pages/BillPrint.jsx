@@ -1017,7 +1017,7 @@ console.log(dateWiseLines);
           doc.discountAmount ||
           0,
       );
-    const netPay = Math.abs(grandTotal - advanceTotal);
+    const netPay = (grandTotal - advanceTotal);
 
     // Compose hotel/guest info per doc
     const guestRooms = (doc.selectedRooms || [])
