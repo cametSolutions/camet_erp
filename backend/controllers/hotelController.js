@@ -1383,7 +1383,6 @@ export const getBookings = async (req, res) => {
       filter,
       params,
     );
-  
 
     // ✅ Process bookings to add payment status and travel agent info
     const processedBookings = bookings.map((booking) => {
@@ -1413,7 +1412,10 @@ export const getBookings = async (req, res) => {
 
       return processed;
     });
-  console.log("bookingss", processedBookings[0]?.selectedRooms[0]?.dateTariffs);
+    console.log(
+      "bookingss",
+      processedBookings[0]?.selectedRooms[0]?.dateTariffs,
+    );
     return sendBookingsResponse(res, processedBookings, totalBookings, params);
   } catch (error) {
     console.error("Error in getBookings:", error);
@@ -1855,7 +1857,6 @@ export const updateBooking = async (req, res) => {
     // TRANSACTION
     // -----------------------------
     await session.withTransaction(async () => {
-    
       // 2) Handle advance logic (delete-only vs delete+recreate)
       if (bookingData.advanceAmount && bookingData.advanceAmount > 0) {
         // a) Create new TallyData advance object
@@ -2025,7 +2026,7 @@ export const updateBooking = async (req, res) => {
             );
           }
         }
-      } 
+      }
       // else {
       //   // No advance now -> ensure old advance records are gone
       //   await TallyData.deleteMany({ billId: bookingId.toString() }).session(
@@ -3053,8 +3054,7 @@ export const convertCheckOutToSale = async (req, res) => {
               balanceToPay: pendingAmount <= 0 ? 0 : pendingAmount,
               isPartialCheckout: isThisPartial,
               originalCheckInId: checkInId,
-              discountAmount:
-                Number(item?.discountAmount || 0),
+              discountAmount: Number(item?.discountAmount || 0),
               paymenttypeDetails: {
                 cash,
                 bank,
@@ -3942,7 +3942,7 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
           [`configurations.0.discountBasedOnGrossAmountInHotel`]: data.checked,
         },
       };
-    }else if (data.title) {
+    } else if (data.title) {
       // Fallback for backward compatibility with old toggle structure
       updateData = {
         $set: {
@@ -4517,9 +4517,7 @@ export const getHotelSalesDetails = async (req, res) => {
       },
     ]);
 
-    
-  
-  const salesData = [
+    const salesData = [
       ...new Map(AllSalesData.map((item) => [item.salesNumber, item])).values(),
     ];
 
@@ -4528,10 +4526,10 @@ export const getHotelSalesDetails = async (req, res) => {
       console.log("saleeeeeeee", sale);
 
       const roomName =
-  sale?.items
-    ?.map((item) => item.product_name)
-    ?.filter(Boolean)
-    ?.join(", ") || "";
+        sale?.items
+          ?.map((item) => item.product_name)
+          ?.filter(Boolean)
+          ?.join(", ") || "";
       // Extract payment information
       let cashAmount = 0,
         bankAmount = 0,
@@ -6307,7 +6305,7 @@ export const getOccupancyCheckoutReport = async (req, res) => {
                 $lte: endDate,
               },
             },
-            
+
             {
               status: { $ne: "checkOut" },
               arrivalDateObj: {
@@ -6394,10 +6392,9 @@ export const getOccupancyCheckoutReport = async (req, res) => {
               .filter(Boolean)
               .join(", ") || "";
 
-          planName = getPlanNames(foundPlan);
-
           if (foundPlan.length >= 0) {
             foundPlan.map((plan) => {
+              planName = plan.foodPlan;
               if (!planMap[plan.foodPlan]) {
                 planMap[plan.foodPlan] = {
                   plan: plan.foodPlan,
@@ -6413,23 +6410,35 @@ export const getOccupancyCheckoutReport = async (req, res) => {
               planMap[plan.foodPlan].addnl += additionalPaxCount;
               planMap[plan.foodPlan].total += pax + additionalPaxCount;
             });
+            if (!planMap[planName]) {
+              planMap[planName] = {
+                plan: planName,
+                rms: 0,
+                pax: 0,
+                addnl: 0,
+                total: 0,
+              };
+            }
+
+            planMap[planName].rms += 1;
+            planMap[planName].pax += pax;
+            planMap[planName].addnl += additionalPaxCount;
+            planMap[planName].total += pax + additionalPaxCount;
           }
         }
 
-        if (!planMap[planName]) {
-          planMap[planName] = {
-            plan: planName,
-            rms: 0,
-            pax: 0,
-            addnl: 0,
-            total: 0,
-          };
-        }
+        let extraPersonTariff =
+          doc?.additionalPaxDetails?.reduce((acc, item) => {
+            return item?.roomId?.toString() === room?.roomId?.toString()
+              ? acc + (item?.rate || 0)
+              : acc;
+          }, 0) || 0;
 
-        planMap[planName].rms += 1;
-        planMap[planName].pax += pax;
-        planMap[planName].addnl += additionalPaxCount;
-        planMap[planName].total += pax + additionalPaxCount;
+        let additionalPax =
+          doc?.additionalPaxDetails?.filter(
+            (item) => item?.roomId.toString() == room?.roomId.toString(),
+          ).length || 0;
+
         rows.push({
           slNo: rows.length + 1,
           room: room?.roomName || "",
@@ -6437,12 +6446,15 @@ export const getOccupancyCheckoutReport = async (req, res) => {
           guestName: doc?.guestName || doc?.customerName || "",
           company: doc?.company || "",
           pax,
+          additionalPax,
           arrivalDate: doc?.arrivalDate || "",
           arrivalTime: doc?.arrivalTime || "",
           departureDate: doc?.newChecoutDate || doc?.checkOutDate || "",
           departureTime: doc?.newCheckoutTime || doc?.checkOutTime || "",
           plan: planName,
           tariff,
+          extraPersonTariff,
+          totalTariffWithPax: extraPersonTariff + tariff,
           discountPercent: 0,
           discountAmount: 0,
         });
@@ -6528,7 +6540,6 @@ export const getOccupancyCheckoutReport = async (req, res) => {
   }
 };
 
-
 export const deleteAdvance = async (req, res) => {
   const session = await mongoose.startSession();
 
@@ -6547,7 +6558,7 @@ export const deleteAdvance = async (req, res) => {
 
     const deletedAdvance = await TallyData.findOneAndDelete(
       { _id: id, cmp_id },
-      { session }
+      { session },
     );
 
     if (!deletedAdvance) {
@@ -6557,10 +6568,10 @@ export const deleteAdvance = async (req, res) => {
         message: "Advance not found",
       });
     }
-      if (deletedAdvance) {
-        await deleteReceipt(id, session);
-        await deleteSettlements(id, session);
-      }
+    if (deletedAdvance) {
+      await deleteReceipt(id, session);
+      await deleteSettlements(id, session);
+    }
 
     const advanceAmount = Number(deletedAdvance?.bill_amount || 0);
 
@@ -6577,13 +6588,13 @@ export const deleteAdvance = async (req, res) => {
       const booking = await Booking.findOne(
         { _id: deletedAdvance.billId, cmp_id },
         null,
-        { session }
+        { session },
       );
 
       if (booking) {
         const current = Number(booking.advanceAmount || 0);
         const updated = current - advanceAmount;
-        let totalAdvance = Number(booking.totalAdvance || 0) - advanceAmount
+        let totalAdvance = Number(booking.totalAdvance || 0) - advanceAmount;
         let currentBlance = Number(booking.balanceToPay || 0);
         let updatedBalance = currentBlance + advanceAmount;
         await Booking.updateOne(
@@ -6591,11 +6602,11 @@ export const deleteAdvance = async (req, res) => {
           {
             $set: {
               advanceAmount: String(updated),
-              balanceToPay : String(updatedBalance),
-              totalAdvance : String(totalAdvance)
+              balanceToPay: String(updatedBalance),
+              totalAdvance: String(totalAdvance),
             },
           },
-          { session }
+          { session },
         );
       }
     }
@@ -6605,7 +6616,7 @@ export const deleteAdvance = async (req, res) => {
       const checkIn = await CheckIn.findOne(
         { _id: deletedAdvance.billId, cmp_id },
         null,
-        { session }
+        { session },
       );
 
       if (checkIn) {
@@ -6618,10 +6629,10 @@ export const deleteAdvance = async (req, res) => {
           {
             $set: {
               advanceAmount: String(updated),
-              balanceToPay : String(updatedBalance)
+              balanceToPay: String(updatedBalance),
             },
           },
-          { session }
+          { session },
         );
       }
     }

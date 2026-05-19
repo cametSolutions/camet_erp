@@ -203,3 +203,23 @@ export const calculateOtherCharges = async ({
     amountType: inputType,
   };
 };
+
+export const getTaxPercentage = (amount, hsnDetails) => {
+  const matchedRow = hsnDetails?.rows?.find((row) => {
+    const greaterThan = Number(row.greaterThan || 0);
+    const upto = Number(row.upto || Infinity);
+
+    return amount > greaterThan && amount <= upto;
+  });
+
+  if (!matchedRow) return null;
+
+  return {
+    igst: Number(matchedRow.igstRate || 0),
+    cgst: Number(matchedRow.cgstRate || 0),
+    sgst: Number(matchedRow.sgstUtgstRate || 0),
+    totalTax:
+      Number(matchedRow.cgstRate || 0) +
+      Number(matchedRow.sgstUtgstRate || 0),
+  };
+};

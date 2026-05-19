@@ -519,7 +519,7 @@ const RestaurantPOS = () => {
         console.log("Processing booking, foodPlan array:", room?.foodPlan);
 
         return (
-          room?.selectedRooms?.map((selectedRoom) => {
+          room?.selectedRooms?.filter((selectedRoom) => !selectedRoom.isSwapped)?.map((selectedRoom) => {
             const completeFoodPlan = [];
 
             room.foodPlan?.forEach((data) => {

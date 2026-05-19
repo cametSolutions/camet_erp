@@ -236,14 +236,14 @@ const HotelBillPrint = () => {
       const swapDate = room?.swappingDateFrom
         ? new Date(room.swappingDateFrom).toISOString().split("T")[0]
         : "";
-
+console.log(swapDate);
       if (room.isSwapped && room.swappingDateFrom) {
         console.log(room.roomName);
         const swappingDate = normalizeToDate(room.swappingDateFrom);
         const arrivalDate = normalizeToDate(doc.arrivalDate);
 
         fullDaysAre = Math.floor(
-          (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
+          (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) 
         );
 
         if (fullDaysAre <= 0) {
@@ -1017,7 +1017,7 @@ console.log(dateWiseLines);
           doc.discountAmount ||
           0,
       );
-    const netPay = Math.abs(grandTotal - advanceTotal);
+    const netPay = (grandTotal - advanceTotal);
 
     // Compose hotel/guest info per doc
     const guestRooms = (doc.selectedRooms || [])
@@ -1031,10 +1031,10 @@ console.log(dateWiseLines);
 
     const basePax =
       (doc.selectedRooms || []).reduce(
-        (acc, curr) => acc + Number(curr.pax || 0),
+        (acc, curr) => acc + curr.isSwapped ? 0 : Number(curr.pax || 0),
         0,
       ) || 1;
-
+console.log(doc?.additionalPaxDetails);
     const additionalPaxCount = (doc.additionalPaxDetails || []).length;
 
     const totalPax = basePax + additionalPaxCount;

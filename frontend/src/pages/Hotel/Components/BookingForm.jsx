@@ -369,6 +369,7 @@ console.log(name, value)
       }));
       return;
     }
+    
     if (name === "country") {
       setFormData((prev) => ({ ...prev, [name]: value, guestCountry: value }));
       return;
