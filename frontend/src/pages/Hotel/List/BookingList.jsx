@@ -1241,6 +1241,7 @@ function BookingList() {
             restaurantBaseSaleData: restaurantBaseSaleData,
             checkoutMode, //to check if the checkout is single or multiple
             checkinIds: checkinidsarray, //have array of checkinids ,if only its sinle checkout unless its null
+            restaurantSideDiscountAdjustmentArray: restaurantSideDiscountAdjustmentArray
           },
           { withCredentials: true },
         );
@@ -2392,6 +2393,7 @@ function BookingList() {
 
   const handlePaymentAllocationInRestaurant = (data) => {
     if (!data) {
+      console.log("data", data);
       setRestaurantSideDiscountAdjustmentArray(data);
       setSelectedDataForPayment((prevData) => ({
         ...prevData,

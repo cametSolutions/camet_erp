@@ -22,22 +22,22 @@ export default function PaymentAllocation({
   const [discountType, setDiscountType] = useState("percentage");
   const [discountValue, setDiscountValue] = useState("");
   const [saleData, setSaleData] = useState([]);
-  const [loading, setLoading] = useState(false); // ← loader state
+  const [loading, setLoading] = useState(false);
   const [selectedOtherCharge, setSelectedOtherCharge] = useState({});
-  const [restaurantSaleWiseTaggedOtherCharges, setRestaurantSaleWiseTaggedOtherCharges] = useState([]); 
+  // Stores one discount entry per sale: { saleId, saleNumber, finalValue, ... }
+  const [restaurantSaleWiseTaggedOtherCharges, setRestaurantSaleWiseTaggedOtherCharges] = useState([]);
 
-    const org = useSelector(
-      (state) => state.secSelectedOrganization.secSelectedOrg,
-    );
+  const org = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg,
+  );
 
-    const discountBasedOnGrossAmount =
-      org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
-  
+  const discountBasedOnGrossAmount =
+    org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
 
-  // We only need discount so we find it form additional charge list
+  // Find the DISCOUNT charge head from otherCharges
   useEffect(() => {
     if (otherCharges?.length > 0) {
-      let discountHead = otherCharges.find(
+      const discountHead = otherCharges.find(
         (item) => item?.name?.toUpperCase().trim() === "DISCOUNT",
       );
       if (discountHead) {
@@ -45,10 +45,11 @@ export default function PaymentAllocation({
       }
     }
   }, [otherCharges]);
+
   const handleFetch = async () => {
     try {
-      setLoading(true); // ← start loader
-      let checkInNumbers = selectedCheckIns
+      setLoading(true);
+      const checkInNumbers = selectedCheckIns
         .filter((item) => item?.voucherNumber)
         .map((item) => item.voucherNumber);
 
@@ -63,7 +64,7 @@ export default function PaymentAllocation({
     } catch (error) {
       console.error(error);
     } finally {
-      setLoading(false); // ← stop loader always
+      setLoading(false);
     }
   };
 
@@ -73,19 +74,46 @@ export default function PaymentAllocation({
     }
   }, [selectedCheckIns]);
 
+  // Normalize: support both _id (Mongo) and id (mapped). Prefer _id.
+  const getSaleId = (sale) => sale?._id ?? sale?.id ?? null;
+
   const selectedItem = useMemo(
-    () => saleData.find((i) => i.id === selectedId) ?? null,
+    () => saleData.find((i) => getSaleId(i) === selectedId) ?? null,
     [saleData, selectedId],
   );
 
-  const discountAmount = restaurantSaleWiseTaggedOtherCharges.reduce((acc, item) => acc + Number(item?.finalValue || 0), 0); 
+  // ── Helper: get discount finalValue for a specific sale ──────────────────
+  const getDiscountForSale = (sale) => {
+    const saleMongoId = getSaleId(sale);
+    const entry = restaurantSaleWiseTaggedOtherCharges.find(
+      (item) => item?.saleId === saleMongoId,
+    );
+    return Number(entry?.finalValue || 0);
+  };
+
+  // ── Per-row net (used in table AND summary) ──────────────────────────────
+  const getNetForSale = (sale) =>
+    +(sale.subTotal - getDiscountForSale(sale)).toFixed(2);
+
+  // ── Summary values for the SELECTED row only ─────────────────────────────
+  const selectedDiscount = selectedItem
+    ? getDiscountForSale(selectedItem)
+    : 0;
 
   const netPayable = selectedItem
-    ? +(selectedItem.subTotal - discountAmount).toFixed(2)
+    ? getNetForSale(selectedItem)
     : 0;
+
   const balance = +(applicableAmount - netPayable).toFixed(2);
+
+  // ── Footer totals (all rows) ─────────────────────────────────────────────
   const totalRaw = (saleData || []).reduce((s, i) => s + (i.subTotal ?? 0), 0);
-  const totalNet = +(totalRaw - discountAmount).toFixed(2);
+  const totalDiscount = restaurantSaleWiseTaggedOtherCharges.reduce(
+    (acc, item) => acc + Number(item?.finalValue || 0),
+    0,
+  );
+  const totalNet = +(totalRaw - totalDiscount).toFixed(2);
+
   const canConfirm = !!selectedItem && balance >= 0;
 
   const handleRowClick = (id) => {
@@ -93,84 +121,61 @@ export default function PaymentAllocation({
     setDiscountValue("");
   };
 
-  // const handleDiscountInput = (e) => {
-  //   const v = e.target.value;
-  //   if (v === "" || /^\d*\.?\d*$/.test(v)) setDiscountValue(v);
-  // };
+  const handleDiscountInput = (value, selectedDataForPayment) => {
+    const inputAmount = Number(value) || 0;
+    const flatItems = selectedDataForPayment?.items || [];
 
-const handleDiscountInput = (value, selectedDataForPayment) => {
-  
-  const inputAmount = Number(value) || 0;
+    let calculatedDiscount = inputAmount; // default: flat amount
 
-  const flatItems = selectedDataForPayment?.items || [];
-  console.log(flatItems);
-
-  let baseAmount = 0;
-  let calculatedDiscount = inputAmount;
-
-  if (discountType === "percentage") {
-    if (discountBasedOnGrossAmount) {
-      baseAmount = flatItems.reduce(
+    if (discountType === "percentage") {
+      const baseAmount = flatItems.reduce(
         (acc, item) => acc + Number(item?.total || 0),
-        0
+        0,
       );
-    } else {
-      baseAmount = flatItems.reduce(
-        (acc, item) =>
-          acc +
-          Number(item?.total || 0) ,
-        0
-      );
+      calculatedDiscount = +((baseAmount * inputAmount) / 100).toFixed(2);
     }
 
-    calculatedDiscount = (
-      (baseAmount * inputAmount) /
-      100
-    ).toFixed(2);
-  }
+    const taxAmount =
+      (Number(calculatedDiscount) *
+        Number(selectedOtherCharge?.taxPercentage || 0)) /
+      100;
 
-  console.log(discountBasedOnGrossAmount);
+    setRestaurantSaleWiseTaggedOtherCharges((prev) => {
+      // Remove any existing entry for this sale, then add the updated one
+      const filtered = prev.filter(
+        (item) =>
+          item?.saleId !== getSaleId(selectedDataForPayment) &&
+          item?.saleNumber !== selectedDataForPayment?.salesNumber,
+      );
 
-  const taxAmount =
-    (Number(calculatedDiscount || 0) *
-      Number(selectedOtherCharge?.taxPercentage || 0)) /
-    100;
+      return [
+        ...filtered,
+        {
+          _id: selectedOtherCharge?._id,
+          option: selectedOtherCharge?.name,
+          value: inputAmount,
+          action: "sub",
+          taxPercentage: Number(selectedOtherCharge?.taxPercentage || 0),
+          taxAmt: taxAmount,
+          hsn: selectedOtherCharge?.hsn,
+          finalValue: +(Number(calculatedDiscount) + taxAmount).toFixed(2),
+          saleId: getSaleId(selectedDataForPayment),
+          saleNumber: selectedDataForPayment?.salesNumber,
+        },
+      ];
+    });
 
-  setRestaurantSaleWiseTaggedOtherCharges((prev) => {
-    const filtered = prev?.filter(
-      (item) =>
-        item?.saleId !== selectedDataForPayment?._id &&
-        item?.saleNumber !== selectedDataForPayment?.salesNumber
-    );
-
-    return [
-      ...filtered,
-      {
-        _id: selectedOtherCharge?._id,
-        option: selectedOtherCharge?.name,
-        value: Number(inputAmount) || 0,
-        action: "sub",
-        taxPercentage: Number(
-          selectedOtherCharge?.taxPercentage || 0
-        ),
-        taxAmt: taxAmount || 0,
-        hsn: selectedOtherCharge?.hsn,
-        finalValue: Number(calculatedDiscount) + taxAmount,
-        saleId: selectedDataForPayment?._id,
-        saleNumber: selectedDataForPayment?.salesNumber,
-      },
-    ];
-  });
-
-  setDiscountValue(inputAmount);
-};
-
-console.log(restaurantSaleWiseTaggedOtherCharges);
+    setDiscountValue(inputAmount);
+  };
 
   const handleConfirm = () => {
-    if (canConfirm)
-      onConfirm(restaurantSaleWiseTaggedOtherCharges);
+    console.log(restaurantSaleWiseTaggedOtherCharges);
+    if (canConfirm) onConfirm(restaurantSaleWiseTaggedOtherCharges);
   };
+
+  const hasDiscountHead = Object.keys(selectedOtherCharge || {}).length > 0;
+  // tfoot colSpan: sel-radio + saleNo + amtToPay [+ discHead + disc] + netPayable
+  const tfootColSpan = hasDiscountHead ? 3 : 2;
 
   if (!isOpen) return null;
 
@@ -208,18 +213,10 @@ console.log(restaurantSaleWiseTaggedOtherCharges);
         {/* ── Info bar ── */}
         <div style={S.infoBar}>
           {selectedCheckIns.map((item, idx) => (
-            <InfoChip
-              key={idx}
-              label="Check-In No"
-              value={item.voucherNumber}
-            />
+            <InfoChip key={idx} label="Check-In No" value={item.voucherNumber} />
           ))}
           {selectedCheckIns.map((item, idx) => (
-            <InfoChip
-              key={`guest-${idx}`}
-              label="Guest Name"
-              value={item.guestId?.partyName}
-            />
+            <InfoChip key={`guest-${idx}`} label="Guest Name" value={item.guestId?.partyName} />
           ))}
           <InfoChip
             label="Applicable Amount"
@@ -232,37 +229,17 @@ console.log(restaurantSaleWiseTaggedOtherCharges);
         {/* ── Table / Loader ── */}
         <div style={{ overflowX: "auto", position: "relative" }}>
           {loading ? (
-            /* ── Skeleton loader ── */
             <div style={S.loaderWrap}>
               <div style={S.spinnerRing} />
               <span style={S.loaderText}>Loading sales data…</span>
-              {/* Skeleton rows */}
               <div style={S.skeletonTable}>
                 {[1, 2, 3].map((n) => (
                   <div key={n} style={S.skeletonRow}>
-                    <div
-                      style={{
-                        ...S.skeletonCell,
-                        width: 20,
-                        borderRadius: "50%",
-                      }}
-                    />
+                    <div style={{ ...S.skeletonCell, width: 20, borderRadius: "50%" }} />
                     <div style={{ ...S.skeletonCell, width: 90 }} />
-                    <div
-                      style={{
-                        ...S.skeletonCell,
-                        width: 70,
-                        marginLeft: "auto",
-                      }}
-                    />
+                    <div style={{ ...S.skeletonCell, width: 70, marginLeft: "auto" }} />
                     <div style={{ ...S.skeletonCell, width: 110 }} />
-                    <div
-                      style={{
-                        ...S.skeletonCell,
-                        width: 70,
-                        marginLeft: "auto",
-                      }}
-                    />
+                    <div style={{ ...S.skeletonCell, width: 70, marginLeft: "auto" }} />
                   </div>
                 ))}
               </div>
@@ -274,7 +251,7 @@ console.log(restaurantSaleWiseTaggedOtherCharges);
                   <th style={{ ...S.th, width: 32 }} />
                   <th style={S.th}>Sale No.</th>
                   <th style={{ ...S.th, textAlign: "right" }}>Amount to Pay</th>
-                  {Object.keys(selectedOtherCharge || {}).length > 0 && (
+                  {hasDiscountHead && (
                     <>
                       <th style={S.th}>Discount Head</th>
                       <th style={S.th}>Discount</th>
@@ -286,73 +263,64 @@ console.log(restaurantSaleWiseTaggedOtherCharges);
               <tbody>
                 {saleData.length === 0 ? (
                   <tr>
-                    <td colSpan={5} style={S.emptyCell}>
+                    <td colSpan={hasDiscountHead ? 6 : 4} style={S.emptyCell}>
                       No sales records found for the selected check-ins.
                     </td>
                   </tr>
                 ) : (
                   saleData.map((item) => {
-                    const isSel = item.id === selectedId;
-                    const net = +(
-                      item.subTotal - (isSel ? discountAmount : 0)
-                    ).toFixed(2);
+                    const isSel = getSaleId(item) === selectedId;
+                    // Each row uses its OWN discount entry
+                    const rowDiscount = getDiscountForSale(item);
+                    const rowNet = getNetForSale(item);
+                    const rowDiscountEntry = restaurantSaleWiseTaggedOtherCharges.find(
+                      (d) => d?.saleId === getSaleId(item),
+                    );
+
                     return (
                       <tr
-                        key={item.id}
+                        key={getSaleId(item)}
                         style={{ ...S.tr, ...(isSel ? S.trSel : {}) }}
-                        onClick={() => handleRowClick(item.id)}
+                        onClick={() => handleRowClick(getSaleId(item))}
                       >
                         <td style={S.td}>
-                          <div
-                            style={{ ...S.radio, ...(isSel ? S.radioSel : {}) }}
-                          >
+                          <div style={{ ...S.radio, ...(isSel ? S.radioSel : {}) }}>
                             {isSel && <div style={S.radioDot} />}
                           </div>
                         </td>
                         <td style={S.td}>
                           <span style={S.sBadge}>{item.salesNumber}</span>
                         </td>
-                        <td
-                          style={{
-                            ...S.td,
-                            textAlign: "right",
-                            fontVariantNumeric: "tabular-nums",
-                          }}
-                        >
+                        <td style={{ ...S.td, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                           {fmt(item.subTotal)}
                         </td>
-                        {Object.keys(selectedOtherCharge || {}).length > 0 && (
+
+                        {hasDiscountHead && (
                           <>
-                            <td
-                              style={S.td}
-                              onClick={(e) => e.stopPropagation()}
-                            >
+                            {/* Discount Head column */}
+                            <td style={S.td} onClick={(e) => e.stopPropagation()}>
                               {isSel ? (
                                 <div style={S.discWrap}>
                                   <p>{selectedOtherCharge?.name}</p>
-                                  
                                 </div>
-                              ) : (
-                                <span
-                                  style={{ color: "#c5d5e8", fontSize: 12 }}
-                                >
-                                  —
+                              ) : rowDiscountEntry ? (
+                                <span style={{ fontSize: 11, color: "#5a1aa0" }}>
+                                  {selectedOtherCharge?.name}
                                 </span>
+                              ) : (
+                                <span style={{ color: "#c5d5e8", fontSize: 12 }}>—</span>
                               )}
                             </td>
-                            <td
-                              style={S.td}
-                              onClick={(e) => e.stopPropagation()}
-                            >
+
+                            {/* Discount input / display column */}
+                            <td style={S.td} onClick={(e) => e.stopPropagation()}>
                               {isSel ? (
                                 <div style={S.discWrap}>
                                   <div style={S.toggleGroup}>
                                     <button
                                       style={{
                                         ...S.toggleBtn,
-                                        ...(discountType === "percentage"
-                                          ? S.toggleOn
-                                          : {}),
+                                        ...(discountType === "percentage" ? S.toggleOn : {}),
                                       }}
                                       onClick={() => {
                                         setDiscountType("percentage");
@@ -364,9 +332,7 @@ console.log(restaurantSaleWiseTaggedOtherCharges);
                                     <button
                                       style={{
                                         ...S.toggleBtn,
-                                        ...(discountType === "amount"
-                                          ? S.toggleOn
-                                          : {}),
+                                        ...(discountType === "amount" ? S.toggleOn : {}),
                                       }}
                                       onClick={() => {
                                         setDiscountType("amount");
@@ -380,40 +346,38 @@ console.log(restaurantSaleWiseTaggedOtherCharges);
                                     style={S.discInput}
                                     type="text"
                                     inputMode="decimal"
-                                    placeholder={
-                                      discountType === "percentage"
-                                        ? "0–100"
-                                        : "0.00"
-                                    }
+                                    placeholder={discountType === "percentage" ? "0–100" : "0.00"}
                                     value={discountValue}
-                                    onChange={(e)=>handleDiscountInput(e.target.value,item)}
+                                    onChange={(e) => handleDiscountInput(e.target.value, item)}
                                   />
-                                  {restaurantSaleWiseTaggedOtherCharges.length > 0 && (
+                                  {rowDiscountEntry && (
                                     <span style={S.discBadge}>
-                                      −{fmt(restaurantSaleWiseTaggedOtherCharges.find((dis) => dis?.saleId == item?._id)?.finalValue)}
+                                      −{fmt(rowDiscountEntry.finalValue)}
                                     </span>
                                   )}
                                 </div>
-                              ) : (
-                                <span
-                                  style={{ color: "#c5d5e8", fontSize: 12 }}
-                                >
-                                  —
+                              ) : rowDiscountEntry ? (
+                                // Show previously entered discount for non-selected rows
+                                <span style={S.discBadge}>
+                                  −{fmt(rowDiscountEntry.finalValue)}
                                 </span>
+                              ) : (
+                                <span style={{ color: "#c5d5e8", fontSize: 12 }}>—</span>
                               )}
                             </td>
                           </>
                         )}
+
                         <td
                           style={{
                             ...S.td,
                             textAlign: "right",
                             fontVariantNumeric: "tabular-nums",
-                            color: isSel ? "#1a4fa0" : "inherit",
-                            fontWeight: isSel ? 700 : 400,
+                            color: isSel ? "#1a4fa0" : rowDiscount > 0 ? "#1a4fa0" : "inherit",
+                            fontWeight: isSel || rowDiscount > 0 ? 700 : 400,
                           }}
                         >
-                          {fmt(net)}
+                          {fmt(rowNet)}
                         </td>
                       </tr>
                     );
@@ -422,16 +386,21 @@ console.log(restaurantSaleWiseTaggedOtherCharges);
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={2} style={S.tfoot}>
+                  <td colSpan={tfootColSpan} style={S.tfoot}>
                     {saleData.length} items
                   </td>
                   <td style={{ ...S.tfoot, textAlign: "right" }}>
                     {fmt(totalRaw)}
                   </td>
-                  <td style={S.tfoot} />
-                  <td
-                    style={{ ...S.tfoot, textAlign: "right", color: "#1a4fa0" }}
-                  >
+                  {hasDiscountHead && (
+                    <>
+                      <td style={S.tfoot} />
+                      <td style={{ ...S.tfoot, color: "#c0280a" }}>
+                        {totalDiscount > 0 ? `−${fmt(totalDiscount)}` : "—"}
+                      </td>
+                    </>
+                  )}
+                  <td style={{ ...S.tfoot, textAlign: "right", color: "#1a4fa0" }}>
                     {fmt(totalNet)}
                   </td>
                 </tr>
@@ -448,18 +417,15 @@ console.log(restaurantSaleWiseTaggedOtherCharges);
         )}
 
         {/* ── Summary bar ── */}
-        <div style={S.summary}>
-          <SumTile
-            label="Selected"
-            value={selectedItem ? selectedItem.salesNumber : "—"}
-          />
+        {/* <div style={S.summary}>
+          <SumTile label="Selected" value={selectedItem ? selectedItem.salesNumber : "—"} />
           <SumTile
             label="Item Amount"
             value={selectedItem ? fmt(selectedItem.subTotal) : "—"}
           />
           <SumTile
             label="Discount"
-            value={discountAmount > 0 ? `−${fmt(discountAmount)}` : "—"}
+            value={selectedDiscount > 0 ? `−${fmt(selectedDiscount)}` : "—"}
             valueColor="#c0280a"
           />
           <SumTile
@@ -475,7 +441,7 @@ console.log(restaurantSaleWiseTaggedOtherCharges);
             }
             last
           />
-        </div>
+        </div> */}
 
         {/* ── Footer ── */}
         <div style={S.footer}>
@@ -492,15 +458,9 @@ console.log(restaurantSaleWiseTaggedOtherCharges);
         </div>
       </div>
 
-      {/* ── Spinner keyframes injected once ── */}
       <style>{`
-        @keyframes _pa_spin {
-          to { transform: rotate(360deg); }
-        }
-        @keyframes _pa_pulse {
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0.4; }
-        }
+        @keyframes _pa_spin  { to { transform: rotate(360deg); } }
+        @keyframes _pa_pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
       `}</style>
     </div>
   );
@@ -510,9 +470,7 @@ function InfoChip({ label, value, valueColor, last }) {
   return (
     <div style={{ ...S.infoChip, ...(last ? S.infoChipLast : {}) }}>
       <span style={S.icLabel}>{label}</span>
-      <span
-        style={{ ...S.icValue, ...(valueColor ? { color: valueColor } : {}) }}
-      >
+      <span style={{ ...S.icValue, ...(valueColor ? { color: valueColor } : {}) }}>
         {value}
       </span>
     </div>
@@ -523,9 +481,7 @@ function SumTile({ label, value, valueColor, last }) {
   return (
     <div style={{ ...S.sumTile, ...(last ? S.sumTileLast : {}) }}>
       <span style={S.sumLabel}>{label}</span>
-      <span
-        style={{ ...S.sumValue, ...(valueColor ? { color: valueColor } : {}) }}
-      >
+      <span style={{ ...S.sumValue, ...(valueColor ? { color: valueColor } : {}) }}>
         {value}
       </span>
     </div>
@@ -591,11 +547,7 @@ const S = {
     padding: "9px 16px",
     borderRight: "1px solid #dce8f5",
   },
-  infoChipLast: {
-    borderRight: "none",
-    marginLeft: "auto",
-    alignItems: "flex-end",
-  },
+  infoChipLast: { borderRight: "none", marginLeft: "auto", alignItems: "flex-end" },
   icLabel: {
     fontSize: 10,
     fontWeight: 600,
@@ -604,8 +556,6 @@ const S = {
     letterSpacing: "0.08em",
   },
   icValue: { fontSize: 13, fontWeight: 700, color: "#0d1b2e", marginTop: 2 },
-
-  // ── Loader ──
   loaderWrap: {
     display: "flex",
     flexDirection: "column",
@@ -623,19 +573,8 @@ const S = {
     borderTop: "3px solid #1a6fc4",
     animation: "_pa_spin 0.75s linear infinite",
   },
-  loaderText: {
-    fontSize: 12,
-    color: "#5a7a9a",
-    fontWeight: 600,
-    letterSpacing: "0.04em",
-  },
-  skeletonTable: {
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-    gap: 1,
-    marginTop: 8,
-  },
+  loaderText: { fontSize: 12, color: "#5a7a9a", fontWeight: 600, letterSpacing: "0.04em" },
+  skeletonTable: { width: "100%", display: "flex", flexDirection: "column", gap: 1, marginTop: 8 },
   skeletonRow: {
     display: "flex",
     alignItems: "center",
@@ -649,8 +588,6 @@ const S = {
     background: "#e8f0fb",
     animation: "_pa_pulse 1.4s ease-in-out infinite",
   },
-
-  // ── Empty state ──
   emptyCell: {
     padding: "28px 16px",
     textAlign: "center",
@@ -658,7 +595,6 @@ const S = {
     color: "#8aa4c0",
     fontStyle: "italic",
   },
-
   table: { width: "100%", borderCollapse: "collapse", fontSize: 12 },
   theadRow: { background: "#f5f8fc", borderBottom: "1.5px solid #dce8f5" },
   th: {
@@ -759,11 +695,7 @@ const S = {
     padding: "9px 14px",
     borderRight: "1px solid #dce8f5",
   },
-  sumTileLast: {
-    borderRight: "none",
-    marginLeft: "auto",
-    alignItems: "flex-end",
-  },
+  sumTileLast: { borderRight: "none", marginLeft: "auto", alignItems: "flex-end" },
   sumLabel: {
     fontSize: 10,
     fontWeight: 600,
