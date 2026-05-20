@@ -1,13 +1,26 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
+
+// Round all monetary values to nearest whole rupee (4.2 → 4, 4.8 → 5)
+const round = (n) => Math.round(Number(n) || 0);
 
 const fmt = (n) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
-    maximumFractionDigits: 2,
-  }).format(n ?? 0);
+    maximumFractionDigits: 0,
+  }).format(round(n ?? 0));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shape of a discount entry stored in restaurantSaleWiseTaggedOtherCharges:
+//   { _id, option, action, taxPercentage, taxAmt, hsn,
+//     saleId, saleNumber,
+//     discountType,   ← "percentage" | "amount"  (NEW – persisted per row)
+//     rawInput,       ← exactly what the user typed  (NEW – replaces ambiguous "value")
+//     flatDiscount,   ← computed flat INR discount before tax
+//     finalValue }    ← flatDiscount + tax  (what gets subtracted from subTotal)
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function PaymentAllocation({
   isOpen = true,
@@ -16,43 +29,48 @@ export default function PaymentAllocation({
   selectedCheckIns = [],
   cmp_id,
   applicableAmount,
+  advanceAmount, // budget for advance allocation (from parent)
   otherCharges,
 }) {
   const [selectedId, setSelectedId] = useState(null);
-  const [discountType, setDiscountType] = useState("percentage");
+  // Per-row discount type is now stored in the entry itself (see discountEntries).
+  // This state is ONLY used while a row is actively selected / being edited.
+  const [activeDiscountType, setActiveDiscountType] = useState("percentage");
   const [discountValue, setDiscountValue] = useState("");
+
   const [saleData, setSaleData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedOtherCharge, setSelectedOtherCharge] = useState({});
-  // Stores one discount entry per sale: { saleId, saleNumber, finalValue, ... }
-  const [restaurantSaleWiseTaggedOtherCharges, setRestaurantSaleWiseTaggedOtherCharges] = useState([]);
+
+  // FIX #5: discount entries keyed by saleId for O(1) lookup & per-row type
+  // Shape: { [saleId]: { discountType, rawInput, flatDiscount, finalValue, ...meta } }
+  const [discountEntries, setDiscountEntries] = useState({});
+
+  // advance: { [saleId]: number }
+  const [advanceMap, setAdvanceMap] = useState({});
+  const [applyAllAdvance, setApplyAllAdvance] = useState(false);
 
   const org = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
-  const discountBasedOnGrossAmount =
-    org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
-
-  // Find the DISCOUNT charge head from otherCharges
+  // ── Seed discount head ───────────────────────────────────────────────────
   useEffect(() => {
     if (otherCharges?.length > 0) {
       const discountHead = otherCharges.find(
         (item) => item?.name?.toUpperCase().trim() === "DISCOUNT",
       );
-      if (discountHead) {
-        setSelectedOtherCharge(discountHead);
-      }
+      if (discountHead) setSelectedOtherCharge(discountHead);
     }
   }, [otherCharges]);
 
-  const handleFetch = async () => {
+  // ── Fetch sales ──────────────────────────────────────────────────────────
+  const handleFetch = useCallback(async () => {
     try {
       setLoading(true);
       const checkInNumbers = selectedCheckIns
         .filter((item) => item?.voucherNumber)
         .map((item) => item.voucherNumber);
-
       const response = await api.get(
         `/api/sUsers/getRestaurantSales/${cmp_id}`,
         {
@@ -66,15 +84,12 @@ export default function PaymentAllocation({
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCheckIns, cmp_id]);
 
   useEffect(() => {
-    if (selectedCheckIns?.length > 0) {
-      handleFetch();
-    }
-  }, [selectedCheckIns]);
+    if (selectedCheckIns?.length > 0) handleFetch();
+  }, [handleFetch]);
 
-  // Normalize: support both _id (Mongo) and id (mapped). Prefer _id.
   const getSaleId = (sale) => sale?._id ?? sale?.id ?? null;
 
   const selectedItem = useMemo(
@@ -82,100 +97,224 @@ export default function PaymentAllocation({
     [saleData, selectedId],
   );
 
-  // ── Helper: get discount finalValue for a specific sale ──────────────────
-  const getDiscountForSale = (sale) => {
-    const saleMongoId = getSaleId(sale);
-    const entry = restaurantSaleWiseTaggedOtherCharges.find(
-      (item) => item?.saleId === saleMongoId,
-    );
-    return Number(entry?.finalValue || 0);
-  };
+  // ── Discount helpers ─────────────────────────────────────────────────────
+  // Returns the final deduction amount (flatDiscount + tax) for a sale
+  const getDiscountForSale = useCallback(
+    (sale) => Number(discountEntries[getSaleId(sale)]?.finalValue || 0),
+    [discountEntries],
+  );
 
-  // ── Per-row net (used in table AND summary) ──────────────────────────────
-  const getNetForSale = (sale) =>
-    +(sale.subTotal - getDiscountForSale(sale)).toFixed(2);
+  // ── Advance helpers ──────────────────────────────────────────────────────
+  const getAdvanceForSale = useCallback(
+    (sale) => Number(advanceMap[getSaleId(sale)] || 0),
+    [advanceMap],
+  );
 
-  // ── Summary values for the SELECTED row only ─────────────────────────────
-  const selectedDiscount = selectedItem
-    ? getDiscountForSale(selectedItem)
-    : 0;
-
-  const netPayable = selectedItem
-    ? getNetForSale(selectedItem)
-    : 0;
-
-  const balance = +(applicableAmount - netPayable).toFixed(2);
-
-  // ── Footer totals (all rows) ─────────────────────────────────────────────
-  const totalRaw = (saleData || []).reduce((s, i) => s + (i.subTotal ?? 0), 0);
-  const totalDiscount = restaurantSaleWiseTaggedOtherCharges.reduce(
-    (acc, item) => acc + Number(item?.finalValue || 0),
+  const totalAdvanceUsed = Object.values(advanceMap).reduce(
+    (a, v) => a + Number(v || 0),
     0,
   );
-  const totalNet = +(totalRaw - totalDiscount).toFixed(2);
+  const remainingAdvance = round(advanceAmount - totalAdvanceUsed);
 
-  const canConfirm = !!selectedItem && balance >= 0;
+  // ── Net per row ──────────────────────────────────────────────────────────
+  const getRawNetForSale = (sale) =>
+    round(sale.subTotal - getDiscountForSale(sale) - getAdvanceForSale(sale));
 
-  const handleRowClick = (id) => {
-    setSelectedId((prev) => (prev === id ? null : id));
-    setDiscountValue("");
-  };
+  const getNetForSale = (sale) => Math.max(getRawNetForSale(sale), 0);
 
-  const handleDiscountInput = (value, selectedDataForPayment) => {
-    const inputAmount = Number(value) || 0;
-    const flatItems = selectedDataForPayment?.items || [];
+  // ── Footer totals ────────────────────────────────────────────────────────
+  const totalRaw = saleData.reduce((s, i) => s + round(i.subTotal ?? 0), 0);
+  const totalDiscount = Object.values(discountEntries).reduce(
+    (acc, e) => acc + round(e?.finalValue || 0),
+    0,
+  );
+  const totalAdvance = totalAdvanceUsed;
+  const totalNet = round(totalRaw - totalDiscount - totalAdvance);
 
-    let calculatedDiscount = inputAmount; // default: flat amount
+  const netPayable = selectedItem ? getNetForSale(selectedItem) : 0;
+  const hasAnyNegativeNet = saleData.some((s) => getRawNetForSale(s) < 0);
 
-    if (discountType === "percentage") {
-      const baseAmount = flatItems.reduce(
-        (acc, item) => acc + Number(item?.total || 0),
-        0,
-      );
-      calculatedDiscount = +((baseAmount * inputAmount) / 100).toFixed(2);
-    }
-
-    const taxAmount =
-      (Number(calculatedDiscount) *
-        Number(selectedOtherCharge?.taxPercentage || 0)) /
-      100;
-
-    setRestaurantSaleWiseTaggedOtherCharges((prev) => {
-      // Remove any existing entry for this sale, then add the updated one
-      const filtered = prev.filter(
-        (item) =>
-          item?.saleId !== getSaleId(selectedDataForPayment) &&
-          item?.saleNumber !== selectedDataForPayment?.salesNumber,
-      );
-
-      return [
-        ...filtered,
-        {
-          _id: selectedOtherCharge?._id,
-          option: selectedOtherCharge?.name,
-          value: inputAmount,
-          action: "sub",
-          taxPercentage: Number(selectedOtherCharge?.taxPercentage || 0),
-          taxAmt: taxAmount,
-          hsn: selectedOtherCharge?.hsn,
-          finalValue: +(Number(calculatedDiscount) + taxAmount).toFixed(2),
-          saleId: getSaleId(selectedDataForPayment),
-          saleNumber: selectedDataForPayment?.salesNumber,
-        },
-      ];
-    });
-
-    setDiscountValue(inputAmount);
-  };
-
-  const handleConfirm = () => {
-    console.log(restaurantSaleWiseTaggedOtherCharges);
-    if (canConfirm) onConfirm(restaurantSaleWiseTaggedOtherCharges);
-  };
+  const canConfirm =
+    !!selectedItem &&
+    netPayable >= 0 &&
+    totalAdvanceUsed <= advanceAmount &&
+    !hasAnyNegativeNet;
 
   const hasDiscountHead = Object.keys(selectedOtherCharge || {}).length > 0;
-  // tfoot colSpan: sel-radio + saleNo + amtToPay [+ discHead + disc] + netPayable
-  const tfootColSpan = hasDiscountHead ? 3 : 2;
+  const tfootColSpan = 2; // radio + saleNo
+
+  // ── Build a discount entry object ────────────────────────────────────────
+  // Discount always applies against sale.subTotal (the row amount):
+  //   percentage → clamp input to 0–100, compute (subTotal * pct / 100)
+  //   amount     → clamp input to 0–subTotal directly
+  const buildDiscountEntry = useCallback(
+    (sale, rawInput, discType) => {
+      const inputAmount = Number(rawInput) || 0;
+      const rowAmount = round(sale.subTotal); // the row's own amount
+
+      let flatDiscount;
+      if (discType === "percentage") {
+        // Clamp percentage to 0–100
+        const pct = Math.min(Math.max(inputAmount, 0), 100);
+        flatDiscount = round((rowAmount * pct) / 100);
+      } else {
+        // Clamp flat amount to 0–rowAmount
+        flatDiscount = round(Math.min(Math.max(inputAmount, 0), rowAmount));
+      }
+
+      const taxPct = Number(selectedOtherCharge?.taxPercentage || 0);
+      const taxAmt = round((flatDiscount * taxPct) / 100);
+      const finalValue = round(flatDiscount + taxAmt);
+
+      return {
+        _id: selectedOtherCharge?._id,
+        option: selectedOtherCharge?.name,
+        action: "sub",
+        taxPercentage: taxPct,
+        taxAmt,
+        hsn: selectedOtherCharge?.hsn,
+        saleId: getSaleId(sale),
+        saleNumber: sale?.salesNumber,
+        discountType: discType,
+        rawInput,
+        flatDiscount,
+        finalValue,
+      };
+    },
+    [selectedOtherCharge],
+  );
+
+  // FIX #4: re-clamp advance for a sale given its new discount
+  const reclampAdvance = useCallback(
+    (saleId, sale, newFinalDiscount) => {
+      setAdvanceMap((prev) => {
+        const current = Number(prev[saleId] || 0);
+        const maxForRow = round(sale.subTotal - newFinalDiscount);
+        const otherUsed = Object.entries(prev)
+          .filter(([k]) => k !== saleId)
+          .reduce((a, [, v]) => a + Number(v || 0), 0);
+        const budgetLeft = round(advanceAmount - otherUsed);
+        const clamped = round(
+          Math.min(current, Math.max(maxForRow, 0), Math.max(budgetLeft, 0)),
+        );
+        if (clamped === current) return prev; // no change → skip re-render
+        return { ...prev, [saleId]: clamped };
+      });
+    },
+    [advanceAmount],
+  );
+
+  // ── Per-row discount input ───────────────────────────────────────────────
+  const handleDiscountInput = (rawInput, sale) => {
+    const entry = buildDiscountEntry(sale, rawInput, activeDiscountType);
+    setDiscountEntries((prev) => ({ ...prev, [getSaleId(sale)]: entry }));
+    setDiscountValue(rawInput);
+    // FIX #4: immediately re-clamp advance if it now exceeds (subTotal - newDiscount)
+    reclampAdvance(getSaleId(sale), sale, entry.finalValue);
+  };
+
+  // ── Row click: select / deselect ─────────────────────────────────────────
+  const handleRowClick = (id) => {
+    setSelectedId((prev) => {
+      if (prev === id) {
+        setDiscountValue("");
+        return null;
+      }
+      // FIX #5: restore this row's persisted discount type + raw input
+      const existing = discountEntries[id];
+      if (existing) {
+        setActiveDiscountType(existing.discountType ?? "percentage");
+        setDiscountValue(String(existing.rawInput ?? ""));
+      } else {
+        setActiveDiscountType("percentage");
+        setDiscountValue("");
+      }
+      return id;
+    });
+  };
+
+  // ── Apply-all advance ────────────────────────────────────────────────────
+  // FIX #2: read discount from the current discountEntries state directly
+  const handleApplyAllAdvance = (checked) => {
+    setApplyAllAdvance(checked);
+    if (!checked) {
+      setAdvanceMap({});
+      return;
+    }
+    let budget = advanceAmount;
+    const newMap = {};
+    for (const sale of saleData) {
+      const saleId = getSaleId(sale);
+      if (budget <= 0) {
+        newMap[saleId] = 0;
+        continue;
+      }
+      // FIX #2: read from discountEntries directly (not via stale closure callback)
+      const discFinal = Number(discountEntries[saleId]?.finalValue || 0);
+      const needed = round(sale.subTotal - discFinal);
+      const alloc = round(Math.min(Math.max(needed, 0), budget));
+      newMap[saleId] = alloc;
+      budget = round(budget - alloc);
+    }
+    setAdvanceMap(newMap);
+  };
+
+  // ── Per-row advance input ────────────────────────────────────────────────
+  const handleAdvanceInput = (rawValue, sale) => {
+    const saleId = getSaleId(sale);
+    const input = Number(rawValue) || 0;
+    const discFinal = Number(discountEntries[saleId]?.finalValue || 0);
+    const maxForRow = round(sale.subTotal - discFinal);
+
+    const otherUsed = Object.entries(advanceMap)
+      .filter(([k]) => k !== saleId)
+      .reduce((a, [, v]) => a + Number(v || 0), 0);
+    const budgetForRow = round(advanceAmount - otherUsed);
+
+    const clamped = round(
+      Math.min(input, Math.max(maxForRow, 0), Math.max(budgetForRow, 0)),
+    );
+    setAdvanceMap((prev) => ({ ...prev, [saleId]: clamped }));
+    if (clamped !== input) setApplyAllAdvance(false);
+  };
+
+  // ── Confirm ──────────────────────────────────────────────────────────────
+  const handleConfirm = () => {
+    if (!canConfirm) return;
+
+    // Build one clean row per sale with exactly the fields the parent needs
+    const rows = saleData.map((sale) => {
+      const saleId = getSaleId(sale);
+      const discEntry = discountEntries[saleId];
+      console.log(discEntry);
+      if (!discEntry) return ;
+ console.log(discEntry);
+      return {
+        // Sale identifiers
+        saleId,
+        saleNumber: sale.salesNumber,
+        // Discount
+        discountAmount: discEntry ? round(discEntry.flatDiscount) : 0,
+        discountType: discEntry ? discEntry.discountType : null, // "percentage" | "amount" | null
+        _id: discEntry ? discEntry._id : null,
+        option: discEntry ? discEntry.option : null,
+        value: discEntry ? discEntry.rawInput : null,
+        action: "sub",
+        taxPercentage: discEntry ? discEntry.taxPercentage : null,
+        taxAmt: discEntry ? discEntry.taxAmt : null,
+        hsn: discEntry ? discEntry.hsn : null,
+        finalValue: discEntry ? round(discEntry.flatDiscount) : 0,
+        // Advance
+        advanceAmount: round(advanceMap[saleId] || 0),
+        // Derived net (for parent convenience)
+        netPayable: getNetForSale(sale),
+      };
+    }).filter(Boolean);
+
+    
+
+    onConfirm(rows);
+  };
 
   if (!isOpen) return null;
 
@@ -213,21 +352,47 @@ export default function PaymentAllocation({
         {/* ── Info bar ── */}
         <div style={S.infoBar}>
           {selectedCheckIns.map((item, idx) => (
-            <InfoChip key={idx} label="Check-In No" value={item.voucherNumber} />
+            <InfoChip
+              key={idx}
+              label="Check-In No"
+              value={item.voucherNumber}
+            />
           ))}
           {selectedCheckIns.map((item, idx) => (
-            <InfoChip key={`guest-${idx}`} label="Guest Name" value={item.guestId?.partyName} />
+            <InfoChip
+              key={`g-${idx}`}
+              label="Guest Name"
+              value={item.guestId?.partyName}
+            />
           ))}
           <InfoChip
-            label="Applicable Amount"
-            value={fmt(applicableAmount)}
+            label="Advance Budget"
+            value={fmt(advanceAmount)}
             valueColor="#1a8a4a"
+          />
+          <InfoChip
+            label="Remaining"
+            value={fmt(remainingAdvance)}
+            valueColor={
+              remainingAdvance < 0
+                ? "#c0280a"
+                : remainingAdvance === 0
+                  ? "#1a8a4a"
+                  : "#1a4fa0"
+            }
             last
           />
         </div>
 
-        {/* ── Table / Loader ── */}
-        <div style={{ overflowX: "auto", position: "relative" }}>
+        {/* ── Table ── */}
+        <div
+          style={{
+            overflowX: "auto",
+            position: "relative",
+            flex: 1,
+            overflowY: "auto",
+          }}
+        >
           {loading ? (
             <div style={S.loaderWrap}>
               <div style={S.spinnerRing} />
@@ -235,11 +400,29 @@ export default function PaymentAllocation({
               <div style={S.skeletonTable}>
                 {[1, 2, 3].map((n) => (
                   <div key={n} style={S.skeletonRow}>
-                    <div style={{ ...S.skeletonCell, width: 20, borderRadius: "50%" }} />
+                    <div
+                      style={{
+                        ...S.skeletonCell,
+                        width: 20,
+                        borderRadius: "50%",
+                      }}
+                    />
                     <div style={{ ...S.skeletonCell, width: 90 }} />
-                    <div style={{ ...S.skeletonCell, width: 70, marginLeft: "auto" }} />
+                    <div
+                      style={{
+                        ...S.skeletonCell,
+                        width: 70,
+                        marginLeft: "auto",
+                      }}
+                    />
                     <div style={{ ...S.skeletonCell, width: 110 }} />
-                    <div style={{ ...S.skeletonCell, width: 70, marginLeft: "auto" }} />
+                    <div
+                      style={{
+                        ...S.skeletonCell,
+                        width: 70,
+                        marginLeft: "auto",
+                      }}
+                    />
                   </div>
                 ))}
               </div>
@@ -250,81 +433,153 @@ export default function PaymentAllocation({
                 <tr style={S.theadRow}>
                   <th style={{ ...S.th, width: 32 }} />
                   <th style={S.th}>Sale No.</th>
-                  <th style={{ ...S.th, textAlign: "right" }}>Amount to Pay</th>
+                  <th style={{ ...S.th, textAlign: "right" }}>Amount</th>
                   {hasDiscountHead && (
                     <>
-                      <th style={S.th}>Discount Head</th>
+                      <th style={S.th}>Disc. Head</th>
                       <th style={S.th}>Discount</th>
                     </>
                   )}
+                  <th style={{ ...S.th, minWidth: 140 }}>
+                    <div style={S.advHeadWrap}>
+                      <span>Advance</span>
+                      <label
+                        style={S.advAllLabel}
+                        title="Fill all rows with advance"
+                      >
+                        <div
+                          style={{
+                            ...S.checkbox,
+                            ...(applyAllAdvance ? S.checkboxOn : {}),
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApplyAllAdvance(!applyAllAdvance);
+                          }}
+                        >
+                          {applyAllAdvance && (
+                            <svg
+                              width="9"
+                              height="9"
+                              viewBox="0 0 12 12"
+                              fill="none"
+                              stroke="#fff"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <polyline points="2,6 5,9 10,3" />
+                            </svg>
+                          )}
+                        </div>
+                        <span style={S.advAllText}>All</span>
+                      </label>
+                    </div>
+                  </th>
                   <th style={{ ...S.th, textAlign: "right" }}>Net Payable</th>
                 </tr>
               </thead>
+
               <tbody>
                 {saleData.length === 0 ? (
                   <tr>
-                    <td colSpan={hasDiscountHead ? 6 : 4} style={S.emptyCell}>
+                    <td colSpan={hasDiscountHead ? 7 : 5} style={S.emptyCell}>
                       No sales records found for the selected check-ins.
                     </td>
                   </tr>
                 ) : (
                   saleData.map((item) => {
-                    const isSel = getSaleId(item) === selectedId;
-                    // Each row uses its OWN discount entry
-                    const rowDiscount = getDiscountForSale(item);
+                    const saleId = getSaleId(item);
+                    const isSel = saleId === selectedId;
+                    const rowDiscEntry = discountEntries[saleId];
+                    const rowDiscount = Number(rowDiscEntry?.finalValue || 0);
+                    const rowAdvance = getAdvanceForSale(item);
                     const rowNet = getNetForSale(item);
-                    const rowDiscountEntry = restaurantSaleWiseTaggedOtherCharges.find(
-                      (d) => d?.saleId === getSaleId(item),
+
+                    const maxForRow = round(item.subTotal - rowDiscount);
+                    const otherUsed = Object.entries(advanceMap)
+                      .filter(([k]) => k !== saleId)
+                      .reduce((a, [, v]) => a + Number(v || 0), 0);
+                    const budgetLeft = round(advanceAmount - otherUsed);
+                    const rowCap = round(
+                      Math.min(maxForRow, Math.max(budgetLeft, 0)),
                     );
 
                     return (
                       <tr
-                        key={getSaleId(item)}
+                        key={saleId}
                         style={{ ...S.tr, ...(isSel ? S.trSel : {}) }}
-                        onClick={() => handleRowClick(getSaleId(item))}
+                        onClick={() => handleRowClick(saleId)}
                       >
+                        {/* Radio */}
                         <td style={S.td}>
-                          <div style={{ ...S.radio, ...(isSel ? S.radioSel : {}) }}>
+                          <div
+                            style={{ ...S.radio, ...(isSel ? S.radioSel : {}) }}
+                          >
                             {isSel && <div style={S.radioDot} />}
                           </div>
                         </td>
+
+                        {/* Sale No */}
                         <td style={S.td}>
                           <span style={S.sBadge}>{item.salesNumber}</span>
                         </td>
-                        <td style={{ ...S.td, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+
+                        {/* Amount */}
+                        <td
+                          style={{
+                            ...S.td,
+                            textAlign: "right",
+                            fontVariantNumeric: "tabular-nums",
+                          }}
+                        >
                           {fmt(item.subTotal)}
                         </td>
 
+                        {/* Discount cols */}
                         {hasDiscountHead && (
                           <>
-                            {/* Discount Head column */}
-                            <td style={S.td} onClick={(e) => e.stopPropagation()}>
-                              {isSel ? (
-                                <div style={S.discWrap}>
-                                  <p>{selectedOtherCharge?.name}</p>
-                                </div>
-                              ) : rowDiscountEntry ? (
-                                <span style={{ fontSize: 11, color: "#5a1aa0" }}>
+                            <td
+                              style={S.td}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {isSel || rowDiscEntry ? (
+                                <span
+                                  style={{ fontSize: 11, color: "#5a1aa0" }}
+                                >
                                   {selectedOtherCharge?.name}
                                 </span>
                               ) : (
-                                <span style={{ color: "#c5d5e8", fontSize: 12 }}>—</span>
+                                <span
+                                  style={{ color: "#c5d5e8", fontSize: 12 }}
+                                >
+                                  —
+                                </span>
                               )}
                             </td>
-
-                            {/* Discount input / display column */}
-                            <td style={S.td} onClick={(e) => e.stopPropagation()}>
+                            <td
+                              style={S.td}
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               {isSel ? (
                                 <div style={S.discWrap}>
                                   <div style={S.toggleGroup}>
                                     <button
                                       style={{
                                         ...S.toggleBtn,
-                                        ...(discountType === "percentage" ? S.toggleOn : {}),
+                                        ...(activeDiscountType === "percentage"
+                                          ? S.toggleOn
+                                          : {}),
                                       }}
                                       onClick={() => {
-                                        setDiscountType("percentage");
+                                        setActiveDiscountType("percentage");
                                         setDiscountValue("");
+                                        // Clear entry so stale % value doesn't linger
+                                        setDiscountEntries((prev) => {
+                                          const next = { ...prev };
+                                          delete next[saleId];
+                                          return next;
+                                        });
                                       }}
                                     >
                                       %
@@ -332,49 +587,115 @@ export default function PaymentAllocation({
                                     <button
                                       style={{
                                         ...S.toggleBtn,
-                                        ...(discountType === "amount" ? S.toggleOn : {}),
+                                        ...(activeDiscountType === "amount"
+                                          ? S.toggleOn
+                                          : {}),
                                       }}
                                       onClick={() => {
-                                        setDiscountType("amount");
+                                        setActiveDiscountType("amount");
                                         setDiscountValue("");
+                                        setDiscountEntries((prev) => {
+                                          const next = { ...prev };
+                                          delete next[saleId];
+                                          return next;
+                                        });
                                       }}
                                     >
                                       ₹
                                     </button>
                                   </div>
                                   <input
-                                    style={S.discInput}
+                                    style={{
+                                      ...S.discInput,
+                                      borderColor: rowDiscEntry
+                                        ? "#7c3aed"
+                                        : "#c5d5e8",
+                                      background: rowDiscEntry
+                                        ? "#f5f0ff"
+                                        : "#fff",
+                                    }}
                                     type="text"
                                     inputMode="decimal"
-                                    placeholder={discountType === "percentage" ? "0–100" : "0.00"}
+                                    placeholder={
+                                      activeDiscountType === "percentage"
+                                        ? "0–100"
+                                        : "0.00"
+                                    }
                                     value={discountValue}
-                                    onChange={(e) => handleDiscountInput(e.target.value, item)}
+                                    onChange={(e) =>
+                                      handleDiscountInput(e.target.value, item)
+                                    }
                                   />
-                                  {rowDiscountEntry && (
+                                  {/* Max hint: shows cap based on type */}
+                                  <span style={S.discCapHint}>
+                                    max{" "}
+                                    {activeDiscountType === "percentage"
+                                      ? "100%"
+                                      : fmt(round(item.subTotal))}
+                                  </span>
+                                  {rowDiscEntry && (
                                     <span style={S.discBadge}>
-                                      −{fmt(rowDiscountEntry.finalValue)}
+                                      −{fmt(rowDiscEntry.finalValue)}
                                     </span>
                                   )}
                                 </div>
-                              ) : rowDiscountEntry ? (
-                                // Show previously entered discount for non-selected rows
+                              ) : rowDiscEntry ? (
                                 <span style={S.discBadge}>
-                                  −{fmt(rowDiscountEntry.finalValue)}
+                                  −{fmt(rowDiscEntry.finalValue)}
                                 </span>
                               ) : (
-                                <span style={{ color: "#c5d5e8", fontSize: 12 }}>—</span>
+                                <span
+                                  style={{ color: "#c5d5e8", fontSize: 12 }}
+                                >
+                                  —
+                                </span>
                               )}
                             </td>
                           </>
                         )}
 
+                        {/* Advance input */}
+                        <td style={S.td} onClick={(e) => e.stopPropagation()}>
+                          <div style={S.advCellWrap}>
+                            <input
+                              style={{
+                                ...S.advInput,
+                                borderColor:
+                                  rowAdvance > 0 ? "#1a6fc4" : "#c5d5e8",
+                                background: rowAdvance > 0 ? "#edf5ff" : "#fff",
+                              }}
+                              type="text"
+                              inputMode="decimal"
+                              placeholder="0.00"
+                              value={advanceMap[saleId] ?? ""}
+                              onChange={(e) => {
+                                setApplyAllAdvance(false);
+                                handleAdvanceInput(e.target.value, item);
+                              }}
+                            />
+                            {rowCap > 0 && rowAdvance < rowCap && (
+                              <span style={S.advCapHint}>
+                                max {fmt(rowCap)}
+                              </span>
+                            )}
+                            {rowAdvance > 0 && (
+                              <span style={S.advBadge}>−{fmt(rowAdvance)}</span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Net Payable */}
                         <td
                           style={{
                             ...S.td,
                             textAlign: "right",
                             fontVariantNumeric: "tabular-nums",
-                            color: isSel ? "#1a4fa0" : rowDiscount > 0 ? "#1a4fa0" : "inherit",
-                            fontWeight: isSel || rowDiscount > 0 ? 700 : 400,
+                            color:
+                              rowAdvance > 0 || rowDiscount > 0
+                                ? "#1a4fa0"
+                                : "inherit",
+                            fontWeight:
+                              rowAdvance > 0 || rowDiscount > 0 ? 700 : 400,
                           }}
                         >
                           {fmt(rowNet)}
@@ -384,6 +705,7 @@ export default function PaymentAllocation({
                   })
                 )}
               </tbody>
+
               <tfoot>
                 <tr>
                   <td colSpan={tfootColSpan} style={S.tfoot}>
@@ -400,7 +722,12 @@ export default function PaymentAllocation({
                       </td>
                     </>
                   )}
-                  <td style={{ ...S.tfoot, textAlign: "right", color: "#1a4fa0" }}>
+                  <td style={{ ...S.tfoot, color: "#1a6fc4" }}>
+                    {totalAdvance > 0 ? `−${fmt(totalAdvance)}` : "—"}
+                  </td>
+                  <td
+                    style={{ ...S.tfoot, textAlign: "right", color: "#1a4fa0" }}
+                  >
                     {fmt(totalNet)}
                   </td>
                 </tr>
@@ -409,42 +736,34 @@ export default function PaymentAllocation({
           )}
         </div>
 
-        {/* ── Overage alert ── */}
-        {selectedItem && balance < 0 && (
+        {/* ── Alerts ── */}
+        {totalAdvanceUsed > advanceAmount && (
           <div style={S.alert}>
-            ⚠ Net payable exceeds applicable amount. Please adjust the discount.
+            ⚠ Total advance {fmt(totalAdvanceUsed)} exceeds advance budget{" "}
+            {fmt(advanceAmount)}.
+          </div>
+        )}
+        {hasAnyNegativeNet && (
+          <div style={S.alert}>
+            ⚠ One or more rows have advance exceeding net payable. Please
+            adjust.
           </div>
         )}
 
-        {/* ── Summary bar ── */}
-        {/* <div style={S.summary}>
-          <SumTile label="Selected" value={selectedItem ? selectedItem.salesNumber : "—"} />
-          <SumTile
-            label="Item Amount"
-            value={selectedItem ? fmt(selectedItem.subTotal) : "—"}
-          />
-          <SumTile
-            label="Discount"
-            value={selectedDiscount > 0 ? `−${fmt(selectedDiscount)}` : "—"}
-            valueColor="#c0280a"
-          />
-          <SumTile
-            label="Net Payable"
-            value={selectedItem ? fmt(netPayable) : "—"}
-            valueColor="#1a4fa0"
-          />
-          <SumTile
-            label="Balance"
-            value={selectedItem ? fmt(balance) : fmt(applicableAmount)}
-            valueColor={
-              balance < 0 ? "#c0280a" : balance === 0 ? "#1a8a4a" : "#0d1b2e"
-            }
-            last
-          />
-        </div> */}
-
         {/* ── Footer ── */}
         <div style={S.footer}>
+          <div style={S.footerLeft}>
+            <span style={S.footerStat}>
+              Advance used:&nbsp;
+              <strong style={{ color: "#1a6fc4" }}>{fmt(totalAdvance)}</strong>
+              &ensp;|&ensp; Remaining:&nbsp;
+              <strong
+                style={{ color: remainingAdvance < 0 ? "#c0280a" : "#1a8a4a" }}
+              >
+                {fmt(remainingAdvance)}
+              </strong>
+            </span>
+          </div>
           <button style={S.btnCancel} onClick={onClose}>
             Cancel
           </button>
@@ -470,18 +789,9 @@ function InfoChip({ label, value, valueColor, last }) {
   return (
     <div style={{ ...S.infoChip, ...(last ? S.infoChipLast : {}) }}>
       <span style={S.icLabel}>{label}</span>
-      <span style={{ ...S.icValue, ...(valueColor ? { color: valueColor } : {}) }}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function SumTile({ label, value, valueColor, last }) {
-  return (
-    <div style={{ ...S.sumTile, ...(last ? S.sumTileLast : {}) }}>
-      <span style={S.sumLabel}>{label}</span>
-      <span style={{ ...S.sumValue, ...(valueColor ? { color: valueColor } : {}) }}>
+      <span
+        style={{ ...S.icValue, ...(valueColor ? { color: valueColor } : {}) }}
+      >
         {value}
       </span>
     </div>
@@ -503,9 +813,12 @@ const S = {
     background: "#fff",
     borderRadius: 10,
     width: "100%",
-    maxWidth: 720,
+    maxWidth: 820,
     overflow: "hidden",
     fontFamily: "'Segoe UI', system-ui, sans-serif",
+    maxHeight: "90vh",
+    display: "flex",
+    flexDirection: "column",
   },
   head: {
     background: "#0d1b2e",
@@ -513,6 +826,7 @@ const S = {
     alignItems: "center",
     justifyContent: "space-between",
     padding: "13px 18px",
+    flexShrink: 0,
   },
   headLeft: { display: "flex", alignItems: "center", gap: 10 },
   headIcon: {
@@ -540,6 +854,7 @@ const S = {
     background: "#f0f6ff",
     borderBottom: "1px solid #dce8f5",
     display: "flex",
+    flexShrink: 0,
   },
   infoChip: {
     display: "flex",
@@ -547,7 +862,11 @@ const S = {
     padding: "9px 16px",
     borderRight: "1px solid #dce8f5",
   },
-  infoChipLast: { borderRight: "none", marginLeft: "auto", alignItems: "flex-end" },
+  infoChipLast: {
+    borderRight: "none",
+    marginLeft: "auto",
+    alignItems: "flex-end",
+  },
   icLabel: {
     fontSize: 10,
     fontWeight: 600,
@@ -573,8 +892,19 @@ const S = {
     borderTop: "3px solid #1a6fc4",
     animation: "_pa_spin 0.75s linear infinite",
   },
-  loaderText: { fontSize: 12, color: "#5a7a9a", fontWeight: 600, letterSpacing: "0.04em" },
-  skeletonTable: { width: "100%", display: "flex", flexDirection: "column", gap: 1, marginTop: 8 },
+  loaderText: {
+    fontSize: 12,
+    color: "#5a7a9a",
+    fontWeight: 600,
+    letterSpacing: "0.04em",
+  },
+  skeletonTable: {
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    gap: 1,
+    marginTop: 8,
+  },
   skeletonRow: {
     display: "flex",
     alignItems: "center",
@@ -606,6 +936,32 @@ const S = {
     letterSpacing: "0.07em",
     textTransform: "uppercase",
     whiteSpace: "nowrap",
+  },
+  advHeadWrap: { display: "flex", alignItems: "center", gap: 6 },
+  advAllLabel: {
+    display: "flex",
+    alignItems: "center",
+    gap: 3,
+    cursor: "pointer",
+  },
+  checkbox: {
+    width: 14,
+    height: 14,
+    borderRadius: 3,
+    border: "1.5px solid #b0c4da",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    flexShrink: 0,
+    background: "#fff",
+  },
+  checkboxOn: { background: "#1a6fc4", borderColor: "#1a6fc4" },
+  advAllText: {
+    fontSize: 9,
+    fontWeight: 700,
+    color: "#1a6fc4",
+    letterSpacing: "0.06em",
   },
   tr: { borderBottom: "1px solid #eef2f7", cursor: "pointer" },
   trSel: { background: "#edf5ff", boxShadow: "inset 3px 0 0 #1a6fc4" },
@@ -658,11 +1014,48 @@ const S = {
     color: "#1a2740",
     outline: "none",
   },
+  discCapHint: {
+    fontSize: 10,
+    color: "#7a5a10",
+    fontStyle: "italic",
+    whiteSpace: "nowrap",
+  },
   discBadge: {
     fontSize: 10,
     fontWeight: 700,
     color: "#c0280a",
     background: "#fff0ed",
+    padding: "1px 5px",
+    borderRadius: 4,
+  },
+  advCellWrap: {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    flexWrap: "wrap",
+  },
+  advInput: {
+    width: 72,
+    padding: "4px 7px",
+    border: "1.5px solid #c5d5e8",
+    borderRadius: 5,
+    fontSize: 11,
+    fontFamily: "inherit",
+    color: "#1a2740",
+    outline: "none",
+    transition: "border-color 0.15s, background 0.15s",
+  },
+  advCapHint: {
+    fontSize: 10,
+    color: "#7a5a10",
+    fontStyle: "italic",
+    whiteSpace: "nowrap",
+  },
+  advBadge: {
+    fontSize: 10,
+    fontWeight: 700,
+    color: "#1a4fa0",
+    background: "#ddeeff",
     padding: "1px 5px",
     borderRadius: 4,
   },
@@ -681,29 +1074,8 @@ const S = {
     fontSize: 11,
     fontWeight: 600,
     color: "#c0280a",
+    flexShrink: 0,
   },
-  summary: {
-    background: "#f0f6ff",
-    borderTop: "1px solid #dce8f5",
-    display: "flex",
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
-  sumTile: {
-    display: "flex",
-    flexDirection: "column",
-    padding: "9px 14px",
-    borderRight: "1px solid #dce8f5",
-  },
-  sumTileLast: { borderRight: "none", marginLeft: "auto", alignItems: "flex-end" },
-  sumLabel: {
-    fontSize: 10,
-    fontWeight: 600,
-    color: "#5a7a9a",
-    textTransform: "uppercase",
-    letterSpacing: "0.07em",
-  },
-  sumValue: { fontSize: 12, fontWeight: 700, color: "#0d1b2e", marginTop: 2 },
   footer: {
     background: "#fff",
     borderTop: "1px solid #eef2f7",
@@ -712,7 +1084,10 @@ const S = {
     alignItems: "center",
     gap: 8,
     padding: "10px 16px",
+    flexShrink: 0,
   },
+  footerLeft: { flex: 1 },
+  footerStat: { fontSize: 11, color: "#5a7a9a" },
   btnCancel: {
     padding: "6px 16px",
     border: "1px solid #c5d5e8",

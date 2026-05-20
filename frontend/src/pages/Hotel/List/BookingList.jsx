@@ -313,6 +313,8 @@ function BookingList() {
         const additionalPaxAmount = additionalPaxPerDay * stayDays;
         let foodPlanAmount = foodPlanPerDay * stayDays;
 
+        
+
         console.log(baseAmount, additionalPaxPerDay, foodPlanAmount);
 
         taxAmount = configurations[0]?.addRateWithTax?.hotelSale
@@ -328,10 +330,11 @@ function BookingList() {
         );
       }, 0);
 
+      console.log("checkoutTotal", checkoutTotal);
       return (
         total +
         (checkoutTotal - advance) +
-        Number(checkout?.otherChargeDetails?.amount || 0)
+        Math.abs(Number(checkout?.otherChargeAmount || 0) - Number(checkout?.discountAmount || 0))
       );
     }, 0);
   };
@@ -517,7 +520,7 @@ function BookingList() {
       }, 0);
       console.log(restaurantSubTotal);
       let taggedTotal = 0;
-
+      let taggedAdvance = 0
       if (restaurantSideDiscountAdjustmentArray.length > 0) {
         taggedTotal = restaurantSideDiscountAdjustmentArray.reduce(
           (total, item) => {
@@ -525,15 +528,21 @@ function BookingList() {
           },
           0,
         );
+        taggedAdvance = restaurantSideDiscountAdjustmentArray.reduce(
+          (total, item) => {
+            return total + (item.advanceAmount || 0);
+          },
+          0,
+        )
       }
-      restaurantSideDiscountAdjustmentArray;
 
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
         total: totalAmount,
-        advanceAmount: advanceAmount,
+        advanceAmount: Math.round(advanceAmount - taggedAdvance),
         restaurantSubTotal: Math.round(restaurantSubTotal - taggedTotal),
         restaurantActualTotal: restaurantSubTotal,
+        restaurantActualAdvance: advanceAmount,
         totalWithRestaurantSubTotal: totalAmount + restaurantSubTotal,
       }));
     }
@@ -2391,26 +2400,32 @@ function BookingList() {
     }
   };
 
-  const handlePaymentAllocationInRestaurant = (data) => {
-    if (!data) {
-      console.log("data", data);
-      setRestaurantSideDiscountAdjustmentArray(data);
+  const handlePaymentAllocationInRestaurant = (rows) => {
+    if (!rows) {
+      console.log("data", rows);
+      setRestaurantSideDiscountAdjustmentArray(rows);
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
         restaurantSubTotal: selectedDataForPayment?.restaurantActualTotal,
       }));
     } else {
-      setRestaurantSideDiscountAdjustmentArray(data);
-      let resturantTotal = data.reduce(
+      console.log("data", rows);
+      setRestaurantSideDiscountAdjustmentArray(rows);
+      let resturantTotal = rows.reduce(
         (acc, item) => acc + Number(item?.finalValue || 0),
         0,
       );
+      let advanceAmount = rows.reduce(
+        (acc, item) => acc + Number(item?.advanceAmount || 0),
+        0,
+      )
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
         restaurantSubTotal: Math.round(
-          Number(prevData?.restaurantSubTotal || 0) -
+          Number(prevData?.restaurantActualTotal || 0) -
             Number(resturantTotal || 0),
         ),
+        advanceAmount : Math.round(Number(prevData?.restaurantActualAdvance || 0) - Number(advanceAmount || 0))
       }));
 
       setRestaurantSaleManageMent(false);
@@ -3789,6 +3804,7 @@ function BookingList() {
             applicableAmount={selectedDataForPayment?.restaurantSubTotal}
             cmp_id={cmp_id}
             otherCharges={additionalChargeData}
+            advanceAmount={selectedDataForPayment?.advanceAmount}
             restaurantSideDiscountAdjustmentArray={
               restaurantSideDiscountAdjustmentArray
             }
