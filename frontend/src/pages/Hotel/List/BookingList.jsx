@@ -145,7 +145,7 @@ function BookingList() {
   useEffect(() => {
     const calculateHeight = () => {
       if (containerRef.current) {
-        setListHeight(containerRef.current.clientHeight);
+        setListHeight(containerRef.current.clientHeight );
       }
     };
 
@@ -838,7 +838,7 @@ function BookingList() {
 
   useEffect(() => {
     const calculateHeight = () => {
-      const newHeight = window.innerHeight - 135;
+      const newHeight = window.innerHeight - 200;
       setListHeight(newHeight);
     };
 
