@@ -145,7 +145,7 @@ function BookingList() {
   useEffect(() => {
     const calculateHeight = () => {
       if (containerRef.current) {
-        setListHeight(containerRef.current.clientHeight );
+        setListHeight(containerRef.current.clientHeight);
       }
     };
 
@@ -159,7 +159,7 @@ function BookingList() {
   const [restaurantBillTransfer, setShowRestaurantBillTransfer] =
     useState(false);
   const { roomId, roomName, filterByRoom } = location.state || {};
-  
+
   const paymentDetails = useSelector((state) => state.paymentSlice);
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
@@ -248,7 +248,6 @@ function BookingList() {
           return sum + Number(room?.amountAfterTax || 0);
         }
 
-
         let stayDays = Number(room?.stayDays || 1);
 
         const normalizeToDate = (d) => {
@@ -266,7 +265,7 @@ function BookingList() {
           const arrivalDate = normalizeToDate(checkout?.arrivalDate);
 
           stayDays = Math.floor(
-            (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) ,
+            (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24),
           );
 
           if (stayDays <= 0) {
@@ -313,8 +312,6 @@ function BookingList() {
         const additionalPaxAmount = additionalPaxPerDay * stayDays;
         let foodPlanAmount = foodPlanPerDay * stayDays;
 
-        
-
         console.log(baseAmount, additionalPaxPerDay, foodPlanAmount);
 
         taxAmount = configurations[0]?.addRateWithTax?.hotelSale
@@ -334,7 +331,10 @@ function BookingList() {
       return (
         total +
         (checkoutTotal - advance) +
-        Math.abs(Number(checkout?.otherChargeAmount || 0) - Number(checkout?.discountAmount || 0))
+        Math.abs(
+          Number(checkout?.otherChargeAmount || 0) -
+            Number(checkout?.discountAmount || 0),
+        )
       );
     }, 0);
   };
@@ -464,7 +464,7 @@ function BookingList() {
       setRemarks(paymentDetails?.paymentDetails?.remarks);
       setRestaurantSideDiscountAdjustmentArray(
         paymentDetails?.restaurantSideDiscountAdjustmentArray,
-      )
+      );
 
       if (paymentDetails?.paymentMode === "split") {
         setSplitPaymentRows(paymentDetails?.splitPayment);
@@ -520,21 +520,28 @@ function BookingList() {
       }, 0);
       console.log(restaurantSubTotal);
       let taggedTotal = 0;
-      let taggedAdvance = 0
-      if (restaurantSideDiscountAdjustmentArray.length > 0) {
-        taggedTotal = restaurantSideDiscountAdjustmentArray.reduce(
+      let taggedAdvance = 0;
+      if (restaurantSideDiscountAdjustmentArray?.length > 0) {
+        taggedTotal = restaurantSideDiscountAdjustmentArray?.reduce(
           (total, item) => {
             return total + (item.finalValue || 0);
           },
           0,
         );
-        taggedAdvance = restaurantSideDiscountAdjustmentArray.reduce(
+        taggedAdvance = restaurantSideDiscountAdjustmentArray?.reduce(
           (total, item) => {
             return total + (item.advanceAmount || 0);
           },
           0,
-        )
+        );
       }
+      console.log(taggedTotal, taggedAdvance);
+      console.log(restaurantSideDiscountAdjustmentArray);
+      console.log(
+        totalAmount,
+        restaurantSubTotal - taggedTotal,
+        restaurantSubTotal,
+      );
 
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
@@ -543,10 +550,11 @@ function BookingList() {
         restaurantSubTotal: Math.round(restaurantSubTotal - taggedTotal),
         restaurantActualTotal: restaurantSubTotal,
         restaurantActualAdvance: advanceAmount,
-        totalWithRestaurantSubTotal: totalAmount + restaurantSubTotal,
+        totalWithRestaurantSubTotal:
+          totalAmount + (restaurantSubTotal - taggedTotal),
       }));
     }
-  }, [selectedCheckOut]);
+  }, [selectedCheckOut, restaurantSideDiscountAdjustmentArray]);
 
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
@@ -912,10 +920,48 @@ function BookingList() {
 
       updatedRows[index].customerName = name;
       updatedRows[index][field] = value;
-    } else if (field === "underCategory") {
+    } else if (field === "underCategory" && value == "food") {
+      console.log(splitPaymentRows);
+      let totalFoodAmount = splitPaymentRows.reduce(
+        (sum, item) =>
+          item?.underCategory == "food" ? sum + item.amount : sum,
+        0,
+      );
+      console.log(totalFoodAmount);
       updatedRows[index][field] = value;
-      updatedRows[index].amount =
-        selectedDataForPayment?.restaurantSubTotal || 0;
+      updatedRows[index].amount = Math.abs(
+        selectedDataForPayment?.restaurantSubTotal - totalFoodAmount,
+      );
+    } else if (
+      field === "amount" &&
+      updatedRows[index].underCategory === "food"
+    ) {
+      console.log(selectedDataForPayment);
+
+      // Calculate total food amount excluding current row
+      let totalFoodAmount =
+        splitPaymentRows.reduce((sum, item, i) => {
+          if (item?.underCategory === "food" && i !== index) {
+            return sum + Number(item.amount || 0);
+          }
+
+          return sum;
+        }, 0) + Number(value || 0);
+
+      console.log(totalFoodAmount);
+
+      if (
+        totalFoodAmount >
+        Number(selectedDataForPayment?.restaurantSubTotal || 0)
+      ) {
+        updatedRows[index][field] = 0;
+
+        toast.error(
+          "Food amount tagged is already equal to restaurant subtotal",
+        );
+      } else {
+        updatedRows[index][field] = Number(value || 0);
+      }
     } else {
       updatedRows[index][field] = value;
     }
@@ -964,9 +1010,11 @@ function BookingList() {
       const expectedRestaurantTotal = Number(
         selectedDataForPayment?.restaurantSubTotal || 0,
       );
-
+      console.log(selectedDataForPayment);
       console.log(expectedRestaurantTotal);
       console.log(restaurantSubTotal);
+      console.log(splitTotal);
+      console.log(expectedSplitTotal);
 
       if (
         Number(splitTotal.toFixed(2)) !== Number(expectedSplitTotal.toFixed(2))
@@ -1225,9 +1273,12 @@ function BookingList() {
 
     if (partial) {
       console.log("Hhhh");
-      console.log(dateandstaysdata);
+      console.log(additionalChargeDataBasedOnSelection);
 
-      console.log(paymentDetails);
+      restaurantSideDiscountAdjustmentArray.length > 0 &&
+        (paymentDetails.restaurantSideDiscountAdjustmentArray =
+          restaurantSideDiscountAdjustmentArray);
+
       dispatch(setPaymentDetails(paymentDetails));
       dispatch(setSelectedParty(selectedCustomer));
       dispatch(setSelectedPaymentMode(paymentMode));
@@ -1250,7 +1301,8 @@ function BookingList() {
             restaurantBaseSaleData: restaurantBaseSaleData,
             checkoutMode, //to check if the checkout is single or multiple
             checkinIds: checkinidsarray, //have array of checkinids ,if only its sinle checkout unless its null
-            restaurantSideDiscountAdjustmentArray: restaurantSideDiscountAdjustmentArray
+            restaurantSideDiscountAdjustmentArray:
+              restaurantSideDiscountAdjustmentArray,
           },
           { withCredentials: true },
         );
@@ -1816,159 +1868,153 @@ function BookingList() {
             // setShowEnhancedCheckoutModal(!showEnhancedCheckoutModal)
           }}
         >
+          <div className="flex items-center w-full md:hidden">
+            {/* SL No */}
+            <div className="w-18 text-center text-gray-700 font-medium text-xs">
+              {index + 1}
+            </div>
 
-<div className="flex items-center w-full md:hidden">
+            {/* Date */}
+            <div className="w-32 text-center text-gray-600 text-xs">
+              {location.pathname.includes("checkOutList")
+                ? formatDate(el?.checkOutDate)
+                : formatDate(el?.bookingDate)}
+            </div>
 
-  {/* SL No */}
-  <div className="w-18 text-center text-gray-700 font-medium text-xs">
-    {index + 1}
-  </div>
+            {/* Voucher No */}
+            <div className="w-32 text-center text-gray-700 font-semibold text-xs">
+              {el?.voucherNumber || "-"}
+            </div>
 
-  {/* Date */}
-  <div className="w-32 text-center text-gray-600 text-xs">
-    {location.pathname.includes("checkOutList")
-      ? formatDate(el?.checkOutDate)
-      : formatDate(el?.bookingDate)}
-  </div>
+            {/* ✅ ACTIONS — exact copy of desktop actions */}
+            <div className="w-32 flex flex-wrap items-center justify-center gap-1">
+              {((location.pathname === "/sUsers/bookingList" &&
+                el?.status != "checkIn") ||
+                (el?.status != "checkOut" &&
+                  location.pathname != "/sUsers/checkInList" &&
+                  location.pathname != "/sUsers/checkOutList")) && (
+                <button
+                  onClick={(e) => handleCheckin(e, el)}
+                  className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                >
+                  CheckIn
+                </button>
+              )}
 
-  {/* Voucher No */}
-  <div className="w-32 text-center text-gray-700 font-semibold text-xs">
-    {el?.voucherNumber || "-"}
-  </div>
+              {location.pathname === "/sUsers/checkInList" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/sUsers/CheckInPrint", {
+                      state: {
+                        selectedCheckOut: [el],
+                        customerId: el.customerId._id,
+                      },
+                    });
+                  }}
+                  className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                  title="Print Registration Card"
+                >
+                  Print
+                </button>
+              )}
 
-  {/* ✅ ACTIONS — exact copy of desktop actions */}
-  <div className="w-32 flex flex-wrap items-center justify-center gap-1">
+              {el?.status === "checkIn" &&
+                location.pathname === "/sUsers/bookingList" && (
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                  >
+                    CheckedIn
+                  </button>
+                )}
 
-    {((location.pathname === "/sUsers/bookingList" &&
-      el?.status != "checkIn") ||
-      (el?.status != "checkOut" &&
-        location.pathname != "/sUsers/checkInList" &&
-        location.pathname != "/sUsers/checkOutList")) && (
-      <button
-        onClick={(e) => handleCheckin(e, el)}
-        className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
-      >
-        CheckIn
-      </button>
-    )}
+              {el?.status === "checkOut" &&
+                location.pathname === "/sUsers/checkInList" && (
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                  >
+                    CheckedOut
+                  </button>
+                )}
 
-    {location.pathname === "/sUsers/checkInList" && (
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate("/sUsers/CheckInPrint", {
-            state: {
-              selectedCheckOut: [el],
-              customerId: el.customerId._id,
-            },
-          });
-        }}
-        className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
-        title="Print Registration Card"
-      >
-        Print
-      </button>
-    )}
+              {location.pathname === "/sUsers/checkOutList" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCustomer(el.customerId?._id);
+                    setSelectedCheckOut([el]);
+                    const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+                    navigate(
+                      hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
+                      {
+                        state: {
+                          selectedCheckOut: bookings?.filter(
+                            (item) => item.voucherNumber === el.voucherNumber,
+                          ),
+                          customerId: el.customerId?._id,
+                          isForPreview: false,
+                        },
+                      },
+                    );
+                  }}
+                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                >
+                  Print
+                </button>
+              )}
 
-    {el?.status === "checkIn" &&
-      location.pathname === "/sUsers/bookingList" && (
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
-        >
-          CheckedIn
-        </button>
-    )}
+              {(el?.status != "checkIn" &&
+                location.pathname == "/sUsers/bookingList") ||
+              (el?.status != "checkOut" &&
+                location.pathname == "/sUsers/checkInList") ? (
+                <div className="flex items-center gap-1">
+                  <FaEdit
+                    title="Edit"
+                    className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (location.pathname === "/sUsers/bookingList") {
+                        navigate("/sUsers/editBooking", { state: el });
+                      } else {
+                        navigate("/sUsers/editChecking", { state: el });
+                      }
+                    }}
+                  />
+                  <MdDelete
+                    title="Delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(el._id);
+                    }}
+                    className="text-red-500 cursor-pointer hover:text-red-700 text-sm"
+                  />
+                </div>
+              ) : null}
 
-    {el?.status === "checkOut" &&
-      location.pathname === "/sUsers/checkInList" && (
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
-        >
-          CheckedOut
-        </button>
-    )}
+              {location.pathname === "/sUsers/bookingList" &&
+                el?.status !== "checkIn" &&
+                el?.status !== "cancelled" && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancelBooking(el._id, el.voucherNumber);
+                    }}
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                    title="Cancel booking"
+                  >
+                    <MdCancel />
+                  </button>
+                )}
 
-    {location.pathname === "/sUsers/checkOutList" && (
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setSelectedCustomer(el.customerId?._id);
-          setSelectedCheckOut([el]);
-          const hasPrint1 = configurations[0]?.defaultPrint?.print1;
-          navigate(
-            hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
-            {
-              state: {
-                selectedCheckOut: bookings?.filter(
-                  (item) => item.voucherNumber === el.voucherNumber
-                ),
-                customerId: el.customerId?._id,
-                isForPreview: false,
-              },
-            }
-          );
-        }}
-        className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
-      >
-        Print
-      </button>
-    )}
-
-    {(el?.status != "checkIn" &&
-      location.pathname == "/sUsers/bookingList") ||
-    (el?.status != "checkOut" &&
-      location.pathname == "/sUsers/checkInList") ? (
-      <div className="flex items-center gap-1">
-        <FaEdit
-          title="Edit"
-          className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (location.pathname === "/sUsers/bookingList") {
-              navigate("/sUsers/editBooking", { state: el });
-            } else {
-              navigate("/sUsers/editChecking", { state: el });
-            }
-          }}
-        />
-        <MdDelete
-          title="Delete"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDelete(el._id);
-          }}
-          className="text-red-500 cursor-pointer hover:text-red-700 text-sm"
-        />
-      </div>
-    ) : null}
-
-    {location.pathname === "/sUsers/bookingList" &&
-      el?.status !== "checkIn" &&
-      el?.status !== "cancelled" && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleCancelBooking(el._id, el.voucherNumber);
-          }}
-          className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
-          title="Cancel booking"
-        >
-          <MdCancel />
-        </button>
-    )}
-
-    {el?.status === "cancelled" && (
-      <span className="bg-red-100 text-red-700 font-semibold py-1 px-2 rounded text-xs">
-        Cancelled
-      </span>
-    )}
-
-  </div>
-</div>
-
-
+              {el?.status === "cancelled" && (
+                <span className="bg-red-100 text-red-700 font-semibold py-1 px-2 rounded text-xs">
+                  Cancelled
+                </span>
+              )}
+            </div>
+          </div>
 
           <div className="hidden md:flex items-center w-full">
             <div className="w-10 text-center text-gray-700 font-medium">
@@ -2401,15 +2447,8 @@ function BookingList() {
   };
 
   const handlePaymentAllocationInRestaurant = (rows) => {
-    if (!rows) {
-      console.log("data", rows);
-      setRestaurantSideDiscountAdjustmentArray(rows);
-      setSelectedDataForPayment((prevData) => ({
-        ...prevData,
-        restaurantSubTotal: selectedDataForPayment?.restaurantActualTotal,
-      }));
-    } else {
-      console.log("data", rows);
+    console.log("rows", rows);
+    if (rows?.length > 0) { 
       setRestaurantSideDiscountAdjustmentArray(rows);
       let resturantTotal = rows.reduce(
         (acc, item) => acc + Number(item?.finalValue || 0),
@@ -2418,43 +2457,53 @@ function BookingList() {
       let advanceAmount = rows.reduce(
         (acc, item) => acc + Number(item?.advanceAmount || 0),
         0,
-      )
+      );
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
         restaurantSubTotal: Math.round(
           Number(prevData?.restaurantActualTotal || 0) -
             Number(resturantTotal || 0),
         ),
-        advanceAmount : Math.round(Number(prevData?.restaurantActualAdvance || 0) - Number(advanceAmount || 0))
+        advanceAmount: Math.round(
+          Number(prevData?.restaurantActualAdvance || 0) -
+            Number(advanceAmount || 0),
+        ),
       }));
 
       setRestaurantSaleManageMent(false);
+     setSplitPaymentRows((prev) =>
+  prev.map((row) => ({
+    ...row,
+    amount: 0,
+  }))
+);
     }
   };
+  console.log("selectedDataForPayment", restaurantSideDiscountAdjustmentArray);
 
   return (
     <>
       <div className="flex-1 bg-slate-50 h-screen overflow-hidden">
         <div className="sticky top-0 z-20">
-         <TitleDiv
-  loading={loader}
-  title={
-    location.pathname === "/sUsers/checkInList"
-      ? filterByRoom
-        ? `Check In List - Room ${roomName}`
-        : "Hotel Check In List"
-      : location.pathname === "/sUsers/bookingList"
-      ? "Hotel Booking List"
-      : "Hotel Check Out List"
-  }
-  // ✅ ADD THIS:
-  from={
-    location.pathname === "/sUsers/checkInList"
-      ? "/sUsers/hotelDashboard"
-      : location.pathname === "/sUsers/bookingList"
-      ? "/sUsers/hotelDashboard"
-      : "/sUsers/hotelDashboard"
-  }
+          <TitleDiv
+            loading={loader}
+            title={
+              location.pathname === "/sUsers/checkInList"
+                ? filterByRoom
+                  ? `Check In List - Room ${roomName}`
+                  : "Hotel Check In List"
+                : location.pathname === "/sUsers/bookingList"
+                  ? "Hotel Booking List"
+                  : "Hotel Check Out List"
+            }
+            // ✅ ADD THIS:
+            from={
+              location.pathname === "/sUsers/checkInList"
+                ? "/sUsers/hotelDashboard"
+                : location.pathname === "/sUsers/bookingList"
+                  ? "/sUsers/hotelDashboard"
+                  : "/sUsers/hotelDashboard"
+            }
             dropdownContents={[
               {
                 title:
@@ -2945,7 +2994,24 @@ function BookingList() {
                             <div className="col-span-3 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
                               Amount
                             </div>
-                            <div className="col-span-1"></div>
+                            {splitPaymentRows.some(
+                              (row) => row.underCategory === "food",
+                            ) ? (
+                              <div className="col-span-1 flex justify-center">
+                                <button
+                                  onClick={() => {
+                                    setRestaurantSaleManageMent(true);
+                                    restaurantSideDiscountAdjustmentArray?.length > 0 && handlePaymentAllocationInRestaurant(null);
+                                  }}
+                                  className="w-6 h-6 rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+                                  title="Restaurant Bill Management"
+                                >
+                                  <Settings className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="col-span-1"></div>
+                            )}
                           </div>
 
                           <div className="space-y-2.5">
@@ -3032,6 +3098,7 @@ function BookingList() {
                                       </span>
                                     )}
                                   </div>
+
                                   <div className="grid grid-cols-12 gap-2 items-center mt-2.5">
                                     {/* Customer */}
                                     <div className="col-span-4">
@@ -3227,23 +3294,6 @@ function BookingList() {
                                         />
                                       </div>
                                     </div>
-                                    {row.underCategory === "food" && (
-                                      <div className="col-span-1 flex justify-center">
-                                        <button
-                                          onClick={() => {
-                                            setRestaurantSaleManageMent(true);
-                                            handlePaymentAllocationInRestaurant(
-                                              null,
-                                            );
-                                          }}
-                                          className="w-6 h-6 rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
-                                          title="Restaurant Bill Management"
-                                        >
-                                          <Settings className="w-3.5 h-3.5" />
-                                        </button>
-                                      </div>
-                                    )}
-
                                     {/* Delete — always allowed so user can free up allocation */}
                                     <div className="col-span-1 flex justify-center">
                                       {splitPaymentRows.length > 1 && (
@@ -3801,10 +3851,9 @@ function BookingList() {
             onClose={() => setRestaurantSaleManageMent(false)}
             onConfirm={handlePaymentAllocationInRestaurant}
             selectedCheckIns={selectedCheckOut}
-            applicableAmount={selectedDataForPayment?.restaurantSubTotal}
             cmp_id={cmp_id}
-            otherCharges={additionalChargeData}
             advanceAmount={selectedDataForPayment?.advanceAmount}
+            otherCharges={additionalChargeData}
             restaurantSideDiscountAdjustmentArray={
               restaurantSideDiscountAdjustmentArray
             }

@@ -28,9 +28,9 @@ export default function PaymentAllocation({
   onConfirm = () => {},
   selectedCheckIns = [],
   cmp_id,
-  applicableAmount,
   advanceAmount, // budget for advance allocation (from parent)
   otherCharges,
+  restaurantSideDiscountAdjustmentArray,
 }) {
   const [selectedId, setSelectedId] = useState(null);
   // Per-row discount type is now stored in the entry itself (see discountEntries).
@@ -50,9 +50,7 @@ export default function PaymentAllocation({
   const [advanceMap, setAdvanceMap] = useState({});
   const [applyAllAdvance, setApplyAllAdvance] = useState(false);
 
-  const org = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg,
-  );
+  console.log(restaurantSideDiscountAdjustmentArray);
 
   // ── Seed discount head ───────────────────────────────────────────────────
   useEffect(() => {
@@ -63,6 +61,41 @@ export default function PaymentAllocation({
       if (discountHead) setSelectedOtherCharge(discountHead);
     }
   }, [otherCharges]);
+
+useEffect(() => {
+  if (restaurantSideDiscountAdjustmentArray?.length > 0) {
+    const initialDiscountEntries = {};
+    const initialAdvanceMap = {};
+
+    restaurantSideDiscountAdjustmentArray?.forEach((item) => {
+      initialDiscountEntries[item.saleId] = {
+        _id: item._id,
+        option: item.option,
+        action: item.action,
+        taxPercentage: item.taxPercentage,
+        taxAmt: item.taxAmt,
+        hsn: item.hsn,
+
+        saleId: item.saleId,
+        saleNumber: item.saleNumber,
+
+        discountType: item.discountType,
+        rawInput: item.value,
+
+        flatDiscount: Number(item.discountAmount || 0),
+
+        finalValue: Number(item.finalValue || 0),
+      };
+
+      initialAdvanceMap[item.saleId] = Number(
+        item.advanceAmount || 0
+      );
+    });
+
+    setDiscountEntries(initialDiscountEntries);
+    setAdvanceMap(initialAdvanceMap);
+  }
+}, [restaurantSideDiscountAdjustmentArray]);
 
   // ── Fetch sales ──────────────────────────────────────────────────────────
   const handleFetch = useCallback(async () => {
@@ -286,9 +319,9 @@ export default function PaymentAllocation({
     const rows = saleData.map((sale) => {
       const saleId = getSaleId(sale);
       const discEntry = discountEntries[saleId];
-      console.log(discEntry);
-      if (!discEntry) return ;
- console.log(discEntry);
+      
+  if (!discEntry && advanceMap[saleId] <= 0) return;
+
       return {
         // Sale identifiers
         saleId,

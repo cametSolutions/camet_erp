@@ -404,6 +404,7 @@ const HotelBillPrint = () => {
 
     const roomServiceTotals = {};
     const dineInTotals = {};
+    console.log("currentDocKots", currentDocKots);
 
     currentDocKots.forEach((kot) => {
       const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
@@ -464,7 +465,9 @@ const HotelBillPrint = () => {
       const roomName =
         (doc.selectedRooms || []).find(
           (r) => String(r?.roomId || r?._id || r?.id) === roomId,
-        )?.roomName || "Unknown Room";
+        )?.roomName || "Unknown Room"; 
+
+   
 
       lines.push({
         date: roomServiceTotals[roomId].date,
@@ -615,7 +618,11 @@ const HotelBillPrint = () => {
       .filter((l) => l.type === "dineIn")
       .reduce((t, l) => t + Number(l.amount || 0), 0);
 
-    const restaurantTotal = roomServiceTotal + dineInTotal;
+  const newlyAppliedDiscount = paymentDetails?.paymentDetails?.restaurantSideDiscountAdjustmentArray?.length > 0 &&
+            paymentDetails?.paymentDetails?.restaurantSideDiscountAdjustmentArray?.reduce((acc, curr) => (acc + Number(curr.finalValue || 0)), 0);
+         console.log(newlyAppliedDiscount);
+
+    const restaurantTotal = (roomServiceTotal + dineInTotal) - newlyAppliedDiscount;
 
     console.log("Room Service Total:", roomServiceTotal);
     console.log("Dine In Total:", dineInTotal);
@@ -1087,7 +1094,6 @@ const HotelBillPrint = () => {
     console.log(roomWiseDiscount, otherChargesAmount, discount);
     console.log(paymentDetails?.paymentDetails);
     console.log(doc);
-
     return {
       hotel: {
         name: organization?.name,
@@ -1138,6 +1144,7 @@ const HotelBillPrint = () => {
         cgst: cgstAmount,
         restaurant: dineInTotal, // ✅ Only dine-in restaurant amount
         roomService: roomServiceTotal, // ✅ Only room service amount
+        restaurantSideDiscount: newlyAppliedDiscount,
         foodPlan: planAmount + Number(foodPlanAmountWithTax),
         additionalPax: additionalPaxAmount,
         otherChargeAmount,
@@ -2252,6 +2259,30 @@ ${hotelName}`;
                             }}
                           >
                             {billData?.summary?.roomService?.toLocaleString(
+                              "en-IN",
+                              {
+                                minimumFractionDigits: 2,
+                              },
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                            {activeMode !== "room" &&
+                      billData?.summary?.restaurantSideDiscount > 0 && (
+                        <tr>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                     Newly added restaurant discount
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {billData?.summary?.restaurantSideDiscount?.toLocaleString(
                               "en-IN",
                               {
                                 minimumFractionDigits: 2,
