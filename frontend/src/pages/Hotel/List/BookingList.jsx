@@ -462,8 +462,9 @@ function BookingList() {
       setcheckinids(location?.state?.cheinids);
       setPaymentMode(paymentDetails?.paymentMode);
       setRemarks(paymentDetails?.paymentDetails?.remarks);
+      console.log(paymentDetails);
       setRestaurantSideDiscountAdjustmentArray(
-        paymentDetails?.restaurantSideDiscountAdjustmentArray,
+        paymentDetails?.paymentDetails?.restaurantSideDiscountAdjustmentArray,
       );
 
       if (paymentDetails?.paymentMode === "split") {
@@ -1289,6 +1290,7 @@ function BookingList() {
       setIsPartial(false);
       proceedToCheckout(dateandstaysdata, processedCheckoutData);
     } else {
+      console.log(restaurantSideDiscountAdjustmentArray)
       try {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,

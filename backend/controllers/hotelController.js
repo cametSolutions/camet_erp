@@ -24,6 +24,7 @@ import {
   extractRequestParamsForBookings,
   updateStatus,
   saveSettlementDataHotel,
+  handleAdvanceAndDiscountSettlementInRestaurant,
 } from "../helpers/hotelHelper.js";
 import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
@@ -2767,7 +2768,16 @@ export const convertCheckOutToSale = async (req, res) => {
         roomAssignments = null,
         checkoutMode,
         checkinIds,
+        restaurantSideDiscountAdjustmentArray,
       } = req.body;
+      if (restaurantSideDiscountAdjustmentArray.length > 0) {
+        await handleAdvanceAndDiscountSettlementInRestaurant(
+          restaurantSideDiscountAdjustmentArray,
+          selectedCheckOut,
+          cmp_id,
+          session,
+        );
+      }
 
       if (!paymentDetails) throw new Error("Missing payment details");
 
