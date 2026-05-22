@@ -5792,42 +5792,132 @@ export const getFlashReportForDate = async (req, res) => {
     const org = await Organization.findById(cmp_id).lean();
     const companyName = org?.orgName || org?.name || "Hotel";
 
-    const checkouts = await CheckOut.find({
-      cmp_id,
-      checkOutDate: {
-        $gte: fromDate,
-        $lte: toDate,
+    // ── Pipeline from CheckIn (same as occupancy report) ───────────────────
+    const pipeline = [
+      {
+        $match: {
+          cmp_id: new mongoose.Types.ObjectId(cmp_id),
+        },
       },
-    }).lean();
 
-    if (!checkouts.length) {
+      // Join checkouts to get actual checkout date
+      {
+        $lookup: {
+          from: "checkouts",
+          let: { checkInId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$checkInId", "$$checkInId"] },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                checkOutDate: 1,
+                checkoutTime: 1,
+              },
+            },
+          ],
+          as: "checkoutDetails",
+        },
+      },
+
+      // Resolve checkout date: prefer checkout doc, fall back to checkin field
+      {
+        $addFields: {
+          rawNewCheckoutDate: {
+            $ifNull: [
+              { $first: "$checkoutDetails.checkOutDate" },
+              "$checkOutDate",
+            ],
+          },
+        },
+      },
+
+      // Convert date strings → Date objects for comparison
+      {
+        $addFields: {
+          arrivalDateObj: {
+            $dateFromString: {
+              dateString: "$arrivalDate",
+              onError: null,
+              onNull: null,
+            },
+          },
+          newCheckoutDate: {
+            $dateFromString: {
+              dateString: "$rawNewCheckoutDate",
+              onError: null,
+              onNull: null,
+            },
+          },
+        },
+      },
+
+      {
+        $project: {
+          checkoutDetails: 0,
+          rawNewCheckoutDate: 0,
+        },
+      },
+
+      // Date filter — same $or logic as occupancy report
+      {
+        $match: {
+          $or: [
+            {
+              status: "checkOut",
+              newCheckoutDate: { $gt: new Date(fromDate) },
+              arrivalDateObj: { $lte: new Date(toDate) },
+            },
+            {
+              status: { $ne: "checkOut" },
+              arrivalDateObj: { $lte: new Date(toDate) },
+            },
+          ],
+        },
+      },
+    ];
+
+    const checkins = await CheckIn.aggregate(pipeline);
+
+    if (!checkins.length) {
       return res.status(404).json({
         success: false,
-        message: "No checkouts found for selected date range",
+        message: "No checkins found for selected date range",
       });
     }
 
+    // ── Aggregate all fields from CheckIn docs only ────────────────────────
     let totalRooms = 0;
     let paxDomestic = 0;
     let roomApartment = 0;
     let roomExtraBed = 0;
+    let foodPlanTotal = 0;
+    let grandTotal = 0;
 
-    checkouts.forEach((co) => {
-      if (Array.isArray(co.selectedRooms)) {
-        totalRooms += co.selectedRooms.length;
+    checkins.forEach((doc) => {
+      // Food plan and grand total from checkin doc
+      foodPlanTotal += Number(doc.foodPlanTotal || 0);
+      grandTotal += Number(doc.grandTotal || 0);
 
-        co.selectedRooms.forEach((r) => {
-          if (typeof r.pax === "number") {
-            paxDomestic += r.pax;
-          } else if (r?.pax != null) {
-            paxDomestic += Number(r.pax) || 0;
-          }
+      if (Array.isArray(doc.selectedRooms)) {
+        totalRooms += doc.selectedRooms.length;
 
-          if (typeof r.amountAfterTax === "number") {
-            roomApartment += r.amountAfterTax;
-          } else if (r?.amountAfterTax != null) {
-            roomApartment += Number(r.amountAfterTax) || 0;
-          }
+        doc.selectedRooms.forEach((r) => {
+          paxDomestic += Number(r.pax || 0);
+
+          // Same tariff precedence as occupancy report
+          const tariff = Number(
+            Math.round(r.priceLevelRate) ||
+              r?.baseAmount ||
+              r?.amountAfterTax ||
+              r?.totalAmount ||
+              r?.baseAmountWithTax ||
+              0,
+          );
+          roomApartment += tariff;
         });
       }
     });
@@ -5840,84 +5930,64 @@ export const getFlashReportForDate = async (req, res) => {
 
     const paxForeign = 0;
     const totalPax = paxDomestic + paxForeign;
-    const adults = totalPax;
-    const children = 0;
-    const males = totalPax;
-    const females = 0;
-    const noShows = 0;
-
-    const foodPlanTotal = checkouts.reduce(
-      (sum, co) => sum + Number(co.foodPlanTotal || 0),
-      0,
-    );
-
     const roomTotal = roomApartment + roomExtraBed;
     const fbTotal = foodPlanTotal;
 
-    const grandTotal = checkouts.reduce(
-      (sum, co) => sum + Number(co.grandTotal || 0),
-      0,
-    );
-
-    const occPercent = totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
-
+    const occPercent =
+      totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
     const arrTotalRooms = totalRooms > 0 ? roomTotal / totalRooms : 0;
-
-    const arrSaleableRooms = saleableRooms > 0 ? roomTotal / saleableRooms : 0;
-
-    const arrOccupiedRooms = totalOccupied > 0 ? roomTotal / totalOccupied : 0;
+    const arrSaleableRooms =
+      saleableRooms > 0 ? roomTotal / saleableRooms : 0;
+    const arrOccupiedRooms =
+      totalOccupied > 0 ? roomTotal / totalOccupied : 0;
 
     const reportDate = new Date(toDate);
     const dayLabel = reportDate.toLocaleDateString("en-GB");
-    const monthLabel = reportDate.toLocaleString("en-GB", {
-      month: "long",
-    });
-
-    const data = {
-      companyName,
-      fromDate,
-      toDate,
-      dayLabel,
-      monthLabel,
-
-      totalRooms,
-      blockedRooms,
-      saleableRooms,
-      occupiedPaid,
-      occupiedComp,
-      totalOccupied,
-
-      paxDomestic,
-      paxForeign,
-      totalPax,
-      adults,
-      children,
-      males,
-      females,
-      noShows,
-
-      occPercent: Number(occPercent.toFixed(2)),
-      arrTotalRooms: Number(arrTotalRooms.toFixed(2)),
-      arrSaleableRooms: Number(arrSaleableRooms.toFixed(2)),
-      arrOccupiedRooms: Number(arrOccupiedRooms.toFixed(2)),
-
-      roomApartment: Number(roomApartment.toFixed(2)),
-      roomExtraBed: Number(roomExtraBed.toFixed(2)),
-      roomTotal: Number(roomTotal.toFixed(2)),
-
-      fbPlanRate: Number(fbTotal.toFixed(2)),
-      fbRoomService: 0,
-      fbRestaurant: 0,
-      fbTotal: Number(fbTotal.toFixed(2)),
-
-      otherRevenues: 0,
-      modRevenues: 0,
-      grandTotal: Number(grandTotal.toFixed(2)),
-    };
+    const monthLabel = reportDate.toLocaleString("en-GB", { month: "long" });
 
     return res.json({
       success: true,
-      data,
+      data: {
+        companyName,
+        fromDate,
+        toDate,
+        dayLabel,
+        monthLabel,
+
+        totalRooms,
+        blockedRooms,
+        saleableRooms,
+        occupiedPaid,
+        occupiedComp,
+        totalOccupied,
+
+        paxDomestic,
+        paxForeign,
+        totalPax,
+        adults: totalPax,
+        children: 0,
+        males: totalPax,
+        females: 0,
+        noShows: 0,
+
+        occPercent: Number(occPercent.toFixed(2)),
+        arrTotalRooms: Number(arrTotalRooms.toFixed(2)),
+        arrSaleableRooms: Number(arrSaleableRooms.toFixed(2)),
+        arrOccupiedRooms: Number(arrOccupiedRooms.toFixed(2)),
+
+        roomApartment: Number(roomApartment.toFixed(2)),
+        roomExtraBed: Number(roomExtraBed.toFixed(2)),
+        roomTotal: Number(roomTotal.toFixed(2)),
+
+        fbPlanRate: Number(fbTotal.toFixed(2)),
+        fbRoomService: 0,
+        fbRestaurant: 0,
+        fbTotal: Number(fbTotal.toFixed(2)),
+
+        otherRevenues: 0,
+        modRevenues: 0,
+        grandTotal: Number(grandTotal.toFixed(2)),
+      },
     });
   } catch (err) {
     console.error("Flash report error", err);
