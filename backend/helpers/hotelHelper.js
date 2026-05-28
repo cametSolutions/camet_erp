@@ -179,7 +179,19 @@ console.log("📄 DATE FIELDS:", {
     "convertedFrom.checkInNumber": { $in: checkInNumbers },
   })
   .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData");
+ const checkoutSale = await salesModel.find({
+    cmp_id: filter.cmp_id,
+    isPostToRoom: false,
+    isCancelled: false,
+    "convertedFrom.checkInNumber": { $in: checkInNumbers },
+  })
+  .select("createdAt salesNumber");
 
+let saleObject = {};
+
+for (const sale of checkoutSale) {
+  saleObject[sale.salesNumber] = sale.createdAt;
+}
  
 // Build map: checkInNumber -> { totalAmount, paymentSplittingData }
 const totalByCheckIn = {};
@@ -248,7 +260,7 @@ const bookingsWithSales = await Promise.all(
       cmp_id: filter.cmp_id,
       salesNumber :  b.voucherNumber,
     }) : []
-
+console.log("saleObject",saleObject)
 
     return {
       ...b.toObject(),
@@ -258,6 +270,7 @@ const bookingsWithSales = await Promise.all(
         ...(specificSale?.paymentSplittingData || []), 
         ...(checkInData.paymentSplittingData || []),
       ],
+      createdDate : saleObject[b.voucherNumber]
     };
   })
 );

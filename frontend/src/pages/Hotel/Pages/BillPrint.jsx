@@ -1041,11 +1041,14 @@ const HotelBillPrint = () => {
 
     const basePax =
       (doc.selectedRooms || []).reduce(
-        (acc, curr) => (acc + curr.isSwapped ? 0 : Number(curr.pax || 0)),
+        (acc, curr) => (acc + (curr.isSwapped ? 0 : Number(curr.pax || 0))),
         0,
       ) || 1;
-    console.log(doc?.additionalPaxDetails);
+      console.log(doc?.selectedRooms);
+
+    console.log(doc.additionalPaxDetails );
     const additionalPaxCount = (doc.additionalPaxDetails || []).length;
+    console.log(additionalPaxCount);
 
     const totalPax = basePax + additionalPaxCount;
 
@@ -1086,7 +1089,7 @@ const HotelBillPrint = () => {
     }, 0);
     console.log(roomWiseDiscount, otherChargesAmount, discount);
     console.log(paymentDetails?.paymentDetails);
-    console.log(doc);
+    console.log(doc.createdDate);
 
     return {
       hotel: {
@@ -1115,7 +1118,7 @@ const HotelBillPrint = () => {
         companyName: partyCompanyName || "",
       },
       stay: {
-        billDate: formatDate(new Date()),
+        billDate: formatDate(doc.createdDate || new Date()),
         arrival: `${formatDate(doc?.arrivalDate)} ${doc?.arrivalTime || ""}`,
         departure: `${formatDate(doc?.checkOutDate || new Date())} ${
           doc?.checkOutTime || new Date().toLocaleTimeString()
