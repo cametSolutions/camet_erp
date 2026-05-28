@@ -190,22 +190,24 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
           document.series_id.toString(),
         );
       }
-     if (
-  type === "sales" &&
-  document.salesNumber &&
-  checkoutMap.has(document.salesNumber.toString())
-) {
-  const foodPlanDetails = checkoutMap.get(document.salesNumber.toString());
+      if (
+        type === "sales" &&
+        document.salesNumber &&
+        checkoutMap.has(document.salesNumber.toString())
+      ) {
+        const foodPlanDetails = checkoutMap.get(
+          document.salesNumber.toString(),
+        );
 
-  processedDocument.totalFoodPlanAmount =
-    foodPlanDetails.totalFoodPlanAmount || 0;
+        processedDocument.totalFoodPlanAmount =
+          foodPlanDetails.totalFoodPlanAmount || 0;
 
-  processedDocument.taxableFoodPlanAmount =
-    foodPlanDetails.taxableFoodPlanAmount || 0;
+        processedDocument.taxableFoodPlanAmount =
+          foodPlanDetails.taxableFoodPlanAmount || 0;
 
-  processedDocument.foodPlanTaxAmount =
-    foodPlanDetails.foodPlanTaxAmount || 0;
-}
+        processedDocument.foodPlanTaxAmount =
+          foodPlanDetails.foodPlanTaxAmount || 0;
+      }
       // Skip processing if no items array
       if (!Array.isArray(document.items)) {
         return processedDocument;
@@ -249,6 +251,443 @@ export const fetchData = async (type, cmp_id, serialNumber, res, userId) => {
   }
 };
 
+const round = (num) => Number(Number(num || 0).toFixed(2));
+
+const calculateTaxAmount = (
+  taxPercentage,
+  roomPrice,
+  addTaxWithRate,
+  foodPlanArray,
+  roomId,
+  bookingType,
+) => {
+  let foodPlanTax = 5;
+
+  if (bookingType === "offline") {
+    foodPlanTax = taxPercentage;
+  }
+
+  // Food plan total including tax
+  let specificFoodPlanTotal = (foodPlanArray || []).reduce(
+    (acc, item) =>
+      item.roomId.toString() === roomId.toString()
+        ? acc + Number(item.rate || 0)
+        : acc,
+    0,
+  );
+
+  // Food plan taxable amount
+  let taxableSpecificFoodPlan = round(
+    specificFoodPlanTotal / (1 + foodPlanTax / 100),
+  );
+
+  // Room amount including tax
+  let amountWithTax = Math.max(
+    0,
+    Number(roomPrice || 0) - Number(specificFoodPlanTotal || 0),
+  );
+
+  // Room taxable amount
+  let taxableAmount = round(amountWithTax / (1 + taxPercentage / 100));
+
+  // Room tax amount
+  let roomTaxAmount = round(amountWithTax - taxableAmount);
+
+  // Food plan tax amount
+  let foodPlanTaxAmount = round(
+    specificFoodPlanTotal - taxableSpecificFoodPlan,
+  );
+
+  return {
+    taxableAmount,
+    roomTaxAmount,
+    specificFoodPlanTotal: round(specificFoodPlanTotal),
+    taxableSpecificFoodPlan,
+    foodPlanTaxAmount,
+    foodPlanTaxPercentage: foodPlanTax,
+  };
+};
+
+export const fetchDataHotel = async (
+  type,
+  cmp_id,
+  serialNumber,
+  res,
+  userId,
+) => {
+  let model;
+  let voucherType;
+
+  switch (type) {
+    case "invoices":
+      model = invoiceModel;
+      voucherType = "saleOrder";
+      break;
+
+    case "sales":
+      model = salesModel;
+      voucherType = "sales";
+      break;
+
+    case "vanSales":
+      model = vanSaleModel;
+      voucherType = "vanSale";
+      break;
+
+    case "purchase":
+      model = purchaseModel;
+      voucherType = "purchase";
+      break;
+
+    case "transactions":
+      model = TransactionModel;
+      voucherType = "transactions";
+      break;
+
+    case "stockTransfers":
+      model = stockTransferModel;
+      voucherType = "stockTransfer";
+      break;
+
+    case "receipt":
+      model = receiptModel;
+      voucherType = "receipt";
+      break;
+
+    case "payment":
+      model = paymentModel;
+      voucherType = "payment";
+      break;
+
+    default:
+      return res.status(400).json({ message: "Invalid type parameter" });
+  }
+
+  try {
+    let query = {
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+    };
+
+    if (type === "vanSales" && userId) {
+      if (serialNumber) {
+        query.userLevelSerialNumber = {
+          $gt: serialNumber,
+        };
+
+        query.Secondary_user_id = new mongoose.Types.ObjectId(userId);
+      }
+    } else {
+      if (serialNumber) {
+        query.uniqueSaleNumber = {
+          $gt: serialNumber,
+        };
+      }
+    }
+
+    const data = await model.find(query).lean();
+
+    if (data.length === 0) {
+      return res.status(404).json({ message: `${type} not found` });
+    }
+
+    // =========================
+    // SERIES
+    // =========================
+
+    const seriesIds = [
+      ...new Set(
+        data
+          .filter((doc) => doc.series_id)
+          .map((doc) => doc.series_id.toString()),
+      ),
+    ];
+
+    const checkoutNumber = [
+      ...new Set(
+        data
+          .filter((doc) => doc.salesNumber)
+          .map((doc) => doc.salesNumber.toString()),
+      ),
+    ];
+
+    let seriesMap = new Map();
+
+    if (seriesIds.length > 0) {
+      const seriesDocuments = await VoucherSeriesModel.find({
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+
+        voucherType,
+
+        "series._id": {
+          $in: seriesIds.map((id) => new mongoose.Types.ObjectId(id)),
+        },
+      }).lean();
+
+      seriesDocuments.forEach((seriesDoc) => {
+        if (seriesDoc.series && Array.isArray(seriesDoc.series)) {
+          seriesDoc.series.forEach((series) => {
+            seriesMap.set(series._id.toString(), {
+              seriesName: series.seriesName,
+              prefix: series.prefix,
+              suffix: series.suffix,
+              under: series.under || "others",
+            });
+          });
+        }
+      });
+    }
+
+    // =========================
+    // CHECKOUT
+    // =========================
+
+    let checkoutMap = new Map();
+
+    if (type === "sales" && checkoutNumber.length > 0) {
+      const checkout = await CheckOut.find({
+        cmp_id: new mongoose.Types.ObjectId(cmp_id),
+
+        voucherNumber: {
+          $in: checkoutNumber,
+        },
+      })
+        .select(
+          `
+          voucherNumber
+          selectedRooms
+          _id
+          foodPlan
+          addTaxWithRate
+          bookingType
+          stayDays
+          cmp_id
+          Primary_user_id
+        `,
+        )
+        .lean();
+
+      checkout.forEach((doc) => {
+        if (!doc?.voucherNumber) return;
+
+        const selectedRooms = Array.isArray(doc.selectedRooms)
+          ? doc.selectedRooms
+          : [];
+
+        const totalFoodPlanAmount = round(
+          selectedRooms.reduce(
+            (total, room) => total + Number(room?.foodPlanAmountWithTax || 0),
+            0,
+          ),
+        );
+
+        const taxableFoodPlanAmount = round(
+          selectedRooms.reduce(
+            (total, room) =>
+              total + Number(room?.foodPlanAmountWithOutTax || 0),
+            0,
+          ),
+        );
+
+        let newItemsArranged = selectedRooms.map((room) => {
+          let taxDetails = calculateTaxAmount(
+            room.taxPercentage,
+            room?.amountAfterTax,
+            doc?.addTaxWithRate,
+            doc?.foodPlan,
+            room?.roomId,
+            doc?.bookingType,
+          );
+
+          return {
+            _id: room._id,
+
+            product_name: room?.roomName,
+
+            cmp_id: doc?.cmp_id,
+
+            balance_stock: 0,
+
+            Primary_user_id: doc?.Primary_user_id,
+
+            category: null,
+            sub_category: null,
+
+            unit: "NOS",
+
+            GodownList: [],
+
+            hsn_code: room?.hsnDetails?.hsn,
+
+            cgst: Number(room?.taxPercentage) / 2,
+
+            sgst: Number(room?.taxPercentage) / 2,
+
+            igst: Number(room?.taxPercentage),
+
+            batchEnabled: false,
+            gdnEnabled: false,
+
+            Priceleveles: room.priceLevel,
+
+            hasGodownOrBatch: false,
+
+            totalCount: doc.stayDays,
+
+            totalActualCount: doc.stayDays,
+
+            total: round(room?.amountAfterTax),
+
+            totalCgstAmt: round(taxDetails?.roomTaxAmount / 2),
+
+            totalSgstAmt: round(taxDetails?.roomTaxAmount / 2),
+
+            totalIgstAmt: round(taxDetails?.roomTaxAmount),
+
+            totalCessAmt: 0,
+
+            totalAddlCessAmt: 0,
+
+            added: true,
+
+            taxInclusive: true,
+
+            under: "room",
+
+            taxableAmount: taxDetails?.taxableAmount,
+
+            foodPlanTaxableAmount: taxDetails?.taxableSpecificFoodPlan,
+
+            foodPlanTaxAmount: taxDetails?.foodPlanTaxAmount,
+
+            foodPlanTaxPercentage: taxDetails?.foodPlanTaxPercentage,
+
+            foodPlanAmountWithTax: taxDetails?.specificFoodPlanTotal,
+          };
+        });
+
+        checkoutMap.set(doc.voucherNumber.toString(), {
+          totalFoodPlanAmount,
+
+          taxableFoodPlanAmount,
+
+          foodPlanTaxAmount: round(totalFoodPlanAmount - taxableFoodPlanAmount),
+
+          selectedRooms: newItemsArranged,
+        });
+      });
+    }
+
+    // =========================
+    // RECEIPT / PAYMENT
+    // =========================
+
+    if (type === "receipt" || type === "payment") {
+      const processedData = data.map((doc) => {
+        const processedDoc = { ...doc };
+
+        processedDoc.party.billData = doc.billData;
+
+        delete processedDoc.billData;
+
+        if (doc.series_id && seriesMap.has(doc.series_id.toString())) {
+          processedDoc.seriesDetails = seriesMap.get(doc.series_id.toString());
+        }
+
+        return processedDoc;
+      });
+
+      return res.status(200).json({
+        message: `${type} fetched`,
+        data: processedData,
+      });
+    }
+
+    // =========================
+    // MAIN PROCESSING
+    // =========================
+
+    const processedData = data.map((document) => {
+      let processedDocument = { ...document };
+
+      if (document.series_id && seriesMap.has(document.series_id.toString())) {
+        processedDocument.seriesDetails = seriesMap.get(
+          document.series_id.toString(),
+        );
+      }
+
+      if (
+        type === "sales" &&
+        document.salesNumber &&
+        checkoutMap.has(document.salesNumber.toString())
+      ) {
+        const foodPlanDetails = checkoutMap.get(
+          document.salesNumber.toString(),
+        );
+
+        processedDocument.totalFoodPlanAmount =
+          foodPlanDetails.totalFoodPlanAmount || 0;
+
+        processedDocument.taxableFoodPlanAmount =
+          foodPlanDetails.taxableFoodPlanAmount || 0;
+
+        processedDocument.foodPlanTaxAmount =
+          foodPlanDetails.foodPlanTaxAmount || 0;
+
+        processedDocument.items = foodPlanDetails.selectedRooms || [];
+      } else {
+        if (
+          Array.isArray(processedDocument.items) &&
+          processedDocument.items.length > 0
+        ) {
+          processedDocument.items.forEach((item) => {
+            item.under = "restaurant";
+          });
+        }
+      }
+
+      // Skip if no items
+      if (!Array.isArray(processedDocument.items)) {
+        return processedDocument;
+      }
+
+      processedDocument.items = processedDocument.items.map((item) => {
+        const processedItem = { ...item };
+
+        // Filter price levels
+        if (Array.isArray(item.Priceleveles) && document.priceLevel) {
+          processedItem.Priceleveles = item.Priceleveles.filter(
+            (price) => price.pricelevel === document.priceLevel,
+          );
+        }
+
+        // Filter godown
+        if (Array.isArray(item.GodownList)) {
+          if (item.hasGodownOrBatch === true) {
+            processedItem.GodownList = item.GodownList.filter(
+              (godown) => godown.added === true,
+            );
+          }
+        }
+
+        return processedItem;
+      });
+
+      return processedDocument;
+    });
+
+    return res.status(200).json({
+      message: `${type} fetched`,
+      data: processedData,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error",
+    });
+  }
+};
 export const getApiLogs = async (cmp_id, dataName) => {
   const company = await OrganizationModel.findById(cmp_id)
     .lean()

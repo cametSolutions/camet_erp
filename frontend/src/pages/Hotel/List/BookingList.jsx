@@ -1206,8 +1206,8 @@ function BookingList() {
         (row) =>
           !row.customer ||
           !row.source ||
-          !row.amount ||
-          parseFloat(row.amount) <= 0,
+         (!row.amount && row.underCategory != "food" )||
+          parseFloat(row.amount) < 0,
       );
 
       if (hasInvalidRows) {
@@ -2948,11 +2948,15 @@ function BookingList() {
                       // Validate last row — all 3 mandatory fields must be filled
                       const lastRow =
                         splitPaymentRows[splitPaymentRows.length - 1];
-                      const lastRowValid =
+                        console.log("lastRow", lastRow);
+                        console.log(selectedDataForPayment)
+                     let amount = lastRow?.underCategory !== "food" ?  parseFloat(lastRow.amount) : selectedDataForPayment?.restaurantSubTotal == 0 && 1
+                     console.log("amount", amount)
+                        const lastRowValid =
                         lastRow &&
                         lastRow.customer?.trim() !== "" &&
                         lastRow.source?.trim() !== "" &&
-                        parseFloat(lastRow.amount) > 0;
+                        parseFloat(amount ) > 0;
 
                       // Track which rows have validation errors (only shown after an add attempt)
                       // We store this as a derived set of incomplete row indices
