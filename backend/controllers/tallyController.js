@@ -6,7 +6,7 @@ import productModel from "../models/productModel.js";
 import AccountGroup from "../models/accountGroup.js";
 import subGroupModel from "../models/subGroup.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
-import { fetchData, getApiLogs } from "../helpers/tallyHelper.js";
+import { fetchData, getApiLogs ,fetchDataHotel } from "../helpers/tallyHelper.js";
 import { getUserFriendlyMessage } from "../helpers/getUserFreindlyMessage.js";
 import { Booking,CheckIn } from "../models/bookingModal.js";
 import mongoose from "mongoose";
@@ -2482,6 +2482,15 @@ export const giveSales = async (req, res) => {
   const serialNumber = req.params.SNo;
   return fetchData("sales", cmp_id, serialNumber, res);
 };
+
+
+export const giveSalesHotel = async (req, res) => {
+  const cmp_id = req.params.cmp_id;
+  const serialNumber = req.params.SNo;
+  return fetchDataHotel("sales", cmp_id, serialNumber, res);
+};
+
+
 
 // // @desc for giving van sales to tally
 // // route GET/api/tally/giveVanSales
