@@ -521,11 +521,11 @@ export const fetchDataHotel = async (
 
             hsn_code: room?.hsnDetails?.hsn,
 
-            cgst: Number(room?.taxPercentage) / 2,
+            cgst: (Number(room?.taxPercentage) / 2).toFixed(2),
 
-            sgst: Number(room?.taxPercentage) / 2,
+            sgst: (Number(room?.taxPercentage) / 2).toFixed(2),
 
-            igst: Number(room?.taxPercentage),
+            igst: Number(room?.taxPercentage).toFixed(2),
 
             batchEnabled: false,
             gdnEnabled: false,
@@ -540,11 +540,11 @@ export const fetchDataHotel = async (
 
             total: (room?.amountAfterTax),
 
-            totalCgstAmt: (taxDetails?.roomTaxAmount / 2),
+            totalCgstAmt: (taxDetails?.roomTaxAmount / 2).toFixed(2),
 
-            totalSgstAmt: (taxDetails?.roomTaxAmount / 2),
+            totalSgstAmt: (taxDetails?.roomTaxAmount / 2).toFixed(2),
 
-            totalIgstAmt: (taxDetails?.roomTaxAmount),
+            totalIgstAmt: (taxDetails?.roomTaxAmount).toFixed(2),
 
             totalCessAmt: 0,
 
@@ -556,15 +556,15 @@ export const fetchDataHotel = async (
 
             under: "room",
 
-            taxableAmount: taxDetails?.taxableAmount,
+            taxableAmount: taxDetails?.taxableAmount.toFixed(2),
 
-            foodPlanTaxableAmount: taxDetails?.taxableSpecificFoodPlan,
+            foodPlanTaxableAmount: taxDetails?.taxableSpecificFoodPlan.toFixed(2),
 
-            foodPlanTaxAmount: taxDetails?.foodPlanTaxAmount,
+            foodPlanTaxAmount: taxDetails?.foodPlanTaxAmount.toFixed(2),
 
-            foodPlanTaxPercentage: taxDetails?.foodPlanTaxPercentage,
+            foodPlanTaxPercentage: taxDetails?.foodPlanTaxPercentage.toFixed(2),
 
-            foodPlanAmountWithTax: taxDetails?.specificFoodPlanTotal,
+            foodPlanAmountWithTax: taxDetails?.specificFoodPlanTotal.toFixed(2),
           };
         });
 
