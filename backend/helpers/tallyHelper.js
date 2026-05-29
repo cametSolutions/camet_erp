@@ -280,7 +280,7 @@ const calculateTaxAmount = (
   ) * Number(stayDays || 1)
 
   // Food plan taxable amount
-  let taxableSpecificFoodPlan = round(
+  let taxableSpecificFoodPlan = (
     specificFoodPlanTotal / (1 + foodPlanTax / 100),
   );
 
@@ -291,20 +291,20 @@ const calculateTaxAmount = (
   );
 
   // Room taxable amount
-  let taxableAmount = round(amountWithTax / (1 + taxPercentage / 100));
+  let taxableAmount = (amountWithTax / (1 + taxPercentage / 100));
 
   // Room tax amount
-  let roomTaxAmount = round(amountWithTax - taxableAmount);
+  let roomTaxAmount = (amountWithTax - taxableAmount);
 
   // Food plan tax amount
-  let foodPlanTaxAmount = round(
+  let foodPlanTaxAmount = (
     specificFoodPlanTotal - taxableSpecificFoodPlan,
   );
 
   return {
     taxableAmount,
     roomTaxAmount,
-    specificFoodPlanTotal: round(specificFoodPlanTotal),
+    specificFoodPlanTotal: (specificFoodPlanTotal),
     taxableSpecificFoodPlan,
     foodPlanTaxAmount,
     foodPlanTaxPercentage: foodPlanTax,
@@ -476,14 +476,14 @@ export const fetchDataHotel = async (
           ? doc.selectedRooms
           : [];
 
-        const totalFoodPlanAmount = round(
+        const totalFoodPlanAmount = (
           selectedRooms.reduce(
             (total, room) => total + Number(room?.foodPlanAmountWithTax || 0),
             0,
           ),
         );
 
-        const taxableFoodPlanAmount = round(
+        const taxableFoodPlanAmount = (
           selectedRooms.reduce(
             (total, room) =>
               total + Number(room?.foodPlanAmountWithOutTax || 0),
@@ -540,13 +540,13 @@ export const fetchDataHotel = async (
 
             totalActualCount: doc.stayDays,
 
-            total: round(room?.amountAfterTax),
+            total: (room?.amountAfterTax),
 
-            totalCgstAmt: round(taxDetails?.roomTaxAmount / 2),
+            totalCgstAmt: (taxDetails?.roomTaxAmount / 2),
 
-            totalSgstAmt: round(taxDetails?.roomTaxAmount / 2),
+            totalSgstAmt: (taxDetails?.roomTaxAmount / 2),
 
-            totalIgstAmt: round(taxDetails?.roomTaxAmount),
+            totalIgstAmt: (taxDetails?.roomTaxAmount),
 
             totalCessAmt: 0,
 
@@ -575,7 +575,7 @@ export const fetchDataHotel = async (
 
           taxableFoodPlanAmount,
 
-          foodPlanTaxAmount: round(totalFoodPlanAmount - taxableFoodPlanAmount),
+          foodPlanTaxAmount: (totalFoodPlanAmount - taxableFoodPlanAmount),
 
           selectedRooms: newItemsArranged,
         });
