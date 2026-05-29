@@ -289,7 +289,7 @@ const calculateTaxAmount = (
   );
 
   // Room taxable amount
-  let taxableAmount = (amountWithTax / (1 + taxPercentage / 100));
+  let taxableAmount = (amountWithTax / (1 + taxPercentage / 100))
 
   // Room tax amount
   let roomTaxAmount = (amountWithTax - taxableAmount);
@@ -560,7 +560,7 @@ export const fetchDataHotel = async (
 
             foodPlanTaxableAmount: taxDetails?.taxableSpecificFoodPlan.toFixed(2),
 
-            foodPlanTaxAmount: taxDetails?.foodPlanTaxAmount.toFixed(2),
+            foodPlanTaxAmount: Math.trunc(taxDetails?.foodPlanTaxAmount * 100) / 100,
 
             foodPlanTaxPercentage: taxDetails?.foodPlanTaxPercentage.toFixed(2),
 
