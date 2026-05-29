@@ -280,9 +280,7 @@ const calculateTaxAmount = (
   ) * Number(stayDays || 1)
 
   // Food plan taxable amount
-  let taxableSpecificFoodPlan = (
-    specificFoodPlanTotal / (1 + foodPlanTax / 100),
-  );
+  let taxableSpecificFoodPlan = ( specificFoodPlanTotal / (1 + foodPlanTax / 100));
 
   // Room amount including tax
   let amountWithTax = Math.max(
@@ -298,7 +296,7 @@ const calculateTaxAmount = (
 
   // Food plan tax amount
   let foodPlanTaxAmount = (
-    specificFoodPlanTotal - taxableSpecificFoodPlan,
+    specificFoodPlanTotal - taxableSpecificFoodPlan
   );
 
   return {
@@ -480,7 +478,7 @@ export const fetchDataHotel = async (
           selectedRooms.reduce(
             (total, room) => total + Number(room?.foodPlanAmountWithTax || 0),
             0,
-          ),
+          )
         );
 
         const taxableFoodPlanAmount = (
@@ -488,7 +486,7 @@ export const fetchDataHotel = async (
             (total, room) =>
               total + Number(room?.foodPlanAmountWithOutTax || 0),
             0,
-          ),
+          )
         );
 
         let newItemsArranged = selectedRooms.map((room) => {
@@ -575,7 +573,7 @@ export const fetchDataHotel = async (
 
           taxableFoodPlanAmount,
 
-          foodPlanTaxAmount: (totalFoodPlanAmount - taxableFoodPlanAmount),
+          foodPlanTaxAmount: round(totalFoodPlanAmount - taxableFoodPlanAmount),
 
           selectedRooms: newItemsArranged,
         });
