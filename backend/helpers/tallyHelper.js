@@ -277,7 +277,7 @@ const calculateTaxAmount = (
         ? acc + Number(item.rate || 0)
         : acc,
     0,
-  );
+  ) * Number(stayDays || 1)
 
   // Food plan taxable amount
   let taxableSpecificFoodPlan = round(
@@ -287,7 +287,7 @@ const calculateTaxAmount = (
   // Room amount including tax
   let amountWithTax = Math.max(
     0,
-    Number(roomPrice || 0) - (Number(specificFoodPlanTotal || 0) * Number(stayDays || 1)),
+    Number(roomPrice || 0) - (Number(specificFoodPlanTotal || 0)),
   );
 
   // Room taxable amount
