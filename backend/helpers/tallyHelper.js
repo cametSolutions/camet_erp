@@ -560,7 +560,7 @@ export const fetchDataHotel = async (
 
             foodPlanTaxableAmount: taxDetails?.taxableSpecificFoodPlan.toFixed(2),
 
-            foodPlanTaxAmount: Math.trunc(taxDetails?.foodPlanTaxAmount * 100) / 100,
+            foodPlanTaxAmount: (Math.floor(taxDetails?.foodPlanTaxAmount * 100) - 1) / 100,
 
             foodPlanTaxPercentage: taxDetails?.foodPlanTaxPercentage.toFixed(2),
 
