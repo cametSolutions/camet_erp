@@ -491,12 +491,13 @@ export const fetchDataHotel = async (
         let newItemsArranged = selectedRooms.map((room) => {
           let taxDetails = calculateTaxAmount(
             room.taxPercentage,
-            room?.amountAfterTax,
+            room?.totalAmount,
             doc?.addTaxWithRate,
             doc?.foodPlan,
             room?.roomId,
             doc?.bookingType,
           );
+          
 
           return {
             _id: room._id,
