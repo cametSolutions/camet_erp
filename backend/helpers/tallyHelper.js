@@ -260,8 +260,11 @@ const calculateTaxAmount = (
   foodPlanArray,
   roomId,
   bookingType,
+  stayDays
 ) => {
   let foodPlanTax = 5;
+
+  console.log(roomPrice)
 
   if (bookingType === "offline") {
     foodPlanTax = taxPercentage;
@@ -284,7 +287,7 @@ const calculateTaxAmount = (
   // Room amount including tax
   let amountWithTax = Math.max(
     0,
-    Number(roomPrice || 0) - Number(specificFoodPlanTotal || 0),
+    Number(roomPrice || 0) - (Number(specificFoodPlanTotal || 0) * Number(stayDays || 1)),
   );
 
   // Room taxable amount
@@ -496,6 +499,7 @@ export const fetchDataHotel = async (
             doc?.foodPlan,
             room?.roomId,
             doc?.bookingType,
+            room?.stayDays
           );
           
 
