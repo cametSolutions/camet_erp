@@ -31,6 +31,8 @@ const COLUMNS = [
   { key: "plan",              label: "Plan",           width: "50px" },
   { key: "rooms",             label: "Rooms",          width: "80px" },
   { key: "noRooms",           label: "No.Rms",         width: "60px" },
+  { key: "placeOfSupply",           label: "placeOfSupply",      width: "160px" },
+  { key: "gst",           label: "GST",      width: "160px" },
   { key: "days",              label: "Days",           width: "50px" },
   { key: "totalAmount",       label: "Total Amt",      width: "90px",  render: fmt },
   { key: "perDayRevenue",     label: "Per Day",        width: "80px",  render: fmt },

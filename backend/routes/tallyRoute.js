@@ -13,6 +13,7 @@ import {
   giveVanSales,
   getStockTransfers,
   giveReceipts,
+  giveReceiptsHotel,
   givePayments,
   updateStock,
   updatePriceLevels,
@@ -22,6 +23,7 @@ import {
   addSubDetails,
   addGodowns,
   backfillUniqueSaleNumber,
+  createReceiptForSales,
 } from "../controllers/tallyController.js";
 
 const router = express.Router();
@@ -55,6 +57,8 @@ router.get("/getSalesHotel/:cmp_id/:SNo", giveSalesHotel);
 router.get("/getVanSales/:cmp_id/:SNo", giveVanSales);
 router.get("/getStockTransfers/:cmp_id/:SNo", getStockTransfers);
 router.get("/getReceipts/:cmp_id/:SNo", giveReceipts);
+router.post("/createReceipts/:cmp_id/:SNo", createReceiptForSales);
+router.get("/getReceiptsHotel/:cmp_id/:SNo", giveReceiptsHotel);
 router.get("/getPayments/:cmp_id/:SNo", givePayments);
 router.get("/getPurchase/:cmp_id/:SNo", givePurchase);
 
