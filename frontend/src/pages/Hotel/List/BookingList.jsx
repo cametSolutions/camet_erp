@@ -1375,8 +1375,8 @@ function BookingList() {
             ...originalCheckIn,
             partyArray: checkIn.originalCheckIn.customerId.party_master_id,
             Totaladvance:
-              Number(checkIn?.originalCheckIn?.advanceAmount || 0) +
-              Number(checkIn?.originalCheckIn?.bookingId?.advanceAmount || 0),
+              Number(checkIn?.originalCheckIn?.totalAdvance || 0) +
+              Number(checkIn?.originalCheckIn?.bookingId?.totalAdvance || 0),
             customerId: group.customer,
             allCheckInIds: [id],
             selectedRooms: roomsToCheckout,
@@ -1412,8 +1412,8 @@ function BookingList() {
             partyId: checkIn.originalCheckIn.customerId.party_master_id,
             customerId: group.customer,
             Totaladvance:
-              Number(checkIn?.originalCheckIn?.advanceAmount || 0) +
-              Number(checkIn?.originalCheckIn?.bookingId?.advanceAmount || 0),
+              Number(checkIn?.originalCheckIn?.totalAdvance || 0) +
+              Number(checkIn?.originalCheckIn?.bookingId?.totalAdvance || 0),
             selectedRooms: roomsToCheckout,
             isPartialCheckout,
             originalCheckInId: checkIn.checkInId,
@@ -1507,13 +1507,13 @@ function BookingList() {
         customerGroups[custId].allCheckInIds = [
           ...(d.allCheckInIds || [d._id]),
         ];
-        customerGroups[custId].advanceAmount = Number(d.advanceAmount || 0);
+        customerGroups[custId].totalAdvance = Number(d.totalAdvance || 0);
       } else {
         customerGroups[custId].selectedRooms.push(...(d.selectedRooms || []));
         customerGroups[custId].allCheckInIds.push(
           ...(d.allCheckInIds || [d._id]),
         );
-        customerGroups[custId].advanceAmount += Number(d.advanceAmount || 0);
+        customerGroups[custId].totalAdvance += Number(d.totalAdvance || 0);
       }
     });
 
@@ -1854,12 +1854,12 @@ function BookingList() {
 
             <div className="w-24 text-center text-gray-600 text-xs">
               ₹
-              {el?.advanceAmount
+              {el?.totalAdvance
                 ? formatCurrency(
                     el.bookingId
-                      ? Number(el.bookingId?.advanceAmount || 0) +
-                          Number(el.advanceAmount)
-                      : el.advanceAmount,
+                      ? Number(el.bookingId?.totalAdvance || 0) +
+                          Number(el.totalAdvance)
+                      : el.totalAdvance,
                   ).replace("₹", "")
                 : "0.00"}
             </div>
