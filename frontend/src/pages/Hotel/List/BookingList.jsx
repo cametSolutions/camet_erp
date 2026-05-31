@@ -224,8 +224,8 @@ function BookingList() {
       if (!rooms.length) return total;
 
       const advance =
-        Number(checkout?.advanceAmount || 0) +
-        Number(checkout?.bookingId?.advanceAmount || 0);
+        Number(checkout?.totalAdvance || 0) +
+        Number(checkout?.bookingId?.totalAdvance || 0);
 
       const hasSwapping = rooms.some((r) => r?.swappingDateFrom);
       const checkoutTotal = rooms.reduce((sum, room) => {
@@ -488,12 +488,12 @@ function BookingList() {
     ) {
       console.log(selectedCheckOut);
       const totalAmount = calculateTotalAmount(selectedCheckOut);
-      console.log(selectedCheckOut.length);
+      console.log(selectedCheckOut);
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
         return (
           total +
-          (Number(item.advanceAmount || 0) +
-            Number(item.bookingId?.advanceAmount || 0))
+          (Number(item.totalAdvance || 0) +
+            Number(item.bookingId?.totalAdvance || 0))
         );
       }, 0);
       console.log(advanceAmount);
@@ -501,7 +501,7 @@ function BookingList() {
       const restaurantSubTotal = selectedCheckOut.reduce((total, item) => {
         return total + (item.restaurantSubTotal || 0);
       }, 0);
-      console.log(restaurantSubTotal);
+      console.log(totalAmount);
 
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
