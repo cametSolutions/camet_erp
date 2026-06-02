@@ -465,7 +465,7 @@ export const generateKot = async (req, res) => {
       customer: req.body.customer,
       tableNumber: req.body.customer?.tableNumber,
       total: req.body.total,
-      createdAt: new Date(),
+      // createdAt: new Date(),
 
       status: organizationData.configurations[0].kotAutoApproval
         ? "completed"
@@ -557,7 +557,7 @@ export const editKot = async (req, res) => {
       delete customer.roomId;
     }
 
-    console.log("req.body?.status", req.body?.status);
+    console.log("req.body?.status", req.body);
 
     let tag = req.body?.parentTag;
 
@@ -573,7 +573,7 @@ export const editKot = async (req, res) => {
           total: req.body.total,
           status: req.body.status || "pending",
           paymentMethod: req.body.paymentMethod,
-          roomId: req.body.customer?.roomId,
+          roomId: req.body?.roomId,
           checkInNumber: req.body.customer?.checkInNumber,
 
           ...(!tag && { kitchenBatches: req.body.kitchenBatches }),
