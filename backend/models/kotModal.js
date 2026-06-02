@@ -33,146 +33,146 @@ const kitchenBatchSchema = new mongoose.Schema(
       default: "printed",
     },
   },
-  { _id: false }
+  { _id: false },
 );
 
-const kotSchema = new mongoose.Schema({
-  primary_user_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "PrimaryUser",
-    required: true,
-  },
-  secondary_user_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "SecondaryUser",
-  },
-  cmp_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Organization",
-    required: true,
-  },
-
-  items: [],
-
-  voucherNumber: {
-    type: String,
-    required: true,
-  },
-
-  type: {
-    type: String,
-    required: true,
-  },
-
-  customer: {
-    name: {
-      type: String,
-      trim: true,
+const kotSchema = new mongoose.Schema(
+  {
+    primary_user_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PrimaryUser",
+      required: true,
     },
-    guestName: {
-      type: String,
-      trim: true,
+    secondary_user_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SecondaryUser",
     },
-    phone: {
-      type: String,
-      trim: true,
+    cmp_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      required: true,
     },
-    address: {
+
+    items: [],
+
+    voucherNumber: {
       type: String,
-      trim: true,
+      required: true,
+    },
+
+    type: {
+      type: String,
+      required: true,
+    },
+
+    customer: {
+      name: {
+        type: String,
+        trim: true,
+      },
+      guestName: {
+        type: String,
+        trim: true,
+      },
+      phone: {
+        type: String,
+        trim: true,
+      },
+      address: {
+        type: String,
+        trim: true,
+      },
+      tableNumber: {
+        type: String,
+        trim: true,
+      },
+      status: {
+        type: String,
+        trim: true,
+      },
     },
     tableNumber: {
       type: String,
       trim: true,
     },
+
+    serviceType: {
+      type: String,
+      enum: ["Restaurant", "Room Service", "Dine-in"],
+      default: "Restaurant",
+    },
+
+    total: {
+      type: Number,
+      required: true,
+      set: (val) => Math.round(val),
+    },
+
     status: {
+      type: String,
+      default: "pending",
+    },
+    kitchenBatches: {
+      type: [kitchenBatchSchema],
+      default: [],
+    },
+
+    cancelReason: {
       type: String,
       trim: true,
     },
-  },
-  tableNumber: {
-    type: String,
-    trim: true,
-  },
 
-  serviceType: {
-    type: String,
-    enum: ["Restaurant", "Room Service", "Dine-in"],
-    default: "Restaurant",
-  },
-
-  total: {
-    type: Number,
-    required: true,
-    set: (val) => Math.round(val),
-  },
-
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-
-  status: {
-    type: String,
-    default: "pending",
-  },
-    kitchenBatches: {
-    type: [kitchenBatchSchema],
-    default: [],
-  },
-
-  cancelReason: {
-    type: String,
-    trim: true,
-  },
-
-  cancelledAt: {
-    type: Date,
-  },
-  paymentMethod: {
-    type: String,
-  },
-  paymentCompleted: {
-    type: Boolean,
-    default: false,
-  },
-  roomId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Room",
-  },
-  checkInNumber: {
-    type: String,
-    trim: true,
-  },
-  discount: { type: Number, default: 0, set: (val) => Math.round(val) },
-  discountChargeId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "AdditionalCharges",
-  },
-  note: { type: String },
-  foodPlanId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "FoodPlan",
-    default: null,
-  },
-  isParent: {
-    type: Boolean,
-    default: true,
-  },
-
-  foodPlanDetails: [
-    {
-      _id: { type: mongoose.Schema.Types.ObjectId, ref: "FoodPlan" },
-      planType: String,
-      amount: Number,
-      isComplimentary: Boolean,
+    cancelledAt: {
+      type: Date,
     },
-  ],
+    paymentMethod: {
+      type: String,
+    },
+    paymentCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    roomId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Room",
+    },
+    checkInNumber: {
+      type: String,
+      trim: true,
+    },
+    discount: { type: Number, default: 0, set: (val) => Math.round(val) },
+    discountChargeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AdditionalCharges",
+    },
+    note: { type: String },
+    foodPlanId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "FoodPlan",
+      default: null,
+    },
+    isParent: {
+      type: Boolean,
+      default: true,
+    },
 
-  isManuallyComplimentary: {
-    type: Boolean,
-    default: false,
+    foodPlanDetails: [
+      {
+        _id: { type: mongoose.Schema.Types.ObjectId, ref: "FoodPlan" },
+        planType: String,
+        amount: Number,
+        isComplimentary: Boolean,
+      },
+    ],
+
+    isManuallyComplimentary: {
+      type: Boolean,
+      default: false,
+    },
   },
-});
+  {
+    timestamps: true,
+  },
+);
 
 export default mongoose.model("Kot", kotSchema);
