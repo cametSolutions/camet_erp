@@ -185,7 +185,8 @@ console.log("📄 DATE FIELDS:", {
     isCancelled: false,
     "convertedFrom.checkInNumber": { $in: checkInNumbers },
   })
-  .select("createdAt salesNumber");
+  .select("createdAt salesNumber")
+  .lean();
 
 let saleObject = {};
 
@@ -235,7 +236,9 @@ for (const sale of sales) {
           (existing.amount + Number(split.amount || 0)).toFixed(2)
         );
       } else {
-        totalByCheckIn[checkInNumber].paymentSplittingData.push({ ...split });
+       totalByCheckIn[checkInNumber].paymentSplittingData.push(
+  split.toObject ? split.toObject() : { ...split._doc || split }
+);
       }
     }
   }
@@ -266,10 +269,15 @@ console.log("saleObject",saleObject)
       ...b.toObject(),
       displayTotal: (specificSale?.paymentSplittingData?.length > 0  &&  params?.modal === "checkOut" ) ? specificSale.paymentSplittingData.reduce((total, split) => total + Number(split.amount || 0) , 0) + Number(checkInData.totalAmount || 0): 0,
       restaurantSubTotal: checkInData.totalAmount,
-      restaurantPaymentSplittingData: [
-        ...(specificSale?.paymentSplittingData || []), 
-        ...(checkInData.paymentSplittingData || []),
-      ],
+     restaurantPaymentSplittingData: [
+  ...(specificSale?.paymentSplittingData || []).map(
+    item => item.toObject ? item.toObject() : { ...(item._doc || item) }
+  ),
+
+  ...(checkInData.paymentSplittingData || []).map(
+    item => item.toObject ? item.toObject() : { ...(item._doc || item) }
+  ),
+],
       createdDate : saleObject[b.voucherNumber]
     };
   })
