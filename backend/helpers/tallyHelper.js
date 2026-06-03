@@ -275,7 +275,7 @@ const calculateTaxAmount = (
   let specificFoodPlanTotal =
     (foodPlanArray || []).reduce(
       (acc, item) =>
-        item.roomId.toString() === roomId.toString()
+        item.roomId?.toString() === roomId?.toString()
           ? acc + Number(item.rate || 0)
           : acc,
       0,
@@ -465,6 +465,7 @@ export const fetchDataHotel = async (
           addTaxWithRate
           bookingType
           stayDays
+          paxTotal
           cmp_id
           Primary_user_id
         `,
@@ -565,6 +566,8 @@ export const fetchDataHotel = async (
             foodPlanTaxPercentage: taxDetails?.foodPlanTaxPercentage.toFixed(2),
 
             foodPlanAmountWithTax: taxDetails?.specificFoodPlanTotal.toFixed(2),
+
+            paxTotal: doc?.paxTotal,
           };
         });
 
