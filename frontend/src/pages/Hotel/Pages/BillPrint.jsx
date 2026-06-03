@@ -98,7 +98,7 @@ const HotelBillPrint = () => {
 
   // Fetch debit and KOT once for all docs shown
   const fetchDebitData = async (data) => {
-    console.log(data);
+    console.log(data[0]?.restaurantPaymentSplittingData);
     try {
       const res = await api.post(
         `/api/sUsers/fetchOutStandingAndFoodData/${organization._id}`,
@@ -120,13 +120,12 @@ const HotelBillPrint = () => {
     if (selectedCheckOut?.length > 0) {
       console.log(isForPreview);
       if (!isForPreview) {
-        const rawData = selectedCheckOut[0].checkoutpaymenttypedetails || [];
-        console.log(rawData);
+        const rawData = selectedCheckOut[0].restaurantPaymentSplittingData || [];
         // ✅ Convert to normal array
         const cleanData = rawData.map((item) =>
           item?.toObject ? item.toObject() : item._doc ? item._doc : item,
         );
-        console.log("cleanData", cleanData);
+
         const mergedMap = {};
         let mapData = [...cleanData];
         mapData?.forEach((item) => {
