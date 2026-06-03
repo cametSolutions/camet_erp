@@ -135,19 +135,23 @@ export const buildDatabaseFilterForBooking = (params) => {
 };
 
 // function used to fetch booking
-export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
+export const fetchBookingsFromDatabase = async (
+  filter = {},
+  params = {}
+) => {
   const { skip = 0, limit = 0 } = params;
+
   try {
-    let selectedModal
-    if (params?.modal == "booking") {
+    let selectedModal;
+
+    if (params?.modal === "booking") {
       selectedModal = Booking;
-    } else if (params?.modal == "checkIn") {
+    } else if (params?.modal === "checkIn") {
       selectedModal = CheckIn;
     } else {
       selectedModal = CheckOut;
     }
 
-    // console.log("params", params);
     const [bookings, totalBookings] = await Promise.all([
       selectedModal
         .find(filter)
@@ -155,96 +159,59 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         .populate("guestId")
         .populate("agentId")
         .populate("isHotelAgent")
-        //     .populate({
-        //   path: "selectedRooms.roomId",
-        //   select: "roomName roomNumber status",
-        // })
         .populate("selectedRooms.selectedPriceLevel")
         .populate("bookingId")
         .populate("checkInId")
         .sort({ createdAt: -1 })
         .skip(limit > 0 ? skip : 0)
         .limit(limit > 0 ? limit : 0),
+
       selectedModal.countDocuments(filter),
     ]);
 
-    // In fetchBookingsFromDatabase, after query runs
-    const raw = await selectedModal.findOne({ cmp_id: filter.cmp_id }).lean();
-    console.log("🔑 ALL FIELD NAMES:", Object.keys(raw || {}));
-    console.log("📄 DATE FIELDS:", {
-      createdAt: raw?.createdAt,
-      bookingDate: raw?.bookingDate,
-      arrivalDate: raw?.arrivalDate,
-      checkOutDate: raw?.checkOutDate,
-      date: raw?.date,
-    });
     const checkInNumbers =
-      params?.modal == "checkIn"
+      params?.modal === "checkIn"
         ? bookings.map((b) => b.voucherNumber)
-        : params?.modal == "checkOut"
-          ? bookings.map((b) => b.checkInId?.voucherNumber)
-          : [];
-    // 2) Find all related sales in one query
-  const sales = await salesModel
-  .find({
-    cmp_id: filter.cmp_id,
-    isPostToRoom: true,
-    isCancelled: false,
-    "convertedFrom.checkInNumber": { $in: checkInNumbers },
-  })
-  .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData");
- const checkoutSale = await salesModel.find({
-    cmp_id: filter.cmp_id,
-    isPostToRoom: false,
-    isCancelled: false,
-    "convertedFrom.checkInNumber": { $in: checkInNumbers },
-  })
-  .select("createdAt salesNumber");
+        : params?.modal === "checkOut"
+        ? bookings.map((b) => b.checkInId?.voucherNumber)
+        : [];
 
-let saleObject = {};
+    // Get all room posted sales
+    const sales = await salesModel
+      .find({
+        cmp_id: filter.cmp_id,
+        isPostToRoom: true,
+        isCancelled: false,
+        "convertedFrom.checkInNumber": {
+          $in: checkInNumbers,
+        },
+      })
+      .select(
+        "_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData"
+      )
+      .lean();
 
-for (const sale of checkoutSale) {
-  saleObject[sale.salesNumber] = sale.createdAt;
-}
- 
-// Build map: checkInNumber -> { totalAmount, paymentSplittingData }
-const totalByCheckIn = {};
-const processedSaleIds = new Set();
+    // Get checkout sales dates
+    const checkoutSale = await salesModel
+      .find({
+        cmp_id: filter.cmp_id,
+        isPostToRoom: false,
+        isCancelled: false,
+        "convertedFrom.checkInNumber": {
+          $in: checkInNumbers,
+        },
+      })
+      .select("createdAt salesNumber")
+      .lean();
 
-for (const sale of sales) {
-  const saleId = String(sale._id);
+    const saleObject = {};
 
-  if (processedSaleIds.has(saleId)) continue;
-  processedSaleIds.add(saleId);
-
-  const saleAmount = sale.isPostToRoom ? Number(sale.finalAmount || 0) : 0;
-  const saleSplits = sale.paymentSplittingData || [];
-  
-  // console.log("jidss",sale.paymentSplittingData);
-
-  const uniqueCheckInNumbers = new Set(
-    (sale.convertedFrom || [])
-      .map((conv) => conv?.checkInNumber)
-      .filter(Boolean)
-  );
-
-  for (const checkInNumber of uniqueCheckInNumbers) {
-    if (!totalByCheckIn[checkInNumber]) {
-      totalByCheckIn[checkInNumber] = {
-        totalAmount: 0,
-        paymentSplittingData: [],
-      };
+    for (const sale of checkoutSale) {
+      saleObject[sale.salesNumber] = sale.createdAt;
     }
 
-    totalByCheckIn[checkInNumber].totalAmount += saleAmount;
+    // Build checkIn mapping
 
-    // Merge splits — combine amounts if same source, else push new
-    for (const split of saleSplits) {
-      const existing = totalByCheckIn[checkInNumber].paymentSplittingData.find(
-        (s) => s.source === split.source && s.type === split.type
-      );
-
-    // Build map: checkInNumber -> { totalAmount, paymentSplittingData }
     const totalByCheckIn = {};
     const processedSaleIds = new Set();
 
@@ -252,20 +219,23 @@ for (const sale of sales) {
       const saleId = String(sale._id);
 
       if (processedSaleIds.has(saleId)) continue;
+
       processedSaleIds.add(saleId);
 
-      const saleAmount = sale.isPostToRoom ? Number(sale.finalAmount || 0) : 0;
-      const saleSplits = sale.paymentSplittingData || [];
-
-      // console.log("jidss",sale.paymentSplittingData);
-
-      const uniqueCheckInNumbers = new Set(
-        (sale.convertedFrom || [])
-          .map((conv) => conv?.checkInNumber)
-          .filter(Boolean),
+      const saleAmount = Number(
+        sale.finalAmount || 0
       );
 
-      for (const checkInNumber of uniqueCheckInNumbers) {
+      const saleSplits =
+        sale.paymentSplittingData || [];
+
+      const uniqueCheckIns = new Set(
+        (sale.convertedFrom || [])
+          .map((c) => c?.checkInNumber)
+          .filter(Boolean)
+      );
+
+      for (const checkInNumber of uniqueCheckIns) {
         if (!totalByCheckIn[checkInNumber]) {
           totalByCheckIn[checkInNumber] = {
             totalAmount: 0,
@@ -273,22 +243,31 @@ for (const sale of sales) {
           };
         }
 
-        totalByCheckIn[checkInNumber].totalAmount += saleAmount;
+        totalByCheckIn[
+          checkInNumber
+        ].totalAmount += saleAmount;
 
-        // Merge splits — combine amounts if same source, else push new
         for (const split of saleSplits) {
-          const existing = totalByCheckIn[
-            checkInNumber
-          ].paymentSplittingData.find(
-            (s) => s.source === split.source && s.type === split.type,
-          );
+          const existing =
+            totalByCheckIn[
+              checkInNumber
+            ].paymentSplittingData.find(
+              (s) =>
+                s.source === split.source &&
+                s.type === split.type
+            );
 
           if (existing) {
             existing.amount = parseFloat(
-              (existing.amount + Number(split.amount || 0)).toFixed(2),
+              (
+                existing.amount +
+                Number(split.amount || 0)
+              ).toFixed(2)
             );
           } else {
-            totalByCheckIn[checkInNumber].paymentSplittingData.push({
+            totalByCheckIn[
+              checkInNumber
+            ].paymentSplittingData.push({
               ...split,
             });
           }
@@ -296,48 +275,95 @@ for (const sale of sales) {
       }
     }
 
-    // 4) Attach to bookings
-    const bookingsWithSales = await Promise.all(
-      bookings.map(async (b) => {
-        const voucherNumber =
-          params?.modal === "checkIn"
-            ? b.voucherNumber
-            : params?.modal === "checkOut"
+    // Attach sales info to bookings
+
+    const bookingsWithSales =
+      await Promise.all(
+        bookings.map(async (b) => {
+          const voucherNumber =
+            params?.modal === "checkIn"
+              ? b.voucherNumber
+              : params?.modal ===
+                "checkOut"
               ? b.checkInId?.voucherNumber
               : "";
 
-        const checkInData = totalByCheckIn[voucherNumber] || {
-          totalAmount: 0,
-          paymentSplittingData: [],
-        };
+          const checkInData =
+            totalByCheckIn[
+              voucherNumber
+            ] || {
+              totalAmount: 0,
+              paymentSplittingData: [],
+            };
 
-    const specificSale = params?.modal === "checkIn"? [] : params?.modal === "checkOut"?  await salesModel.findOne({
-      cmp_id: filter.cmp_id,
-      salesNumber :  b.voucherNumber,
-    }) : []
-console.log("saleObject",saleObject)
+          const specificSale =
+            params?.modal === "checkOut"
+              ? await salesModel
+                  .findOne({
+                    cmp_id: filter.cmp_id,
+                    salesNumber:
+                      b.voucherNumber,
+                  })
+                  .lean()
+              : null;
+
+          return {
+            ...b.toObject(),
+
+            displayTotal:
+              params?.modal ===
+                "checkOut" &&
+              specificSale?.paymentSplittingData
+                ?.length
+                ? specificSale.paymentSplittingData.reduce(
+                    (total, split) =>
+                      total +
+                      Number(
+                        split.amount || 0
+                      ),
+                    0
+                  ) +
+                  Number(
+                    checkInData.totalAmount ||
+                      0
+                  )
+                : 0,
+
+            restaurantSubTotal:
+              checkInData.totalAmount,
+
+            restaurantPaymentSplittingData:
+              [
+                ...(specificSale?.paymentSplittingData ||
+                  []),
+
+                ...(
+                  checkInData.paymentSplittingData ||
+                  []
+                ),
+              ],
+
+            createdDate:
+              saleObject[
+                b.voucherNumber
+              ],
+          };
+        })
+      );
 
     return {
-      ...b.toObject(),
-      displayTotal: (specificSale?.paymentSplittingData?.length > 0  &&  params?.modal === "checkOut" ) ? specificSale.paymentSplittingData.reduce((total, split) => total + Number(split.amount || 0) , 0) + Number(checkInData.totalAmount || 0): 0,
-      restaurantSubTotal: checkInData.totalAmount,
-      restaurantPaymentSplittingData: [
-        ...(specificSale?.paymentSplittingData || []), 
-        ...(checkInData.paymentSplittingData || []),
-      ],
-      createdDate : saleObject[b.voucherNumber]
+      bookings: bookingsWithSales,
+      totalBookings,
     };
-  })
-);
-    }
-return { bookings: bookingsWithSales, totalBookings };
-  } 
-}
-}catch (error) {
-    console.error("❌ Error fetching bookings from database:", error);
+  } catch (error) {
+    console.error(
+      "❌ Error fetching bookings:",
+      error
+    );
 
-    // Optionally, rethrow or return an error object
-    throw new Error("Failed to fetch bookings. Please try again.");
+    throw new Error(
+      "Failed to fetch bookings."
+    );
   }
 };
 // function used to send response for booking
