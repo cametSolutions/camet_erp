@@ -1460,9 +1460,6 @@ console.log(baseStatus);
           cmp_id={cmp_id}
           api={api}
         />
-        {/* Animations */}
-
-        {/* Animations */}
         <style>{`
     @keyframes fade-in {
       from { opacity: 0; transform: translateY(20px); }

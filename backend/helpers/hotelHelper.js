@@ -986,5 +986,42 @@ export const deleteSettlements = async (tallyId, session = null) => {
   }
 };
 
-// helper used to calculate other charges based on if it is calculated based on the each room or total room amount
+// helper used convert room to available
 
+export const updateSwapDetails = async(existingRoom, updatedRoom, session) => {
+  console.log("=== UPDATE SWAP DETAILS STARTED ===",existingRoom);
+  console.log("=== UPDATE SWAP DETAILS STARTED ===",updatedRoom);
+  try {
+    // ✅ Find rooms that are in existingRoom but NOT in updatedRoom, and isSwap is true
+ const removedRooms = existingRoom.filter(
+  (room) =>
+    room.isSwapped === false &&
+    !updatedRoom.some(
+      (updated) => updated.roomId.toString() === room.roomId.toString()
+    )
+);
+
+console.log("Removed rooms:", removedRooms);
+
+    // ✅ Delete these rooms
+   if (removedRooms.length > 0) {
+  const result = await roomModal.updateMany(
+    {
+      _id: {
+        $in: removedRooms.map((room) => room.roomId),
+      },
+    },
+    {
+      $set: {
+        status: "dirty",
+      },
+    },
+    { session }
+  );
+
+  console.log("reessE",result);
+}
+  } catch (error) {
+    console.error(error);
+  }
+};

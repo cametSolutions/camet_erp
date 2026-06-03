@@ -24,6 +24,7 @@ import {
   extractRequestParamsForBookings,
   updateStatus,
   saveSettlementDataHotel,
+  updateSwapDetails
 } from "../helpers/hotelHelper.js";
 import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
@@ -1717,6 +1718,7 @@ export const updateBooking = async (req, res) => {
       .findOne({ _id: bookingId })
       .session(session);
 
+    await updateSwapDetails(findOne?.selectedRooms, bookingData.selectedRooms, session);
     // -----------------------------
     // ROOM MERGE + TOTAL RECALC
     // -----------------------------
