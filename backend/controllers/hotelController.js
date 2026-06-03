@@ -25,6 +25,7 @@ import {
   updateStatus,
   saveSettlementDataHotel,
   handleAdvanceAndDiscountSettlementInRestaurant,
+  updateSwapDetails
 } from "../helpers/hotelHelper.js";
 import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
@@ -1380,7 +1381,7 @@ export const getBookings = async (req, res) => {
     console.log("paramss", params);
     const filter = buildDatabaseFilterForBooking(params);
 
-    const { bookings, totalBookings } = await fetchBookingsFromDatabase(
+    const { bookings=[], totalBookings=0 } = await fetchBookingsFromDatabase(
       filter,
       params,
     );
@@ -1718,6 +1719,7 @@ export const updateBooking = async (req, res) => {
       .findOne({ _id: bookingId })
       .session(session);
 
+    await updateSwapDetails(findOne?.selectedRooms, bookingData.selectedRooms, session);
     // -----------------------------
     // ROOM MERGE + TOTAL RECALC
     // -----------------------------
@@ -6828,6 +6830,7 @@ export const viewReport = async (req, res) => {
         date: { $gte: start, $lte: end },
         isCancelled: false,
       })
+      // .populate("cmp_id", "state")
       .lean();
 
     // Collect all checkIn IDs from convertedFrom
@@ -6844,6 +6847,8 @@ export const viewReport = async (req, res) => {
       cmp_id,
       voucherNumber: { $in: checkInNumbers },
     }).lean();
+
+    let companyDetails = await Organization.findOne({ _id: cmp_id }).lean();
 
     // Map checkIns by voucherNumber
     const checkInMap = {};
@@ -6959,6 +6964,8 @@ export const viewReport = async (req, res) => {
         billNo: sale.salesNumber,
         date: sale.date,
         agentName: sale.party?.partyName || "",
+        gst:sale.party?.gstNo,
+        placeOfSupply: companyDetails.state,
         plan,
         rooms: roomName,
         noRooms: ci.selectedRooms?.length || 1,

@@ -138,7 +138,7 @@ export const buildDatabaseFilterForBooking = (params) => {
 export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
   const { skip = 0, limit = 0 } = params;
   try {
-    let selectedModal;
+    let selectedModal
     if (params?.modal == "booking") {
       selectedModal = Booking;
     } else if (params?.modal == "checkIn") {
@@ -185,15 +185,63 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
           ? bookings.map((b) => b.checkInId?.voucherNumber)
           : [];
     // 2) Find all related sales in one query
-    const sales = await salesModel
-      .find({
-        cmp_id: filter.cmp_id,
-        isPostToRoom: true,
-        isCancelled: false,
-        "convertedFrom.checkInNumber": { $in: checkInNumbers },
-      })
-      .select(
-        "_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData",
+  const sales = await salesModel
+  .find({
+    cmp_id: filter.cmp_id,
+    isPostToRoom: true,
+    isCancelled: false,
+    "convertedFrom.checkInNumber": { $in: checkInNumbers },
+  })
+  .select("_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData");
+ const checkoutSale = await salesModel.find({
+    cmp_id: filter.cmp_id,
+    isPostToRoom: false,
+    isCancelled: false,
+    "convertedFrom.checkInNumber": { $in: checkInNumbers },
+  })
+  .select("createdAt salesNumber");
+
+let saleObject = {};
+
+for (const sale of checkoutSale) {
+  saleObject[sale.salesNumber] = sale.createdAt;
+}
+ 
+// Build map: checkInNumber -> { totalAmount, paymentSplittingData }
+const totalByCheckIn = {};
+const processedSaleIds = new Set();
+
+for (const sale of sales) {
+  const saleId = String(sale._id);
+
+  if (processedSaleIds.has(saleId)) continue;
+  processedSaleIds.add(saleId);
+
+  const saleAmount = sale.isPostToRoom ? Number(sale.finalAmount || 0) : 0;
+  const saleSplits = sale.paymentSplittingData || [];
+  
+  // console.log("jidss",sale.paymentSplittingData);
+
+  const uniqueCheckInNumbers = new Set(
+    (sale.convertedFrom || [])
+      .map((conv) => conv?.checkInNumber)
+      .filter(Boolean)
+  );
+
+  for (const checkInNumber of uniqueCheckInNumbers) {
+    if (!totalByCheckIn[checkInNumber]) {
+      totalByCheckIn[checkInNumber] = {
+        totalAmount: 0,
+        paymentSplittingData: [],
+      };
+    }
+
+    totalByCheckIn[checkInNumber].totalAmount += saleAmount;
+
+    // Merge splits — combine amounts if same source, else push new
+    for (const split of saleSplits) {
+      const existing = totalByCheckIn[checkInNumber].paymentSplittingData.find(
+        (s) => s.source === split.source && s.type === split.type
       );
 
     // Build map: checkInNumber -> { totalAmount, paymentSplittingData }
@@ -263,37 +311,29 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
           paymentSplittingData: [],
         };
 
-        const specificSale =
-          params?.modal === "checkIn"
-            ? []
-            : params?.modal === "checkOut"
-              ? await salesModel.findOne({
-                  cmp_id: filter.cmp_id,
-                  salesNumber: b.voucherNumber,
-                })
-              : [];
+    const specificSale = params?.modal === "checkIn"? [] : params?.modal === "checkOut"?  await salesModel.findOne({
+      cmp_id: filter.cmp_id,
+      salesNumber :  b.voucherNumber,
+    }) : []
+console.log("saleObject",saleObject)
 
-        return {
-          ...b.toObject(),
-          displayTotal:
-            specificSale?.paymentSplittingData?.length > 0 &&
-            params?.modal === "checkOut"
-              ? specificSale.paymentSplittingData.reduce(
-                  (total, split) => total + Number(split.amount || 0),
-                  0,
-                ) + Number(checkInData.totalAmount || 0)
-              : 0,
-          restaurantSubTotal: checkInData.totalAmount,
-          restaurantPaymentSplittingData: [
-            ...(specificSale?.paymentSplittingData || []),
-            ...(checkInData.paymentSplittingData || []),
-          ],
-        };
-      }),
-    );
-
-    return { bookings: bookingsWithSales, totalBookings };
-  } catch (error) {
+    return {
+      ...b.toObject(),
+      displayTotal: (specificSale?.paymentSplittingData?.length > 0  &&  params?.modal === "checkOut" ) ? specificSale.paymentSplittingData.reduce((total, split) => total + Number(split.amount || 0) , 0) + Number(checkInData.totalAmount || 0): 0,
+      restaurantSubTotal: checkInData.totalAmount,
+      restaurantPaymentSplittingData: [
+        ...(specificSale?.paymentSplittingData || []), 
+        ...(checkInData.paymentSplittingData || []),
+      ],
+      createdDate : saleObject[b.voucherNumber]
+    };
+  })
+);
+    }
+return { bookings: bookingsWithSales, totalBookings };
+  } 
+}
+}catch (error) {
     console.error("❌ Error fetching bookings from database:", error);
 
     // Optionally, rethrow or return an error object
@@ -1250,5 +1290,43 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
     );
 
     throw error;
+// helper used convert room to available
+  }
+};
+export const updateSwapDetails = async(existingRoom, updatedRoom, session) => {
+  console.log("=== UPDATE SWAP DETAILS STARTED ===",existingRoom);
+  console.log("=== UPDATE SWAP DETAILS STARTED ===",updatedRoom);
+  try {
+    // ✅ Find rooms that are in existingRoom but NOT in updatedRoom, and isSwap is true
+ const removedRooms = existingRoom.filter(
+  (room) =>
+    room.isSwapped === false &&
+    !updatedRoom.some(
+      (updated) => updated.roomId.toString() === room.roomId.toString()
+    )
+);
+
+console.log("Removed rooms:", removedRooms);
+
+    // ✅ Delete these rooms
+   if (removedRooms.length > 0) {
+  const result = await roomModal.updateMany(
+    {
+      _id: {
+        $in: removedRooms.map((room) => room.roomId),
+      },
+    },
+    {
+      $set: {
+        status: "dirty",
+      },
+    },
+    { session }
+  );
+
+  console.log("reessE",result);
+}
+  } catch (error) {
+    console.error(error);
   }
 };

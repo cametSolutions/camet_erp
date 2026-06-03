@@ -12,10 +12,11 @@ import { jsPDF } from "jspdf";
 
 function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
   const [subTotal, setSubTotal] = useState(0);
+  const isConfirmingRef = useRef(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const location = useLocation();
   const contentToPrint = useRef(null);
 
-  
   !data && (data = location?.state);
   !org &&
     (org = useSelector(
@@ -25,12 +26,12 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
   let showPrintButton =
     org?.configurations?.[0]?.defaultPrint?.showBeforeSaleInRestaurant;
   const { isFinalized } = useParams();
-console.log(data);
+  console.log(data);
   // const isIndian = useSelector(
   //   (state) =>
   //     state?.secSelectedOrganization?.secSelectedOrg?.country === "India",
   // );
-  const isIndian = true
+  const isIndian = true;
   const party = data?.party;
 
   // ✅ FIX: Proper isSameState logic
@@ -51,10 +52,10 @@ console.log(data);
   // Derived: is wide format (A4 or A5) vs thermal 3-inch roll
   const isWideFormat = emailBillSizeA5; // A5=true, A4=false (both wider than thermal)
   const emailPaperFormat = emailBillSizeA5 ? "a5" : "a4";
-  const emailPageWidth = emailBillSizeA5 ? 148 : 210;   // mm
-  const emailPageHeight = emailBillSizeA5 ? 210 : 297;  // mm
+  const emailPageWidth = emailBillSizeA5 ? 148 : 210; // mm
+  const emailPageHeight = emailBillSizeA5 ? 210 : 297; // mm
   const emailWindowWidth = emailBillSizeA5 ? 560 : 794; // px (for html2canvas)
-  const emailMargin = emailBillSizeA5 ? 6 : 10;         // mm
+  const emailMargin = emailBillSizeA5 ? 6 : 10; // mm
 
   const getVoucherNumber = () => {
     if (!voucherType) return "";
@@ -96,7 +97,8 @@ console.log(data);
 
     const totalDiscount =
       Number(
-        data?.totalAdditionalCharges || data?.additionalCharges?.[0]?.finalValue,
+        data?.totalAdditionalCharges ||
+          data?.additionalCharges?.[0]?.finalValue,
       ) || 0;
 
     const grossTaxable = data.items.reduce((acc, item) => {
@@ -178,8 +180,8 @@ console.log(data);
     if (!hasCheckIn && !Array.isArray(foodPlanArray)) return null;
     const names = foodPlanArray?.map((item) => item.planType).join(", ");
 
-    return  names?.length > 0 ? `Food Paln: ${names}` : null;
-  }; 
+    return names?.length > 0 ? `Food Paln: ${names}` : null;
+  };
 
   const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
   const discount = Number(
@@ -270,12 +272,27 @@ console.log(data);
 
     if (imgRenderedHeight <= availableHeight) {
       const topOffset = emailMargin + (availableHeight - imgRenderedHeight) / 2;
-      doc.addImage(imgData, "PNG", emailMargin, topOffset, availableWidth, imgRenderedHeight);
+      doc.addImage(
+        imgData,
+        "PNG",
+        emailMargin,
+        topOffset,
+        availableWidth,
+        imgRenderedHeight,
+      );
     } else {
       const scaledHeight = availableHeight;
-      const scaledWidth = availableWidth * (availableHeight / imgRenderedHeight);
+      const scaledWidth =
+        availableWidth * (availableHeight / imgRenderedHeight);
       const leftOffset = emailMargin + (availableWidth - scaledWidth) / 2;
-      doc.addImage(imgData, "PNG", leftOffset, emailMargin, scaledWidth, scaledHeight);
+      doc.addImage(
+        imgData,
+        "PNG",
+        leftOffset,
+        emailMargin,
+        scaledWidth,
+        scaledHeight,
+      );
     }
 
     return new Promise((resolve) => {
@@ -330,8 +347,7 @@ console.log(data);
         )
         .join("\n") || "";
 
-    const defaultMessage =
-`Dear Customer,
+    const defaultMessage = `Dear Customer,
 
 Thank you for dining at ${orgName}!
 
@@ -402,11 +418,25 @@ ${orgName}`;
           const to = document.getElementById("swal-to").value.trim();
           const cc = document.getElementById("swal-cc").value.trim();
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!to) { Swal.showValidationMessage("Please enter recipient email"); return false; }
-          if (!emailRegex.test(to)) { Swal.showValidationMessage("Please enter a valid email address"); return false; }
+          if (!to) {
+            Swal.showValidationMessage("Please enter recipient email");
+            return false;
+          }
+          if (!emailRegex.test(to)) {
+            Swal.showValidationMessage("Please enter a valid email address");
+            return false;
+          }
           if (cc) {
-            const invalid = cc.split(",").map((e) => e.trim()).filter((e) => e && !emailRegex.test(e));
-            if (invalid.length) { Swal.showValidationMessage(`Invalid CC email(s): ${invalid.join(", ")}`); return false; }
+            const invalid = cc
+              .split(",")
+              .map((e) => e.trim())
+              .filter((e) => e && !emailRegex.test(e));
+            if (invalid.length) {
+              Swal.showValidationMessage(
+                `Invalid CC email(s): ${invalid.join(", ")}`,
+              );
+              return false;
+            }
           }
           return { to, cc };
         },
@@ -415,7 +445,10 @@ ${orgName}`;
       if (isDismissed || !emailData) return;
       toEmail = emailData.to;
       ccEmails = emailData.cc
-        ? emailData.cc.split(",").map((e) => e.trim()).filter(Boolean)
+        ? emailData.cc
+            .split(",")
+            .map((e) => e.trim())
+            .filter(Boolean)
         : [];
     }
 
@@ -439,7 +472,10 @@ ${orgName}`;
       focusConfirm: false,
       preConfirm: () => {
         const msg = document.getElementById("swal-message").value;
-        if (!msg?.trim()) { Swal.showValidationMessage("Please enter a message"); return false; }
+        if (!msg?.trim()) {
+          Swal.showValidationMessage("Please enter a message");
+          return false;
+        }
         return msg;
       },
     });
@@ -464,7 +500,8 @@ ${orgName}`;
       Swal.fire({
         icon: "success",
         title: "Success!",
-        text: option === "Mail" ? "Email sent successfully!" : "WhatsApp opened!",
+        text:
+          option === "Mail" ? "Email sent successfully!" : "WhatsApp opened!",
         confirmButtonColor: "#000000",
       });
     } catch (error) {
@@ -573,14 +610,33 @@ ${orgName}`;
 
       <TitleDiv title="Restaurant sale print" />
       <div className="grid mt-2">
-        <div ref={contentToPrint} className="receipt-container" style={containerStyle}>
+        <div
+          ref={contentToPrint}
+          className="receipt-container"
+          style={containerStyle}
+        >
           {/* Header */}
-          <div style={{ ...flexRow, marginBottom: "8px", paddingBottom: "6px", borderBottom: "1px dotted #000", alignItems: "flex-start", gap: "8px" }}>
+          <div
+            style={{
+              ...flexRow,
+              marginBottom: "8px",
+              paddingBottom: "6px",
+              borderBottom: "1px dotted #000",
+              alignItems: "flex-start",
+              gap: "8px",
+            }}
+          >
             {org?.logo && (
-              <img src={org.logo} alt="Logo" style={{ width: "25mm", height: "auto", objectFit: "contain" }} />
+              <img
+                src={org.logo}
+                alt="Logo"
+                style={{ width: "25mm", height: "auto", objectFit: "contain" }}
+              />
             )}
             <div style={{ flex: 1, textAlign: "center" }}>
-              <div style={{ ...bold, fontSize: "16px", marginBottom: "2px" }}>{org?.name}</div>
+              <div style={{ ...bold, fontSize: "16px", marginBottom: "2px" }}>
+                {org?.name}
+              </div>
               {(org?.road || org?.place) && (
                 <div>{`${org?.road || ""}${org?.road && org?.place ? ", " : ""}${org?.place || ""}`}</div>
               )}
@@ -590,31 +646,72 @@ ${orgName}`;
           </div>
 
           {/* Title */}
-          <div style={{ ...centerText, marginBottom: "6px", paddingBottom: "6px", borderBottom: "1px dotted #000" }}>
-            <div style={{ fontSize: "14px", fontWeight: "bold", fontStyle: "italic" }}>INVOICE</div>
+          <div
+            style={{
+              ...centerText,
+              marginBottom: "6px",
+              paddingBottom: "6px",
+              borderBottom: "1px dotted #000",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "14px",
+                fontWeight: "bold",
+                fontStyle: "italic",
+              }}
+            >
+              INVOICE
+            </div>
           </div>
 
           {/* Bill Info */}
-          <div style={{ marginBottom: "6px", fontSize: "11px", fontWeight: "bold", paddingBottom: "6px", borderBottom: "1px dotted #000" }}>
+          <div
+            style={{
+              marginBottom: "6px",
+              fontSize: "11px",
+              fontWeight: "bold",
+              paddingBottom: "6px",
+              borderBottom: "1px dotted #000",
+            }}
+          >
             <div style={{ display: "flex" }}>
               <span style={{ minWidth: "170px" }}>Bill {getBillNumber()}</span>
-              <span>Date: {new Date(data?.Date || data?.createdAt).toLocaleDateString("en-GB")}</span>
+              <span>
+                Date:{" "}
+                {new Date(data?.Date || data?.createdAt).toLocaleDateString(
+                  "en-GB",
+                )}
+              </span>
             </div>
             <div style={{ display: "flex" }}>
-              <span style={{ minWidth: "170px", visibility: getTableNumber() && getTableNumber() !== "10" ? "visible" : "hidden" }}>
+              <span
+                style={{
+                  minWidth: "170px",
+                  visibility:
+                    getTableNumber() && getTableNumber() !== "10"
+                      ? "visible"
+                      : "hidden",
+                }}
+              >
                 Table: {getTableNumber()}
               </span>
               <span>
                 Time:{" "}
-                {new Date(data?.Date || data?.createdAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })}
+                {new Date(data?.Date || data?.createdAt).toLocaleTimeString(
+                  "en-GB",
+                  { hour: "2-digit", minute: "2-digit", hour12: false },
+                )}
               </span>
             </div>
             {data?.orderType && (
               <div style={{ marginTop: "2px" }}>
-                <span style={{ textTransform: "capitalize" }}>{data.orderType.replace(/-/g, " ")}</span>
+                <span style={{ textTransform: "capitalize" }}>
+                  {data.orderType.replace(/-/g, " ")}
+                </span>
               </div>
             )}
-               {data?.party?.partyName && (
+            {data?.party?.partyName && (
               <div style={{ marginTop: "2px" }}>
                 <span style={{ textTransform: "capitalize" }}>Guest : </span>
                 <span style={{ textTransform: "capitalize" }}>
@@ -642,18 +739,29 @@ ${orgName}`;
                 ? Number(el.totalIgstAmt)
                 : Number(el?.totalCgstAmt || 0) + Number(el?.totalSgstAmt || 0);
             const igst = Number(el?.igst || 0);
-            const addRateWithTax = org?.configurations?.[0]?.addRateWithTax?.restaurantSale;
+            const addRateWithTax =
+              org?.configurations?.[0]?.addRateWithTax?.restaurantSale;
             const addRate = addRateWithTax
-              ? count > 0 ? ((total * 100) / (100 + igst) / count).toFixed(2) : "0.00"
-              : count > 0 ? ((total - totalTax) / count).toFixed(2) : "0.00";
+              ? count > 0
+                ? ((total * 100) / (100 + igst) / count).toFixed(2)
+                : "0.00"
+              : count > 0
+                ? ((total - totalTax) / count).toFixed(2)
+                : "0.00";
             const rate = includeTaxWithPrint
-              ? count > 0 ? (Number(addRate) + Number((totalTax / count).toFixed(2))).toFixed(2) : "0.00"
+              ? count > 0
+                ? (
+                    Number(addRate) + Number((totalTax / count).toFixed(2))
+                  ).toFixed(2)
+                : "0.00"
               : addRate;
             const amount = (Number(rate) * count).toFixed(2);
             return (
               <div key={index} style={itemGrid}>
                 <div style={textLeft}>{index + 1}</div>
-                <div style={{ ...textLeft, wordBreak: "break-word" }}>{el.product_name}</div>
+                <div style={{ ...textLeft, wordBreak: "break-word" }}>
+                  {el.product_name}
+                </div>
                 <div style={centerText}>{count}</div>
                 <div style={textRight}>{rate}</div>
                 <div style={textRight}>{amount}</div>
@@ -664,43 +772,109 @@ ${orgName}`;
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
           {/* Totals */}
-          <div style={{ fontSize: "10px", marginBottom: "4px", display: "flex", flexDirection: "row" }}>
+          <div
+            style={{
+              fontSize: "10px",
+              marginBottom: "4px",
+              display: "flex",
+              flexDirection: "row",
+            }}
+          >
             <div style={{ flex: 1 }}>{getPaymentSummary()}</div>
             <div style={{ flex: 1 }}>
               {!discountBasedOnGrossAmount && Number(discount) > 0 && (
                 <>
-                  <div style={{ display: "flex", flexDirection: "row", marginBottom: "2px", fontWeight: "bold" }}>
-                    <div style={{ marginLeft: "auto", width: 60, textAlign: "right" }}>SubTotal</div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      marginBottom: "2px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    <div
+                      style={{
+                        marginLeft: "auto",
+                        width: 60,
+                        textAlign: "right",
+                      }}
+                    >
+                      SubTotal
+                    </div>
                     <div style={{ width: 60, textAlign: "right" }}>
-                      {(Number(subTotal || 0) + Number(discount || 0)).toFixed(2)}
+                      {(Number(subTotal || 0) + Number(discount || 0)).toFixed(
+                        2,
+                      )}
                     </div>
                   </div>
                   {Number(discount) > 0 && (
-                    <div style={{ display: "flex", flexDirection: "row", marginBottom: "2px", fontWeight: "bold" }}>
-                      <div style={{ marginLeft: "auto", width: 60, textAlign: "right" }}>Discount</div>
-                      <div style={{ width: 60, textAlign: "right" }}>{discount}</div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        marginBottom: "2px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      <div
+                        style={{
+                          marginLeft: "auto",
+                          width: 60,
+                          textAlign: "right",
+                        }}
+                      >
+                        Discount
+                      </div>
+                      <div style={{ width: 60, textAlign: "right" }}>
+                        {discount}
+                      </div>
                     </div>
                   )}
                 </>
               )}
 
               {/* Gross Amount */}
-              <div style={{ display: "flex", flexDirection: "row", marginBottom: "2px", fontWeight: "bold" }}>
-                <div style={{ marginLeft: "auto", width: 80, textAlign: "right" }}>Gross Amount</div>
-                <div style={{ width: 60, textAlign: "right" }}>{subTotal?.toFixed(2)}</div>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  marginBottom: "2px",
+                  fontWeight: "bold",
+                }}
+              >
+                <div
+                  style={{ marginLeft: "auto", width: 80, textAlign: "right" }}
+                >
+                  Gross Amount
+                </div>
+                <div style={{ width: 60, textAlign: "right" }}>
+                  {subTotal?.toFixed(2)}
+                </div>
               </div>
 
               {/* CGST + SGST (same state) */}
               {isIndian && isSameState && calculateTotalTax() > 0 && (
                 <>
                   <div style={flexRow}>
-                    <div style={{ marginLeft: "auto", width: 70, fontWeight: "bold" }}>
+                    <div
+                      style={{
+                        marginLeft: "auto",
+                        width: 70,
+                        fontWeight: "bold",
+                      }}
+                    >
                       CGST {cgstPercentage}%
                     </div>
                     <div style={textRight}>{cgst}</div>
                   </div>
                   <div style={flexRow}>
-                    <div style={{ marginLeft: "auto", width: 70, fontWeight: "bold" }}>
+                    <div
+                      style={{
+                        marginLeft: "auto",
+                        width: 70,
+                        fontWeight: "bold",
+                      }}
+                    >
                       SGST {sgstPercentage}%
                     </div>
                     {/* ✅ FIX: was showing cgst here before */}
@@ -712,7 +886,13 @@ ${orgName}`;
               {/* IGST (inter-state) */}
               {isIndian && !isSameState && calculateTotalTax() > 0 && (
                 <div style={flexRow}>
-                  <div style={{ marginLeft: "auto", width: 70, fontWeight: "bold" }}>
+                  <div
+                    style={{
+                      marginLeft: "auto",
+                      width: 70,
+                      fontWeight: "bold",
+                    }}
+                  >
                     IGST {igstPercentage}%
                   </div>
                   <div style={textRight}>{tax}</div>
@@ -722,7 +902,13 @@ ${orgName}`;
               {/* Non-Indian tax */}
               {!isIndian && calculateTotalTax() > 0 && (
                 <div style={flexRow}>
-                  <div style={{ marginLeft: "auto", width: 70, fontWeight: "bold" }}>
+                  <div
+                    style={{
+                      marginLeft: "auto",
+                      width: 70,
+                      fontWeight: "bold",
+                    }}
+                  >
                     Tax {igstPercentage}%
                   </div>
                   <div style={textRight}>{tax}</div>
@@ -735,14 +921,26 @@ ${orgName}`;
 
           {/* Final Details */}
           <div style={{ fontSize: "10px", marginBottom: "6px" }}>
-            <div style={{ display: "flex", fontWeight: "bold", marginBottom: "2px" }}>
+            <div
+              style={{
+                display: "flex",
+                fontWeight: "bold",
+                marginBottom: "2px",
+              }}
+            >
               {getRoomNumber() && <div style={bold}>{getRoomNumber()}</div>}
-              <div style={{ marginLeft: "auto", paddingRight: "3px", fontWeight: "bold" }}>
+              <div
+                style={{
+                  marginLeft: "auto",
+                  paddingRight: "3px",
+                  fontWeight: "bold",
+                }}
+              >
                 Total: {netAmount}
               </div>
             </div>
             {getFoodPlan() && <div style={bold}>{getFoodPlan()}</div>}
-       
+
             {/* {data?.voucherNumber?.[0]?.checkInNumber && (
               <div style={flexRow}>
                 <div style={bold}>{data.voucherNumber[0].checkInNumber}</div>
@@ -753,32 +951,48 @@ ${orgName}`;
             )} */}
 
             {/* {Number(discount) > 0 && ( */}
-              <div
-                style={{
-                  ...flexRow,
-                  justifyContent: "flex-end",
-                  paddingRight: "3px",
-                  fontWeight: "bold",
-                }}
-              >
-                {discountBasedOnGrossAmount && Number(discount) &&  (
-                  <>
-                    Discount: <span style={bold}>{discount || "0.00"}</span>
-                  </>
-                )}
-              </div>
+            <div
+              style={{
+                ...flexRow,
+                justifyContent: "flex-end",
+                paddingRight: "3px",
+                fontWeight: "bold",
+              }}
+            >
+              {discountBasedOnGrossAmount && Number(discount) && (
+                <>
+                  Discount: <span style={bold}>{discount || "0.00"}</span>
+                </>
+              )}
+            </div>
             {/* )} */}
           </div>
 
           <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
           {/* Net Amount */}
-          <div style={{ ...centerText, fontSize: "14px", fontWeight: "bold", marginBottom: "8px", paddingBottom: "6px", borderBottom: "1px dotted #000" }}>
+          <div
+            style={{
+              ...centerText,
+              fontSize: "14px",
+              fontWeight: "bold",
+              marginBottom: "8px",
+              paddingBottom: "6px",
+              borderBottom: "1px dotted #000",
+            }}
+          >
             Net Amount: {netAmount}
           </div>
 
           {/* Footer */}
-          <div style={{ ...centerText, fontSize: "11px", fontWeight: "bold", marginTop: "8px" }}>
+          <div
+            style={{
+              ...centerText,
+              fontSize: "11px",
+              fontWeight: "bold",
+              marginTop: "8px",
+            }}
+          >
             Thank You Visit Again
           </div>
         </div>
@@ -804,13 +1018,48 @@ ${orgName}`;
           {isPreview && (
             <>
               <button
-                className="px-3 py-1 rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-600 active:scale-95 transition"
-                onClick={() => sendToParent(true)}
+                className="px-3 py-1 rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-600 active:scale-95 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5"
+                disabled={isConfirming}
+                onClick={() => {
+                  // ref check fires instantly — blocks before re-render
+                  if (isConfirmingRef.current) return;
+                  isConfirmingRef.current = true;
+                  setIsConfirming(true);
+                  sendToParent(true);
+                }}
               >
-                Confirm
+                {isConfirming ? (
+                  <>
+                    <svg
+                      className="animate-spin h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8H4z"
+                      />
+                    </svg>
+                    Confirming...
+                  </>
+                ) : (
+                  "Confirm"
+                )}
               </button>
+
               <button
-                className="px-3 py-1 rounded-lg bg-red-400 text-gray-800 font-medium hover:bg-red-500 active:scale-95 transition"
+                className="px-3 py-1 rounded-lg bg-red-400 text-gray-800 font-medium hover:bg-red-500 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isConfirming}
                 onClick={() => sendToParent(false)}
               >
                 Cancel
