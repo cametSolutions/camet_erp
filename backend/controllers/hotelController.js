@@ -6978,9 +6978,9 @@ export const getTravelAgentSalesReport = async (req, res) => {
     }
 
     if (fromNorm || toNorm) {
-      checkoutFilter.arrivalDate = {};
-      if (fromNorm) checkoutFilter.arrivalDate.$gte = fromNorm;
-      if (toNorm)   checkoutFilter.arrivalDate.$lte = toNorm;
+      checkoutFilter.checkOutDate = {};
+      if (fromNorm) checkoutFilter.checkOutDate.$gte = fromNorm;
+      if (toNorm)   checkoutFilter.checkOutDate.$lte = toNorm;
     }
 
     console.log("[TravelAgentReport] filter:", JSON.stringify(checkoutFilter));
