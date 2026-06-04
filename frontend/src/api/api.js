@@ -11,7 +11,7 @@ console.log("ENV", ENV)
 // console.log(ENV);
 if (ENV === "development") {
   console.log("j")
-  baseUrl = "http://localhost:7000";
+  baseUrl = "http://localhost:5001/";
 } else if (ENV === "erp") {
   baseUrl = "https://www.erp.camet.in/";
 } else if (ENV === "testing") {

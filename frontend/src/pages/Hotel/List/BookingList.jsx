@@ -41,6 +41,7 @@ import {
 import useFetch from "@/customHook/useFetch";
 import PrintModal from "../Components/PrintModal";
 import { calculateDiscountValues } from "../Helper/hotelHelper.js";
+import BookingListEditModal from "./BookingListEditModal";
 
 function BookingList() {
   const location = useLocation();
@@ -131,12 +132,15 @@ function BookingList() {
     { bg: "#FBEAF0", border: "#ED93B1", icon: "#993556", text: "#72243E" },
   ];
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedEditBooking, setSelectedEditBooking] = useState(null);
+
   const containerRef = useRef(null);
 
   useEffect(() => {
     const calculateHeight = () => {
       if (containerRef.current) {
-        setListHeight(containerRef.current.clientHeight );
+        setListHeight(containerRef.current.clientHeight);
       }
     };
 
@@ -230,7 +234,7 @@ function BookingList() {
       const hasSwapping = rooms.some((r) => r?.swappingDateFrom);
       const checkoutTotal = rooms.reduce((sum, room) => {
         // if (room.dateTariffs) {
-          
+
         // }
         console.log(room?.amountAfterTax);
 
@@ -238,7 +242,7 @@ function BookingList() {
           return sum + Number(room?.amountAfterTax || 0);
         }
 
- console.log(room);
+        console.log(room);
 
         let stayDays = Number(room?.stayDays || 1);
 
@@ -257,7 +261,7 @@ function BookingList() {
           const arrivalDate = normalizeToDate(checkout?.arrivalDate);
 
           stayDays = Math.floor(
-            (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) ,
+            (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24),
           );
 
           if (stayDays <= 0) {
@@ -643,7 +647,7 @@ function BookingList() {
         );
 
         let bookingData = res?.data?.bookingData || [];
-        
+
         console.log("bookingData", bookingData[0]);
 
         if (location.pathname === "/sUsers/checkInList") {
@@ -1640,6 +1644,7 @@ function BookingList() {
   };
 
   console.log(checkoutMode);
+
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
       <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
@@ -1716,6 +1721,8 @@ function BookingList() {
 
     const el = bookings[index];
     if (!el) return null;
+
+    // console.log(el.voucherNumber);
 
     const findSwappedRooms = (room) => {
       let specifcSwap = el.roomSwapHistory.find(
@@ -1839,12 +1846,12 @@ function BookingList() {
               ₹{el?.selectedRooms?.[0]?.foodPlanAmountWithOutTax || "0.00"}
             </div>
 
-          <div
-  className="w-28 text-center text-gray-600 text-xs font-medium truncate cursor-default"
-  title={getTravelAgentName(el) || el?.agentId?.partyName || "-"}
->
-  {getTravelAgentName(el) || el?.agentId?.partyName || "-"}
-</div>
+            <div
+              className="w-28 text-center text-gray-600 text-xs font-medium truncate cursor-default"
+              title={getTravelAgentName(el) || el?.agentId?.partyName || "-"}
+            >
+              {getTravelAgentName(el) || el?.agentId?.partyName || "-"}
+            </div>
 
             {isCheckoutList && (
               <div className="w-28 text-center text-gray-600 text-xs font-medium">
@@ -1866,9 +1873,11 @@ function BookingList() {
 
             <div className="w-28 text-center text-gray-800 font-semibold text-xs">
               ₹
-              {el?.displayTotal > 0 ? el?.displayTotal : el?.grandTotal
-                ? formatCurrency(el.roomTotal).replace("₹", "")
-                : "00.00"}
+              {el?.displayTotal > 0
+                ? el?.displayTotal
+                : el?.grandTotal
+                  ? formatCurrency(el.roomTotal).replace("₹", "")
+                  : "00.00"}
             </div>
 
             {/* 🔹 ACTION BUTTONS */}
@@ -1945,6 +1954,18 @@ function BookingList() {
                   className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
                 >
                   Print
+                </button>
+              )}
+              {location.pathname === "/sUsers/checkOutList" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditModalOpen(true);
+                    setSelectedEditBooking(el);
+                  }}
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                >
+                  Edit
                 </button>
               )}
               {(el?.status != "checkIn" &&
@@ -3555,6 +3576,16 @@ function BookingList() {
           </div>
         )}
       </div>
+
+      <BookingListEditModal
+        open={isEditModalOpen}
+        onOpenChange={(val) => {
+          setIsEditModalOpen(val);
+          if (!val) setSelectedEditBooking(null); // clear on close
+        }}
+        voucherNumber={selectedEditBooking?.voucherNumber}
+        cmp_id={cmp_id}
+      />
     </>
   );
 }

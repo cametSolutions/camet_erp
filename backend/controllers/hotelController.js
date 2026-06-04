@@ -6936,3 +6936,33 @@ export const viewReport = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
+export const getSaleBasedOnVoucher = async (req, res) => {
+  try {
+    
+    const voucherNumber=req.params.voucherNumber;
+    const cmp_id=req.query.cmp_id;
+
+    console.log(voucherNumber,cmp_id);
+    
+    
+    if(!voucherNumber || !cmp_id){
+      return res.status(400).json({ message: "voucherNumber and cmp_id are required" });
+    }
+
+    const sale = await salesModel.findOne({ cmp_id, salesNumber: voucherNumber }).lean();
+
+    if (!sale) {
+      return res.status(404).json({ message: "Sale not found for the given voucher number" });
+    }
+
+    res.json({ success: true, data: sale });
+
+
+  } catch (error) {
+
+    console.error("getSaleBasedOnVoucher error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+    
+  }
+}
