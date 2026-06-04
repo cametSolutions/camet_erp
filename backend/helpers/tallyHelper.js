@@ -262,6 +262,7 @@ const calculateTaxAmount = (
   roomId,
   bookingType,
   stayDays,
+  additionalPaxDetails,
 ) => {
   let foodPlanTax = 5;
 
@@ -281,8 +282,22 @@ const calculateTaxAmount = (
       0,
     ) * Number(stayDays || 1);
 
+    let specificAdditionalPaxDetails = (additionalPaxDetails || []).reduce(
+      (acc, item) =>
+        item.roomId?.toString() === roomId?.toString()
+          ? acc + Number(item.rate || 0)
+          : acc,
+      0,
+    )
+
+ 
+  
   // Food plan taxable amount
   let taxableSpecificFoodPlan = specificFoodPlanTotal / (1 + foodPlanTax / 100);
+
+    // additionalPax  taxable amount
+  let additionalPaxTaxAmount = (Number(specificAdditionalPaxDetails) * Number(taxPercentage)) / 100;
+
 
   // Room amount including tax
   let amountWithTax = Math.max(
@@ -298,6 +313,8 @@ const calculateTaxAmount = (
 
   // Food plan tax amount
   let foodPlanTaxAmount = specificFoodPlanTotal - taxableSpecificFoodPlan;
+   // Food plan tax amount
+
 
   return {
     taxableAmount,
@@ -306,6 +323,9 @@ const calculateTaxAmount = (
     taxableSpecificFoodPlan,
     foodPlanTaxAmount,
     foodPlanTaxPercentage: foodPlanTax,
+    additionalPaxWithTax: specificAdditionalPaxDetails + additionalPaxTaxAmount ,
+    additionalPaxWithoutTax:  specificAdditionalPaxDetails,
+    additionalPaxTaxAmount: additionalPaxTaxAmount,
   };
 };
 
@@ -462,6 +482,7 @@ export const fetchDataHotel = async (
           selectedRooms
           _id
           foodPlan
+          additionalPaxDetails
           addTaxWithRate
           bookingType
           stayDays
@@ -498,11 +519,16 @@ export const fetchDataHotel = async (
             room?.roomId,
             doc?.bookingType,
             room?.stayDays,
+            doc?.additionalPaxDetails,
+            doc,
           );
+
+          if(doc.voucherNumber == "CO-910-2025"){
+            console.log("taxDetailsddddd",taxDetails)
+          }
 
           return {
             _id: room._id,
-
             product_name: room?.roomName,
 
             cmp_id: doc?.cmp_id,
@@ -567,9 +593,19 @@ export const fetchDataHotel = async (
 
             foodPlanAmountWithTax: taxDetails?.specificFoodPlanTotal.toFixed(2),
 
+            additionalPaxWithTax: taxDetails?.additionalPaxWithTax.toFixed(2),
+
+            additionalPaxWithoutTax: taxDetails?.additionalPaxWithoutTax.toFixed(
+              2,
+            ),
+            additionalPaxTaxAmount: taxDetails?.additionalPaxTaxAmount.toFixed(2),
+
+            additionalPaxTaxPercentage: Number(room?.taxPercentage).toFixed(2),
+
             paxTotal: doc?.paxTotal,
           };
         });
+
 
         checkoutMap.set(doc.voucherNumber.toString(), {
           totalFoodPlanAmount,
