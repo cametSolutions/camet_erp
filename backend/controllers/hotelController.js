@@ -7062,3 +7062,292 @@ export const getRestaurantSales = async (req, res) => {
     });
   }
 };
+
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+export const getTravelAgentSalesReport = async (req, res) => {
+  try {
+    const { cmp_id, agentId, from, to } = req.query;
+
+    if (!cmp_id) {
+      return res.status(400).json({ success: false, message: "cmp_id is required" });
+    }
+
+    // Normalize date: handles both "YYYY-MM-DD" and "DD/MM/YYYY"
+    const normalizeDate = (dateStr) => {
+      if (!dateStr) return null;
+      if (dateStr.includes("/")) {
+        const [d, m, y] = dateStr.split("/");
+        return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+      }
+      return dateStr;
+    };
+
+    const fromNorm = normalizeDate(from);
+    const toNorm   = normalizeDate(to);
+
+    // ── Step 1: Build base match ──────────────────────────────────────────
+    const checkoutFilter = {
+      cmp_id:  new mongoose.Types.ObjectId(cmp_id),
+      agentId: { $exists: true, $ne: null },
+    };
+
+    if (agentId) {
+      checkoutFilter.agentId = new mongoose.Types.ObjectId(agentId);
+    }
+
+    if (fromNorm || toNorm) {
+      checkoutFilter.arrivalDate = {};
+      if (fromNorm) checkoutFilter.arrivalDate.$gte = fromNorm;
+      if (toNorm)   checkoutFilter.arrivalDate.$lte = toNorm;
+    }
+
+    console.log("[TravelAgentReport] filter:", JSON.stringify(checkoutFilter));
+
+    // ── Step 2: First fetch checkouts WITHOUT $lookup ─────────────────────
+    // (to confirm data exists before debugging $lookup)
+    const rawCount = await CheckOut.countDocuments(checkoutFilter);
+    console.log("[TravelAgentReport] raw matching checkouts:", rawCount);
+
+    // ── Step 3: Aggregate with FIXED $lookup using let + $expr ───────────
+    const checkouts = await CheckOut.aggregate([
+      { $match: checkoutFilter },
+
+      // ✅ FIXED: use let + pipeline + $expr instead of localField/foreignField
+      // This works on ALL MongoDB versions
+      {
+        $lookup: {
+          from: "parties",
+          let:  { agentObjId: "$agentId" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$_id", "$$agentObjId"] },
+              },
+            },
+            {
+              $project: {
+                partyName:    1,
+                mobileNumber: 1,
+                gstNo:        1,
+              },
+            },
+          ],
+          as: "agentDoc",
+        },
+      },
+
+      {
+        $addFields: {
+          agentDoc: { $arrayElemAt: ["$agentDoc", 0] },
+
+          // Room names joined
+          RoomNo: {
+            $reduce: {
+              input:        "$selectedRooms",
+              initialValue: "",
+              in: {
+                $concat: [
+                  "$$value",
+                  { $cond: [{ $eq: ["$$value", ""] }, "", ", "] },
+                  { $ifNull: ["$$this.roomName", ""] },
+                ],
+              },
+            },
+          },
+
+          // Food plan names joined
+          Plan: {
+            $reduce: {
+              input:        "$foodPlan",
+              initialValue: "",
+              in: {
+                $concat: [
+                  "$$value",
+                  { $cond: [{ $eq: ["$$value", ""] }, "", "/"] },
+                  { $ifNull: ["$$this.foodPlan", ""] },
+                ],
+              },
+            },
+          },
+
+          // Tax sums from selectedRooms
+          CGST: { $sum: "$selectedRooms.totalCgstAmt" },
+          SGST: { $sum: "$selectedRooms.totalSgstAmt" },
+        },
+      },
+
+      {
+        $project: {
+          _id:         1,
+          BillNo:      "$voucherNumber",
+          RoomNo:      1,
+          GuestName:   "$guestName",
+          CheckInDate: "$arrivalDate",
+          CheckOutDate:"$checkOutDate",
+          NoD:         "$stayDays",
+          Plan:        1,
+          RRent:       "$roomTotal",
+          EBed:        { $ifNull: ["$paxTotal", 0] },
+          PlAmt:       "$foodPlanTotal",
+          TOTAL:       { $toDouble: "$totalAmount" },
+          CGST:        1,
+          SGST:        1,
+          NetAmt:      { $toDouble: "$grandTotal" },
+
+          // Agent fields — now from partyName
+          agentId:     "$agentDoc._id",
+          agentName:   "$agentDoc.partyName",     // ✅ correct field
+          agentMobile: "$agentDoc.mobileNumber",
+          agentGst:    "$agentDoc.gstNo",
+        },
+      },
+
+      { $sort: { CheckInDate: 1 } },
+    ]);
+
+    console.log("[TravelAgentReport] aggregated rows:", checkouts.length);
+    if (checkouts.length > 0) {
+      console.log("[TravelAgentReport] sample row:", JSON.stringify(checkouts[0]));
+    }
+
+    // ── Step 4: Group by agent ────────────────────────────────────────────
+    const agentSummaryMap = {};
+
+    checkouts.forEach((row) => {
+      // Use agentId as key; fallback to "unknown" if $lookup failed
+      const key  = row.agentId ? String(row.agentId) : `noagent_${row._id}`;
+      const name = row.agentName || `Agent (${String(row.agentId || "?").slice(-6)})`;
+
+      if (!agentSummaryMap[key]) {
+        agentSummaryMap[key] = {
+          agentId:      row.agentId,
+          agentName:    name,
+          agentMobile:  row.agentMobile || "",
+          agentGst:     row.agentGst    || "",
+          totalRRent:   0,
+          totalEBed:    0,
+          totalPlAmt:   0,
+          totalTOTAL:   0,
+          totalCGST:    0,
+          totalSGST:    0,
+          totalNetAmt:  0,
+          sales:        [],
+        };
+      }
+
+      const g = agentSummaryMap[key];
+      g.totalRRent  += Number(row.RRent  || 0);
+      g.totalEBed   += Number(row.EBed   || 0);
+      g.totalPlAmt  += Number(row.PlAmt  || 0);
+      g.totalTOTAL  += Number(row.TOTAL  || 0);
+      g.totalCGST   += Number(row.CGST   || 0);
+      g.totalSGST   += Number(row.SGST   || 0);
+      g.totalNetAmt += Number(row.NetAmt || 0);
+
+      row.SlNo = g.sales.length + 1;
+      g.sales.push(row);
+    });
+
+    const agentSummary = Object.values(agentSummaryMap);
+
+    const grandTotal = {
+      totalSales:  checkouts.length,
+      totalRRent:  agentSummary.reduce((s, a) => s + a.totalRRent,  0),
+      totalEBed:   agentSummary.reduce((s, a) => s + a.totalEBed,   0),
+      totalPlAmt:  agentSummary.reduce((s, a) => s + a.totalPlAmt,  0),
+      totalTOTAL:  agentSummary.reduce((s, a) => s + a.totalTOTAL,  0),
+      totalCGST:   agentSummary.reduce((s, a) => s + a.totalCGST,   0),
+      totalSGST:   agentSummary.reduce((s, a) => s + a.totalSGST,   0),
+      totalNetAmt: agentSummary.reduce((s, a) => s + a.totalNetAmt, 0),
+    };
+
+    return res.status(200).json({
+      success: true,
+      grandTotal,
+      agentSummary,
+      data: checkouts,
+    });
+
+  } catch (err) {
+    console.error("[getTravelAgentSalesReport] ERROR:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ── Agent dropdown list ──────────────────────────────────────────────────────
+export const getAgentList = async (req, res) => {
+  try {
+    const { cmp_id } = req.query;
+    if (!cmp_id) {
+      return res.status(400).json({ success: false, message: "cmp_id is required" });
+    }
+
+    // Get unique agentIds from CheckOut
+    const agentIds = await CheckOut.distinct("agentId", {
+      cmp_id:  new mongoose.Types.ObjectId(cmp_id),
+      agentId: { $exists: true, $ne: null },
+    });
+
+    console.log("[getAgentList] distinct agentIds:", agentIds.length);
+
+    // Fetch party details using let + $expr
+    const agents = await CheckOut.aggregate([
+      {
+        $match: {
+          cmp_id:  new mongoose.Types.ObjectId(cmp_id),
+          agentId: { $exists: true, $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id:       "$agentId",
+          totalSales: { $sum: 1 },
+        },
+      },
+      {
+        $lookup: {
+          from: "parties",
+          let:  { agentObjId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$_id", "$$agentObjId"] },
+              },
+            },
+            {
+              $project: { partyName: 1, mobileNumber: 1 },
+            },
+          ],
+          as: "partyDoc",
+        },
+      },
+      {
+        $addFields: {
+          partyDoc: { $arrayElemAt: ["$partyDoc", 0] },
+        },
+      },
+      {
+        $project: {
+          _id:         1,
+          agentName:   "$partyDoc.partyName",
+          agentMobile: "$partyDoc.mobileNumber",
+          totalSales:  1,
+        },
+      },
+      { $sort: { agentName: 1 } },
+    ]);
+
+    return res.status(200).json({ success: true, data: agents });
+
+  } catch (err) {
+    console.error("[getAgentList] ERROR:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
