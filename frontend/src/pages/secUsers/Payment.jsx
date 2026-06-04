@@ -296,7 +296,7 @@ function Payment() {
                       className="w-full px-3 py-2 border focus:border-blue-500 rounded shadow-lg"
                     >
                       {/* Map through the array of banks and create options */}
-                      {banks.map((bank, index) => (
+                      {banks?.map((bank, index) => (
                         <option key={index} value={bank.bank_name}>
                           {bank.bank_name}
                         </option>
@@ -337,7 +337,7 @@ function Payment() {
                       className="w-full px-3 py-2 border focus:border-blue-500 rounded shadow-lg"
                     >
                       {/* Map through the array of banks and create options */}
-                      {banks.map((bank, index) => (
+                      {banks?.map((bank, index) => (
                         <option key={index} value={bank.bank_ledname}>
                           {bank.bank_name}
                         </option>

@@ -63,6 +63,22 @@ const reports = [
     iconColor: "text-teal-700",
     path: "/sUsers/viewReport",
   },
+   {
+    label: "Receipt Report",
+    desc: "Receipt of rest & hotel",
+    icon: Home,
+    iconBg: "bg-teal-50",
+    iconColor: "text-teal-700",
+    path: "/sUsers/Receiptreport",
+  },
+   {
+    label: "Travel Agent Report",
+    desc: "Travel agent performance summary",
+    icon: Coffee,
+    iconBg: "bg-orange-50",
+    iconColor: "text-orange-700",
+    path: "/sUsers/TravelAgentReport",
+  },
           
 ];
 

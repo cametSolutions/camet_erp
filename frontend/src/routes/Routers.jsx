@@ -467,6 +467,8 @@ const SummaryDashboard = lazy(
   () => import("@/pages/Hotel/Pages/SummaryDashboard")
 )
 const BillSummary = lazy(() => import("@/pages/Hotel/Pages/BillSummary"))
+const Receiptreport = lazy(() => import("@/pages/Hotel/Pages/Receiptreport"))
+const TravelAgentReport = lazy(() => import("@/pages/Hotel/Pages/TravelAgentReport"))
 const CheckInPrint = lazy(() => import("@/pages/Hotel/Pages/CheckInPrint"))
 const ViewReport = lazy(() => import("@/pages/Hotel/Pages/viewReport"))
 const Checkoutpdf = lazy(() => import("@/pages/Hotel/Pages/Checkoutpdf"))
@@ -2156,6 +2158,22 @@ const Routers = () => {
           element={
             <ProtectedSecRoute>
               <BillSummary />
+            </ProtectedSecRoute>
+          }
+        />
+         <Route
+          path="/sUsers/Receiptreport"
+          element={
+            <ProtectedSecRoute>
+              <Receiptreport />
+            </ProtectedSecRoute>
+          }
+        />
+         <Route
+          path="/sUsers/TravelAgentReport"
+          element={
+            <ProtectedSecRoute>
+              <TravelAgentReport />
             </ProtectedSecRoute>
           }
         />
