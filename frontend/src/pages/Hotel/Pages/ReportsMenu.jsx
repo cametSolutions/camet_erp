@@ -56,7 +56,7 @@ const reports = [
     path: "/sUsers/occupancy-checkout-report",
   },
    {
-    label: "The View Report",
+    label: "Sales Summary Report",
     desc: "food plan pax report ",
   icon: Coffee,
     iconBg: "bg-teal-50",
@@ -116,7 +116,7 @@ const ReportsMenu = () => {
       {/* Dropdown */}
       {open && (
         <div className="absolute right-0 mt-1.5 w-64 bg-white border border-gray-200 
-                        rounded-xl shadow-xl z-30 overflow-hidden">
+                        rounded-xl shadow-xl z-30 overflow-scroll overflow-x-hidden max-h-96">
           {/* Header */}
           <div className="flex items-center gap-2.5 px-3.5 py-3 border-b border-gray-100">
             <div className="w-7 h-7 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
