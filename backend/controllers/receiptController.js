@@ -20,7 +20,7 @@ import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import settlementModel from "../models/settlementModel.js";
 
 import salesModel from "../models/salesModel.js";       // adjust path
-import voucherSeriesModel from "../models/voucherSeriesModel.js"; // adjust path
+import VoucherSeries from "../models/voucherSeriesModel.js"; // adjust path
 /**
  * @desc  create receipt
  * @route POST/api/sUsers/createReceipt
@@ -865,7 +865,7 @@ export const getReceiptsByVoucherSeries = async (req, res) => {
     // Receipt has series_id pointing to that series doc
     let seriesIdFilter = null;
     if (under !== "all") {
-      const matchingSeries = await voucherSeriesModel
+      const matchingSeries = await VoucherSeries
         .find(
           { cmp_id: new mongoose.Types.ObjectId(cmp_id), under },
           { _id: 1 }
