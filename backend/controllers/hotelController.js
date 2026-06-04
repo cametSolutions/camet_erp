@@ -6999,7 +6999,7 @@ export const getTravelAgentSalesReport = async (req, res) => {
       {
         $lookup: {
           from: "parties",
-          let:  { agentObjId: "$customerId" },
+          let:  { agentObjId: "$agentId" },
           pipeline: [
             {
               $match: {
