@@ -175,11 +175,11 @@ const RestaurantPOS = () => {
         address: kotDataForEdit?.customer?.address,
         tableNumber: kotDataForEdit?.tableNumber,
       });
-      setRoomDetails({
-        _id: kotDataForEdit?.roomId?._id || "",
-        guestName: kotDataForEdit?.guestId?.name || "",
-        CheckInNumber: kotDataForEdit?.checkInNumber || "",
-      });
+      // setRoomDetails({
+      //   _id: kotDataForEdit?.roomId?._id || "",
+      //   guestName: kotDataForEdit?.guestId?.name || "",
+      //   CheckInNumber: kotDataForEdit?.checkInNumber || "",
+      // });
     }
   }, [kotDataForEdit]);
 
@@ -1137,7 +1137,7 @@ const RestaurantPOS = () => {
     } else if (orderType === "dine-in") {
       if (roomDetails && Object.keys(roomDetails).length > 0) {
         orderCustomerDetails = {
-          roomId: roomDetails?._id,
+          roomId: roomDetails?._id || null,
           checkInNumber: roomDetails?.CheckInNumber,
           name: roomDetails?.guestName,
           tableNumber: selectedTableNumber,
@@ -1163,11 +1163,14 @@ const RestaurantPOS = () => {
       orderCustomerDetails = { ...customerDetails, tableStatus };
     }
 
+    console.log(orderCustomerDetails);
+
     const newOrder = {
       id: orderNumber,
       items: [...finalProductData],
       type: orderType,
       customer: orderCustomerDetails,
+      roomId: orderCustomerDetails?.roomId || null,
       total: getTotalAmount(finalProductData) || 0,
       timestamp: new Date(),
       status: kotDataForEdit?.status || "pending",
