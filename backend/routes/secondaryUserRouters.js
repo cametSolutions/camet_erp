@@ -34,7 +34,7 @@ import { transactions, addHsn, getSingleHsn, editHsn, deleteHsn, getOpeningBalan
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
-import { createReceipt, cancelReceipt, editReceipt, getReceiptDetails } from '../controllers/receiptController.js';
+import { createReceipt, cancelReceipt, editReceipt, getReceiptDetails ,getReceiptsByVoucherSeries } from '../controllers/receiptController.js';
 import { createPayment, cancelPayment, editPayment, getPaymentDetails } from '../controllers/paymentController.js';
 import { createInvoice, editInvoice, cancelSalesOrder, PartyListWithOrderPending, getInvoiceDetails } from '../controllers/saleOrderController.js';
 import { createStockTransfer, editStockTransfer, cancelStockTransfer, getStockTransferDetails } from '../controllers/stockTransferController.js';
@@ -70,7 +70,7 @@ import {
     getTouristReport,getFoodPlanReport,getOccupancyCheckoutReport,
     sendBillEmail,
     viewReport,
-    deleteAdvance
+    deleteAdvance,getTravelAgentSalesReport,getAgentList
 } from '../controllers/hotelController.js'
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot,getKotDash, updateKotStatus, editKot,
@@ -395,6 +395,8 @@ router.get("/getRoomSwapHistory/:checkInId",getRoomSwapHistory);
 router.get("/getCheckedInGuests/:cmp_id", checkedInGuest);
 router.get('/summary', getSummaryDashboard);
 router.get('/hotel-sales/:cmp_id/:type', getHotelSalesDetails);
+router.get("/receiptReport/:cmp_id",getReceiptsByVoucherSeries)
+// router.get("/unreconciled/:cmp_id", getUnreconciledSales);
 router.put("/cancel/:id", cancelKot);
 router.get('/getRoomCheckInDetails/:cmp_id/:roomId',getRoomCheckInDetails);
 router.put('/cancelBooking/:id', cancelBooking);
@@ -410,6 +412,8 @@ router.get("/flash-report", getFlashReportForDate);
 router.get("/restaurant-category-wise-sales", getRestaurantCategoryWiseSalesReport);
 router.get("/restaurant-date-wise-item-report", getRestaurantDateWiseItemReport);
 router.get("/tourist-report", getTouristReport);
+router.get("/travel-agent-sales", getTravelAgentSalesReport);
+router.get("/travel-agent-sales/agents", getAgentList);
 router.get("/foodplan-report", getFoodPlanReport);
 router.get("/occupancy-checkout-report", getOccupancyCheckoutReport);
 router.get("/register", getKotRegister);
