@@ -19,6 +19,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Building2, UtensilsCrossed, Loader2 } from "lucide-react";
+import CustomerSearchInputBox from "../Components/CustomerSearchInputBox";
+import api from "@/api/api";
+import { toast } from "sonner";
+
+// ── Helpers ──
+const getPaymentMethod = (sourceType) => {
+  switch (sourceType?.toLowerCase()) {
+    case "cash":  return "Cash";
+    case "upi":   return "Upi";
+    case "card":  return "Card";
+    case "bank":  return "Bank";
+    default:      return "Online";
+  }
+};
+
+const capitalize = (str) =>
+  str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
 
 // eslint-disable-next-line react/prop-types
 const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => {
@@ -32,59 +49,82 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
     cmp_id ? `/api/sUsers/getBankAndCashSources/${cmp_id}` : null
   );
 
+  console.log(sourcesResponse);
+  
+
   const saleData = saleResponse?.data;
 
   const combinedSources = (() => {
     if (!sourcesResponse?.data) return [];
     const { banks = [], cashs = [] } = sourcesResponse.data;
     return [
-      ...cashs.map((c) => ({
-        id: c._id,
-        name: c.cash_ledname,
-        type: c.under,
-      })),
-      ...banks.map((b) => ({
-        id: b._id,
-        name: b.bank_ledname,
-        type: b.under,
-      })),
+      ...cashs.map((c) => ({ id: c._id, name: c.cash_ledname, type: c.under })),
+      ...banks.map((b) => ({ id: b._id, name: b.bank_ledname, type: b.under })),
     ];
   })();
 
-  const [gstNo, setGstNo] = useState("");
-  const [address, setAddress] = useState("");
+  const [selectedParty, setSelectedParty] = useState(null);
+  const [gstNo, setGstNo]       = useState("");
+  const [address, setAddress]   = useState("");
   const [payments, setPayments] = useState([]);
   const [saveLoading, setSaveLoading] = useState(false);
 
   useEffect(() => {
     if (saleData) {
+      setSelectedParty(
+        saleData.party
+          ? {
+              _id:          saleData.party._id,
+              partyName:    saleData.party.partyName,
+              mobileNumber: saleData.party.mobileNumber || "",
+            }
+          : null
+      );
       setGstNo(saleData.party?.gstNo || "");
       setAddress(saleData.address || "");
 
-      const rows = (saleData.paymentSplittingData || []).map((p) => ({
-        source: p.source || "",
-        sourceType: p.sourceType || "cash",
-        subsource: p.subsource || "",
-        amount: p.amount ?? "",
-        remarks: p.remarks || "",
-        customerName: p.customerName || "",
-      }));
+      const rows = (saleData.paymentSplittingData || [])
+        .filter((p) => p.sourceType?.toLowerCase() !== "credit") // ✅ exclude credit
+        .map((p) => ({
+          source:        p.source       || "",
+          sourceType:    p.sourceType   || "cash",
+          subsource:     p.subsource    || "",
+          amount:        p.amount       ?? "",
+          remarks:       p.remarks      || "",
+          customerName:  p.customerName || "",
+          paymentMethod: getPaymentMethod(p.sourceType || "cash"),
+        }));
 
       setPayments(
         rows.length > 0
           ? rows
-          : [{ source: "", sourceType: "cash", subsource: "", amount: "", remarks: "", customerName: "" }]
+          : [{
+              source: "", sourceType: "cash", subsource: "",
+              amount: "", remarks: "", customerName: "", paymentMethod: "Cash",
+            }]
       );
     }
   }, [saleData]);
 
   const handleOpenChange = (isOpen) => {
     if (!isOpen) {
+      setSelectedParty(null);
       setGstNo("");
       setAddress("");
       setPayments([]);
     }
     onOpenChange(isOpen);
+  };
+
+  const handlePartySelect = (party) => {
+    setSelectedParty(party);
+    if (party) {
+      setGstNo(party.gstNo || "");
+      setAddress(party.billingAddress || "");
+    } else {
+      setGstNo("");
+      setAddress("");
+    }
   };
 
   const handleSourceChange = (index, sourceId) => {
@@ -94,9 +134,10 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
         i === index
           ? {
               ...row,
-              source: sourceId,
-              sourceType: selected?.type || "cash",
-              subsource: selected?.name || "",
+              source:        sourceId,
+              sourceType:    selected?.type || "cash",
+              subsource:     selected?.name || "",
+              paymentMethod: getPaymentMethod(selected?.type || "cash"),
             }
           : row
       )
@@ -112,14 +153,27 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
   const handleSave = async () => {
     setSaveLoading(true);
     try {
-      // TODO: wire your API
-      // await api.put(`/api/sUsers/update-sale/${saleData._id}`, {
-      //   gstNo, address, payments, cmp_id,
-      // }, { withCredentials: true });
-      // toast.success("Sale updated successfully");
+      // ✅ Capitalize first letter of sourceType before sending
+      const formattedPayments = payments.map((p) => ({
+        ...p,
+        sourceType: capitalize(p.sourceType),
+      }));
+
+      await api.put(
+        `/api/sUsers/updateCheckout/${saleData._id}?cmp_id=${cmp_id}`,
+        {
+          partyId:  selectedParty?._id,
+          gstNo,
+          address,
+          payments: formattedPayments,
+        },
+        { withCredentials: true }
+      );
+      toast.success("Booking updated successfully");
       handleOpenChange(false);
     } catch (err) {
       console.error(err);
+      toast.error(err?.response?.data?.message || "Failed to update booking");
     } finally {
       setSaveLoading(false);
     }
@@ -156,7 +210,7 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
           </div>
         )}
 
-        {/* Scrollable body + footer */}
+        {/* Scrollable body */}
         {!loading && !error && saleData && (
           <>
             <div className="overflow-y-auto flex-1">
@@ -201,12 +255,22 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
                     </div>
                   </div>
 
-                  {/* Editable: Party details */}
+                  {/* ── Party Section ── */}
                   <div>
                     <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                      Party Details
+                      Party
                     </h4>
                     <div className="space-y-3">
+
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Party Name</Label>
+                        <CustomerSearchInputBox
+                          selectedParty={selectedParty}
+                          onSelect={handlePartySelect}
+                          placeholder="Search party..."
+                        />
+                      </div>
+
                       <div className="space-y-1.5">
                         <Label className="text-sm">GST Number</Label>
                         <Input
@@ -216,6 +280,7 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
                           className="h-9 text-sm"
                         />
                       </div>
+
                       <div className="space-y-1.5">
                         <Label className="text-sm">Billing Address</Label>
                         <Input
@@ -228,7 +293,7 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
                     </div>
                   </div>
 
-                  {/* Editable: Payment rows */}
+                  {/* ── Payment Details ── */}
                   <div>
                     <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                       Payment Details
@@ -246,13 +311,13 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
                                 Payment {index + 1}
                               </span>
                               <span className="text-xs border rounded-full px-2 py-0.5 text-gray-600">
-                                {row.sourceType}
+                                {capitalize(row.sourceType)}
                               </span>
                             </div>
                           )}
 
                           <div className="grid grid-cols-2 gap-3">
-                            {/* Source selector — editable */}
+                            {/* Source selector */}
                             <div className="space-y-1.5">
                               <Label className="text-xs">Payment Source</Label>
                               <Select
@@ -288,7 +353,15 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
                             </div>
                           </div>
 
-                          {/* Remarks — editable */}
+                          {/* Payment method — read-only, auto-derived */}
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Payment Method</Label>
+                            <div className="h-9 px-3 flex items-center bg-gray-100 border rounded-md text-sm text-gray-600 cursor-not-allowed">
+                              {row.paymentMethod}
+                            </div>
+                          </div>
+
+                          {/* Remarks
                           <div className="space-y-1.5">
                             <Label className="text-xs">Remarks</Label>
                             <Input
@@ -297,7 +370,7 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
                               placeholder="Optional remarks"
                               className="h-9 text-sm bg-white"
                             />
-                          </div>
+                          </div> */}
 
                           {/* Customer name — read-only */}
                           {row.customerName && (
@@ -313,50 +386,6 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
                     </div>
                   </div>
 
-                  {/* Read-only: Items table */}
-                  <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                      Items
-                    </h4>
-                    <div className="rounded-lg border overflow-hidden">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="bg-gray-50 text-gray-500">
-                            <th className="text-left px-3 py-2 font-medium">Item</th>
-                            <th className="text-right px-3 py-2 font-medium">Amount</th>
-                            <th className="text-right px-3 py-2 font-medium">GST</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {saleData.items?.map((item, i) => (
-                            <tr key={i} className="border-t">
-                              <td className="px-3 py-2">
-                                <span className="font-medium">{item.product_name}</span>
-                                <span className="text-muted-foreground ml-1">
-                                  ({item.cgst + item.sgst}%)
-                                </span>
-                              </td>
-                              <td className="px-3 py-2 text-right">
-                                ₹{item.total?.toLocaleString("en-IN")}
-                              </td>
-                              <td className="px-3 py-2 text-right text-muted-foreground">
-                                ₹{(item.totalCgstAmt + item.totalSgstAmt)?.toLocaleString("en-IN")}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr className="border-t bg-gray-50 font-semibold">
-                            <td className="px-3 py-2">Total</td>
-                            <td className="px-3 py-2 text-right">
-                              ₹{saleData.finalAmount?.toLocaleString("en-IN")}
-                            </td>
-                            <td />
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-                  </div>
                 </TabsContent>
 
                 {/* ── RESTAURANT TAB ── */}
@@ -369,7 +398,7 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
               </Tabs>
             </div>
 
-            {/* Footer — always visible */}
+            {/* Footer */}
             <div className="flex items-center justify-end gap-2 px-6 py-4 border-t bg-gray-50 shrink-0">
               <Button
                 variant="outline"
