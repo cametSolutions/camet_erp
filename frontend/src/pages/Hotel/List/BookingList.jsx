@@ -2956,9 +2956,11 @@ function BookingList() {
                         const lastRowValid =
                         lastRow &&
                         lastRow.customer?.trim() !== "" &&
-                        lastRow.source?.trim() !== "" &&
-                        parseFloat(amount ) > 0;
+                        lastRow.source?.trim() !== ""  &&
+                        Number(amount ) > 0;
 
+
+                        console.log(lastRowValid)
                       // Track which rows have validation errors (only shown after an add attempt)
                       // We store this as a derived set of incomplete row indices
                       const incompleteFields = (row) => {
@@ -3027,15 +3029,10 @@ function BookingList() {
                                 (s) => s.id === row.source,
                               );
                               const sourceType = sourceObj?.type || "";
-
-                              // Lock all inputs only for non-last rows when fully paid.
-                              // The last row stays editable so the user can adjust the amount,
-                              // but the amount is clamped to not exceed the remaining difference.
                               const rowLocked =
                                 isFullyPaid &&
                                 index !== splitPaymentRows.length - 1;
 
-                              // Show field-level errors only on the last row when it's incomplete
                               const isLastRow =
                                 index === splitPaymentRows.length - 1;
                               const missing =
@@ -3061,7 +3058,7 @@ function BookingList() {
                                     <span className="text-[11px] text-gray-400 font-medium">
                                       Under:
                                     </span>
-                                    {["food", "room", "laundry"].map(
+                                    { (selectedDataForPayment?.restaurantSubTotal  > 0 ? ["food", "room", "laundry"] : [ "room", "laundry"] ).map(
                                       (category) => (
                                         <button
                                           key={category}
