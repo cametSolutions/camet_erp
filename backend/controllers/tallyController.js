@@ -9,6 +9,9 @@ import AdditionalCharges from "../models/additionalChargesModel.js";
 import { fetchData, getApiLogs ,fetchDataHotel} from "../helpers/tallyHelper.js";
 import { getUserFriendlyMessage } from "../helpers/getUserFreindlyMessage.js";
 import { Booking,CheckIn } from "../models/bookingModal.js";
+import receiptModel from "../models/receiptModel.js";
+import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
+import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import mongoose from "mongoose";
 import {
   Godown,
@@ -19,6 +22,7 @@ import {
 } from "../models/subDetails.js";
 import accountGroupModel from "../models/accountGroup.js";
 import salesModel from "../models/salesModel.js";
+
 export const saveDataFromTally = async (req, res) => {
   try {
     const { data, partyIds } = await req.body;
@@ -2586,11 +2590,47 @@ export const backfillUniqueSaleNumber = async (req, res) => {
   }
 };
 
+export const backfillUniqueReceiptNumber = async (req, res) => {
+  try {
+    const companies = await receiptModel.distinct("cmp_id");
+
+    for (const cmp_id of companies) {
+      const receipts = await receiptModel
+        .find({ cmp_id })
+        .sort({ date: 1, _id: 1 })
+        .select("_id");
+
+      let number = 1;
+
+      for (const receipt of receipts) {
+     let  result = await receiptModel.updateOne(
+          { _id: receipt._id },
+          {
+            $set: {
+              uniqueReceiptNumber: number,
+            },
+          }
+        );
+  console.log(result);
+        number++;
+      }
+    
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Existing receipts numbered company-wise successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to backfill receipt  numbers",
+      error: error.message,
+    });
+  }
+}
 
 
-import receiptModel from "../models/receiptModel.js";
-import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
-import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 
 const BATCH_SIZE = 20; // safe limit per transaction
 

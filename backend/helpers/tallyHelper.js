@@ -288,7 +288,7 @@ const calculateTaxAmount = (
           ? acc + Number(item.rate || 0)
           : acc,
       0,
-    )
+    ) * Number(stayDays || 1);
 
  
   
