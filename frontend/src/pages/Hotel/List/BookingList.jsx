@@ -135,6 +135,8 @@ function BookingList() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEditBooking, setSelectedEditBooking] = useState(null);
 
+  console.log(selectedEditBooking?.checkInId?.voucherNumber);
+
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -3584,6 +3586,7 @@ function BookingList() {
           if (!val) setSelectedEditBooking(null); // clear on close
         }}
         voucherNumber={selectedEditBooking?.voucherNumber}
+        checkInNumber={selectedEditBooking?.checkInId?.voucherNumber || null}
         cmp_id={cmp_id}
       />
     </>

@@ -7227,3 +7227,42 @@ export const updateCheckout = async (req, res) => {
     });
   }
 };
+
+export const getSalesByCheckInNumber = async (req, res) => {
+  try {
+    const { cmp_id } = req.query;
+    const { checkInNumber } = req.params;
+
+    console.log(checkInNumber);
+    
+
+    if (!checkInNumber || !cmp_id) {
+      return res
+        .status(400)
+        .json({ message: "checkInNumber and cmp_id are required" });
+    }
+
+    const sales = await salesModel
+      .find({
+        cmp_id,
+
+        // isCancelled: false,
+        "convertedFrom.0.checkInNumber": checkInNumber,
+      })
+      .lean();
+
+      if (sales.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "No sales found for the given check-in number" });
+      }
+
+    res.json({ success: true, count: sales.length, data: sales });
+  } catch (error) {
+    console.error("getSalesByCheckInNumber error:", error);
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};

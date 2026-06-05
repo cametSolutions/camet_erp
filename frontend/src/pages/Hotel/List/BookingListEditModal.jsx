@@ -8,20 +8,12 @@ import {
   DialogOverlay,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Building2, UtensilsCrossed, Loader2 } from "lucide-react";
-import CustomerSearchInputBox from "../Components/CustomerSearchInputBox";
 import api from "@/api/api";
 import { toast } from "sonner";
+import HotelTabContent from "./HotelTabContent";
+import RestaurantTabContent from "./RestaurantTabContent";
 
 // ── Helpers ──
 const getPaymentMethod = (sourceType) => {
@@ -38,8 +30,9 @@ const capitalize = (str) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
 
 // eslint-disable-next-line react/prop-types
-const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => {
+const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, checkInNumber }) => {
 
+  // ── Hotel sale fetch ──
   const { data: saleResponse, loading, error } = useFetch(
     voucherNumber ? `/api/sUsers/getSaleBasedOnVoucher/${voucherNumber}` : null,
     { cmp_id }
@@ -49,10 +42,18 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
     cmp_id ? `/api/sUsers/getBankAndCashSources/${cmp_id}` : null
   );
 
-  console.log(sourcesResponse);
-  
-
   const saleData = saleResponse?.data;
+
+  // ── Restaurant sales fetch ──
+  const {
+    data: restaurantSalesResponse,
+    loading: restaurantLoading,
+    error: restaurantError,
+  } = useFetch(
+    `/api/sUsers/getSalesByCheckInNumber/${encodeURIComponent(checkInNumber)}?cmp_id=${cmp_id}`
+  );
+
+  const restaurantSales = restaurantSalesResponse?.data ?? [];
 
   const combinedSources = (() => {
     if (!sourcesResponse?.data) return [];
@@ -84,7 +85,7 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
       setAddress(saleData.address || "");
 
       const rows = (saleData.paymentSplittingData || [])
-        .filter((p) => p.sourceType?.toLowerCase() !== "credit") // ✅ exclude credit
+        .filter((p) => p.sourceType?.toLowerCase() !== "credit")
         .map((p) => ({
           source:        p.source       || "",
           sourceType:    p.sourceType   || "cash",
@@ -98,10 +99,7 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
       setPayments(
         rows.length > 0
           ? rows
-          : [{
-              source: "", sourceType: "cash", subsource: "",
-              amount: "", remarks: "", customerName: "", paymentMethod: "Cash",
-            }]
+          : [{ source: "", sourceType: "cash", subsource: "", amount: "", remarks: "", customerName: "", paymentMethod: "Cash" }]
       );
     }
   }, [saleData]);
@@ -144,16 +142,9 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
     );
   };
 
-  const handleRemarksChange = (index, value) => {
-    setPayments((prev) =>
-      prev.map((row, i) => (i === index ? { ...row, remarks: value } : row))
-    );
-  };
-
   const handleSave = async () => {
     setSaveLoading(true);
     try {
-      // ✅ Capitalize first letter of sourceType before sending
       const formattedPayments = payments.map((p) => ({
         ...p,
         sourceType: capitalize(p.sourceType),
@@ -231,168 +222,40 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
                   >
                     <UtensilsCrossed className="w-3.5 h-3.5" />
                     Restaurant
+                    {restaurantSales.length > 0 && (
+                      <span className="ml-1 text-xs bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5 font-semibold">
+                        {restaurantSales.length}
+                      </span>
+                    )}
                   </TabsTrigger>
                 </TabsList>
 
-                {/* ── HOTEL TAB ── */}
-                <TabsContent value="hotel" className="mt-0 px-6 py-5 space-y-5">
-
-                  {/* Read-only sale summary */}
-                  <div className="grid grid-cols-3 gap-3 bg-gray-50 rounded-lg p-3 text-xs">
-                    <div>
-                      <span className="text-muted-foreground block mb-0.5">Sale No.</span>
-                      <span className="font-medium">{saleData.salesNumber}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground block mb-0.5">Date</span>
-                      <span className="font-medium">{saleData.selectedDate}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground block mb-0.5">Total</span>
-                      <span className="font-medium">
-                        ₹{saleData.finalAmount?.toLocaleString("en-IN")}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* ── Party Section ── */}
-                  <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                      Party
-                    </h4>
-                    <div className="space-y-3">
-
-                      <div className="space-y-1.5">
-                        <Label className="text-sm">Party Name</Label>
-                        <CustomerSearchInputBox
-                          selectedParty={selectedParty}
-                          onSelect={handlePartySelect}
-                          placeholder="Search party..."
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label className="text-sm">GST Number</Label>
-                        <Input
-                          value={gstNo}
-                          onChange={(e) => setGstNo(e.target.value)}
-                          placeholder="e.g. 27AAAPA1234A1Z5"
-                          className="h-9 text-sm"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label className="text-sm">Billing Address</Label>
-                        <Input
-                          value={address}
-                          onChange={(e) => setAddress(e.target.value)}
-                          placeholder="Enter billing address"
-                          className="h-9 text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ── Payment Details ── */}
-                  <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                      Payment Details
-                    </h4>
-                    <div className="space-y-3">
-                      {payments.map((row, index) => (
-                        <div
-                          key={index}
-                          className="rounded-lg border bg-gray-50 p-3 space-y-3"
-                        >
-                          {/* Badge for multiple payments */}
-                          {payments.length > 1 && (
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-medium text-gray-500">
-                                Payment {index + 1}
-                              </span>
-                              <span className="text-xs border rounded-full px-2 py-0.5 text-gray-600">
-                                {capitalize(row.sourceType)}
-                              </span>
-                            </div>
-                          )}
-
-                          <div className="grid grid-cols-2 gap-3">
-                            {/* Source selector */}
-                            <div className="space-y-1.5">
-                              <Label className="text-xs">Payment Source</Label>
-                              <Select
-                                value={row.source}
-                                onValueChange={(val) => handleSourceChange(index, val)}
-                              >
-                                <SelectTrigger className="h-9 text-sm bg-white">
-                                  <SelectValue placeholder="Select source">
-                                    {row.subsource || "Select source"}
-                                  </SelectValue>
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {combinedSources.length === 0 && (
-                                    <SelectItem value="loading" disabled>
-                                      Loading sources...
-                                    </SelectItem>
-                                  )}
-                                  {combinedSources.map((s) => (
-                                    <SelectItem key={s.id} value={s.id}>
-                                      {s.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            {/* Amount — read-only */}
-                            <div className="space-y-1.5">
-                              <Label className="text-xs">Amount</Label>
-                              <div className="h-9 px-3 flex items-center bg-gray-100 border rounded-md text-sm font-medium text-gray-700 cursor-not-allowed">
-                                ₹{Number(row.amount)?.toLocaleString("en-IN")}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Payment method — read-only, auto-derived */}
-                          <div className="space-y-1.5">
-                            <Label className="text-xs">Payment Method</Label>
-                            <div className="h-9 px-3 flex items-center bg-gray-100 border rounded-md text-sm text-gray-600 cursor-not-allowed">
-                              {row.paymentMethod}
-                            </div>
-                          </div>
-
-                          {/* Remarks
-                          <div className="space-y-1.5">
-                            <Label className="text-xs">Remarks</Label>
-                            <Input
-                              value={row.remarks}
-                              onChange={(e) => handleRemarksChange(index, e.target.value)}
-                              placeholder="Optional remarks"
-                              className="h-9 text-sm bg-white"
-                            />
-                          </div> */}
-
-                          {/* Customer name — read-only */}
-                          {row.customerName && (
-                            <p className="text-xs text-muted-foreground">
-                              Customer:{" "}
-                              <span className="font-medium text-gray-700">
-                                {row.customerName}
-                              </span>
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
+                {/* HOTEL TAB */}
+                <TabsContent value="hotel" className="mt-0">
+                  <HotelTabContent
+                    saleData={saleData}
+                    selectedParty={selectedParty}
+                    onPartySelect={handlePartySelect}
+                    gstNo={gstNo}
+                    onGstNoChange={setGstNo}
+                    address={address}
+                    onAddressChange={setAddress}
+                    payments={payments}
+                    combinedSources={combinedSources}
+                    onSourceChange={handleSourceChange}
+                  />
                 </TabsContent>
 
-                {/* ── RESTAURANT TAB ── */}
-                <TabsContent value="restaurant" className="mt-0 px-6 py-5">
-                  <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
-                    No restaurant data for this booking.
-                  </div>
+                {/* RESTAURANT TAB */}
+                <TabsContent value="restaurant" className="mt-0">
+                  <RestaurantTabContent
+                    checkInNumber={checkInNumber}
+                    restaurantSales={restaurantSales}
+                    restaurantLoading={restaurantLoading}
+                    restaurantError={restaurantError}
+                    combinedSources={combinedSources}
+                    cmp_id={cmp_id}
+                  />
                 </TabsContent>
 
               </Tabs>
@@ -414,9 +277,7 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id }) => 
                 disabled={saveLoading}
                 className="h-8 text-xs bg-blue-600 hover:bg-blue-500 text-white"
               >
-                {saveLoading && (
-                  <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
-                )}
+                {saveLoading && <Loader2 className="w-3 h-3 animate-spin mr-1.5" />}
                 Save Changes
               </Button>
             </div>

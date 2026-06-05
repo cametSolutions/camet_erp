@@ -72,7 +72,8 @@ import {
     viewReport,
     deleteAdvance,
     getSaleBasedOnVoucher,
-    updateCheckout
+    updateCheckout,
+    getSalesByCheckInNumber
 } from '../controllers/hotelController.js'
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot,getKotDash, updateKotStatus, editKot,
@@ -424,6 +425,7 @@ router.post('/send-bill-email', sendBillEmail);
 router.get("/viewReport", viewReport);
 router.get("/getSaleBasedOnVoucher/:voucherNumber", getSaleBasedOnVoucher);
 router.put("/updateCheckout/:id", updateCheckout);
+router.get("/getSalesByCheckInNumber/:checkInNumber", getSalesByCheckInNumber);  
 // Route to get detailed booking information for a specific room and date
 
 export default router
