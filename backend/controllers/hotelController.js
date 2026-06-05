@@ -47,6 +47,7 @@ import paymentModel from "../models/paymentModel.js";
 import { PriceLevel } from "../models/subDetails.js";
 import nodemailer from "nodemailer";
 import { transactions } from "./commonController.js";
+import settlementModel from "../models/settlementModel.js";
 // function used to save additional pax details
 export const saveAdditionalPax = async (req, res) => {
   try {
@@ -7031,6 +7032,12 @@ export const updateCheckout = async (req, res) => {
       return res.status(404).json({ message: "Party not found" });
     }
 
+    // ── Helper: map sourceType to settlement sourceType enum ──
+    // cash → "cash", everything else (bank/upi/card) → "bank"
+    const toSourceType = (sourceType) => {
+      return sourceType?.toLowerCase() === "cash" ? "cash" : "bank";
+    };
+
     // ── Update sale party ──
     sale.party = buildEmbeddedParty(party, { gstNo, address });
     sale.markModified("party");
@@ -7038,8 +7045,7 @@ export const updateCheckout = async (req, res) => {
     // ── Update payment splits by index ──
     payments.forEach((payment, index) => {
       const matchingPayment = sale.paymentSplittingData[index];
-
-      if (!matchingPayment) return; // guard: more payments sent than exist in sale
+      if (!matchingPayment) return;
 
       matchingPayment.ref_id = payment.source || matchingPayment.ref_id;
       matchingPayment.source = payment.source || matchingPayment.source;
@@ -7066,11 +7072,11 @@ export const updateCheckout = async (req, res) => {
     if (receipts.length > 0) {
       await Promise.all(
         receipts.map(async (receipt, index) => {
-          // 1. Update party — same for all receipts
+          // 1. Update party
           receipt.party = buildEmbeddedParty(party, { gstNo, address });
           receipt.markModified("party");
 
-          // 2. Match receipt to payment split by index
+          // 2. Match by index
           const matchedPayment = sale.paymentSplittingData[index] || null;
 
           if (matchedPayment) {
@@ -7084,12 +7090,10 @@ export const updateCheckout = async (req, res) => {
                 matchedPayment.subsource || receipt.paymentDetails.cash_ledname;
               receipt.paymentDetails.cash_name =
                 matchedPayment.subsource || receipt.paymentDetails.cash_name;
-              // clear bank fields
               receipt.paymentDetails.bank_id = null;
               receipt.paymentDetails.bank_ledname = "";
               receipt.paymentDetails.bank_name = "";
             } else {
-              // bank / upi / card
               receipt.paymentMethod =
                 matchedPayment.sourceType || receipt.paymentMethod;
               receipt.paymentDetails.bank_id =
@@ -7098,7 +7102,6 @@ export const updateCheckout = async (req, res) => {
                 matchedPayment.subsource || receipt.paymentDetails.bank_ledname;
               receipt.paymentDetails.bank_name =
                 matchedPayment.subsource || receipt.paymentDetails.bank_name;
-              // clear cash fields
               receipt.paymentDetails.cash_id = null;
               receipt.paymentDetails.cash_ledname = "";
               receipt.paymentDetails.cash_name = "";
@@ -7128,29 +7131,23 @@ export const updateCheckout = async (req, res) => {
 
     payments.forEach((payment, index) => {
       const matchingPayment = checkout.checkoutpaymenttypedetails[index];
-
-      if (!matchingPayment) return; // guard: more payments sent than exist in checkout
+      if (!matchingPayment) return;
 
       matchingPayment.mode =
         payment.sourceType?.toLowerCase() || matchingPayment.mode;
       matchingPayment._id = payment.source || matchingPayment._id;
+      matchingPayment.customerName =
+        party.partyName || matchingPayment.customerName;
     });
 
     checkout.markModified("checkoutpaymenttypedetails");
 
-    ///payment totals for checkout
-    const paymentTotals = {
-      cash: 0,
-      bank: 0,
-      upi: 0,
-      credit: 0,
-      card: 0,
-    };
+    // ── Payment totals for checkout ──
+    const paymentTotals = { cash: 0, bank: 0, upi: 0, credit: 0, card: 0 };
 
     sale.paymentSplittingData.forEach((p) => {
       const type = p.sourceType?.toLowerCase() || p.type?.toLowerCase();
       const amount = parseFloat(p.amount?.toString() || "0");
-
       if (type === "cash") paymentTotals.cash += amount;
       else if (type === "bank") paymentTotals.bank += amount;
       else if (type === "upi") paymentTotals.upi += amount;
@@ -7158,26 +7155,57 @@ export const updateCheckout = async (req, res) => {
       else if (type === "card") paymentTotals.card += amount;
     });
 
-    // ── Store totals into checkout.paymenttypeDetails ──
-    checkout.paymenttypeDetails = {
-      cash: paymentTotals.cash,
-      bank: paymentTotals.bank,
-      upi: paymentTotals.upi,
-      credit: paymentTotals.credit,
-      card: paymentTotals.card,
-    };
-
-    console.log("checkout payment detials", checkout.paymenttypeDetails);
+    checkout.paymenttypeDetails = paymentTotals;
     checkout.markModified("paymenttypeDetails");
-
     await checkout.save({ session });
 
-    // console.log("sale party", sale.party);/*  */
-    // console.log("sale paymentSplittingData", sale.paymentSplittingData);/*  */
+    // ── Update Settlements ──
+    // Fetch all settlements for this voucher number
+    const settlements = await settlementModel
+      .find({
+        cmp_id,
+        voucherNumber: sale.salesNumber,
+      })
+      .session(session);
+
+    if (settlements.length > 0) {
+      await Promise.all(
+        settlements.map(async (settlement, index) => {
+          const matchedPayment = sale.paymentSplittingData[index] || null;
+
+          // Always update party info
+          settlement.partyId = party._id;
+          settlement.partyName = party.partyName;
+          settlement.partyType = party.partyType || "party"; // from Party document
+
+          if (matchedPayment) {
+            const rawType = matchedPayment.sourceType?.toLowerCase();
+
+            settlement.sourceId = matchedPayment.source || settlement.sourceId;
+            settlement.sourceType = toSourceType(rawType); // "cash" | "bank"
+            settlement.payment_mode = rawType || settlement.payment_mode; // "cash" | "bank" | "upi" | "card"
+          }
+
+          await settlement.save({ session });
+        }),
+      );
+    }
+
+    // console.log("sale party", sale.party); /* */
+    // console.log("sale paymentSplittingData", sale.paymentSplittingData); /* */
     // console.log("receipts party", receipts.party);
-    // console.log("receipts party", receipts.map(r => r.party));
-    // console.log("receipts paymentDetails", receipts.map(r => r.paymentDetails));
-    // console.log("checkout checkoutpaymenttypedetails", checkout.checkoutpaymenttypedetails);
+    // console.log(
+    //   "receipts party",
+    //   receipts.map((r) => r.party),
+    // );
+    // console.log(
+    //   "receipts paymentDetails",
+    //   receipts.map((r) => r.paymentDetails),
+    // );
+    // console.log(
+    //   "checkout checkoutpaymenttypedetails",
+    //   checkout.checkoutpaymenttypedetails,
+    // );
 
     // ── Commit ──
     await session.commitTransaction();
