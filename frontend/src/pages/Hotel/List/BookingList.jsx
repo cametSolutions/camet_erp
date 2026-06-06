@@ -1207,7 +1207,7 @@ function BookingList() {
         (row) =>
           !row.customer ||
           !row.source ||
-         (!row.amount && row.underCategory != "food" )||
+          (!row.amount && row.underCategory != "food") ||
           parseFloat(row.amount) < 0,
       );
 
@@ -1291,7 +1291,7 @@ function BookingList() {
       setIsPartial(false);
       proceedToCheckout(dateandstaysdata, processedCheckoutData);
     } else {
-      console.log(restaurantSideDiscountAdjustmentArray)
+      console.log(restaurantSideDiscountAdjustmentArray);
       try {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
@@ -2451,7 +2451,7 @@ function BookingList() {
 
   const handlePaymentAllocationInRestaurant = (rows) => {
     console.log("rows", rows);
-    if (rows?.length > 0) { 
+    if (rows?.length > 0) {
       setRestaurantSideDiscountAdjustmentArray(rows);
       let resturantTotal = rows.reduce(
         (acc, item) => acc + Number(item?.finalValue || 0),
@@ -2474,12 +2474,12 @@ function BookingList() {
       }));
 
       setRestaurantSaleManageMent(false);
-     setSplitPaymentRows((prev) =>
-  prev.map((row) => ({
-    ...row,
-    amount: 0,
-  }))
-);
+      setSplitPaymentRows((prev) =>
+        prev.map((row) => ({
+          ...row,
+          amount: 0,
+        })),
+      );
     }
   };
   console.log("selectedDataForPayment", restaurantSideDiscountAdjustmentArray);
@@ -2949,18 +2949,22 @@ function BookingList() {
                       // Validate last row — all 3 mandatory fields must be filled
                       const lastRow =
                         splitPaymentRows[splitPaymentRows.length - 1];
-                        console.log("lastRow", lastRow);
-                        console.log(selectedDataForPayment)
-                     let amount = lastRow?.underCategory !== "food" ?  parseFloat(lastRow.amount) : selectedDataForPayment?.restaurantSubTotal == 0 && 1
-                     console.log("amount", amount)
-                        const lastRowValid =
+                      console.log("lastRow", lastRow);
+                      console.log(selectedDataForPayment);
+                      let amount =
+                        lastRow?.underCategory !== "food"
+                          ? parseFloat(lastRow.amount)
+                          : selectedDataForPayment?.restaurantSubTotal == 0
+                            ? 0
+                            : parseFloat(lastRow.amount);
+                      console.log("amount", amount);
+                      const lastRowValid =
                         lastRow &&
                         lastRow.customer?.trim() !== "" &&
-                        lastRow.source?.trim() !== ""  &&
-                        Number(amount ) > 0;
+                        lastRow.source?.trim() !== "" &&
+                        Number(amount) > 0;
 
-
-                        console.log(lastRowValid)
+                      console.log(lastRowValid);
                       // Track which rows have validation errors (only shown after an add attempt)
                       // We store this as a derived set of incomplete row indices
                       const incompleteFields = (row) => {
@@ -3010,7 +3014,9 @@ function BookingList() {
                                 <button
                                   onClick={() => {
                                     setRestaurantSaleManageMent(true);
-                                    restaurantSideDiscountAdjustmentArray?.length > 0 && handlePaymentAllocationInRestaurant(null);
+                                    restaurantSideDiscountAdjustmentArray?.length >
+                                      0 &&
+                                      handlePaymentAllocationInRestaurant(null);
                                   }}
                                   className="w-6 h-6 rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
                                   title="Restaurant Bill Management"
@@ -3058,41 +3064,43 @@ function BookingList() {
                                     <span className="text-[11px] text-gray-400 font-medium">
                                       Under:
                                     </span>
-                                    { (selectedDataForPayment?.restaurantSubTotal  > 0 ? ["food", "room", "laundry"] : [ "room", "laundry"] ).map(
-                                      (category) => (
-                                        <button
-                                          key={category}
-                                          type="button"
-                                          disabled={rowLocked}
-                                          onClick={() =>
-                                            updateSplitPaymentRow(
-                                              index,
-                                              "underCategory",
-                                              row.underCategory === category
-                                                ? ""
-                                                : category,
-                                            )
-                                          }
-                                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors capitalize ${
-                                            rowLocked
-                                              ? "opacity-60 cursor-not-allowed bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-400"
-                                              : row.underCategory === category
-                                                ? category === "food"
-                                                  ? "bg-orange-100 border-orange-300 text-orange-700 dark:bg-orange-950 dark:border-orange-700 dark:text-orange-300"
-                                                  : category === "room"
-                                                    ? "bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-950 dark:border-blue-700 dark:text-blue-300"
-                                                    : "bg-purple-100 border-purple-300 text-purple-700 dark:bg-purple-950 dark:border-purple-700 dark:text-purple-300"
-                                                : "bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-500 dark:text-gray-400 hover:border-gray-300"
-                                          }`}
-                                        >
-                                          {category === "food" && "🍽 "}
-                                          {category === "room" && "🛏 "}
-                                          {category === "laundry" && "👕 "}
-                                          {category.charAt(0).toUpperCase() +
-                                            category.slice(1)}
-                                        </button>
-                                      ),
-                                    )}
+                                    {(selectedDataForPayment?.restaurantSubTotal >
+                                    0
+                                      ? ["food", "room", "laundry"]
+                                      : ["room", "laundry"]
+                                    ).map((category) => (
+                                      <button
+                                        key={category}
+                                        type="button"
+                                        disabled={rowLocked}
+                                        onClick={() =>
+                                          updateSplitPaymentRow(
+                                            index,
+                                            "underCategory",
+                                            row.underCategory === category
+                                              ? ""
+                                              : category,
+                                          )
+                                        }
+                                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors capitalize ${
+                                          rowLocked
+                                            ? "opacity-60 cursor-not-allowed bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-400"
+                                            : row.underCategory === category
+                                              ? category === "food"
+                                                ? "bg-orange-100 border-orange-300 text-orange-700 dark:bg-orange-950 dark:border-orange-700 dark:text-orange-300"
+                                                : category === "room"
+                                                  ? "bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-950 dark:border-blue-700 dark:text-blue-300"
+                                                  : "bg-purple-100 border-purple-300 text-purple-700 dark:bg-purple-950 dark:border-purple-700 dark:text-purple-300"
+                                              : "bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-500 dark:text-gray-400 hover:border-gray-300"
+                                        }`}
+                                      >
+                                        {category === "food" && "🍽 "}
+                                        {category === "room" && "🛏 "}
+                                        {category === "laundry" && "👕 "}
+                                        {category.charAt(0).toUpperCase() +
+                                          category.slice(1)}
+                                      </button>
+                                    ))}
                                     {row.underCategory && (
                                       <span className="text-[11px] text-gray-400 italic">
                                         Selected:{" "}

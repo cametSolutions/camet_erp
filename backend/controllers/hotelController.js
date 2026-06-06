@@ -2772,7 +2772,7 @@ export const convertCheckOutToSale = async (req, res) => {
         checkinIds,
         restaurantSideDiscountAdjustmentArray,
       } = req.body;
-      if (restaurantSideDiscountAdjustmentArray.length > 0) {
+      if (restaurantSideDiscountAdjustmentArray?.length > 0) {
         await handleAdvanceAndDiscountSettlementInRestaurant(
           restaurantSideDiscountAdjustmentArray,
           selectedCheckOut,
