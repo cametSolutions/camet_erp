@@ -25,7 +25,7 @@ import {
   updateStatus,
   saveSettlementDataHotel,
   handleAdvanceAndDiscountSettlementInRestaurant,
-  updateSwapDetails
+  updateSwapDetails,
 } from "../helpers/hotelHelper.js";
 import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
@@ -1381,10 +1381,8 @@ export const getBookings = async (req, res) => {
     console.log("paramss", params);
     const filter = buildDatabaseFilterForBooking(params);
 
-    const { bookings=[], totalBookings=0 } = await fetchBookingsFromDatabase(
-      filter,
-      params,
-    );
+    const { bookings = [], totalBookings = 0 } =
+      await fetchBookingsFromDatabase(filter, params);
 
     // ✅ Process bookings to add payment status and travel agent info
     const processedBookings = bookings.map((booking) => {
@@ -1719,7 +1717,11 @@ export const updateBooking = async (req, res) => {
       .findOne({ _id: bookingId })
       .session(session);
 
-    await updateSwapDetails(findOne?.selectedRooms, bookingData.selectedRooms, session);
+    await updateSwapDetails(
+      findOne?.selectedRooms,
+      bookingData.selectedRooms,
+      session,
+    );
     // -----------------------------
     // ROOM MERGE + TOTAL RECALC
     // -----------------------------
@@ -2772,6 +2774,25 @@ export const convertCheckOutToSale = async (req, res) => {
         checkinIds,
         restaurantSideDiscountAdjustmentArray,
       } = req.body;
+
+      if (!cmp_id) throw new Error("Missing cmp_id");
+
+      if (!Array.isArray(selectedCheckOut) || selectedCheckOut.length === 0) {
+        throw new Error("No checkout selected");
+      }
+
+      if (!["single", "multiple"].includes(checkoutMode)) {
+        throw new Error("Invalid checkout mode");
+      }
+
+      if (!paymentDetails) throw new Error("Missing payment details");
+
+      const paymentMode = paymentDetails?.paymentMode;
+
+      if (!["single", "split", "credit"].includes(paymentMode)) {
+        throw new Error("Invalid payment mode");
+      }
+
       if (restaurantSideDiscountAdjustmentArray?.length > 0) {
         await handleAdvanceAndDiscountSettlementInRestaurant(
           restaurantSideDiscountAdjustmentArray,
@@ -2781,9 +2802,6 @@ export const convertCheckOutToSale = async (req, res) => {
         );
       }
 
-      if (!paymentDetails) throw new Error("Missing payment details");
-
-      const paymentMode = paymentDetails?.paymentMode;
       const split = paymentDetails?.splitDetails || [];
       const additionalCharges = paymentDetails?.additionalChargeArray || [];
       const splitDetails = split;
@@ -5945,13 +5963,10 @@ export const getFlashReportForDate = async (req, res) => {
     const roomTotal = roomApartment + roomExtraBed;
     const fbTotal = foodPlanTotal;
 
-    const occPercent =
-      totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
+    const occPercent = totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
     const arrTotalRooms = totalRooms > 0 ? roomTotal / totalRooms : 0;
-    const arrSaleableRooms =
-      saleableRooms > 0 ? roomTotal / saleableRooms : 0;
-    const arrOccupiedRooms =
-      totalOccupied > 0 ? roomTotal / totalOccupied : 0;
+    const arrSaleableRooms = saleableRooms > 0 ? roomTotal / saleableRooms : 0;
+    const arrOccupiedRooms = totalOccupied > 0 ? roomTotal / totalOccupied : 0;
 
     const reportDate = new Date(toDate);
     const dayLabel = reportDate.toLocaleDateString("en-GB");
@@ -6964,7 +6979,7 @@ export const viewReport = async (req, res) => {
         billNo: sale.salesNumber,
         date: sale.date,
         agentName: sale.party?.partyName || "",
-        gst:sale.party?.gstNo,
+        gst: sale.party?.gstNo,
         placeOfSupply: companyDetails.state,
         plan,
         rooms: roomName,
@@ -7063,18 +7078,16 @@ export const getRestaurantSales = async (req, res) => {
   }
 };
 
-
-
-
 // ─────────────────────────────────────────────────────────────────────────────
-
 
 export const getTravelAgentSalesReport = async (req, res) => {
   try {
     const { cmp_id, agentId, from, to } = req.query;
 
     if (!cmp_id) {
-      return res.status(400).json({ success: false, message: "cmp_id is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "cmp_id is required" });
     }
 
     // Normalize date: handles both "YYYY-MM-DD" and "DD/MM/YYYY"
@@ -7088,11 +7101,11 @@ export const getTravelAgentSalesReport = async (req, res) => {
     };
 
     const fromNorm = normalizeDate(from);
-    const toNorm   = normalizeDate(to);
+    const toNorm = normalizeDate(to);
 
     // ── Step 1: Build base match ──────────────────────────────────────────
     const checkoutFilter = {
-      cmp_id:  new mongoose.Types.ObjectId(cmp_id),
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
       agentId: { $exists: true, $ne: null },
     };
 
@@ -7103,7 +7116,7 @@ export const getTravelAgentSalesReport = async (req, res) => {
     if (fromNorm || toNorm) {
       checkoutFilter.checkOutDate = {};
       if (fromNorm) checkoutFilter.checkOutDate.$gte = fromNorm;
-      if (toNorm)   checkoutFilter.checkOutDate.$lte = toNorm;
+      if (toNorm) checkoutFilter.checkOutDate.$lte = toNorm;
     }
 
     console.log("[TravelAgentReport] filter:", JSON.stringify(checkoutFilter));
@@ -7122,7 +7135,7 @@ export const getTravelAgentSalesReport = async (req, res) => {
       {
         $lookup: {
           from: "parties",
-          let:  { agentObjId: "$agentId" },
+          let: { agentObjId: "$agentId" },
           pipeline: [
             {
               $match: {
@@ -7131,9 +7144,9 @@ export const getTravelAgentSalesReport = async (req, res) => {
             },
             {
               $project: {
-                partyName:    1,
+                partyName: 1,
                 mobileNumber: 1,
-                gstNo:        1,
+                gstNo: 1,
               },
             },
           ],
@@ -7148,7 +7161,7 @@ export const getTravelAgentSalesReport = async (req, res) => {
           // Room names joined
           RoomNo: {
             $reduce: {
-              input:        "$selectedRooms",
+              input: "$selectedRooms",
               initialValue: "",
               in: {
                 $concat: [
@@ -7163,7 +7176,7 @@ export const getTravelAgentSalesReport = async (req, res) => {
           // Food plan names joined
           Plan: {
             $reduce: {
-              input:        "$foodPlan",
+              input: "$foodPlan",
               initialValue: "",
               in: {
                 $concat: [
@@ -7183,27 +7196,27 @@ export const getTravelAgentSalesReport = async (req, res) => {
 
       {
         $project: {
-          _id:         1,
-          BillNo:      "$voucherNumber",
-          RoomNo:      1,
-          GuestName:   "$guestName",
+          _id: 1,
+          BillNo: "$voucherNumber",
+          RoomNo: 1,
+          GuestName: "$guestName",
           CheckInDate: "$arrivalDate",
-          CheckOutDate:"$checkOutDate",
-          NoD:         "$stayDays",
-          Plan:        1,
-          RRent:       "$roomTotal",
-          EBed:        { $ifNull: ["$paxTotal", 0] },
-          PlAmt:       "$foodPlanTotal",
-          TOTAL:       { $toDouble: "$totalAmount" },
-          CGST:        1,
-          SGST:        1,
-          NetAmt:      { $toDouble: "$grandTotal" },
+          CheckOutDate: "$checkOutDate",
+          NoD: "$stayDays",
+          Plan: 1,
+          RRent: "$roomTotal",
+          EBed: { $ifNull: ["$paxTotal", 0] },
+          PlAmt: "$foodPlanTotal",
+          TOTAL: { $toDouble: "$totalAmount" },
+          CGST: 1,
+          SGST: 1,
+          NetAmt: { $toDouble: "$grandTotal" },
 
           // Agent fields — now from partyName
-          agentId:     "$agentDoc._id",
-          agentName:   "$agentDoc.partyName",     // ✅ correct field
+          agentId: "$agentDoc._id",
+          agentName: "$agentDoc.partyName", // ✅ correct field
           agentMobile: "$agentDoc.mobileNumber",
-          agentGst:    "$agentDoc.gstNo",
+          agentGst: "$agentDoc.gstNo",
         },
       },
 
@@ -7212,7 +7225,10 @@ export const getTravelAgentSalesReport = async (req, res) => {
 
     console.log("[TravelAgentReport] aggregated rows:", checkouts.length);
     if (checkouts.length > 0) {
-      console.log("[TravelAgentReport] sample row:", JSON.stringify(checkouts[0]));
+      console.log(
+        "[TravelAgentReport] sample row:",
+        JSON.stringify(checkouts[0]),
+      );
     }
 
     // ── Step 4: Group by agent ────────────────────────────────────────────
@@ -7220,33 +7236,34 @@ export const getTravelAgentSalesReport = async (req, res) => {
 
     checkouts.forEach((row) => {
       // Use agentId as key; fallback to "unknown" if $lookup failed
-      const key  = row.agentId ? String(row.agentId) : `noagent_${row._id}`;
-      const name = row.agentName || `Agent (${String(row.agentId || "?").slice(-6)})`;
+      const key = row.agentId ? String(row.agentId) : `noagent_${row._id}`;
+      const name =
+        row.agentName || `Agent (${String(row.agentId || "?").slice(-6)})`;
 
       if (!agentSummaryMap[key]) {
         agentSummaryMap[key] = {
-          agentId:      row.agentId,
-          agentName:    name,
-          agentMobile:  row.agentMobile || "",
-          agentGst:     row.agentGst    || "",
-          totalRRent:   0,
-          totalEBed:    0,
-          totalPlAmt:   0,
-          totalTOTAL:   0,
-          totalCGST:    0,
-          totalSGST:    0,
-          totalNetAmt:  0,
-          sales:        [],
+          agentId: row.agentId,
+          agentName: name,
+          agentMobile: row.agentMobile || "",
+          agentGst: row.agentGst || "",
+          totalRRent: 0,
+          totalEBed: 0,
+          totalPlAmt: 0,
+          totalTOTAL: 0,
+          totalCGST: 0,
+          totalSGST: 0,
+          totalNetAmt: 0,
+          sales: [],
         };
       }
 
       const g = agentSummaryMap[key];
-      g.totalRRent  += Number(row.RRent  || 0);
-      g.totalEBed   += Number(row.EBed   || 0);
-      g.totalPlAmt  += Number(row.PlAmt  || 0);
-      g.totalTOTAL  += Number(row.TOTAL  || 0);
-      g.totalCGST   += Number(row.CGST   || 0);
-      g.totalSGST   += Number(row.SGST   || 0);
+      g.totalRRent += Number(row.RRent || 0);
+      g.totalEBed += Number(row.EBed || 0);
+      g.totalPlAmt += Number(row.PlAmt || 0);
+      g.totalTOTAL += Number(row.TOTAL || 0);
+      g.totalCGST += Number(row.CGST || 0);
+      g.totalSGST += Number(row.SGST || 0);
       g.totalNetAmt += Number(row.NetAmt || 0);
 
       row.SlNo = g.sales.length + 1;
@@ -7256,13 +7273,13 @@ export const getTravelAgentSalesReport = async (req, res) => {
     const agentSummary = Object.values(agentSummaryMap);
 
     const grandTotal = {
-      totalSales:  checkouts.length,
-      totalRRent:  agentSummary.reduce((s, a) => s + a.totalRRent,  0),
-      totalEBed:   agentSummary.reduce((s, a) => s + a.totalEBed,   0),
-      totalPlAmt:  agentSummary.reduce((s, a) => s + a.totalPlAmt,  0),
-      totalTOTAL:  agentSummary.reduce((s, a) => s + a.totalTOTAL,  0),
-      totalCGST:   agentSummary.reduce((s, a) => s + a.totalCGST,   0),
-      totalSGST:   agentSummary.reduce((s, a) => s + a.totalSGST,   0),
+      totalSales: checkouts.length,
+      totalRRent: agentSummary.reduce((s, a) => s + a.totalRRent, 0),
+      totalEBed: agentSummary.reduce((s, a) => s + a.totalEBed, 0),
+      totalPlAmt: agentSummary.reduce((s, a) => s + a.totalPlAmt, 0),
+      totalTOTAL: agentSummary.reduce((s, a) => s + a.totalTOTAL, 0),
+      totalCGST: agentSummary.reduce((s, a) => s + a.totalCGST, 0),
+      totalSGST: agentSummary.reduce((s, a) => s + a.totalSGST, 0),
       totalNetAmt: agentSummary.reduce((s, a) => s + a.totalNetAmt, 0),
     };
 
@@ -7272,7 +7289,6 @@ export const getTravelAgentSalesReport = async (req, res) => {
       agentSummary,
       data: checkouts,
     });
-
   } catch (err) {
     console.error("[getTravelAgentSalesReport] ERROR:", err);
     return res.status(500).json({ success: false, message: err.message });
@@ -7284,12 +7300,14 @@ export const getAgentList = async (req, res) => {
   try {
     const { cmp_id } = req.query;
     if (!cmp_id) {
-      return res.status(400).json({ success: false, message: "cmp_id is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "cmp_id is required" });
     }
 
     // Get unique agentIds from CheckOut
     const agentIds = await CheckOut.distinct("agentId", {
-      cmp_id:  new mongoose.Types.ObjectId(cmp_id),
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
       agentId: { $exists: true, $ne: null },
     });
 
@@ -7299,20 +7317,20 @@ export const getAgentList = async (req, res) => {
     const agents = await CheckOut.aggregate([
       {
         $match: {
-          cmp_id:  new mongoose.Types.ObjectId(cmp_id),
+          cmp_id: new mongoose.Types.ObjectId(cmp_id),
           agentId: { $exists: true, $ne: null },
         },
       },
       {
         $group: {
-          _id:       "$agentId",
+          _id: "$agentId",
           totalSales: { $sum: 1 },
         },
       },
       {
         $lookup: {
           from: "parties",
-          let:  { agentObjId: "$_id" },
+          let: { agentObjId: "$_id" },
           pipeline: [
             {
               $match: {
@@ -7333,21 +7351,18 @@ export const getAgentList = async (req, res) => {
       },
       {
         $project: {
-          _id:         1,
-          agentName:   "$partyDoc.partyName",
+          _id: 1,
+          agentName: "$partyDoc.partyName",
           agentMobile: "$partyDoc.mobileNumber",
-          totalSales:  1,
+          totalSales: 1,
         },
       },
       { $sort: { agentName: 1 } },
     ]);
 
     return res.status(200).json({ success: true, data: agents });
-
   } catch (err) {
     console.error("[getAgentList] ERROR:", err);
     return res.status(500).json({ success: false, message: err.message });
   }
 };
-
-
