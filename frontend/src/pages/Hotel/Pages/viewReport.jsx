@@ -184,7 +184,7 @@ export default function ViewReport() {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <h1 className="text-lg font-semibold text-slate-900 md:text-xl">
-                   The View Report
+                   The Room Summary Report
                 </h1>
                 <p className="mt-0.5 text-[11px] text-slate-500">
                   Room-wise sales with tax breakup, payment mode and agent details

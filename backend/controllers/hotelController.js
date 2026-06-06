@@ -6743,18 +6743,34 @@ export const viewReport = async (req, res) => {
     end.setHours(23, 59, 59, 999);
 
     // Fetch sales vouchers in date range
-    const sales = await salesModel
-      .find({
-        cmp_id,
-        voucherType: "sales",
-        date: { $gte: start, $lte: end },
-        isCancelled: false,
-      })
-      // .populate("cmp_id", "state")
-      .lean();
+   const restaurantSeries = await VoucherSeriesModel.findOne({
+  cmp_id,
+  voucherType: "sales",
+});
+
+const restaurantSeriesIds =
+  restaurantSeries?.series
+    ?.filter((s) => s.under === "restaurant")
+    .map((s) => s._id) || [];
+
+const sales = await salesModel.find({
+  cmp_id,
+  voucherType: "sales",
+  date: { $gte: start, $lte: end },
+  isCancelled: false,
+  series_id: { $nin: restaurantSeriesIds },
+}).lean();
+
+      const hotelSalesOnly = sales.filter((sale) => {
+  const ref =
+    sale.convertedFrom?.[0]?.checkInNumber ||
+    sale.convertedFrom?.[0]?.voucherNumber;
+  return !!ref;
+});
+
 
     // Collect all checkIn IDs from convertedFrom
-    const checkInNumbers = sales
+    const checkInNumbers = hotelSalesOnly
       .map(
         (s) =>
           s.convertedFrom?.[0]?.checkInNumber ||
@@ -6776,7 +6792,7 @@ export const viewReport = async (req, res) => {
       checkInMap[ci.voucherNumber] = ci;
     });
 
-    const reportRows = sales.map((sale) => {
+    const reportRows = hotelSalesOnly.map((sale) => {
       const checkInRef =
         sale.convertedFrom?.[0]?.checkInNumber ||
         sale.convertedFrom?.[0]?.voucherNumber;
@@ -6968,20 +6984,24 @@ export const getTravelAgentSalesReport = async (req, res) => {
     const toNorm   = normalizeDate(to);
 
     // ── Step 1: Build base match ──────────────────────────────────────────
-    const checkoutFilter = {
-      cmp_id:  new mongoose.Types.ObjectId(cmp_id),
-      agentId: { $exists: true, $ne: null },
-    };
+ // ── Step 1: Build base match ──────────────────────────────────────────
+const checkoutFilter = {
+  cmp_id: new mongoose.Types.ObjectId(cmp_id),
+  $or: [
+    { agentId: { $exists: true, $ne: null } },
+    { isHotelAgent: true },
+  ],
+};
 
-    if (agentId) {
-      checkoutFilter.agentId = new mongoose.Types.ObjectId(agentId);
-    }
+if (agentId) {
+  checkoutFilter.agentId = new mongoose.Types.ObjectId(agentId);
+}
 
-    if (fromNorm || toNorm) {
-      checkoutFilter.checkOutDate = {};
-      if (fromNorm) checkoutFilter.checkOutDate.$gte = fromNorm;
-      if (toNorm)   checkoutFilter.checkOutDate.$lte = toNorm;
-    }
+if (fromNorm || toNorm) {
+  checkoutFilter.checkOutDate = {};
+  if (fromNorm) checkoutFilter.checkOutDate.$gte = fromNorm;
+  if (toNorm)   checkoutFilter.checkOutDate.$lte = toNorm;
+}
 
     console.log("[TravelAgentReport] filter:", JSON.stringify(checkoutFilter));
 
@@ -6996,93 +7016,105 @@ export const getTravelAgentSalesReport = async (req, res) => {
 
       // ✅ FIXED: use let + pipeline + $expr instead of localField/foreignField
       // This works on ALL MongoDB versions
-      {
-        $lookup: {
-          from: "parties",
-          let:  { agentObjId: "$agentId" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $eq: ["$_id", "$$agentObjId"] },
-              },
-            },
-            {
-              $project: {
-                partyName:    1,
-                mobileNumber: 1,
-                gstNo:        1,
-              },
-            },
+     // Lookup by agentId
+{
+  $lookup: {
+    from: "parties",
+    let:  { agentObjId: "$agentId" },
+    pipeline: [
+      { $match: { $expr: { $eq: ["$_id", "$$agentObjId"] } } },
+      { $project: { partyName: 1, mobileNumber: 1, gstNo: 1 } },
+    ],
+    as: "agentDoc",
+  },
+},
+
+// Lookup by customerId (used when isHotelAgent=true and agentId is missing)
+{
+  $lookup: {
+    from: "parties",
+    let:  { custObjId: "$customerId" },
+    pipeline: [
+      { $match: { $expr: { $eq: ["$_id", "$$custObjId"] } } },
+      { $project: { partyName: 1, mobileNumber: 1, gstNo: 1 } },
+    ],
+    as: "customerDoc",
+  },
+},
+
+{
+  $addFields: {
+    // Use agentDoc if agentId exists, else use customerDoc if isHotelAgent=true
+    resolvedAgent: {
+      $cond: [
+        { $gt: [{ $size: "$agentDoc" }, 0] },
+        { $arrayElemAt: ["$agentDoc", 0] },
+        {
+          $cond: [
+            { $eq: ["$isHotelAgent", true] },
+            { $arrayElemAt: ["$customerDoc", 0] },
+            null,
           ],
-          as: "agentDoc",
+        },
+      ],
+    },
+
+    RoomNo: {
+      $reduce: {
+        input: "$selectedRooms", initialValue: "",
+        in: {
+          $concat: [
+            "$$value",
+            { $cond: [{ $eq: ["$$value", ""] }, "", ", "] },
+            { $ifNull: ["$$this.roomName", ""] },
+          ],
         },
       },
+    },
 
-      {
-        $addFields: {
-          agentDoc: { $arrayElemAt: ["$agentDoc", 0] },
-
-          // Room names joined
-          RoomNo: {
-            $reduce: {
-              input:        "$selectedRooms",
-              initialValue: "",
-              in: {
-                $concat: [
-                  "$$value",
-                  { $cond: [{ $eq: ["$$value", ""] }, "", ", "] },
-                  { $ifNull: ["$$this.roomName", ""] },
-                ],
-              },
-            },
-          },
-
-          // Food plan names joined
-          Plan: {
-            $reduce: {
-              input:        "$foodPlan",
-              initialValue: "",
-              in: {
-                $concat: [
-                  "$$value",
-                  { $cond: [{ $eq: ["$$value", ""] }, "", "/"] },
-                  { $ifNull: ["$$this.foodPlan", ""] },
-                ],
-              },
-            },
-          },
-
-          // Tax sums from selectedRooms
-          CGST: { $sum: "$selectedRooms.totalCgstAmt" },
-          SGST: { $sum: "$selectedRooms.totalSgstAmt" },
+    Plan: {
+      $reduce: {
+        input: "$foodPlan", initialValue: "",
+        in: {
+          $concat: [
+            "$$value",
+            { $cond: [{ $eq: ["$$value", ""] }, "", "/"] },
+            { $ifNull: ["$$this.foodPlan", ""] },
+          ],
         },
       },
+    },
 
-      {
-        $project: {
-          _id:         1,
-          BillNo:      "$voucherNumber",
-          RoomNo:      1,
-          GuestName:   "$guestName",
-          CheckInDate: "$arrivalDate",
-          CheckOutDate:"$checkOutDate",
-          NoD:         "$stayDays",
-          Plan:        1,
-          RRent:       "$roomTotal",
-          EBed:        { $ifNull: ["$paxTotal", 0] },
-          PlAmt:       "$foodPlanTotal",
-          TOTAL:       { $toDouble: "$totalAmount" },
-          CGST:        1,
-          SGST:        1,
-          NetAmt:      { $toDouble: "$grandTotal" },
+    CGST: { $sum: "$selectedRooms.totalCgstAmt" },
+    SGST: { $sum: "$selectedRooms.totalSgstAmt" },
+  },
+},
 
-          // Agent fields — now from partyName
-          agentId:     "$agentDoc._id",
-          agentName:   "$agentDoc.partyName",     // ✅ correct field
-          agentMobile: "$agentDoc.mobileNumber",
-          agentGst:    "$agentDoc.gstNo",
-        },
-      },
+{
+  $project: {
+    _id:          1,
+    BillNo:       "$voucherNumber",
+    RoomNo:       1,
+    GuestName:    "$guestName",
+    CheckInDate:  "$arrivalDate",
+    CheckOutDate: "$checkOutDate",
+    NoD:          "$stayDays",
+    Plan:         1,
+    RRent:        "$roomTotal",
+    EBed:         { $ifNull: ["$paxTotal", 0] },
+    PlAmt:        "$foodPlanTotal",
+    TOTAL:        { $toDouble: "$totalAmount" },
+    CGST:         1,
+    SGST:         1,
+    NetAmt:       { $toDouble: "$grandTotal" },
+
+    agentId:      "$resolvedAgent._id",
+    agentName:    "$resolvedAgent.partyName",
+    agentMobile:  "$resolvedAgent.mobileNumber",
+    agentGst:     "$resolvedAgent.gstNo",
+    isHotelAgent: 1,
+  },
+},
 
       { $sort: { CheckInDate: 1 } },
     ]);

@@ -901,7 +901,7 @@ const matchQuery = {
 
 // ✅ Filter by billData source directly — no series lookup needed
 if (under !== "all") {
-  matchQuery["billData.0.source"] = under; // "hotel" or "restaurant"
+  matchQuery["billData.0.source"] = new RegExp(`^${under}$`, "i"); // case-insensitive
 }
 
     // ── Step 3: Aggregation ───────────────────────────────────────
@@ -930,7 +930,7 @@ if (under !== "all") {
  const billDataRaw = Array.isArray(r.billData) ? r.billData : [];
       // billType comes from the joined voucherSeries.under ("hotel" | "restaurant")
     // ✅ CHANGE THIS LINE in your .map() transform
-const billType = r.voucherSeries?.under || billDataRaw[0]?.source || "";
+const billType = (r.voucherSeries?.under || billDataRaw[0]?.source || "").toLowerCase().trim();
 const seriesPrefix = r.voucherSeries?.prefix     || "";
 const seriesName   = r.voucherSeries?.seriesName || "";
 
@@ -1006,7 +1006,7 @@ const receiptSource = (() => {
         billDataList: uniqueBillData.map((b) => ({
           billNo:          b.bill_no              || "",
           billDate:        b.bill_date            || null,
-          source:          b.source               || "",          // "hotel" | "restaurant"
+        source: (b.source || "").toLowerCase().trim(),
           settledAmount:   Number(b.settledAmount   || 0),
           remainingAmount: Number(b.remainingAmount || 0),
           pendingAmount:   Number(b.bill_pending_amt || 0),

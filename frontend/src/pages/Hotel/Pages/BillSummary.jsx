@@ -832,11 +832,11 @@ console.log(salesData);
     }
   }, []);
 
-  useEffect(() => {
-    if (cmp_id && owner && businessType && startDate && endDate) {
-      fetchSalesData(startDate, endDate);
-    }
-  }, [cmp_id, owner, businessType, startDate, endDate]);
+  // useEffect(() => {
+  //   if (cmp_id && owner && businessType && startDate && endDate) {
+  //     fetchSalesData(startDate, endDate);
+  //   }
+  // }, [cmp_id, owner, businessType, startDate, endDate]);
 
   const handlePDFExport = () => {
     if (filteredSalesData.length === 0) {
@@ -953,6 +953,13 @@ console.log(filteredSalesData);
                     disabled={loading}
                   />
                 </div>
+                <button
+  onClick={() => fetchSalesData(startDate, endDate)}
+  disabled={loading}
+  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+>
+  Fetch Report
+</button>
               </div>
 
               {/* Right: KOT / Meal filters */}
