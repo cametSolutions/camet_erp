@@ -372,16 +372,20 @@ export default function ReceiptReport() {
     }
   }, [cmp_id, fromDate, toDate]);
 
-  useEffect(() => {
-    if (cmp_id) fetchReport();
-  }, [cmp_id, fromDate, toDate]);
+// ✅ ADD THIS INSTEAD - fetches only once when company is selected
+useEffect(() => {
+  if (cmp_id && allReceipts.length === 0) {
+    fetchReport();
+  }
+}, [cmp_id]);
 
   /* ── rows: client-side filter + search ──────────────────────────────── */
   const rows = useMemo(() => {
+     console.log("ALL RECEIPTS billTypes:", allReceipts.map(r => ({ billNo: r.billNo, billType: r.billType })));
     const q = search.toLowerCase().trim();
     return allReceipts.filter((r) => {
-      if (filter === "hotel"      && r.billType !== "hotel")      return false;
-      if (filter === "restaurant" && r.billType !== "restaurant") return false;
+   if (filter === "restaurant" && r.billType === "hotel") return false;
+if (filter === "hotel"      && r.billType?.toLowerCase() !== "hotel")      return false;
       if (!q) return true;
 
        const billMatch =
@@ -598,7 +602,7 @@ export default function ReceiptReport() {
           {[
             { val: "all",        label: "🏨 + 🍽 All",   count: allReceipts.length },
             { val: "hotel",      label: "🏨 Hotel",       count: allReceipts.filter(r => r.billType === "hotel").length },
-            { val: "restaurant", label: "🍽 Restaurant",  count: allReceipts.filter(r => r.billType === "restaurant").length },
+           { val: "restaurant", label: "🍽 Restaurant", count: allReceipts.filter(r => r.billType !== "hotel").length },
           ].map((t) => (
             <button key={t.val}
               onClick={() => { setFilter(t.val); setExpanded(null); setSearch(""); }}

@@ -6984,20 +6984,24 @@ export const getTravelAgentSalesReport = async (req, res) => {
     const toNorm   = normalizeDate(to);
 
     // ── Step 1: Build base match ──────────────────────────────────────────
-    const checkoutFilter = {
-      cmp_id:  new mongoose.Types.ObjectId(cmp_id),
-      agentId: { $exists: true, $ne: null },
-    };
+ // ── Step 1: Build base match ──────────────────────────────────────────
+const checkoutFilter = {
+  cmp_id: new mongoose.Types.ObjectId(cmp_id),
+  $or: [
+    { agentId: { $exists: true, $ne: null } },
+    { isHotelAgent: true },
+  ],
+};
 
-    if (agentId) {
-      checkoutFilter.agentId = new mongoose.Types.ObjectId(agentId);
-    }
+if (agentId) {
+  checkoutFilter.agentId = new mongoose.Types.ObjectId(agentId);
+}
 
-    if (fromNorm || toNorm) {
-      checkoutFilter.checkOutDate = {};
-      if (fromNorm) checkoutFilter.checkOutDate.$gte = fromNorm;
-      if (toNorm)   checkoutFilter.checkOutDate.$lte = toNorm;
-    }
+if (fromNorm || toNorm) {
+  checkoutFilter.checkOutDate = {};
+  if (fromNorm) checkoutFilter.checkOutDate.$gte = fromNorm;
+  if (toNorm)   checkoutFilter.checkOutDate.$lte = toNorm;
+}
 
     console.log("[TravelAgentReport] filter:", JSON.stringify(checkoutFilter));
 
@@ -7012,93 +7016,105 @@ export const getTravelAgentSalesReport = async (req, res) => {
 
       // ✅ FIXED: use let + pipeline + $expr instead of localField/foreignField
       // This works on ALL MongoDB versions
-      {
-        $lookup: {
-          from: "parties",
-          let:  { agentObjId: "$agentId" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $eq: ["$_id", "$$agentObjId"] },
-              },
-            },
-            {
-              $project: {
-                partyName:    1,
-                mobileNumber: 1,
-                gstNo:        1,
-              },
-            },
+     // Lookup by agentId
+{
+  $lookup: {
+    from: "parties",
+    let:  { agentObjId: "$agentId" },
+    pipeline: [
+      { $match: { $expr: { $eq: ["$_id", "$$agentObjId"] } } },
+      { $project: { partyName: 1, mobileNumber: 1, gstNo: 1 } },
+    ],
+    as: "agentDoc",
+  },
+},
+
+// Lookup by customerId (used when isHotelAgent=true and agentId is missing)
+{
+  $lookup: {
+    from: "parties",
+    let:  { custObjId: "$customerId" },
+    pipeline: [
+      { $match: { $expr: { $eq: ["$_id", "$$custObjId"] } } },
+      { $project: { partyName: 1, mobileNumber: 1, gstNo: 1 } },
+    ],
+    as: "customerDoc",
+  },
+},
+
+{
+  $addFields: {
+    // Use agentDoc if agentId exists, else use customerDoc if isHotelAgent=true
+    resolvedAgent: {
+      $cond: [
+        { $gt: [{ $size: "$agentDoc" }, 0] },
+        { $arrayElemAt: ["$agentDoc", 0] },
+        {
+          $cond: [
+            { $eq: ["$isHotelAgent", true] },
+            { $arrayElemAt: ["$customerDoc", 0] },
+            null,
           ],
-          as: "agentDoc",
+        },
+      ],
+    },
+
+    RoomNo: {
+      $reduce: {
+        input: "$selectedRooms", initialValue: "",
+        in: {
+          $concat: [
+            "$$value",
+            { $cond: [{ $eq: ["$$value", ""] }, "", ", "] },
+            { $ifNull: ["$$this.roomName", ""] },
+          ],
         },
       },
+    },
 
-      {
-        $addFields: {
-          agentDoc: { $arrayElemAt: ["$agentDoc", 0] },
-
-          // Room names joined
-          RoomNo: {
-            $reduce: {
-              input:        "$selectedRooms",
-              initialValue: "",
-              in: {
-                $concat: [
-                  "$$value",
-                  { $cond: [{ $eq: ["$$value", ""] }, "", ", "] },
-                  { $ifNull: ["$$this.roomName", ""] },
-                ],
-              },
-            },
-          },
-
-          // Food plan names joined
-          Plan: {
-            $reduce: {
-              input:        "$foodPlan",
-              initialValue: "",
-              in: {
-                $concat: [
-                  "$$value",
-                  { $cond: [{ $eq: ["$$value", ""] }, "", "/"] },
-                  { $ifNull: ["$$this.foodPlan", ""] },
-                ],
-              },
-            },
-          },
-
-          // Tax sums from selectedRooms
-          CGST: { $sum: "$selectedRooms.totalCgstAmt" },
-          SGST: { $sum: "$selectedRooms.totalSgstAmt" },
+    Plan: {
+      $reduce: {
+        input: "$foodPlan", initialValue: "",
+        in: {
+          $concat: [
+            "$$value",
+            { $cond: [{ $eq: ["$$value", ""] }, "", "/"] },
+            { $ifNull: ["$$this.foodPlan", ""] },
+          ],
         },
       },
+    },
 
-      {
-        $project: {
-          _id:         1,
-          BillNo:      "$voucherNumber",
-          RoomNo:      1,
-          GuestName:   "$guestName",
-          CheckInDate: "$arrivalDate",
-          CheckOutDate:"$checkOutDate",
-          NoD:         "$stayDays",
-          Plan:        1,
-          RRent:       "$roomTotal",
-          EBed:        { $ifNull: ["$paxTotal", 0] },
-          PlAmt:       "$foodPlanTotal",
-          TOTAL:       { $toDouble: "$totalAmount" },
-          CGST:        1,
-          SGST:        1,
-          NetAmt:      { $toDouble: "$grandTotal" },
+    CGST: { $sum: "$selectedRooms.totalCgstAmt" },
+    SGST: { $sum: "$selectedRooms.totalSgstAmt" },
+  },
+},
 
-          // Agent fields — now from partyName
-          agentId:     "$agentDoc._id",
-          agentName:   "$agentDoc.partyName",     // ✅ correct field
-          agentMobile: "$agentDoc.mobileNumber",
-          agentGst:    "$agentDoc.gstNo",
-        },
-      },
+{
+  $project: {
+    _id:          1,
+    BillNo:       "$voucherNumber",
+    RoomNo:       1,
+    GuestName:    "$guestName",
+    CheckInDate:  "$arrivalDate",
+    CheckOutDate: "$checkOutDate",
+    NoD:          "$stayDays",
+    Plan:         1,
+    RRent:        "$roomTotal",
+    EBed:         { $ifNull: ["$paxTotal", 0] },
+    PlAmt:        "$foodPlanTotal",
+    TOTAL:        { $toDouble: "$totalAmount" },
+    CGST:         1,
+    SGST:         1,
+    NetAmt:       { $toDouble: "$grandTotal" },
+
+    agentId:      "$resolvedAgent._id",
+    agentName:    "$resolvedAgent.partyName",
+    agentMobile:  "$resolvedAgent.mobileNumber",
+    agentGst:     "$resolvedAgent.gstNo",
+    isHotelAgent: 1,
+  },
+},
 
       { $sort: { CheckInDate: 1 } },
     ]);
