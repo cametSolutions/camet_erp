@@ -2801,12 +2801,9 @@ export const convertCheckOutToSale = async (req, res) => {
           session,
         );
       }
-
       const split = paymentDetails?.splitDetails || [];
       const additionalCharges = paymentDetails?.additionalChargeArray || [];
       const splitDetails = split;
-
-      let tracker = paymentDetails?.paymenttypeDetails;
 
       let restaurantTotal =
         restaurantBaseSaleData.length > 0
@@ -2848,21 +2845,8 @@ export const convertCheckOutToSale = async (req, res) => {
         allCheckins.map((checkin) => [checkin.voucherNumber, checkin]),
       );
 
-      // helper: merge advance paymenttypeDetails
-      const mergePayment = (target, src) => {
-        if (!src) return;
-        const keys = ["cash", "upi", "bank", "card", "credit"];
-
-        keys.forEach((key) => {
-          if (src[key] !== undefined && src[key] !== null) {
-            target[key] = Number(target[key] || 0) + Number(src[key] || 0);
-          }
-        });
-      };
-
       let results = [];
       let salesarray = [];
-
       for (const item of selectedCheckOut) {
         const bookingVoucherNumber =
           item?.bookingId?.voucherNumber || item?.bookingId;
@@ -2878,26 +2862,9 @@ export const convertCheckOutToSale = async (req, res) => {
           0,
         );
 
-        // merge current paymentDetails with booking/checkin advance details
-        const merged = {
-          cash: Number(paymentDetails?.paymenttypeDetails?.cash || 0),
-          bank: Number(paymentDetails?.paymenttypeDetails?.bank || 0),
-          upi: Number(paymentDetails?.paymenttypeDetails?.upi || 0),
-          card: Number(paymentDetails?.paymenttypeDetails?.card || 0),
-          credit: Number(paymentDetails?.paymenttypeDetails?.credit || 0),
-        };
-
-        if (matchedBooking?.paymenttypeDetails) {
-          mergePayment(merged, matchedBooking.paymenttypeDetails);
-        }
-
-        if (matchedCheckin?.paymenttypeDetails) {
-          mergePayment(merged, matchedCheckin.paymenttypeDetails);
-        }
-
-        paymentDetails.paymenttypeDetails = merged;
 
         const selectedPartyId = item?.customerId?._id || item?.customerId;
+        
         if (!selectedPartyId) {
           throw new Error("Missing customerId._id in checkout item");
         }

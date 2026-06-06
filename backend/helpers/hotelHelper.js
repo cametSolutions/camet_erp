@@ -1297,7 +1297,7 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
           );
 
           // Update nested bill data
-          await TallyData.updateOne(
+          await receiptModel.updateOne(
             { "billData.billId": tallyData[i]._id },
             {
               $set: {
