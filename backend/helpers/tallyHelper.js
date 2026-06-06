@@ -263,10 +263,11 @@ const calculateTaxAmount = (
   bookingType,
   stayDays,
   additionalPaxDetails,
+  doc
 ) => {
   let foodPlanTax = 5;
 
-  console.log(roomPrice);
+
 
   if (bookingType === "offline") {
     foodPlanTax = taxPercentage;
@@ -510,7 +511,11 @@ export const fetchDataHotel = async (
           0,
         );
 
-        let newItemsArranged = selectedRooms.map((room) => {
+     
+
+        let newItemsArranged = selectedRooms.map(async(room) => {
+
+          let stayDays = await calculateStayDays(doc,room);
           let taxDetails = calculateTaxAmount(
             room.taxPercentage,
             room?.totalAmount,
@@ -518,7 +523,7 @@ export const fetchDataHotel = async (
             doc?.foodPlan,
             room?.roomId,
             doc?.bookingType,
-            room?.stayDays,
+            stayDays,
             doc?.additionalPaxDetails,
             doc,
           );
@@ -974,4 +979,56 @@ const createReceipt = async (sale, count, orgId, session) => {
       });
     }
   }
+};
+
+
+const calculateStayDays = async (doc, room) => {
+
+  let fullDaysAre = doc.stayDays;
+     const normalizeToDate = (d) => {
+        const nd = new Date(d);
+        nd.setHours(0, 0, 0, 0);
+        return nd;
+      };
+   const swapDate = room?.swappingDateFrom
+        ? new Date(room.swappingDateFrom).toISOString().split("T")[0]
+        : "";
+      console.log(swapDate);
+      if (room.isSwapped && room.swappingDateFrom) {
+
+        const swappingDate = normalizeToDate(room.swappingDateFrom);
+        const arrivalDate = normalizeToDate(doc.arrivalDate);
+
+        fullDaysAre = Math.floor(
+          (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24),
+        );
+
+        if (fullDaysAre <= 0) {
+          if (swapDate == doc.arrivalDate) {
+            fullDaysAre = 0;
+          } else {
+            fullDaysAre = 1;
+          }
+        }
+      }
+
+      if (!room.isSwapped && room.swappingDateFrom) {
+        console.log(room.roomName);
+        const swappingDate = normalizeToDate(room.swappingDateFrom);
+        const checkoutDate = normalizeToDate(doc.checkOutDate);
+
+        fullDaysAre = Math.floor(
+          (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
+        );
+
+        if (fullDaysAre <= 0) {
+          if (swapDate == doc.arrivalDate) {
+            fullDaysAre = 1;
+          } else {
+            fullDaysAre = 0;
+          }
+        }
+      }
+
+      return fullDaysAre;
 };

@@ -2592,43 +2592,56 @@ export const backfillUniqueSaleNumber = async (req, res) => {
 
 export const backfillUniqueReceiptNumber = async (req, res) => {
   try {
-    const companies = await receiptModel.distinct("cmp_id");
 
-    for (const cmp_id of companies) {
-      const receipts = await receiptModel
-        .find({ cmp_id })
-        .sort({ date: 1, _id: 1 })
-        .select("_id");
+    const { cmp_id } = req.params;
 
-      let number = 1;
-
-      for (const receipt of receipts) {
-     let  result = await receiptModel.updateOne(
-          { _id: receipt._id },
-          {
-            $set: {
-              uniqueReceiptNumber: number,
-            },
-          }
-        );
-  console.log(result);
-        number++;
-      }
-    
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Company ID required"
+      });
     }
 
-    res.status(200).json({
+    const receipts = await receiptModel
+      .find({ cmp_id })
+      .sort({ date: 1, _id: 1 }) // or createdAt:1 if preferred
+      .select("_id date");
+
+    let number = 1;
+
+    for (const receipt of receipts) {
+
+      await receiptModel.updateOne(
+        { _id: receipt._id },
+        {
+          $set: {
+            uniqueReceiptNumber: number
+          }
+        }
+      );
+
+      console.log(
+        `Receipt ${receipt._id} -> ${number}`
+      );
+
+      number++;
+    }
+
+    return res.status(200).json({
       success: true,
-      message: "Existing receipts numbered company-wise successfully",
+      totalUpdated: receipts.length,
+      message: "Receipt numbers rebuilt successfully"
     });
+
   } catch (error) {
-    res.status(500).json({
+
+    return res.status(500).json({
       success: false,
-      message: "Failed to backfill receipt  numbers",
-      error: error.message,
+      message: error.message
     });
+
   }
-}
+};
 
 
 
@@ -2656,7 +2669,7 @@ export const createReceiptForSales = async (req, res) => {
 // ─────────────────────────────────────────────
 export const createReceiptForSalesFully = async (cmp) => {
   // Fetch all sales OUTSIDE any transaction — just a plain read
-  const sales = await salesModel.find({ cmp_id: cmp }).lean();
+  const sales = await salesModel.find({ cmp_id: cmp  }).lean();
   console.log(`🔵 Total sales found: ${sales.length}`);
 
   // Fetch voucher series OUTSIDE transaction — reused across all batches
@@ -2748,8 +2761,7 @@ const processBatch = async (batch, cmp, voucher, batchNumber) => {
 // ─────────────────────────────────────────────
 const createReceipt = async (sale, orgId, session, voucher) => {
   // Skip non-party sales
-  if (sale.party?.partyType !== "party" || sale.party?.partyName?.toLowerCase() === "gpay" ||
-sale.party?.partyName?.toLowerCase() === "cash") {
+  if (!sale.isPostToRoom && !sale.checkInId ) {
     console.log(`⏭️ Skipping sale ${sale._id} — partyType: ${sale.party?.partyType}`);
     return false;
   }
