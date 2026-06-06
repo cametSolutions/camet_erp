@@ -2527,6 +2527,7 @@ export const giveReceipts = async (req, res) => {
   return fetchData("receipt", cmp_id, serialNumber, res);
 };
 
+
 export const giveReceiptsHotel = async (req, res) => {
 
   const cmp_id = req.params.cmp_id;
@@ -2806,16 +2807,17 @@ const createReceipt = async (sale, orgId, session, voucher) => {
     ];
 
     let type = "cash";
+    
     if(data?.type != "cash"){
       type = "bank";
     }
 
     const paymentDetails = {
       _id: data?.source ||  data?.ref_id,
-      cash_ledname: data.type === "cash" ? data?.subsource   || "cash" : null,
-      cash_name:    data.type === "cash" ? data?.subsource ? data?.subsource : type || "cash" : null,
-      bank_ledname: data.type !=="cash" ? data?.subsource ? data?.subsource : type : null,
-      bank_name:    data.type !=="cash" ? data?.subsource ? data?.subsource : type : null,
+      cash_ledname: data.type === "cash" ? type : null,
+      cash_name:    data.type === "cash" ? type  : null,
+      bank_ledname: data.type !=="cash" ? type: null,
+      bank_name:    data.type !=="cash" ? type: null,
     };
 
     const receipt = new receiptModel({

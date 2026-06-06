@@ -404,7 +404,7 @@ export const fetchDataHotel = async (
           $gt: serialNumber,
         };
       } else {
-        query.serialNumber = { $gt: serialNumber };
+        query.uniqueReceiptNumber = { $gt: serialNumber };
       }
     }
 
