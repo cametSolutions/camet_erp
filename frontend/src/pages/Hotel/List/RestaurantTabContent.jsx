@@ -14,6 +14,7 @@ const RestaurantTabContent = ({
   restaurantError,
   combinedSources,
   cmp_id,
+    refreshHook
 }) => {
   const [editingSale, setEditingSale] = useState(null);
 
@@ -157,6 +158,7 @@ const RestaurantTabContent = ({
         sale={editingSale}
         combinedSources={combinedSources}
         cmp_id={cmp_id}
+        refreshHook={refreshHook}
       />
     </div>
   );

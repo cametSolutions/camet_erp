@@ -37,7 +37,7 @@ const formatCurrency = (amount) =>
   Number(amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 });
 
 // eslint-disable-next-line react/prop-types
-const RestaurantBillEditModal = ({ open, onOpenChange, sale, combinedSources, cmp_id }) => {
+const RestaurantBillEditModal = ({ open, onOpenChange, sale, combinedSources, cmp_id, refreshHook }) => {
   const [payments, setPayments] = useState([]);
   const [saveLoading, setSaveLoading] = useState(false);
 
@@ -100,6 +100,7 @@ const RestaurantBillEditModal = ({ open, onOpenChange, sale, combinedSources, cm
       );
       toast.success("Payment updated successfully");
       handleClose();
+      refreshHook();
     } catch (err) {
       console.error(err);
       toast.error(err?.response?.data?.message || "Failed to update payment");

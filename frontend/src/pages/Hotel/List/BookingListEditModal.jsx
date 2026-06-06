@@ -49,6 +49,7 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, check
     data: restaurantSalesResponse,
     loading: restaurantLoading,
     error: restaurantError,
+    refreshHook: refreshRestaurantHook
   } = useFetch(
     `/api/sUsers/getSalesByCheckInNumber/${encodeURIComponent(checkInNumber)}?cmp_id=${cmp_id}`
   );
@@ -255,6 +256,7 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, check
                     restaurantError={restaurantError}
                     combinedSources={combinedSources}
                     cmp_id={cmp_id}
+                    refreshHook={refreshRestaurantHook}
                   />
                 </TabsContent>
 
