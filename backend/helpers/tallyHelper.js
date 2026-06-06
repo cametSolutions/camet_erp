@@ -470,6 +470,7 @@ export const fetchDataHotel = async (
     let checkoutMap = new Map();
 
     if (type === "sales" && checkoutNumber.length > 0) {
+      
       const checkout = await CheckOut.find({
         cmp_id: new mongoose.Types.ObjectId(cmp_id),
 
@@ -493,8 +494,8 @@ export const fetchDataHotel = async (
         `,
         )
         .lean();
-
-      checkout.forEach((doc) => {
+await Promise.all(
+      checkout.map(async(doc) => {
         if (!doc?.voucherNumber) return;
 
         const selectedRooms = Array.isArray(doc.selectedRooms)
@@ -513,9 +514,12 @@ export const fetchDataHotel = async (
 
      
 
-        let newItemsArranged = selectedRooms.map(async(room) => {
+        let newItemsArranged =  await Promise.all(
+        
+        selectedRooms.map(async (room) => {
 
           let stayDays = await calculateStayDays(doc,room);
+          console.log("stayDays", stayDays,doc.voucherNumber);
           let taxDetails = calculateTaxAmount(
             room.taxPercentage,
             room?.totalAmount,
@@ -528,9 +532,7 @@ export const fetchDataHotel = async (
             doc,
           );
 
-          if(doc.voucherNumber == "CO-910-2025"){
-            console.log("taxDetailsddddd",taxDetails)
-          }
+      
 
           return {
             _id: room._id,
@@ -564,9 +566,9 @@ export const fetchDataHotel = async (
 
             hasGodownOrBatch: false,
 
-            totalCount: doc.stayDays,
+            totalCount: stayDays,
 
-            totalActualCount: doc.stayDays,
+            totalActualCount: stayDays,
 
             total: room?.amountAfterTax,
 
@@ -609,7 +611,9 @@ export const fetchDataHotel = async (
 
             paxTotal: doc?.paxTotal,
           };
-        });
+        }));
+
+        console.log("newItemsArranged", newItemsArranged);
 
 
         checkoutMap.set(doc.voucherNumber.toString(), {
@@ -621,7 +625,7 @@ export const fetchDataHotel = async (
 
           selectedRooms: newItemsArranged,
         });
-      });
+      }))
     }
 
     // =========================
