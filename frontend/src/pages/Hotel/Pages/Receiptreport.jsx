@@ -383,12 +383,18 @@ export default function ReceiptReport() {
       if (filter === "hotel"      && r.billType !== "hotel")      return false;
       if (filter === "restaurant" && r.billType !== "restaurant") return false;
       if (!q) return true;
+
+       const billMatch =
+      r.billDataList?.some((b) =>
+        b.billNo?.toLowerCase().includes(q)
+      ) || false;
       return (
         r.billNo?.toLowerCase().includes(q) ||
         r.partyName?.toLowerCase().includes(q) ||
         r.guestName?.toLowerCase().includes(q) ||
         r.roomNumber?.toLowerCase().includes(q) ||
-        r.tableNumber?.toLowerCase().includes(q)
+        r.tableNumber?.toLowerCase().includes(q) ||
+         billMatch
       );
     });
   }, [allReceipts, filter, search]);

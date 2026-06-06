@@ -6743,18 +6743,34 @@ export const viewReport = async (req, res) => {
     end.setHours(23, 59, 59, 999);
 
     // Fetch sales vouchers in date range
-    const sales = await salesModel
-      .find({
-        cmp_id,
-        voucherType: "sales",
-        date: { $gte: start, $lte: end },
-        isCancelled: false,
-      })
-      // .populate("cmp_id", "state")
-      .lean();
+   const restaurantSeries = await VoucherSeriesModel.findOne({
+  cmp_id,
+  voucherType: "sales",
+});
+
+const restaurantSeriesIds =
+  restaurantSeries?.series
+    ?.filter((s) => s.under === "restaurant")
+    .map((s) => s._id) || [];
+
+const sales = await salesModel.find({
+  cmp_id,
+  voucherType: "sales",
+  date: { $gte: start, $lte: end },
+  isCancelled: false,
+  series_id: { $nin: restaurantSeriesIds },
+}).lean();
+
+      const hotelSalesOnly = sales.filter((sale) => {
+  const ref =
+    sale.convertedFrom?.[0]?.checkInNumber ||
+    sale.convertedFrom?.[0]?.voucherNumber;
+  return !!ref;
+});
+
 
     // Collect all checkIn IDs from convertedFrom
-    const checkInNumbers = sales
+    const checkInNumbers = hotelSalesOnly
       .map(
         (s) =>
           s.convertedFrom?.[0]?.checkInNumber ||
@@ -6776,7 +6792,7 @@ export const viewReport = async (req, res) => {
       checkInMap[ci.voucherNumber] = ci;
     });
 
-    const reportRows = sales.map((sale) => {
+    const reportRows = hotelSalesOnly.map((sale) => {
       const checkInRef =
         sale.convertedFrom?.[0]?.checkInNumber ||
         sale.convertedFrom?.[0]?.voucherNumber;
