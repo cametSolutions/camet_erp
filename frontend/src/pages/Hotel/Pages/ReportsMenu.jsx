@@ -56,7 +56,7 @@ const reports = [
     path: "/sUsers/occupancy-checkout-report",
   },
    {
-    label: "Sales Summary Report",
+    label: "Room Summary Report",
     desc: "food plan pax report ",
   icon: Coffee,
     iconBg: "bg-teal-50",
