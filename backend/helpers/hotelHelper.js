@@ -496,8 +496,7 @@ export const createReceiptForSales = async (
   restaurantBaseSaleData = [],
   session,
 ) => {
-  console.log("cmpidin the createreceiptforsale", cmp_id);
-  console.log("call for create receipt");
+
   const receipts = [];
 
   // Find voucher series for receipt
@@ -591,11 +590,13 @@ export const createReceiptForSales = async (
       const matchedoutstanding = outstandings.find(
         (item) => item.party_id === splitCustomerId,
       );
+
       const matchedsale = allSales.find(
         (item) => String(item.party?._id) === String(splitCustomerId),
       );
       console.log("outstandings", outstandings);
       for (const item of outstandings) {
+        console.log(outstandings)
         const sale = allSales.find((s) => s.salesNumber === item.bill_no);
         console.log("ssssalesssssssss", sale);
         billData.push({
@@ -1195,21 +1196,27 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
   session,
 ) => {
   try {
-    const checkInIds = selectedCheckOut.map((item) => item._id);
+
+    if (!Array.isArray(settlementData) || settlementData.length === 0) return true;
+    if (!Array.isArray(selectedCheckOut) || selectedCheckOut.length === 0) {
+      throw new Error("selectedCheckOut is required");
+    }
+    if (!cmp_id) throw new Error("Missing cmp_id");
+   const checkInIds = selectedCheckOut.map((item) => item._id).filter(Boolean);
 
     const tallyData = await TallyData.find({
       billId: { $in: checkInIds },
     }).session(session);
 
     // Make sure this array exists
-    const restaurantSideDiscountAdjustmentArray = settlementData
+    const restaurantSideDiscountAdjustmentArray = settlementData;
 
-    let totalOfDiscountAndAdvance =
-      restaurantSideDiscountAdjustmentArray.reduce(
-        (acc, item) =>
-          acc + (item.finalValue || 0) + (item.advanceAmount || 0),
-        0,
-      );
+   let totalOfDiscountAndAdvance =
+  restaurantSideDiscountAdjustmentArray.reduce(
+    (acc, item) =>
+      acc + Number(item.finalValue || 0) + Number(item.advanceAmount || 0),
+    0,
+  );
 
     // Handle discount + advance adjustments
     if (restaurantSideDiscountAdjustmentArray.length > 0) {
@@ -1291,7 +1298,7 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
           );
 
           // Update nested bill data
-          await TallyData.updateOne(
+          await receiptModel.updateOne(
             { "billData.billId": tallyData[i]._id },
             {
               $set: {
@@ -1319,6 +1326,9 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
 // helper used convert room to available
   }
 };
+
+
+
 export const updateSwapDetails = async(existingRoom, updatedRoom, session) => {
   console.log("=== UPDATE SWAP DETAILS STARTED ===",existingRoom);
   console.log("=== UPDATE SWAP DETAILS STARTED ===",updatedRoom);
