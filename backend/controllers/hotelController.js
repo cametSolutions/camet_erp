@@ -7159,14 +7159,25 @@ export const updateCheckout = async (req, res) => {
     checkout.markModified("paymenttypeDetails");
     await checkout.save({ session });
 
+
+
+
     // ── Update Settlements ──
-    // Fetch all settlements for this voucher number
+    // Fetch all settlements for receipt voucher numbers
+
+    const receiptVoucherNumbers=receipts.map(r=>r.receiptNumber).filter(Boolean);
+
     const settlements = await settlementModel
       .find({
         cmp_id,
-        voucherNumber: sale.salesNumber,
+        voucherNumber: { $in: receiptVoucherNumbers },
       })
       .session(session);
+
+
+      // console.log("receipts", receipts);
+      // console.log("receiptVoucherNumbers", receiptVoucherNumbers);
+      // console.log("settlements", settlements);
 
     if (settlements.length > 0) {
       await Promise.all(
@@ -7207,9 +7218,25 @@ export const updateCheckout = async (req, res) => {
     //   checkout.checkoutpaymenttypedetails,
     // );
 
+    // /log settlements
+    console.log(
+      "settlements after update",
+      settlements.map((s) => ({
+        partyId: s.partyId,
+        partyName: s.partyName,
+        partyType: s.partyType,
+        sourceId: s.sourceId,
+        sourceType: s.sourceType,
+        payment_mode: s.payment_mode,
+      })),
+    );
+
     // ── Commit ──
     await session.commitTransaction();
     session.endSession();
+
+    // console.log("receipt",rece);
+    
 
     return res.status(200).json({
       success: true,
@@ -7352,11 +7379,13 @@ export const updateRestaurantSalePayments = async (req, res) => {
       );
     }
 
+    const receiptVoucherNumbers=receipts.map(r=>r.receiptNumber).filter(Boolean);
+
     /// update settlements
     const settlements = await settlementModel
       .find({
         cmp_id,
-        voucherNumber: sale.salesNumber,
+        voucherNumber: { $in: receiptVoucherNumbers },
       })
       .session(session);
 
