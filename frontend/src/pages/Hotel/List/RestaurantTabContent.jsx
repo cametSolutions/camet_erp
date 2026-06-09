@@ -6,7 +6,6 @@ import RestaurantBillEditModal from "./RestaurantBillEditModal";
 const formatCurrency = (amount) =>
   Number(amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 });
 
-// eslint-disable-next-line react/prop-types
 const RestaurantTabContent = ({
   checkInNumber,
   restaurantSales,
@@ -14,7 +13,7 @@ const RestaurantTabContent = ({
   restaurantError,
   combinedSources,
   cmp_id,
-    refreshHook
+  refreshHook,
 }) => {
   const [editingSale, setEditingSale] = useState(null);
 
@@ -94,7 +93,6 @@ const RestaurantTabContent = ({
                   <span className="text-xs font-bold text-gray-800">
                     ₹{formatCurrency(sale.finalAmount)}
                   </span>
-                  {/* Edit payment button */}
                   <button
                     onClick={() => setEditingSale(sale)}
                     className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300 bg-white hover:bg-blue-50 rounded-md px-2 py-1 transition-colors"
@@ -128,22 +126,24 @@ const RestaurantTabContent = ({
                 </div>
               </div>
 
-              {/* Payment split pills */}
+              {/* Payment split pills — all types including credit */}
               {sale.paymentSplittingData?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {sale.paymentSplittingData
-                    .filter((p) => p.sourceType?.toLowerCase() !== "credit")
-                    .map((p, pi) => (
-                      <span
-                        key={pi}
-                        className="inline-flex items-center gap-1 text-xs bg-white border rounded-full px-2 py-0.5 text-gray-600"
-                      >
-                        <span className="capitalize">{p.sourceType}</span>
-                        <span className="font-medium text-gray-800">
-                          ₹{formatCurrency(p.amount)}
-                        </span>
+                  {sale.paymentSplittingData.map((p, pi) => (
+                    <span
+                      key={pi}
+                      className={`inline-flex items-center gap-1 text-xs border rounded-full px-2 py-0.5 ${
+                        p.sourceType?.toLowerCase() === "credit"
+                          ? "bg-amber-50 border-amber-200 text-amber-700"
+                          : "bg-white border-gray-200 text-gray-600"
+                      }`}
+                    >
+                      <span className="capitalize">{p.sourceType}</span>
+                      <span className="font-medium text-gray-800">
+                        ₹{formatCurrency(p.amount)}
                       </span>
-                    ))}
+                    </span>
+                  ))}
                 </div>
               )}
             </div>

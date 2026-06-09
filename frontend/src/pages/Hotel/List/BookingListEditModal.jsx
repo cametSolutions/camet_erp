@@ -15,19 +15,22 @@ import { toast } from "sonner";
 import HotelTabContent from "./HotelTabContent";
 import RestaurantTabContent from "./RestaurantTabContent";
 
+
 // ── Helpers ──
 const getPaymentMethod = (sourceType) => {
   switch (sourceType?.toLowerCase()) {
-    case "cash":  return "Cash";
-    case "upi":   return "Upi";
-    case "card":  return "Card";
-    case "bank":  return "Bank";
-    default:      return "Online";
+    case "cash":   return "Cash";
+    case "upi":    return "Upi";
+    case "card":   return "Card";
+    case "bank":   return "Bank";
+    case "credit": return "Credit";
+    default:       return "Online";
   }
 };
 
 const capitalize = (str) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
+
 
 // eslint-disable-next-line react/prop-types
 const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, checkInNumber }) => {
@@ -85,22 +88,38 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, check
       setGstNo(saleData.party?.gstNo || "");
       setAddress(saleData.address || "");
 
-      const rows = (saleData.paymentSplittingData || [])
-        .filter((p) => p.sourceType?.toLowerCase() !== "credit")
-        .map((p) => ({
+      // ── Map ALL payment rows including credit (no filter) ──
+      const rows = (saleData.paymentSplittingData || []).map((p) => {
+        const isCredit = p.sourceType?.toLowerCase() === "credit";
+        return {
           source:        p.source       || "",
           sourceType:    p.sourceType   || "cash",
+          type:          p.type         || p.sourceType || "cash",
           subsource:     p.subsource    || "",
           amount:        p.amount       ?? "",
           remarks:       p.remarks      || "",
           customerName:  p.customerName || "",
           paymentMethod: getPaymentMethod(p.sourceType || "cash"),
-        }));
+          underCategory: p.underCategory || "room",
+          transactionNo: p.transactionNo || "",
+          upiNo:         p.upiNo        || "",
+          // credit party fields
+          creditParty: isCredit
+            ? { _id: p.customer || p.source || "", partyName: p.customerName || "" }
+            : null,
+          creditPartyId: isCredit ? (p.customer || p.source || "") : "",
+        };
+      });
 
       setPayments(
         rows.length > 0
           ? rows
-          : [{ source: "", sourceType: "cash", subsource: "", amount: "", remarks: "", customerName: "", paymentMethod: "Cash" }]
+          : [{
+              source: "", sourceType: "cash", type: "cash", subsource: "",
+              amount: "", remarks: "", customerName: "", paymentMethod: "Cash",
+              underCategory: "room", transactionNo: "", upiNo: "",
+              creditParty: null, creditPartyId: "",
+            }]
       );
     }
   }, [saleData]);
@@ -126,6 +145,7 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, check
     }
   };
 
+  // ── Handler: ledger source change (non-credit rows) ──
   const handleSourceChange = (index, sourceId) => {
     const selected = combinedSources.find((s) => s.id === sourceId);
     setPayments((prev) =>
@@ -135,8 +155,50 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, check
               ...row,
               source:        sourceId,
               sourceType:    selected?.type || "cash",
+              type:          selected?.type || "cash",
               subsource:     selected?.name || "",
               paymentMethod: getPaymentMethod(selected?.type || "cash"),
+            }
+          : row
+      )
+    );
+  };
+
+  // ── Handler: payment type change (e.g. Cash → Credit) ──
+  const handleSourceTypeChange = (index, newType) => {
+    const isCredit = newType.toLowerCase() === "credit";
+    setPayments((prev) =>
+      prev.map((row, i) =>
+        i === index
+          ? {
+              ...row,
+              sourceType:    newType.toLowerCase(),
+              type:          newType.toLowerCase(),
+              paymentMethod: getPaymentMethod(newType),
+              source:        isCredit ? "" : row.source,
+              subsource:     isCredit ? "credit" : row.subsource,
+              creditParty:   isCredit ? row.creditParty : null,
+              creditPartyId: isCredit ? row.creditPartyId : "",
+            }
+          : row
+      )
+    );
+  };
+
+  // ── Handler: select credit party for a row ──
+  const handleCreditPartyChange = (index, party) => {
+    setPayments((prev) =>
+      prev.map((row, i) =>
+        i === index
+          ? {
+              ...row,
+              source:        party?._id || "",
+              subsource:     "credit",
+              creditParty:   party
+                ? { _id: party._id, partyName: party.partyName, mobileNumber: party.mobileNumber || "" }
+                : null,
+              creditPartyId: party?._id || "",
+              customerName:  party?.partyName || row.customerName,
             }
           : row
       )
@@ -146,10 +208,22 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, check
   const handleSave = async () => {
     setSaveLoading(true);
     try {
-      const formattedPayments = payments.map((p) => ({
-        ...p,
-        sourceType: capitalize(p.sourceType),
-      }));
+      const formattedPayments = payments.map((p) => {
+        const isCredit = p.sourceType?.toLowerCase() === "credit";
+        return {
+          source:        isCredit ? (p.creditPartyId || p.source) : p.source,
+          sourceType:    capitalize(p.sourceType),
+          type:          p.sourceType?.toLowerCase(),
+          subsource:     p.subsource,
+          remarks:       p.remarks,
+          customerName:  p.customerName,
+          amount:        p.amount,
+          underCategory: p.underCategory,
+          transactionNo: p.transactionNo,
+          upiNo:         p.upiNo,
+          ...(isCredit && { creditPartyId: p.creditPartyId }),
+        };
+      });
 
       await api.put(
         `/api/sUsers/updateCheckout/${saleData._id}?cmp_id=${cmp_id}`,
@@ -244,6 +318,8 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, check
                     payments={payments}
                     combinedSources={combinedSources}
                     onSourceChange={handleSourceChange}
+                    onSourceTypeChange={handleSourceTypeChange}
+                    onCreditPartyChange={handleCreditPartyChange}
                   />
                 </TabsContent>
 

@@ -13,7 +13,8 @@ import CustomerSearchInputBox from "../Components/CustomerSearchInputBox";
 const capitalize = (str) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
 
-// eslint-disable-next-line react/prop-types
+const PAYMENT_TYPES = ["Cash", "Upi", "Card", "Bank", "Credit"];
+
 const HotelTabContent = ({
   saleData,
   selectedParty,
@@ -25,9 +26,12 @@ const HotelTabContent = ({
   payments,
   combinedSources,
   onSourceChange,
+  onSourceTypeChange,
+  onCreditPartyChange,
 }) => {
   return (
     <div className="px-6 py-5 space-y-5">
+
       {/* Read-only sale summary */}
       <div className="grid grid-cols-3 gap-3 bg-gray-50 rounded-lg p-3 text-xs">
         <div>
@@ -87,71 +91,127 @@ const HotelTabContent = ({
           Payment Details
         </h4>
         <div className="space-y-3">
-          {payments.map((row, index) => (
-            <div key={index} className="rounded-lg border bg-gray-50 p-3 space-y-3">
-              {payments.length > 1 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-gray-500">
-                    Payment {index + 1}
-                  </span>
-                  <span className="text-xs border rounded-full px-2 py-0.5 text-gray-600">
-                    {capitalize(row.sourceType)}
-                  </span>
-                </div>
-              )}
+          {payments.map((row, index) => {
+            const isCredit = row.sourceType?.toLowerCase() === "credit";
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Payment Source</Label>
-                  <Select
-                    value={row.source}
-                    onValueChange={(val) => onSourceChange(index, val)}
-                  >
-                    <SelectTrigger className="h-9 text-sm bg-white">
-                      <SelectValue placeholder="Select source">
-                        {row.subsource || "Select source"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {combinedSources.length === 0 && (
-                        <SelectItem value="loading" disabled>
-                          Loading sources...
-                        </SelectItem>
-                      )}
-                      {combinedSources.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            return (
+              <div key={index} className="rounded-lg border bg-gray-50 p-3 space-y-3">
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Amount</Label>
-                  <div className="h-9 px-3 flex items-center bg-gray-100 border rounded-md text-sm font-medium text-gray-700 cursor-not-allowed">
-                    ₹{Number(row.amount)?.toLocaleString("en-IN")}
+                {/* Row header */}
+                {payments.length > 1 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-500">
+                      Payment {index + 1}
+                    </span>
+                    <span
+                      className={`text-xs border rounded-full px-2 py-0.5 font-medium ${
+                        isCredit
+                          ? "bg-amber-50 border-amber-200 text-amber-700"
+                          : "bg-gray-100 border-gray-200 text-gray-600"
+                      }`}
+                    >
+                      {capitalize(row.sourceType)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Payment Type + Amount */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Payment Type</Label>
+                    <Select
+                      value={capitalize(row.sourceType) || "Cash"}
+                      onValueChange={(val) => onSourceTypeChange(index, val)}
+                    >
+                      <SelectTrigger className="h-9 text-sm bg-white">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Amount</Label>
+                    <div className="h-9 px-3 flex items-center bg-gray-100 border rounded-md text-sm font-medium text-gray-700 cursor-not-allowed">
+                      ₹{Number(row.amount)?.toLocaleString("en-IN")}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs">Payment Method</Label>
-                <div className="h-9 px-3 flex items-center bg-gray-100 border rounded-md text-sm text-gray-600 cursor-not-allowed">
-                  {row.paymentMethod}
-                </div>
-              </div>
+                {/* Credit party picker OR Ledger source dropdown */}
+                {isCredit ? (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">
+                      Credit Party
+                      <span className="ml-1 text-amber-600 font-normal text-[11px]">
+                        (billed on credit)
+                      </span>
+                    </Label>
+                    <CustomerSearchInputBox
+                      selectedParty={row.creditParty || null}
+                      onSelect={(party) => onCreditPartyChange(index, party)}
+                      placeholder="Search credit party..."
+                    />
+                    {row.creditParty?.partyName && (
+                      <p className="text-xs text-muted-foreground">
+                        Billing to:{" "}
+                        <span className="font-semibold text-amber-700">
+                          {row.creditParty.partyName}
+                        </span>
+                        {row.creditParty.mobileNumber && (
+                          <span className="ml-1 text-gray-400">
+                            · {row.creditParty.mobileNumber}
+                          </span>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Payment Source</Label>
+                    <Select
+                      value={row.source}
+                      onValueChange={(val) => onSourceChange(index, val)}
+                    >
+                      <SelectTrigger className="h-9 text-sm bg-white">
+                        <SelectValue placeholder="Select source">
+                          {row.subsource || "Select source"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {combinedSources.length === 0 && (
+                          <SelectItem value="loading" disabled>
+                            Loading sources...
+                          </SelectItem>
+                        )}
+                        {combinedSources.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-              {row.customerName && (
-                <p className="text-xs text-muted-foreground">
-                  Customer:{" "}
-                  <span className="font-medium text-gray-700">
-                    {row.customerName}
-                  </span>
-                </p>
-              )}
-            </div>
-          ))}
+                {/* Customer name (non-credit only) */}
+                {row.customerName && !isCredit && (
+                  <p className="text-xs text-muted-foreground">
+                    Customer:{" "}
+                    <span className="font-medium text-gray-700">
+                      {row.customerName}
+                    </span>
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
