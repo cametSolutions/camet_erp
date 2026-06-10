@@ -13,6 +13,7 @@ import {
   giveVanSales,
   getStockTransfers,
   giveReceipts,
+  giveReceiptsHotel,
   givePayments,
   updateStock,
   updatePriceLevels,
@@ -22,6 +23,8 @@ import {
   addSubDetails,
   addGodowns,
   backfillUniqueSaleNumber,
+  backfillUniqueReceiptNumber,
+  createReceiptForSales,
 } from "../controllers/tallyController.js";
 
 const router = express.Router();
@@ -45,16 +48,19 @@ router.post("/master/addSubCategory", addSubDetails);
 router.post("/master/item/updateStock", updateStock);
 router.post("/master/item/updatePriceLevels", updatePriceLevels);
 router.post("/master/backfillUniqueSaleNumber", backfillUniqueSaleNumber);
+router.post("/master/backfillUniqueReceiptNumber/:cmp_id", backfillUniqueReceiptNumber);
 // router.post("/master/clearStock/:cmp_id", clearStock);
 
 //get
 router.get("/getTransactions/:cmp_id/:SNo", giveTransaction);
 router.get("/getSalesOrders/:cmp_id/:SNo", giveInvoice);
 router.get("/getSales/:cmp_id/:SNo", giveSales);
-router.get("/getSalesHotel/:cmp_id/:SNo", giveSalesHotel);
-router.get("/getVanSales/:cmp_id/:SNo", giveVanSales);
+router.get("//:cmp_id/:SNo", giveSalesHotel);
+router.get("/getVanSagetSalesHotelles/:cmp_id/:SNo", giveVanSales);
 router.get("/getStockTransfers/:cmp_id/:SNo", getStockTransfers);
 router.get("/getReceipts/:cmp_id/:SNo", giveReceipts);
+router.post("/createReceipts/:cmp_id/:SNo", createReceiptForSales);
+router.get("/getReceiptsHotel/:cmp_id/:SNo", giveReceiptsHotel);
 router.get("/getPayments/:cmp_id/:SNo", givePayments);
 router.get("/getPurchase/:cmp_id/:SNo", givePurchase);
 

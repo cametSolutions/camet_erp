@@ -8,7 +8,8 @@ import vanSaleModel from "../models/vanSaleModel.js";
 import purchaseModel from "../models/purchaseModel.js";
 import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 import OrganizationModel from "../models/OragnizationModel.js";
-
+import { getNewSerialNumber } from "../helpers/secondaryHelper.js";
+import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import mongoose from "mongoose";
 import { CheckOut } from "../models/bookingModal.js";
 
@@ -260,26 +261,44 @@ const calculateTaxAmount = (
   foodPlanArray,
   roomId,
   bookingType,
+  stayDays,
+  additionalPaxDetails,
+  doc
 ) => {
   let foodPlanTax = 5;
+
+
 
   if (bookingType === "offline") {
     foodPlanTax = taxPercentage;
   }
 
   // Food plan total including tax
-  let specificFoodPlanTotal = (foodPlanArray || []).reduce(
-    (acc, item) =>
-      item.roomId.toString() === roomId.toString()
-        ? acc + Number(item.rate || 0)
-        : acc,
-    0,
-  );
+  let specificFoodPlanTotal =
+    (foodPlanArray || []).reduce(
+      (acc, item) =>
+        item.roomId?.toString() === roomId?.toString()
+          ? acc + Number(item.rate || 0)
+          : acc,
+      0,
+    ) * Number(stayDays || 1);
 
+    let specificAdditionalPaxDetails = (additionalPaxDetails || []).reduce(
+      (acc, item) =>
+        item.roomId?.toString() === roomId?.toString()
+          ? acc + Number(item.rate || 0)
+          : acc,
+      0,
+    ) * Number(stayDays || 1);
+
+ 
+  
   // Food plan taxable amount
-  let taxableSpecificFoodPlan = round(
-    specificFoodPlanTotal / (1 + foodPlanTax / 100),
-  );
+  let taxableSpecificFoodPlan = specificFoodPlanTotal / (1 + foodPlanTax / 100);
+
+    // additionalPax  taxable amount
+  let additionalPaxTaxAmount = (Number(specificAdditionalPaxDetails) * Number(taxPercentage)) / 100;
+
 
   // Room amount including tax
   let amountWithTax = Math.max(
@@ -288,23 +307,26 @@ const calculateTaxAmount = (
   );
 
   // Room taxable amount
-  let taxableAmount = round(amountWithTax / (1 + taxPercentage / 100));
+  let taxableAmount = amountWithTax / (1 + taxPercentage / 100);
 
   // Room tax amount
-  let roomTaxAmount = round(amountWithTax - taxableAmount);
+  let roomTaxAmount = amountWithTax - taxableAmount;
 
   // Food plan tax amount
-  let foodPlanTaxAmount = round(
-    specificFoodPlanTotal - taxableSpecificFoodPlan,
-  );
+  let foodPlanTaxAmount = specificFoodPlanTotal - taxableSpecificFoodPlan;
+   // Food plan tax amount
+
 
   return {
     taxableAmount,
     roomTaxAmount,
-    specificFoodPlanTotal: round(specificFoodPlanTotal),
+    specificFoodPlanTotal: specificFoodPlanTotal,
     taxableSpecificFoodPlan,
     foodPlanTaxAmount,
     foodPlanTaxPercentage: foodPlanTax,
+    additionalPaxWithTax: specificAdditionalPaxDetails + additionalPaxTaxAmount ,
+    additionalPaxWithoutTax:  specificAdditionalPaxDetails,
+    additionalPaxTaxAmount: additionalPaxTaxAmount,
   };
 };
 
@@ -377,12 +399,16 @@ export const fetchDataHotel = async (
         query.Secondary_user_id = new mongoose.Types.ObjectId(userId);
       }
     } else {
-      if (serialNumber) {
+      if (serialNumber && type == "sales") {
         query.uniqueSaleNumber = {
           $gt: serialNumber,
         };
+      } else {
+        query.uniqueReceiptNumber = { $gt: serialNumber };
       }
     }
+
+    console.log(model, query);
 
     const data = await model.find(query).lean();
 
@@ -444,6 +470,7 @@ export const fetchDataHotel = async (
     let checkoutMap = new Map();
 
     if (type === "sales" && checkoutNumber.length > 0) {
+      
       const checkout = await CheckOut.find({
         cmp_id: new mongoose.Types.ObjectId(cmp_id),
 
@@ -457,50 +484,58 @@ export const fetchDataHotel = async (
           selectedRooms
           _id
           foodPlan
+          additionalPaxDetails
           addTaxWithRate
           bookingType
           stayDays
+          paxTotal
           cmp_id
           Primary_user_id
         `,
         )
         .lean();
-
-      checkout.forEach((doc) => {
+await Promise.all(
+      checkout.map(async(doc) => {
         if (!doc?.voucherNumber) return;
 
         const selectedRooms = Array.isArray(doc.selectedRooms)
           ? doc.selectedRooms
           : [];
 
-        const totalFoodPlanAmount = round(
-          selectedRooms.reduce(
-            (total, room) => total + Number(room?.foodPlanAmountWithTax || 0),
-            0,
-          ),
+        const totalFoodPlanAmount = selectedRooms.reduce(
+          (total, room) => total + Number(room?.foodPlanAmountWithTax || 0),
+          0,
         );
 
-        const taxableFoodPlanAmount = round(
-          selectedRooms.reduce(
-            (total, room) =>
-              total + Number(room?.foodPlanAmountWithOutTax || 0),
-            0,
-          ),
+        const taxableFoodPlanAmount = selectedRooms.reduce(
+          (total, room) => total + Number(room?.foodPlanAmountWithOutTax || 0),
+          0,
         );
 
-        let newItemsArranged = selectedRooms.map((room) => {
+     
+
+        let newItemsArranged =  await Promise.all(
+        
+        selectedRooms.map(async (room) => {
+
+          let stayDays = await calculateStayDays(doc,room);
+          console.log("stayDays", stayDays,doc.voucherNumber);
           let taxDetails = calculateTaxAmount(
             room.taxPercentage,
-            room?.amountAfterTax,
+            room?.totalAmount,
             doc?.addTaxWithRate,
             doc?.foodPlan,
             room?.roomId,
             doc?.bookingType,
+            stayDays,
+            doc?.additionalPaxDetails,
+            doc,
           );
+
+      
 
           return {
             _id: room._id,
-
             product_name: room?.roomName,
 
             cmp_id: doc?.cmp_id,
@@ -518,11 +553,11 @@ export const fetchDataHotel = async (
 
             hsn_code: room?.hsnDetails?.hsn,
 
-            cgst: Number(room?.taxPercentage) / 2,
+            cgst: (Number(room?.taxPercentage) / 2).toFixed(2),
 
-            sgst: Number(room?.taxPercentage) / 2,
+            sgst: (Number(room?.taxPercentage) / 2).toFixed(2),
 
-            igst: Number(room?.taxPercentage),
+            igst: Number(room?.taxPercentage).toFixed(2),
 
             batchEnabled: false,
             gdnEnabled: false,
@@ -531,17 +566,17 @@ export const fetchDataHotel = async (
 
             hasGodownOrBatch: false,
 
-            totalCount: doc.stayDays,
+            totalCount: stayDays,
 
-            totalActualCount: doc.stayDays,
+            totalActualCount: stayDays,
 
-            total: round(room?.amountAfterTax),
+            total: room?.amountAfterTax,
 
-            totalCgstAmt: round(taxDetails?.roomTaxAmount / 2),
+            totalCgstAmt: (taxDetails?.roomTaxAmount / 2).toFixed(2),
 
-            totalSgstAmt: round(taxDetails?.roomTaxAmount / 2),
+            totalSgstAmt: (taxDetails?.roomTaxAmount / 2).toFixed(2),
 
-            totalIgstAmt: round(taxDetails?.roomTaxAmount),
+            totalIgstAmt: (taxDetails?.roomTaxAmount).toFixed(2),
 
             totalCessAmt: 0,
 
@@ -553,17 +588,33 @@ export const fetchDataHotel = async (
 
             under: "room",
 
-            taxableAmount: taxDetails?.taxableAmount,
+            taxableAmount: taxDetails?.taxableAmount.toFixed(2),
 
-            foodPlanTaxableAmount: taxDetails?.taxableSpecificFoodPlan,
+            foodPlanTaxableAmount:
+              taxDetails?.taxableSpecificFoodPlan.toFixed(2),
 
-            foodPlanTaxAmount: taxDetails?.foodPlanTaxAmount,
+            foodPlanTaxAmount:
+              (Math.floor(taxDetails?.foodPlanTaxAmount * 100) - 1) / 100,
 
-            foodPlanTaxPercentage: taxDetails?.foodPlanTaxPercentage,
+            foodPlanTaxPercentage: taxDetails?.foodPlanTaxPercentage.toFixed(2),
 
-            foodPlanAmountWithTax: taxDetails?.specificFoodPlanTotal,
+            foodPlanAmountWithTax: taxDetails?.specificFoodPlanTotal.toFixed(2),
+
+            additionalPaxWithTax: taxDetails?.additionalPaxWithTax.toFixed(2),
+
+            additionalPaxWithoutTax: taxDetails?.additionalPaxWithoutTax.toFixed(
+              2,
+            ),
+            additionalPaxTaxAmount: taxDetails?.additionalPaxTaxAmount.toFixed(2),
+
+            additionalPaxTaxPercentage: Number(room?.taxPercentage).toFixed(2),
+
+            paxTotal: doc?.paxTotal,
           };
-        });
+        }));
+
+        console.log("newItemsArranged", newItemsArranged);
+
 
         checkoutMap.set(doc.voucherNumber.toString(), {
           totalFoodPlanAmount,
@@ -574,7 +625,7 @@ export const fetchDataHotel = async (
 
           selectedRooms: newItemsArranged,
         });
-      });
+      }))
     }
 
     // =========================
@@ -709,4 +760,279 @@ export const getApiLogs = async (cmp_id, dataName) => {
       company.name || "N/A"
     }  (${cmp_id}) company at standard time ${standardTime} and indian time ${indianTime}`,
   );
+};
+
+export const createReceiptForSalesFully = async (cmp) => {
+  const session = await mongoose.startSession();
+
+  try {
+    await session.startTransaction();
+
+    console.log("🔵 Transaction started");
+
+    const sales = await salesModel.find({ cmp_id: cmp }).session(session);
+    console.log(`🔵 Found ${sales.length} sales`);
+
+    const voucher = await VoucherSeriesModel.findOne({
+      cmp_id: cmp,
+      voucherType: "receipt",
+    }).session(session);
+    console.log("🔵 Voucher fetched:", voucher?._id);
+
+    let count = 0;
+    for (const sale of sales) {
+      count++;
+      console.log(`🔵 Processing sale ${count}:`, sale._id);
+      try {
+        await createReceipt(sale, count, cmp, session, voucher);
+        console.log(`✅ Receipt created for sale ${count}`);
+      } catch (innerErr) {
+        // This catches what was previously swallowed
+        console.error(`❌ FAILED at sale ${count}:`, innerErr.message, innerErr.code);
+        throw innerErr; // re-throw to abort
+      }
+    }
+
+    console.log("🔵 Committing...");
+    await session.commitTransaction();
+    console.log("✅ Committed");
+    return { success: true };
+
+  } catch (error) {
+    console.error("❌ Transaction error:", error.message, "code:", error.code);
+    if (session.transaction.isActive) {
+      await session.abortTransaction();
+    }
+    throw error;
+  } finally {
+    await session.endSession();
+  }
+};
+
+// const createReceipt = async (sale, count) => {
+//  if(sale.partyType !== "party"){
+//   return
+//  }
+
+//   const voucher = await VoucherSeriesModel.findOne({
+//     cmp_id: orgId,
+//     voucherType: "receipt",
+//   }).session(session);
+
+//   let under = sale.isPostToRoom ? "restaurant" : "hotel";
+
+//   const series_idReceipt = voucher?.series
+//     ?.find((s) => s.under === under)
+//     ?._id.toString();
+
+//   const serialNumber = await getNewSerialNumber(
+//     ReceiptModel,
+//     "serialNumber",
+//     // session,
+//   );
+
+//   const receiptVoucher = await generateVoucherNumber(
+//     (orgId = sale.cmp_id),
+//     "sales",
+//     "receipt",
+//      series_idReceipt,
+//     // session,
+//   );
+
+//   if(sale.paymentSplittingData?.length > 0){
+
+//     sale.paymentSplittingData.forEach(async (data) => {
+
+//     let billData = [{
+//     _id: sale._id.toString(),
+//     bill_no: sale.salesNumber,
+//     billId: sale._id.toString(),
+//     bill_date: sale.date,
+//     bill_pending_amt: 0,
+//     source: "sales",
+//     settledAmount: data.amount,
+//     remainingAmount: 0
+//   }]
+//   let selectedPArty = {...party,billData}
+//   let paymentDetails = {
+//     _id:data?.source,
+//     cash_ledname: data.type == "cash" ? data?.subsource : null || "cash",
+//     cash_name: data.type == "cash" ? data?.subsource : null || "cash",
+//     bank_ledname: data.type == "bank" ? data?.subsource : null,
+//     bank_name:  data.type == "bank" ? data?.subsource : null,
+//   }
+
+//       const receipt = new ReceiptModel({
+//         date: sale.date,
+//         voucherType: "receipt",
+//         serialNumber: serialNumber,
+//         receiptNumber: receiptVoucher.voucherNumber,
+//         series_id: series_idReceipt,
+//         usedSeriesNumber : receiptVoucher.usedSeriesNumber,
+//         cmp_id: sale.cmp_id,
+//         party: selectedPArty,
+//         totalBillAmount: data.amount,
+//         enteredAmount: data.amount,
+//         advanceAmount: 0,
+//         remainingAmount: 0,
+//         paymentMethod: data.type == "cash" ? "Cash" : "Bank",
+//         paymentDetails: paymentDetails,
+//         note: null,
+
+//       });
+
+//   }
+
+// }
+// }
+const createReceipt = async (sale, count, orgId, session) => {
+  console.log("partyType", sale);
+  if (sale.party.partyType !== "party") {
+    return;
+  }
+
+     const voucher = await VoucherSeriesModel.findOne({
+        cmp_id: orgId,
+        voucherType: "receipt",
+      }).session(session);
+
+      let under = sale.isPostToRoom ? "restaurant" : "hotel";
+
+      const series_idReceipt = voucher?.series
+        ?.find((s) => s.under === under)
+        ?._id.toString();
+
+  if (sale.paymentSplittingData?.length > 0) {
+    for (const data of sale.paymentSplittingData) {
+   
+
+      const serialNumber = 1
+
+      const receiptVoucher = await generateVoucherNumber(
+        orgId,
+        "receipt",
+        series_idReceipt,
+        session,
+      );
+
+      let billData = [
+        {
+          _id: sale._id.toString(),
+          bill_no: sale.salesNumber,
+          billId: sale._id.toString(),
+          bill_date: sale.date,
+          bill_pending_amt: 0,
+          source: "sales",
+          settledAmount: data.amount,
+          remainingAmount: 0,
+        },
+      ];
+
+      let selectedParty = {
+        ...sale?.party,
+        billData,
+      };
+
+      let paymentDetails = {
+        _id: data?.source,
+
+        cash_ledname: data.type === "cash" ? data?.subsource || "cash" : null,
+
+        cash_name: data.type === "cash" ? data?.subsource || "cash" : null,
+
+        bank_ledname: data.type === "bank" ? data?.subsource : null,
+
+        bank_name: data.type === "bank" ? data?.subsource : null,
+      };
+
+      const receipt = new receiptModel({
+        date: sale.date,
+        voucherType: "receipt",
+
+        serialNumber,
+
+        receiptNumber: receiptVoucher.voucherNumber,
+
+        series_id: series_idReceipt,
+
+        usedSeriesNumber: receiptVoucher.usedSeriesNumber,
+
+        Primary_user_id: sale.Primary_user_id,
+        cmp_id: sale.cmp_id,
+
+        party: selectedParty,
+
+        totalBillAmount: data.amount,
+
+        enteredAmount: data.amount,
+
+        advanceAmount: 0,
+
+        remainingAmount: 0,
+
+        paymentMethod: data.type === "cash" ? "Cash" : "Online",
+
+        paymentDetails,
+
+        note: null,
+        
+      });
+
+      await receipt.save({
+        session,
+      });
+    }
+  }
+};
+
+
+const calculateStayDays = async (doc, room) => {
+
+  let fullDaysAre = doc.stayDays;
+     const normalizeToDate = (d) => {
+        const nd = new Date(d);
+        nd.setHours(0, 0, 0, 0);
+        return nd;
+      };
+   const swapDate = room?.swappingDateFrom
+        ? new Date(room.swappingDateFrom).toISOString().split("T")[0]
+        : "";
+      console.log(swapDate);
+      if (room.isSwapped && room.swappingDateFrom) {
+
+        const swappingDate = normalizeToDate(room.swappingDateFrom);
+        const arrivalDate = normalizeToDate(doc.arrivalDate);
+
+        fullDaysAre = Math.floor(
+          (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24),
+        );
+
+        if (fullDaysAre <= 0) {
+          if (swapDate == doc.arrivalDate) {
+            fullDaysAre = 0;
+          } else {
+            fullDaysAre = 1;
+          }
+        }
+      }
+
+      if (!room.isSwapped && room.swappingDateFrom) {
+        console.log(room.roomName);
+        const swappingDate = normalizeToDate(room.swappingDateFrom);
+        const checkoutDate = normalizeToDate(doc.checkOutDate);
+
+        fullDaysAre = Math.floor(
+          (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
+        );
+
+        if (fullDaysAre <= 0) {
+          if (swapDate == doc.arrivalDate) {
+            fullDaysAre = 1;
+          } else {
+            fullDaysAre = 0;
+          }
+        }
+      }
+
+      return fullDaysAre;
 };

@@ -94,7 +94,7 @@ const receiptSchema = new mongoose.Schema(
     paymentMethod: {
       type: String,
       required: true,
-      enum: ["Online", "Cash", "Cheque","credit"],
+      enum: ["Online", "Cash", "Cheque","credit","Bank","upi","card","bank"],
     },
 
     // Payment details with references
@@ -113,11 +113,31 @@ const receiptSchema = new mongoose.Schema(
     note: { type: String },
 
     isCancelled: { type: Boolean, default: false },
+    uniqueReceiptNumber: {type: Number,default: null,},
   },
   {
     timestamps: true,
   }
 );
+
+receiptSchema.pre("save", async function (next) {
+  try {
+    if (!this.isNew || this.uniqueReceiptNumber) {
+      return next();
+    }
+
+    const lastReceipt = await this.constructor
+      .findOne({ cmp_id: this.cmp_id })
+      .sort({ uniqueReceiptNumber: -1 })
+      .select("uniqueReceiptNumber");
+
+    this.uniqueReceiptNumber =
+      Number(lastReceipt?.uniqueReceiptNumber || 0) + 1;
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 // 1. Primary unique identifier (receiptNumber per company)
 receiptSchema.index(

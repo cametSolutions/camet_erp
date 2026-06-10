@@ -11,6 +11,7 @@ import { formatToLocalDate } from "../helpers/helper.js";
 import TallyData from "../models/TallyData.js";
 import settlementModel from "../models/settlementModel.js";
 import salesModel from "../models/salesModel.js";
+
 // helper function used to add search concept with room
 export const buildDatabaseFilterForRoom = (params) => {
   // console.log("params", params);
@@ -135,19 +136,23 @@ export const buildDatabaseFilterForBooking = (params) => {
 };
 
 // function used to fetch booking
-export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
+export const fetchBookingsFromDatabase = async (
+  filter = {},
+  params = {}
+) => {
   const { skip = 0, limit = 0 } = params;
+
   try {
     let selectedModal;
-    if (params?.modal == "booking") {
+
+    if (params?.modal === "booking") {
       selectedModal = Booking;
-    } else if (params?.modal == "checkIn") {
+    } else if (params?.modal === "checkIn") {
       selectedModal = CheckIn;
     } else {
       selectedModal = CheckOut;
     }
 
-    // console.log("params", params);
     const [bookings, totalBookings] = await Promise.all([
       selectedModal
         .find(filter)
@@ -155,48 +160,59 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         .populate("guestId")
         .populate("agentId")
         .populate("isHotelAgent")
-        //     .populate({
-        //   path: "selectedRooms.roomId",
-        //   select: "roomName roomNumber status",
-        // })
         .populate("selectedRooms.selectedPriceLevel")
         .populate("bookingId")
         .populate("checkInId")
         .sort({ createdAt: -1 })
         .skip(limit > 0 ? skip : 0)
         .limit(limit > 0 ? limit : 0),
+
       selectedModal.countDocuments(filter),
     ]);
 
-    // In fetchBookingsFromDatabase, after query runs
-    const raw = await selectedModal.findOne({ cmp_id: filter.cmp_id }).lean();
-    console.log("🔑 ALL FIELD NAMES:", Object.keys(raw || {}));
-    console.log("📄 DATE FIELDS:", {
-      createdAt: raw?.createdAt,
-      bookingDate: raw?.bookingDate,
-      arrivalDate: raw?.arrivalDate,
-      checkOutDate: raw?.checkOutDate,
-      date: raw?.date,
-    });
     const checkInNumbers =
-      params?.modal == "checkIn"
+      params?.modal === "checkIn"
         ? bookings.map((b) => b.voucherNumber)
-        : params?.modal == "checkOut"
-          ? bookings.map((b) => b.checkInId?.voucherNumber)
-          : [];
-    // 2) Find all related sales in one query
+        : params?.modal === "checkOut"
+        ? bookings.map((b) => b.checkInId?.voucherNumber)
+        : [];
+
+    // Get all room posted sales
     const sales = await salesModel
       .find({
         cmp_id: filter.cmp_id,
         isPostToRoom: true,
         isCancelled: false,
-        "convertedFrom.checkInNumber": { $in: checkInNumbers },
+        "convertedFrom.checkInNumber": {
+          $in: checkInNumbers,
+        },
       })
       .select(
-        "_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData",
-      );
+        "_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData"
+      )
+      .lean();
 
-    // Build map: checkInNumber -> { totalAmount, paymentSplittingData }
+    // Get checkout sales dates
+    const checkoutSale = await salesModel
+      .find({
+        cmp_id: filter.cmp_id,
+        isPostToRoom: false,
+        isCancelled: false,
+        "convertedFrom.checkInNumber": {
+          $in: checkInNumbers,
+        },
+      })
+      .select("createdAt salesNumber")
+      .lean();
+
+    const saleObject = {};
+
+    for (const sale of checkoutSale) {
+      saleObject[sale.salesNumber] = sale.createdAt;
+    }
+
+    // Build checkIn mapping
+
     const totalByCheckIn = {};
     const processedSaleIds = new Set();
 
@@ -204,20 +220,23 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
       const saleId = String(sale._id);
 
       if (processedSaleIds.has(saleId)) continue;
+
       processedSaleIds.add(saleId);
 
-      const saleAmount = sale.isPostToRoom ? Number(sale.finalAmount || 0) : 0;
-      const saleSplits = sale.paymentSplittingData || [];
-
-      // console.log("jidss",sale.paymentSplittingData);
-
-      const uniqueCheckInNumbers = new Set(
-        (sale.convertedFrom || [])
-          .map((conv) => conv?.checkInNumber)
-          .filter(Boolean),
+      const saleAmount = Number(
+        sale.finalAmount || 0
       );
 
-      for (const checkInNumber of uniqueCheckInNumbers) {
+      const saleSplits =
+        sale.paymentSplittingData || [];
+
+      const uniqueCheckIns = new Set(
+        (sale.convertedFrom || [])
+          .map((c) => c?.checkInNumber)
+          .filter(Boolean)
+      );
+
+      for (const checkInNumber of uniqueCheckIns) {
         if (!totalByCheckIn[checkInNumber]) {
           totalByCheckIn[checkInNumber] = {
             totalAmount: 0,
@@ -225,22 +244,31 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
           };
         }
 
-        totalByCheckIn[checkInNumber].totalAmount += saleAmount;
+        totalByCheckIn[
+          checkInNumber
+        ].totalAmount += saleAmount;
 
-        // Merge splits — combine amounts if same source, else push new
         for (const split of saleSplits) {
-          const existing = totalByCheckIn[
-            checkInNumber
-          ].paymentSplittingData.find(
-            (s) => s.source === split.source && s.type === split.type,
-          );
+          const existing =
+            totalByCheckIn[
+              checkInNumber
+            ].paymentSplittingData.find(
+              (s) =>
+                s.source === split.source &&
+                s.type === split.type
+            );
 
           if (existing) {
             existing.amount = parseFloat(
-              (existing.amount + Number(split.amount || 0)).toFixed(2),
+              (
+                existing.amount +
+                Number(split.amount || 0)
+              ).toFixed(2)
             );
           } else {
-            totalByCheckIn[checkInNumber].paymentSplittingData.push({
+            totalByCheckIn[
+              checkInNumber
+            ].paymentSplittingData.push({
               ...split,
             });
           }
@@ -248,56 +276,95 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
       }
     }
 
-    // 4) Attach to bookings
-    const bookingsWithSales = await Promise.all(
-      bookings.map(async (b) => {
-        const voucherNumber =
-          params?.modal === "checkIn"
-            ? b.voucherNumber
-            : params?.modal === "checkOut"
+    // Attach sales info to bookings
+
+    const bookingsWithSales =
+      await Promise.all(
+        bookings.map(async (b) => {
+          const voucherNumber =
+            params?.modal === "checkIn"
+              ? b.voucherNumber
+              : params?.modal ===
+                "checkOut"
               ? b.checkInId?.voucherNumber
               : "";
 
-        const checkInData = totalByCheckIn[voucherNumber] || {
-          totalAmount: 0,
-          paymentSplittingData: [],
-        };
+          const checkInData =
+            totalByCheckIn[
+              voucherNumber
+            ] || {
+              totalAmount: 0,
+              paymentSplittingData: [],
+            };
 
-        const specificSale =
-          params?.modal === "checkIn"
-            ? []
-            : params?.modal === "checkOut"
-              ? await salesModel.findOne({
-                  cmp_id: filter.cmp_id,
-                  salesNumber: b.voucherNumber,
-                })
-              : [];
-
-        return {
-          ...b.toObject(),
-          displayTotal:
-            specificSale?.paymentSplittingData?.length > 0 &&
+          const specificSale =
             params?.modal === "checkOut"
-              ? specificSale.paymentSplittingData.reduce(
-                  (total, split) => total + Number(split.amount || 0),
-                  0,
-                ) + Number(checkInData.totalAmount || 0)
-              : 0,
-          restaurantSubTotal: checkInData.totalAmount,
-          restaurantPaymentSplittingData: [
-            ...(specificSale?.paymentSplittingData || []),
-            ...(checkInData.paymentSplittingData || []),
-          ],
-        };
-      }),
+              ? await salesModel
+                  .findOne({
+                    cmp_id: filter.cmp_id,
+                    salesNumber:
+                      b.voucherNumber,
+                  })
+                  .lean()
+              : null;
+
+          return {
+            ...b.toObject(),
+
+            displayTotal:
+              params?.modal ===
+                "checkOut" &&
+              specificSale?.paymentSplittingData
+                ?.length
+                ? specificSale.paymentSplittingData.reduce(
+                    (total, split) =>
+                      total +
+                      Number(
+                        split.amount || 0
+                      ),
+                    0
+                  ) +
+                  Number(
+                    checkInData.totalAmount ||
+                      0
+                  )
+                : 0,
+
+            restaurantSubTotal:
+              checkInData.totalAmount,
+
+            restaurantPaymentSplittingData:
+              [
+                ...(specificSale?.paymentSplittingData ||
+                  []),
+
+                ...(
+                  checkInData.paymentSplittingData ||
+                  []
+                ),
+              ],
+
+            createdDate:
+              saleObject[
+                b.voucherNumber
+              ],
+          };
+        })
+      );
+
+    return {
+      bookings: bookingsWithSales,
+      totalBookings,
+    };
+  } catch (error) {
+    console.error(
+      "❌ Error fetching bookings:",
+      error
     );
 
-    return { bookings: bookingsWithSales, totalBookings };
-  } catch (error) {
-    console.error("❌ Error fetching bookings from database:", error);
-
-    // Optionally, rethrow or return an error object
-    throw new Error("Failed to fetch bookings. Please try again.");
+    throw new Error(
+      "Failed to fetch bookings."
+    );
   }
 };
 // function used to send response for booking
@@ -430,8 +497,7 @@ export const createReceiptForSales = async (
   restaurantBaseSaleData = [],
   session,
 ) => {
-  console.log("cmpidin the createreceiptforsale", cmp_id);
-  console.log("call for create receipt");
+
   const receipts = [];
 
   // Find voucher series for receipt
@@ -525,11 +591,13 @@ export const createReceiptForSales = async (
       const matchedoutstanding = outstandings.find(
         (item) => item.party_id === splitCustomerId,
       );
+
       const matchedsale = allSales.find(
         (item) => String(item.party?._id) === String(splitCustomerId),
       );
       console.log("outstandings", outstandings);
       for (const item of outstandings) {
+        console.log(outstandings)
         const sale = allSales.find((s) => s.salesNumber === item.bill_no);
         console.log("ssssalesssssssss", sale);
         billData.push({
@@ -1129,21 +1197,27 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
   session,
 ) => {
   try {
-    const checkInIds = selectedCheckOut.map((item) => item._id);
+
+    if (!Array.isArray(settlementData) || settlementData.length === 0) return true;
+    if (!Array.isArray(selectedCheckOut) || selectedCheckOut.length === 0) {
+      throw new Error("selectedCheckOut is required");
+    }
+    if (!cmp_id) throw new Error("Missing cmp_id");
+   const checkInIds = selectedCheckOut.map((item) => item._id).filter(Boolean);
 
     const tallyData = await TallyData.find({
       billId: { $in: checkInIds },
     }).session(session);
 
     // Make sure this array exists
-    const restaurantSideDiscountAdjustmentArray = settlementData
+    const restaurantSideDiscountAdjustmentArray = settlementData;
 
-    let totalOfDiscountAndAdvance =
-      restaurantSideDiscountAdjustmentArray.reduce(
-        (acc, item) =>
-          acc + (item.finalValue || 0) + (item.advanceAmount || 0),
-        0,
-      );
+   let totalOfDiscountAndAdvance =
+  restaurantSideDiscountAdjustmentArray.reduce(
+    (acc, item) =>
+      acc + Number(item.finalValue || 0) + Number(item.advanceAmount || 0),
+    0,
+  );
 
     // Handle discount + advance adjustments
     if (restaurantSideDiscountAdjustmentArray.length > 0) {
@@ -1225,7 +1299,7 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
           );
 
           // Update nested bill data
-          await TallyData.updateOne(
+          await receiptModel.updateOne(
             { "billData.billId": tallyData[i]._id },
             {
               $set: {
@@ -1250,5 +1324,49 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
     );
 
     throw error;
+// helper used convert room to available
   }
 };
+
+
+
+export const updateSwapDetails = async(existingRoom, updatedRoom, session) => {
+  console.log("=== UPDATE SWAP DETAILS STARTED ===",existingRoom);
+  console.log("=== UPDATE SWAP DETAILS STARTED ===",updatedRoom);
+  try {
+    // ✅ Find rooms that are in existingRoom but NOT in updatedRoom, and isSwap is true
+ const removedRooms = existingRoom.filter(
+  (room) =>
+    room.isSwapped === false &&
+    !updatedRoom.some(
+      (updated) => updated.roomId.toString() === room.roomId.toString()
+    )
+);
+
+console.log("Removed rooms:", removedRooms);
+
+    // ✅ Delete these rooms
+   if (removedRooms.length > 0) {
+  const result = await roomModal.updateMany(
+    {
+      _id: {
+        $in: removedRooms.map((room) => room.roomId),
+      },
+    },
+    {
+      $set: {
+        status: "dirty",
+      },
+    },
+    { session }
+  );
+
+  console.log("reessE",result);
+}
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+
+

@@ -6,9 +6,12 @@ import productModel from "../models/productModel.js";
 import AccountGroup from "../models/accountGroup.js";
 import subGroupModel from "../models/subGroup.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
-import { fetchData, getApiLogs ,fetchDataHotel } from "../helpers/tallyHelper.js";
+import { fetchData, getApiLogs ,fetchDataHotel} from "../helpers/tallyHelper.js";
 import { getUserFriendlyMessage } from "../helpers/getUserFreindlyMessage.js";
 import { Booking,CheckIn } from "../models/bookingModal.js";
+import receiptModel from "../models/receiptModel.js";
+import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
+import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import mongoose from "mongoose";
 import {
   Godown,
@@ -19,6 +22,7 @@ import {
 } from "../models/subDetails.js";
 import accountGroupModel from "../models/accountGroup.js";
 import salesModel from "../models/salesModel.js";
+
 export const saveDataFromTally = async (req, res) => {
   try {
     const { data, partyIds } = await req.body;
@@ -2523,6 +2527,14 @@ export const giveReceipts = async (req, res) => {
   return fetchData("receipt", cmp_id, serialNumber, res);
 };
 
+
+export const giveReceiptsHotel = async (req, res) => {
+
+  const cmp_id = req.params.cmp_id;
+  const serialNumber = req.params.SNo;
+  return fetchDataHotel("receipt", cmp_id, serialNumber, res);
+};
+
 export const givePayments = async (req, res) => {
   const cmp_id = req.params.cmp_id;
   const serialNumber = req.params.SNo;
@@ -2537,6 +2549,8 @@ export const givePurchase = async (req, res) => {
   const serialNumber = req.params.SNo;
   return fetchData("purchase", cmp_id, serialNumber, res);
 };
+
+
 
 export const backfillUniqueSaleNumber = async (req, res) => {
   try {
@@ -2575,4 +2589,261 @@ export const backfillUniqueSaleNumber = async (req, res) => {
       error: error.message,
     });
   }
+};
+
+export const backfillUniqueReceiptNumber = async (req, res) => {
+  try {
+
+    const { cmp_id } = req.params;
+
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Company ID required"
+      });
+    }
+
+    const receipts = await receiptModel
+      .find({ cmp_id })
+      .sort({ date: 1, _id: 1 }) // or createdAt:1 if preferred
+      .select("_id date");
+
+    let number = 1;
+
+    for (const receipt of receipts) {
+
+      await receiptModel.updateOne(
+        { _id: receipt._id },
+        {
+          $set: {
+            uniqueReceiptNumber: number
+          }
+        }
+      );
+
+      console.log(
+        `Receipt ${receipt._id} -> ${number}`
+      );
+
+      number++;
+    }
+
+    return res.status(200).json({
+      success: true,
+      totalUpdated: receipts.length,
+      message: "Receipt numbers rebuilt successfully"
+    });
+
+  } catch (error) {
+
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+
+  }
+};
+
+
+
+const BATCH_SIZE = 20; // safe limit per transaction
+
+// ─────────────────────────────────────────────
+// HTTP Controller
+// ─────────────────────────────────────────────
+export const createReceiptForSales = async (req, res) => {
+  try {
+    const cmp_id = req.params.cmp_id;
+    const response = await createReceiptForSalesFully(cmp_id);
+    return res.status(200).json(response);
+  } catch (error) {
+    console.error("createReceiptForSales error:", error);
+    return res.status(500).json({
+      success: false,
+      message: `Error processing request: ${error.message}`,
+    });
+  }
+};
+
+// ─────────────────────────────────────────────
+// Main Orchestrator — Batched Transactions
+// ─────────────────────────────────────────────
+export const createReceiptForSalesFully = async (cmp) => {
+  // Fetch all sales OUTSIDE any transaction — just a plain read
+  const sales = await salesModel.find({ cmp_id: cmp  }).lean();
+  console.log(`🔵 Total sales found: ${sales.length}`);
+
+  // Fetch voucher series OUTSIDE transaction — reused across all batches
+  const voucher = await VoucherSeriesModel.findOne({
+    cmp_id: cmp,
+    voucherType: "receipt",
+  }).lean();
+
+  if (!voucher) {
+    throw new Error("Voucher series not found for this company");
+  }
+  console.log("🔵 Voucher series fetched:", voucher._id);
+
+  const results = {
+    success: true,
+    totalSales: sales.length,
+    totalBatches: Math.ceil(sales.length / BATCH_SIZE),
+    successCount: 0,
+    skippedCount: 0,
+    failedBatches: [],
+  };
+
+  // Split sales into batches of BATCH_SIZE
+  for (let i = 0; i < sales.length; i += BATCH_SIZE) {
+    const batch = sales.slice(i, i + BATCH_SIZE);
+    const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+
+    console.log(
+      `🔵 Processing batch ${batchNumber}/${results.totalBatches} (sales ${i + 1}–${i + batch.length})`
+    );
+
+    const batchResult = await processBatch(batch, cmp, voucher, batchNumber);
+
+    results.successCount += batchResult.successCount;
+    results.skippedCount += batchResult.skippedCount;
+
+    if (batchResult.error) {
+      results.failedBatches.push({
+        batchNumber,
+        startIndex: i,
+        error: batchResult.error,
+      });
+      // Continue to next batch instead of crashing everything
+      console.error(`❌ Batch ${batchNumber} failed: ${batchResult.error}`);
+    }
+  }
+
+  results.success = results.failedBatches.length === 0;
+  console.log("🏁 Done:", results);
+  return results;
+};
+
+// ─────────────────────────────────────────────
+// Single Batch — Wrapped in Its Own Transaction
+// ─────────────────────────────────────────────
+const processBatch = async (batch, cmp, voucher, batchNumber) => {
+  const session = await mongoose.startSession();
+  const result = { successCount: 0, skippedCount: 0, error: null };
+
+  try {
+    await session.startTransaction();
+
+    for (const sale of batch) {
+      const created = await createReceipt(sale, cmp, session, voucher);
+      if (created) {
+        result.successCount++;
+      } else {
+        result.skippedCount++;
+      }
+    }
+
+    await session.commitTransaction();
+    console.log(`✅ Batch ${batchNumber} committed — ${result.successCount} receipts created`);
+  } catch (error) {
+    result.error = error.message;
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+  } finally {
+    await session.endSession();
+  }
+
+  return result;
+};
+
+// ─────────────────────────────────────────────
+// Create Receipt for a Single Sale
+// Returns true if receipt(s) were created, false if skipped
+// ─────────────────────────────────────────────
+const createReceipt = async (sale, orgId, session, voucher) => {
+  // Skip non-party sales
+  if (!sale.isPostToRoom && !sale.checkInId ) {
+    console.log(`⏭️ Skipping sale ${sale._id} — partyType: ${sale.party?.partyType}`);
+    return false;
+  }
+
+  // Skip sales with no payment data
+  if (!sale.paymentSplittingData?.length) {
+    console.log(`⏭️ Skipping sale ${sale._id} — no paymentSplittingData`);
+    return false;
+  }
+
+  const under = sale.isPostToRoom ? "restaurant" : "hotel";
+  const seriesEntry = voucher?.series?.find((s) => s.under === under);
+  const series_idReceipt = seriesEntry?._id?.toString();
+
+  if (!series_idReceipt) {
+    console.warn(`⚠️ No voucher series for under="${under}" — skipping sale ${sale._id}`);
+    return false;
+  }
+
+  for (const data of sale.paymentSplittingData) {
+  if (data.type?.toLowerCase() === "credit") {
+    return false;
+  }
+    const receiptVoucher = await generateVoucherNumber(
+      orgId,
+      "receipt",
+      series_idReceipt,
+      session
+    );
+
+    const billData = [
+      {
+        _id: sale._id.toString(),
+        bill_no: sale.salesNumber,
+        billId: sale._id.toString(),
+        bill_date: sale.date,
+        bill_pending_amt: data.amount,
+        source: "sales",
+        settledAmount: data.amount,
+        remainingAmount: 0,
+      },
+    ];
+
+    let type = "cash";
+    
+    if(data?.type != "cash"){
+      type = "bank";
+    }
+
+    const paymentDetails = {
+      _id: data?.source ||  data?.ref_id,
+      cash_ledname: data.type === "cash" ? type : null,
+      cash_name:    data.type === "cash" ? type  : null,
+      bank_ledname: data.type !=="cash" ? type: null,
+      bank_name:    data.type !=="cash" ? type: null,
+    };
+
+    const receipt = new receiptModel({
+      date:new Date(sale.date),
+      voucherType: "receipt",
+      serialNumber: receiptVoucher.usedSeriesNumber,
+      receiptNumber: receiptVoucher.voucherNumber,
+      series_id: series_idReceipt,
+      usedSeriesNumber: receiptVoucher.usedSeriesNumber,
+      Primary_user_id: sale.Primary_user_id,
+      cmp_id: sale.cmp_id,
+      party: sale.party,
+      billData:billData,
+      totalBillAmount: data.amount,
+      enteredAmount: data.amount,
+      advanceAmount: 0,
+      remainingAmount: 0,
+      paymentMethod: data.type === "cash" ? "Cash" : "Online",
+      paymentDetails,
+       createdAt: new Date(sale.date),
+      note: null,
+    });
+
+    await receipt.save({ session });
+    console.log(`✅ Receipt saved: ${receiptVoucher.voucherNumber} for sale ${sale._id}`);
+  }
+
+  return true;
 };

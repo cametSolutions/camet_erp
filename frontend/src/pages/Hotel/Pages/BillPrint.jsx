@@ -103,7 +103,7 @@ const [pageSelectBillIdx, setPageSelectBillIdx] = useState(0); // which bill to 
 
   // Fetch debit and KOT once for all docs shown
   const fetchDebitData = async (data) => {
-    console.log(data);
+    console.log(data[0]?.restaurantPaymentSplittingData);
     try {
       const res = await api.post(
         `/api/sUsers/fetchOutStandingAndFoodData/${organization._id}`,
@@ -125,13 +125,12 @@ const [pageSelectBillIdx, setPageSelectBillIdx] = useState(0); // which bill to 
     if (selectedCheckOut?.length > 0) {
       console.log(isForPreview);
       if (!isForPreview) {
-        const rawData = selectedCheckOut[0].checkoutpaymenttypedetails || [];
-        console.log(rawData);
+        const rawData = selectedCheckOut[0].restaurantPaymentSplittingData || [];
         // ✅ Convert to normal array
         const cleanData = rawData.map((item) =>
           item?.toObject ? item.toObject() : item._doc ? item._doc : item,
         );
-        console.log("cleanData", cleanData);
+
         const mergedMap = {};
         let mapData = [...cleanData];
         mapData?.forEach((item) => {
@@ -1053,11 +1052,14 @@ const [pageSelectBillIdx, setPageSelectBillIdx] = useState(0); // which bill to 
 
     const basePax =
       (doc.selectedRooms || []).reduce(
-        (acc, curr) => (acc + curr.isSwapped ? 0 : Number(curr.pax || 0)),
+        (acc, curr) => (acc + (curr.isSwapped ? 0 : Number(curr.pax || 0))),
         0,
       ) || 1;
-    console.log(doc?.additionalPaxDetails);
+      console.log(doc?.selectedRooms);
+
+    console.log(doc.additionalPaxDetails );
     const additionalPaxCount = (doc.additionalPaxDetails || []).length;
+    console.log(additionalPaxCount);
 
     const totalPax = basePax + additionalPaxCount;
 
@@ -1099,6 +1101,8 @@ const [pageSelectBillIdx, setPageSelectBillIdx] = useState(0); // which bill to 
     console.log(roomWiseDiscount, otherChargesAmount, discount);
     console.log(paymentDetails?.paymentDetails);
     console.log(doc);
+    console.log(doc.createdDate);
+
     return {
       hotel: {
         name: organization?.name,
@@ -1126,7 +1130,7 @@ const [pageSelectBillIdx, setPageSelectBillIdx] = useState(0); // which bill to 
         companyName: partyCompanyName || "",
       },
       stay: {
-        billDate: formatDate(new Date()),
+        billDate: formatDate(doc.createdDate || new Date()),
         arrival: `${formatDate(doc?.arrivalDate)} ${doc?.arrivalTime || ""}`,
         departure: `${formatDate(doc?.checkOutDate || new Date())} ${
           doc?.checkOutTime || new Date().toLocaleTimeString()

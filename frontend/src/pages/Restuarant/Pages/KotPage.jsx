@@ -1849,7 +1849,7 @@ const complementaryWithTax =
                         {orders.map((order) => {
                           const currentStatusConfig =
                             statusConfig[
-                              order.kitchenBatches.length > 0
+                              order.kitchenBatches?.length > 0
                                 ? order.kitchenBatches[0].status
                                 : order.status
                             ];
@@ -1875,7 +1875,7 @@ const complementaryWithTax =
                             >
                               {/* Status color bar */}
                               <div
-                                className={`h-1 w-full flex-shrink-0 ${currentStatusConfig.bgColor}`}
+                                className={`h-1 w-full flex-shrink-0 ${currentStatusConfig?.bgColor}`}
                               />
 
                               {/* Selected tick */}

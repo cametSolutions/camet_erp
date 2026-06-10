@@ -465,7 +465,7 @@ export const generateKot = async (req, res) => {
       customer: req.body.customer,
       tableNumber: req.body.customer?.tableNumber,
       total: req.body.total,
-      createdAt: new Date(),
+      // createdAt: new Date(),
 
       status: organizationData.configurations[0].kotAutoApproval
         ? "completed"
@@ -557,7 +557,7 @@ export const editKot = async (req, res) => {
       delete customer.roomId;
     }
 
-    console.log("req.body?.status", req.body?.status);
+    console.log("req.body?.status", req.body);
 
     let tag = req.body?.parentTag;
 
@@ -573,7 +573,7 @@ export const editKot = async (req, res) => {
           total: req.body.total,
           status: req.body.status || "pending",
           paymentMethod: req.body.paymentMethod,
-          roomId: req.body.customer?.roomId,
+          roomId: req.body?.roomId,
           checkInNumber: req.body.customer?.checkInNumber,
 
           ...(!tag && { kitchenBatches: req.body.kitchenBatches }),
@@ -705,72 +705,73 @@ export const getKotDash = async (req, res) => {
       })
       .lean();
 
-   const recalculatedKot = await Promise.all(
-     kot.map(async (kotDoc) => {
-    const findSpecificSale = await salesModel.findOne({
-      cmp_id,
-     "convertedFrom.voucherNumber": kotDoc.voucherNumber,
-    })
-      if (kotDoc.paymentCompleted) {
+    const recalculatedKot = await Promise.all(
+      kot.map(async (kotDoc) => {
+        const findSpecificSale = await salesModel.findOne({
+          cmp_id,
+          "convertedFrom.voucherNumber": kotDoc.voucherNumber,
+        });
+        if (kotDoc.paymentCompleted) {
+          return {
+            ...kotDoc,
+            items: kotDoc.items || [], // ← directly from DB, no recalculation
+            total: kotDoc.total || 0, // ← directly from DB
+            salesNumber: findSpecificSale?.salesNumber,
+          };
+        }
+        const recalculatedItems = (kotDoc?.items || [])
+          .map((item) => recalculateKotItem(item))
+          .filter(Boolean);
+
+        const kotTotal = recalculatedItems.reduce(
+          (sum, item) => sum + Number(item?.total || 0),
+          0,
+        );
+
+        const totalTaxableAmount = recalculatedItems.reduce(
+          (sum, item) => sum + Number(item?.taxableAmount || 0),
+          0,
+        );
+
+        const totalCgstAmt = recalculatedItems.reduce(
+          (sum, item) => sum + Number(item?.totalCgstAmt || 0),
+          0,
+        );
+
+        const totalSgstAmt = recalculatedItems.reduce(
+          (sum, item) => sum + Number(item?.totalSgstAmt || 0),
+          0,
+        );
+
+        const totalIgstAmt = recalculatedItems.reduce(
+          (sum, item) => sum + Number(item?.totalIgstAmt || 0),
+          0,
+        );
+
+        const totalCessAmt = recalculatedItems.reduce(
+          (sum, item) => sum + Number(item?.totalCessAmt || 0),
+          0,
+        );
+
+        const totalAddlCessAmt = recalculatedItems.reduce(
+          (sum, item) => sum + Number(item?.totalAddlCessAmt || 0),
+          0,
+        );
+
         return {
           ...kotDoc,
-          items: kotDoc.items || [],   // ← directly from DB, no recalculation
-          total: kotDoc.total || 0,    // ← directly from DB
-          salesNumber: findSpecificSale?.salesNumber
+          items: recalculatedItems,
+          total: round2(kotTotal),
+          taxableAmount: round2(totalTaxableAmount),
+          totalCgstAmt: round2(totalCgstAmt),
+          totalSgstAmt: round2(totalSgstAmt),
+          totalIgstAmt: round2(totalIgstAmt),
+          totalCessAmt: round2(totalCessAmt),
+          totalAddlCessAmt: round2(totalAddlCessAmt),
+          salesNumber: findSpecificSale?.salesNumber,
         };
-      }
-      const recalculatedItems = (kotDoc?.items || [])
-        .map((item) => recalculateKotItem(item))
-        .filter(Boolean); 
-
-      const kotTotal = recalculatedItems.reduce(
-        (sum, item) => sum + Number(item?.total || 0),
-        0,
-      );
-
-      const totalTaxableAmount = recalculatedItems.reduce(
-        (sum, item) => sum + Number(item?.taxableAmount || 0),
-        0,
-      );
-
-      const totalCgstAmt = recalculatedItems.reduce(
-        (sum, item) => sum + Number(item?.totalCgstAmt || 0),
-        0,
-      );
-
-      const totalSgstAmt = recalculatedItems.reduce(
-        (sum, item) => sum + Number(item?.totalSgstAmt || 0),
-        0,
-      );
-
-      const totalIgstAmt = recalculatedItems.reduce(
-        (sum, item) => sum + Number(item?.totalIgstAmt || 0),
-        0,
-      );
-
-      const totalCessAmt = recalculatedItems.reduce(
-        (sum, item) => sum + Number(item?.totalCessAmt || 0),
-        0,
-      );
-
-      const totalAddlCessAmt = recalculatedItems.reduce(
-        (sum, item) => sum + Number(item?.totalAddlCessAmt || 0),
-        0,
-      );
-
-      return {
-        ...kotDoc,
-        items: recalculatedItems,
-        total: round2(kotTotal),
-        taxableAmount: round2(totalTaxableAmount),
-        totalCgstAmt: round2(totalCgstAmt),
-        totalSgstAmt: round2(totalSgstAmt),
-        totalIgstAmt: round2(totalIgstAmt),
-        totalCessAmt: round2(totalCessAmt),
-        totalAddlCessAmt: round2(totalAddlCessAmt),
-        salesNumber: findSpecificSale?.salesNumber
-      };
-    }));
+      }),
+    );
 
     res.status(200).json({
       success: true,
@@ -1255,7 +1256,7 @@ export const updateKotPayment = async (req, res) => {
         isComplimentary = false,
         isManuallyComplimentary = false, // ✅ NEW: Discount amount
         discountBasedOnGrossAmount,
-        note, 
+        note,
         complementaryWithTax = false,
       } = req.body;
 
@@ -1362,15 +1363,15 @@ export const updateKotPayment = async (req, res) => {
         isComplimentary,
         isManuallyComplimentary,
         isPostToRoom,
-        complementaryWithTax, 
+        complementaryWithTax,
       );
       // ✅ Calculate with DISCOUNT
       const originalTotal = Number(kotData?.total || 0);
       const discountTotal = Number(discountAmount || 0);
       const netPayable = originalTotal - discountTotal;
       // Outstanding balance
-      const paidAmount = isPostToRoom ? 0 : cashAmt + onlineAmt;
-      const pendingAmount = netPayable - paidAmount;
+      const paidAmount = isPostToRoom ? originalTotal : cashAmt + onlineAmt;
+      const pendingAmount = isPostToRoom ? originalTotal : netPayable - paidAmount;
       let tallyData;
       if (isPostToRoom || paymentMethod == "credit") {
         tallyData = await createTallyEntry(
@@ -1397,52 +1398,35 @@ export const updateKotPayment = async (req, res) => {
           session,
         );
       }
-    let findCredit =
-  paymentDetails.splitRow?.length > 0
-    ? paymentDetails.splitRow.filter(
-        (item) => item.type === "credit"
-      )
-    : [];
+      let findCredit =
+        paymentSplittingArray?.length > 0
+          ? paymentSplittingArray.filter((item) => item.type === "credit")
+          : [];
 
-console.log("findCredit", findCredit);
+      console.log("findCredit", findCredit);
 
-if (findCredit.length > 0) {
-  for (const item of findCredit) {
+      if (findCredit.length > 0) {
+        for (const item of findCredit) {
+          if (!item.source) continue;
 
-    if (!item.source) continue;
+          let selected = await Party.findOne({
+            cmp_id,
+            _id: item.source,
+          }).session(session);
 
-    let selected = await Party.findOne({
-      cmp_id,
-      _id: item.source,
-    }).session(session);
- let modifiedParty =await mapPartyData(selected);
+          let modifiedParty = await mapPartyData(selected);
 
-    await buildReceipt({
-      cmp_id,
-      selectedParty:modifiedParty ,
-      advanceObject: tallyData,
-      saleData: savedVoucherData[0],
-      amount: item?.amount,
-      paymentDetails,
-      paymentMethod : "credit",
-      req,
-      session,
-    });
-  }
-}
-    
-      if (paymentMethod == "credit") {
-        await buildReceipt({
-          cmp_id,
-          selectedParty: paymentDetails.selectedCreditor,
-          advanceObject: tallyData,
-          saleData: savedVoucherData[0],
-          amount: paymentDetails?.cashAmount,
-          paymentDetails,
-          paymentMethod,
-          req,
-          session,
-        });
+          await createTallyEntry(
+            cmp_id,
+            req,
+            selected,
+            kotData,
+            savedVoucherData[0],
+            item.amount,
+            item.amount,
+            session,
+          );
+        }
       }
 
       // Update KOTs
@@ -1753,14 +1737,20 @@ async function getSelectedParty(
         partyId = paymentDetails?.selectedBank;
       }
     } else {
-      partyId = paymentDetails?.splitRow.find((it) => it.type == "credit")?.source;
+      
+      partyId = paymentDetails?.splitRow.find(
+        (it) => it.type == "credit",
+      )?.source;
+      if(!partyId){
+         partyId = paymentDetails?.splitRow[0]?.source
+      }
     }
   }
   console.log("partyId", partyId);
   const selectedParty = await Party.findOne({ _id: partyId, cmp_id: cmp_id })
     .populate("accountGroup")
     .session(session);
-  if (!selectedParty) throw new Error(`Party not found: ${partyName}`);
+  if (!selectedParty) throw new Error(`Party not found: `);
 
   return selectedParty;
 }
@@ -1771,7 +1761,7 @@ async function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
     arr.push({
       type: "credit",
       amount: cashAmt,
-      source:paymentDetails?.selectedCreditor?._id,
+      source: paymentDetails?.selectedCreditor?._id,
       subsource: paymentDetails?.selectedCreditor?.partyName,
       ref_id: paymentDetails?.selectedCreditor?._id,
       reference_name: paymentDetails?.selectedCreditor?.partyName,
@@ -1805,7 +1795,7 @@ async function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
     });
   }
 
-  if(paymentDetails?.paymentMode === "split") {
+  if (paymentDetails?.paymentMode === "split") {
     arr.push(...paymentDetails?.splitRow);
   }
   return arr;
@@ -1927,7 +1917,7 @@ async function createSalesVoucher(
   additionalChargesArray = null,
   discountBasedOnGrossAmount,
   session,
-    complementaryWithTax = false,
+  complementaryWithTax = false,
 ) {
   // console.log("additionalChargesArray", additionalChargesArray);
   // ✅ FIXED: Use SUBTOTAL (BEFORE discount)
@@ -1939,7 +1929,7 @@ async function createSalesVoucher(
   console.log("kotData", paymentSplittingArray);
   // ✅ Calculate totals
 
-    let items = kotData?.items || [];
+  let items = kotData?.items || [];
 
   if (isComplimentary && !complementaryWithTax) {
     items = items.map((item) => {
@@ -2045,11 +2035,11 @@ async function createTallyEntry(
         bill_date: new Date(),
         bill_no: savedVoucher?.salesNumber,
         billId: savedVoucher?._id,
-        bill_amount: kotData?.total || 0,
+        bill_amount: paidAmount || 0,
         bill_pending_amt: pendingAmount,
         accountGroup: selectedParty?.accountGroup,
         user_id: req.sUserId,
-        advanceAmount: paidAmount,
+        advanceAmount: 0,
         advanceDate: new Date(),
         classification: "Cr",
         source: "sales",
@@ -2090,8 +2080,8 @@ async function saveSettlement(
   } else {
     console.log("paymentDetails", paymentDetails);
     paymentDetails.splitRow.forEach(async (split) => {
-      let selectedParty =await partyModel.findById(split.source);
-       await saveSettlementData(
+      let selectedParty = await partyModel.findById(split.source);
+      await saveSettlementData(
         selectedParty,
         cmp_id,
         split.type,
@@ -2105,8 +2095,7 @@ async function saveSettlement(
         req,
         session,
       );
-    })
-  
+    });
   }
 }
 
@@ -3328,9 +3317,6 @@ export const addComplementaryCashOrBank = async (req, res) => {
   }
 };
 
-
-
-
 export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
   try {
     const { cmp_id, startDate, endDate } = req.query;
@@ -3365,8 +3351,11 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
 
     const restaurantSeries = voucherSeriesDocs.flatMap((doc) =>
       (doc.series || []).filter(
-        (series) => String(series?.under || "").trim().toLowerCase() === "restaurant"
-      )
+        (series) =>
+          String(series?.under || "")
+            .trim()
+            .toLowerCase() === "restaurant",
+      ),
     );
 
     if (!restaurantSeries.length) {
@@ -3458,7 +3447,9 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
 
     restaurantSales.forEach((sale) => {
       (sale.items || []).forEach((item) => {
-        const categoryId = item.category ? item.category.toString() : "uncategorized";
+        const categoryId = item.category
+          ? item.category.toString()
+          : "uncategorized";
         const subcategoryId = item.sub_category
           ? item.sub_category.toString()
           : "uncategorized";
@@ -3468,10 +3459,11 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
           subcategoryMap[subcategoryId] || "Uncategorized";
 
         const qty = Number(
-          item.totalCount ?? item.totalActualCount ?? item.qty ?? 0
+          item.totalCount ?? item.totalActualCount ?? item.qty ?? 0,
         );
         const amount = Number(item.total || 0);
-        const productName = item.product_name || item.itemName || "Unnamed Item";
+        const productName =
+          item.product_name || item.itemName || "Unnamed Item";
         const unit = item.unit || "Nos";
 
         if (!grouped[categoryName]) {
@@ -3508,7 +3500,8 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
         grouped[categoryName].totalQty += qty;
         grouped[categoryName].totalAmount += amount;
         grouped[categoryName].subcategories[subcategoryName].totalQty += qty;
-        grouped[categoryName].subcategories[subcategoryName].totalAmount += amount;
+        grouped[categoryName].subcategories[subcategoryName].totalAmount +=
+          amount;
 
         if (!itemSummaryMap[productName]) {
           itemSummaryMap[productName] = {
@@ -3537,7 +3530,7 @@ export const getRestaurantCategoryWiseSalesReport = async (req, res) => {
     }));
 
     const itemSummary = Object.values(itemSummaryMap).sort(
-      (a, b) => b.totalQty - a.totalQty
+      (a, b) => b.totalQty - a.totalQty,
     );
 
     return res.status(200).json({
@@ -3797,43 +3790,43 @@ export const getKotRegister = async (req, res, next) => {
             ],
           },
 
-         foodPlan: {
-  $cond: [
-    {
-      $and: [
-        { $isArray: "$foodPlanDetails" },
-        { $gt: [{ $size: "$foodPlanDetails" }, 0] },
-      ],
-    },
-    {
-      $reduce: {
-        input: {
-          $map: {
-            input: "$foodPlanDetails",
-            as: "fp",
-            in: {
-              $ifNull: [
-                "$$fp.planType",
-                "$$fp.foodPlanName",
-                "$$fp.name",
-                "",
-              ],
-            },
+          foodPlan: {
+            $cond: [
+              {
+                $and: [
+                  { $isArray: "$foodPlanDetails" },
+                  { $gt: [{ $size: "$foodPlanDetails" }, 0] },
+                ],
+              },
+              {
+                $reduce: {
+                  input: {
+                    $map: {
+                      input: "$foodPlanDetails",
+                      as: "fp",
+                      in: {
+                        $ifNull: [
+                          "$$fp.planType",
+                          "$$fp.foodPlanName",
+                          "$$fp.name",
+                          "",
+                        ],
+                      },
+                    },
+                  },
+                  initialValue: "",
+                  in: {
+                    $cond: [
+                      { $eq: ["$$value", ""] },
+                      "$$this",
+                      { $concat: ["$$value", ", ", "$$this"] },
+                    ],
+                  },
+                },
+              },
+              "DIRECT",
+            ],
           },
-        },
-        initialValue: "",
-        in: {
-          $cond: [
-            { $eq: ["$$value", ""] },
-            "$$this",
-            { $concat: ["$$value", ", ", "$$this"] },
-          ],
-        },
-      },
-    },
-    "DIRECT",
-  ],
-},
 
           status: { $toUpper: "$status" },
           remarks: { $ifNull: ["$note", "$cancelReason", ""] },
@@ -3970,77 +3963,81 @@ export const getSalesRegister = async (req, res) => {
       .lean();
 
     // ---------- payment type helpers unchanged ----------
-  const derivePaymentType = (sale) => {
-  if (sale.isComplimentary) return "COMPLEMENTORY";
+    const derivePaymentType = (sale) => {
+      if (sale.isComplimentary) return "COMPLEMENTORY";
 
-  const splits = Array.isArray(sale.paymentSplittingData)
-    ? sale.paymentSplittingData
-    : [];
-  const nonZero = splits.filter((s) => Number(s?.amount || 0) > 0);
+      const splits = Array.isArray(sale.paymentSplittingData)
+        ? sale.paymentSplittingData
+        : [];
+      const nonZero = splits.filter((s) => Number(s?.amount || 0) > 0);
 
-  // NEW: if nothing paid here but posted to room → CREDIT
-  if (!nonZero.length && sale.isPostToRoom) {
-    return "CREDIT";
-  }
+      // NEW: if nothing paid here but posted to room → CREDIT
+      if (!nonZero.length && sale.isPostToRoom) {
+        return "CREDIT";
+      }
 
-  // If still no payment info and not post to room
-  if (!nonZero.length) return "-";
+      // If still no payment info and not post to room
+      if (!nonZero.length) return "-";
 
-  const hasCash = nonZero.some(
-    (s) => String(s?.type || "").toLowerCase() === "cash"
-  );
-  const hasUpi = nonZero.some(
-    (s) => String(s?.type || "").toLowerCase() === "upi"
-  );
-  const hasCard = nonZero.some(
-    (s) => String(s?.type || "").toLowerCase() === "card"
-  );
-  const hasBank = nonZero.some(
-    (s) => String(s?.type || "").toLowerCase() === "bank"
-  );
-  const hasCheque = nonZero.some(
-    (s) => String(s?.type || "").toLowerCase() === "cheque"
-  );
-  const hasCredit = nonZero.some(
-    (s) => String(s?.type || "").toLowerCase() === "credit"
-  );
-  const hasSponsor = nonZero.some(
-    (s) => String(s?.type || "").toLowerCase() === "sponsor"
-  );
+      const hasCash = nonZero.some(
+        (s) => String(s?.type || "").toLowerCase() === "cash",
+      );
+      const hasUpi = nonZero.some(
+        (s) => String(s?.type || "").toLowerCase() === "upi",
+      );
+      const hasCard = nonZero.some(
+        (s) => String(s?.type || "").toLowerCase() === "card",
+      );
+      const hasBank = nonZero.some(
+        (s) => String(s?.type || "").toLowerCase() === "bank",
+      );
+      const hasCheque = nonZero.some(
+        (s) => String(s?.type || "").toLowerCase() === "cheque",
+      );
+      const hasCredit = nonZero.some(
+        (s) => String(s?.type || "").toLowerCase() === "credit",
+      );
+      const hasSponsor = nonZero.some(
+        (s) => String(s?.type || "").toLowerCase() === "sponsor",
+      );
 
-  if (
-    hasCredit &&
-    !hasCash &&
-    !hasUpi &&
-    !hasCard &&
-    !hasBank &&
-    !hasCheque
-  ) {
-    return "CREDIT";
-  }
+      if (
+        hasCredit &&
+        !hasCash &&
+        !hasUpi &&
+        !hasCard &&
+        !hasBank &&
+        !hasCheque
+      ) {
+        return "CREDIT";
+      }
 
-  if (
-    hasSponsor &&
-    !hasCash &&
-    !hasUpi &&
-    !hasCard &&
-    !hasBank &&
-    !hasCheque &&
-    !hasCredit
-  ) {
-    return "SPONSOR";
-  }
+      if (
+        hasSponsor &&
+        !hasCash &&
+        !hasUpi &&
+        !hasCard &&
+        !hasBank &&
+        !hasCheque &&
+        !hasCredit
+      ) {
+        return "SPONSOR";
+      }
 
-  if (hasCash && hasUpi && nonZero.length === 2) return "CASH/UPI";
-  if (hasCash && !hasUpi && !hasCard && !hasBank && !hasCheque) return "CASH";
-  if (!hasCash && hasUpi && !hasCard && !hasBank && !hasCheque) return "UPI";
-  if (hasCard && !hasCash && !hasUpi && !hasBank && !hasCheque) return "CARD";
-  if (hasBank && !hasCash && !hasUpi && !hasCard && !hasCheque) return "BANK";
-  if (hasCheque && !hasCash && !hasUpi && !hasCard && !hasBank)
-    return "CHEQUE";
+      if (hasCash && hasUpi && nonZero.length === 2) return "CASH/UPI";
+      if (hasCash && !hasUpi && !hasCard && !hasBank && !hasCheque)
+        return "CASH";
+      if (!hasCash && hasUpi && !hasCard && !hasBank && !hasCheque)
+        return "UPI";
+      if (hasCard && !hasCash && !hasUpi && !hasBank && !hasCheque)
+        return "CARD";
+      if (hasBank && !hasCash && !hasUpi && !hasCard && !hasCheque)
+        return "BANK";
+      if (hasCheque && !hasCash && !hasUpi && !hasCard && !hasBank)
+        return "CHEQUE";
 
-  return "CASH/UPI";
-};
+      return "CASH/UPI";
+    };
 
     const formatDate = (d) => {
       if (!d) return "-";
@@ -4139,7 +4136,7 @@ export const getSalesRegister = async (req, res) => {
         checkouts.map((co) => [
           String(co.checkInId),
           co.agentId?.partyName || "",
-        ])
+        ]),
       );
     }
 
@@ -4274,9 +4271,7 @@ export const getSalesRegister = async (req, res) => {
 
     if (status) {
       const s = status.trim().toUpperCase();
-      rows = rows.filter(
-        (r) => (r.paymentType || "").toUpperCase() === s
-      );
+      rows = rows.filter((r) => (r.paymentType || "").toUpperCase() === s);
     }
 
     if (search && search.trim() !== "") {
@@ -4394,7 +4389,7 @@ export const transferKotBills = async (req, res) => {
     }
 
     const allBills = groupedSelected.flatMap((group) => group.bills || []);
-    const party =await  partyModel.findOne({_id:targetRoom.party})
+    const party = await partyModel.findOne({ _id: targetRoom.party });
 
     await Promise.all(
       allBills.map(async (bill) => {
@@ -4417,8 +4412,8 @@ export const transferKotBills = async (req, res) => {
           {
             $set: {
               "convertedFrom.0.checkInNumber": targetRoom.checkInNo,
-              party:party,
-              partyAccount:party.accountGroupName
+              party: party,
+              partyAccount: party.accountGroupName,
             },
           },
         );
@@ -4438,6 +4433,5 @@ export const transferKotBills = async (req, res) => {
     });
   }
 };
-
 
 // function used to delete advance for hotel rooms

@@ -44,6 +44,7 @@ import {
 import useFetch from "@/customHook/useFetch";
 import PrintModal from "../Components/PrintModal";
 import { calculateDiscountValues } from "../Helper/hotelHelper.js";
+import BookingListEditModal from "./BookingListEditModal";
 
 function BookingList() {
   const location = useLocation();
@@ -136,6 +137,12 @@ function BookingList() {
     { bg: "#E6F1FB", border: "#85B7EB", icon: "#185FA5", text: "#0C447C" },
     { bg: "#FBEAF0", border: "#ED93B1", icon: "#993556", text: "#72243E" },
   ];
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedEditBooking, setSelectedEditBooking] = useState(null);
+
+  console.log(selectedEditBooking?.checkInId?.voucherNumber);
+
   const [
     restaurantSideDiscountAdjustmentArray,
     setRestaurantSideDiscountAdjustmentArray,
@@ -234,8 +241,8 @@ function BookingList() {
       if (!rooms.length) return total;
 
       const advance =
-        Number(checkout?.advanceAmount || 0) +
-        Number(checkout?.bookingId?.advanceAmount || 0);
+        Number(checkout?.totalAdvance || 0) +
+        Number(checkout?.bookingId?.totalAdvance || 0);
 
       const hasSwapping = rooms.some((r) => r?.swappingDateFrom);
       const checkoutTotal = rooms.reduce((sum, room) => {
@@ -506,12 +513,12 @@ function BookingList() {
     ) {
       console.log(selectedCheckOut);
       const totalAmount = calculateTotalAmount(selectedCheckOut);
-      console.log(selectedCheckOut.length);
+      console.log(selectedCheckOut);
       const advanceAmount = selectedCheckOut.reduce((total, item) => {
         return (
           total +
-          (Number(item.advanceAmount || 0) +
-            Number(item.bookingId?.advanceAmount || 0))
+          (Number(item.totalAdvance || 0) +
+            Number(item.bookingId?.totalAdvance || 0))
         );
       }, 0);
       console.log(advanceAmount);
@@ -543,6 +550,7 @@ function BookingList() {
         restaurantSubTotal - taggedTotal,
         restaurantSubTotal,
       );
+      console.log(totalAmount);
 
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
@@ -1206,7 +1214,7 @@ function BookingList() {
         (row) =>
           !row.customer ||
           !row.source ||
-         (!row.amount && row.underCategory != "food" )||
+          (!row.amount && row.underCategory != "food") ||
           parseFloat(row.amount) < 0,
       );
 
@@ -1290,7 +1298,7 @@ function BookingList() {
       setIsPartial(false);
       proceedToCheckout(dateandstaysdata, processedCheckoutData);
     } else {
-      console.log(restaurantSideDiscountAdjustmentArray)
+      console.log(restaurantSideDiscountAdjustmentArray);
       try {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
@@ -1466,8 +1474,8 @@ function BookingList() {
             ...originalCheckIn,
             partyArray: checkIn.originalCheckIn.customerId.party_master_id,
             Totaladvance:
-              Number(checkIn?.originalCheckIn?.advanceAmount || 0) +
-              Number(checkIn?.originalCheckIn?.bookingId?.advanceAmount || 0),
+              Number(checkIn?.originalCheckIn?.totalAdvance || 0) +
+              Number(checkIn?.originalCheckIn?.bookingId?.totalAdvance || 0),
             customerId: group.customer,
             allCheckInIds: [id],
             selectedRooms: roomsToCheckout,
@@ -1503,8 +1511,8 @@ function BookingList() {
             partyId: checkIn.originalCheckIn.customerId.party_master_id,
             customerId: group.customer,
             Totaladvance:
-              Number(checkIn?.originalCheckIn?.advanceAmount || 0) +
-              Number(checkIn?.originalCheckIn?.bookingId?.advanceAmount || 0),
+              Number(checkIn?.originalCheckIn?.totalAdvance || 0) +
+              Number(checkIn?.originalCheckIn?.bookingId?.totalAdvance || 0),
             selectedRooms: roomsToCheckout,
             isPartialCheckout,
             originalCheckInId: checkIn.checkInId,
@@ -1598,13 +1606,13 @@ function BookingList() {
         customerGroups[custId].allCheckInIds = [
           ...(d.allCheckInIds || [d._id]),
         ];
-        customerGroups[custId].advanceAmount = Number(d.advanceAmount || 0);
+        customerGroups[custId].totalAdvance = Number(d.totalAdvance || 0);
       } else {
         customerGroups[custId].selectedRooms.push(...(d.selectedRooms || []));
         customerGroups[custId].allCheckInIds.push(
           ...(d.allCheckInIds || [d._id]),
         );
-        customerGroups[custId].advanceAmount += Number(d.advanceAmount || 0);
+        customerGroups[custId].totalAdvance += Number(d.totalAdvance || 0);
       }
     });
 
@@ -1731,6 +1739,7 @@ function BookingList() {
   };
 
   console.log(checkoutMode);
+
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
       <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
@@ -1807,6 +1816,8 @@ function BookingList() {
 
     const el = bookings[index];
     if (!el) return null;
+
+    // console.log(el.voucherNumber);
 
     const findSwappedRooms = (room) => {
       let specifcSwap = el.roomSwapHistory.find(
@@ -2093,12 +2104,12 @@ function BookingList() {
 
             <div className="w-24 text-center text-gray-600 text-xs">
               ₹
-              {el?.advanceAmount
+              {el?.totalAdvance
                 ? formatCurrency(
                     el.bookingId
-                      ? Number(el.bookingId?.advanceAmount || 0) +
-                          Number(el.advanceAmount)
-                      : el.advanceAmount,
+                      ? Number(el.bookingId?.totalAdvance || 0) +
+                          Number(el.totalAdvance)
+                      : el.totalAdvance,
                   ).replace("₹", "")
                 : "0.00"}
             </div>
@@ -2186,6 +2197,18 @@ function BookingList() {
                   className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
                 >
                   Print
+                </button>
+              )}
+              {location.pathname === "/sUsers/checkOutList" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditModalOpen(true);
+                    setSelectedEditBooking(el);
+                  }}
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                >
+                  Edit
                 </button>
               )}
               {(el?.status != "checkIn" &&
@@ -2450,7 +2473,7 @@ function BookingList() {
 
   const handlePaymentAllocationInRestaurant = (rows) => {
     console.log("rows", rows);
-    if (rows?.length > 0) { 
+    if (rows?.length > 0) {
       setRestaurantSideDiscountAdjustmentArray(rows);
       let resturantTotal = rows.reduce(
         (acc, item) => acc + Number(item?.finalValue || 0),
@@ -2473,12 +2496,12 @@ function BookingList() {
       }));
 
       setRestaurantSaleManageMent(false);
-     setSplitPaymentRows((prev) =>
-  prev.map((row) => ({
-    ...row,
-    amount: 0,
-  }))
-);
+      setSplitPaymentRows((prev) =>
+        prev.map((row) => ({
+          ...row,
+          amount: 0,
+        })),
+      );
     }
   };
   console.log("selectedDataForPayment", restaurantSideDiscountAdjustmentArray);
@@ -2948,16 +2971,22 @@ function BookingList() {
                       // Validate last row — all 3 mandatory fields must be filled
                       const lastRow =
                         splitPaymentRows[splitPaymentRows.length - 1];
-                        console.log("lastRow", lastRow);
-                        console.log(selectedDataForPayment)
-                     let amount = lastRow?.underCategory !== "food" ?  parseFloat(lastRow.amount) : selectedDataForPayment?.restaurantSubTotal == 0 && 1
-                     console.log("amount", amount)
-                        const lastRowValid =
+                      console.log("lastRow", lastRow);
+                      console.log(selectedDataForPayment);
+                      let amount =
+                        lastRow?.underCategory !== "food"
+                          ? parseFloat(lastRow.amount)
+                          : selectedDataForPayment?.restaurantSubTotal == 0
+                            ? 0
+                            : parseFloat(lastRow.amount);
+                      console.log("amount", amount);
+                      const lastRowValid =
                         lastRow &&
                         lastRow.customer?.trim() !== "" &&
                         lastRow.source?.trim() !== "" &&
-                        parseFloat(amount ) > 0;
+                        Number(amount) > 0;
 
+                      console.log(lastRowValid);
                       // Track which rows have validation errors (only shown after an add attempt)
                       // We store this as a derived set of incomplete row indices
                       const incompleteFields = (row) => {
@@ -3007,7 +3036,9 @@ function BookingList() {
                                 <button
                                   onClick={() => {
                                     setRestaurantSaleManageMent(true);
-                                    restaurantSideDiscountAdjustmentArray?.length > 0 && handlePaymentAllocationInRestaurant(null);
+                                    restaurantSideDiscountAdjustmentArray?.length >
+                                      0 &&
+                                      handlePaymentAllocationInRestaurant(null);
                                   }}
                                   className="w-6 h-6 rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
                                   title="Restaurant Bill Management"
@@ -3026,15 +3057,10 @@ function BookingList() {
                                 (s) => s.id === row.source,
                               );
                               const sourceType = sourceObj?.type || "";
-
-                              // Lock all inputs only for non-last rows when fully paid.
-                              // The last row stays editable so the user can adjust the amount,
-                              // but the amount is clamped to not exceed the remaining difference.
                               const rowLocked =
                                 isFullyPaid &&
                                 index !== splitPaymentRows.length - 1;
 
-                              // Show field-level errors only on the last row when it's incomplete
                               const isLastRow =
                                 index === splitPaymentRows.length - 1;
                               const missing =
@@ -3060,41 +3086,43 @@ function BookingList() {
                                     <span className="text-[11px] text-gray-400 font-medium">
                                       Under:
                                     </span>
-                                    {["food", "room", "laundry"].map(
-                                      (category) => (
-                                        <button
-                                          key={category}
-                                          type="button"
-                                          disabled={rowLocked}
-                                          onClick={() =>
-                                            updateSplitPaymentRow(
-                                              index,
-                                              "underCategory",
-                                              row.underCategory === category
-                                                ? ""
-                                                : category,
-                                            )
-                                          }
-                                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors capitalize ${
-                                            rowLocked
-                                              ? "opacity-60 cursor-not-allowed bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-400"
-                                              : row.underCategory === category
-                                                ? category === "food"
-                                                  ? "bg-orange-100 border-orange-300 text-orange-700 dark:bg-orange-950 dark:border-orange-700 dark:text-orange-300"
-                                                  : category === "room"
-                                                    ? "bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-950 dark:border-blue-700 dark:text-blue-300"
-                                                    : "bg-purple-100 border-purple-300 text-purple-700 dark:bg-purple-950 dark:border-purple-700 dark:text-purple-300"
-                                                : "bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-500 dark:text-gray-400 hover:border-gray-300"
-                                          }`}
-                                        >
-                                          {category === "food" && "🍽 "}
-                                          {category === "room" && "🛏 "}
-                                          {category === "laundry" && "👕 "}
-                                          {category.charAt(0).toUpperCase() +
-                                            category.slice(1)}
-                                        </button>
-                                      ),
-                                    )}
+                                    {(selectedDataForPayment?.restaurantSubTotal >
+                                    0
+                                      ? ["food", "room", "laundry"]
+                                      : ["room", "laundry"]
+                                    ).map((category) => (
+                                      <button
+                                        key={category}
+                                        type="button"
+                                        disabled={rowLocked}
+                                        onClick={() =>
+                                          updateSplitPaymentRow(
+                                            index,
+                                            "underCategory",
+                                            row.underCategory === category
+                                              ? ""
+                                              : category,
+                                          )
+                                        }
+                                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors capitalize ${
+                                          rowLocked
+                                            ? "opacity-60 cursor-not-allowed bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-400"
+                                            : row.underCategory === category
+                                              ? category === "food"
+                                                ? "bg-orange-100 border-orange-300 text-orange-700 dark:bg-orange-950 dark:border-orange-700 dark:text-orange-300"
+                                                : category === "room"
+                                                  ? "bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-950 dark:border-blue-700 dark:text-blue-300"
+                                                  : "bg-purple-100 border-purple-300 text-purple-700 dark:bg-purple-950 dark:border-purple-700 dark:text-purple-300"
+                                              : "bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-500 dark:text-gray-400 hover:border-gray-300"
+                                        }`}
+                                      >
+                                        {category === "food" && "🍽 "}
+                                        {category === "room" && "🛏 "}
+                                        {category === "laundry" && "👕 "}
+                                        {category.charAt(0).toUpperCase() +
+                                          category.slice(1)}
+                                      </button>
+                                    ))}
                                     {row.underCategory && (
                                       <span className="text-[11px] text-gray-400 italic">
                                         Selected:{" "}
@@ -3872,6 +3900,17 @@ function BookingList() {
           </div>
         )}
       </div>
+
+      <BookingListEditModal
+        open={isEditModalOpen}
+        onOpenChange={(val) => {
+          setIsEditModalOpen(val);
+          if (!val) setSelectedEditBooking(null); // clear on close
+        }}
+        voucherNumber={selectedEditBooking?.voucherNumber}
+        checkInNumber={selectedEditBooking?.checkInId?.voucherNumber || null}
+        cmp_id={cmp_id}
+      />
     </>
   );
 }
