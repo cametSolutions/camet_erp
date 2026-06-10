@@ -62,7 +62,7 @@ import {
     updateVisitOfPurpose, deleteVisitOfPurpose, saveIdProof, getIdProof, updateIdProof, deleteIdProof, saveFoodPlan, getFoodPlan
     , updateFoodPlan, deleteFoodPlan, addRoom, getRooms, editRoom, deleteRoom, getAllRooms, roomBooking, getBookings, deleteBooking, updateBooking,
     fetchAdvanceDetails, getAllRoomsWithStatusForDate, updateRoomStatus, getDateBasedRoomsWithStatus, checkoutWithArrayOfData,
-    fetchOutStandingAndFoodData, convertCheckOutToSale, updateConfigurationForHotelAndRestaurant, swapRoom, getRoomSwapHistory, checkedInGuest,
+    fetchOutStandingAndFoodData, updateConfigurationForHotelAndRestaurant, swapRoom, getRoomSwapHistory, checkedInGuest,
     getallroomsCurrentStatus,
     getallnoncheckoutCheckins,
     getHotelSalesDetails, getRoomCheckInDetails, cancelBooking,getCheckoutStatementByDate,convertToAvailable,controlTaggedCheckIn,
@@ -70,8 +70,15 @@ import {
     getTouristReport,getFoodPlanReport,getOccupancyCheckoutReport,
     sendBillEmail,
     viewReport,
-    deleteAdvance,getTravelAgentSalesReport,getAgentList
+    deleteAdvance,
+    getSaleBasedOnVoucher,
+    updateCheckout,
+    getSalesByCheckInNumber,
+    updateRestaurantSalePayments,
+    getRestaurantSales,getTravelAgentSalesReport,getAgentList
 } from '../controllers/hotelController.js'
+
+import { convertCheckOutToSale } from '../controllers/hotelController2CheckOut.js';
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot,getKotDash, updateKotStatus, editKot,
     getRoomDataForRestaurant, updateKotPayment, getPaymentType, saveTableNumber, getSalePrintData, updateTable, getTables, deleteTable,
@@ -424,6 +431,12 @@ router.post("/transferKotBills/:cmp_id", transferKotBills);
 router.delete("/deleteAdvance/:id", deleteAdvance);
 router.post('/send-bill-email', sendBillEmail);
 router.get("/viewReport", viewReport);
+router.get("/getSaleBasedOnVoucher/:voucherNumber", getSaleBasedOnVoucher);
+router.put("/updateCheckout/:id", updateCheckout);
+router.get("/getSalesByCheckInNumber/:checkInNumber", getSalesByCheckInNumber);  
+router.put("/updateRestaurantSalePayments/:id", updateRestaurantSalePayments);
+
+router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
 // Route to get detailed booking information for a specific room and date
 
 export default router
