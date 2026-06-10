@@ -141,63 +141,61 @@ export const convertCheckOutToSale = async (req, res) => {
         const party = mapPartyData(partyData);
 
         // ── Payment amount calculation ───────────────────────────────────
-      // ── Payment amount calculation ───────────────────────────────────
-let cashAmt            = 0;
-let onlineAmt          = 0;
-let finalPaymentMethod = "";
-let paidAmount         = 0;
-let applicableSplits   = [];
-let remarks            = "";
+        // ── Payment amount calculation ───────────────────────────────────
+        let cashAmt = 0;
+        let onlineAmt = 0;
+        let finalPaymentMethod = "";
+        let paidAmount = 0;
+        let applicableSplits = [];
+        let remarks = "";
 
-if (paymentMode === "single") {
-  cashAmt   = Number(paymentDetails?.cashAmount || 0);
-  onlineAmt = Number(paymentDetails?.onlineAmount || 0);
-  remarks   = paymentDetails?.remarks ?? "";
+        if (paymentMode === "single") {
+          cashAmt = Number(paymentDetails?.cashAmount || 0);
+          onlineAmt = Number(paymentDetails?.onlineAmount || 0);
+          remarks = paymentDetails?.remarks ?? "";
 
-  finalPaymentMethod =
-    cashAmt > 0 ? "cash" : onlineAmt > 0 ? "bank" : "unknown";
+          finalPaymentMethod =
+            cashAmt > 0 ? "cash" : onlineAmt > 0 ? "bank" : "unknown";
 
-  paidAmount = cashAmt + onlineAmt;
+          paidAmount = cashAmt + onlineAmt;
+        } else if (paymentMode === "split") {
+          const splitDetails = paymentDetails?.splitDetails || [];
 
-} else if (paymentMode === "split") {
-  const splitDetails = paymentDetails?.splitDetails || [];
+          applicableSplits = splitDetails.map((splitItem) => ({
+            ...splitItem,
+            amount: Number(splitItem.amount || 0),
+          }));
 
-  applicableSplits = splitDetails.map((splitItem) => ({
-    ...splitItem,
-    amount: Number(splitItem.amount || 0),
-  }));
+          const nonCreditSplits = applicableSplits.filter(
+            (s) => s.sourceType !== "credit",
+          );
 
-  const nonCreditSplits = applicableSplits.filter(
-    (s) => s.sourceType !== "credit"
-  );
+          paidAmount = nonCreditSplits.reduce(
+            (sum, s) => sum + Number(s.amount || 0),
+            0,
+          );
 
-  paidAmount = nonCreditSplits.reduce(
-    (sum, s) => sum + Number(s.amount || 0),
-    0
-  );
+          cashAmt = nonCreditSplits
+            .filter((s) => s.sourceType === "cash")
+            .reduce((sum, s) => sum + Number(s.amount || 0), 0);
 
-  cashAmt = nonCreditSplits
-    .filter((s) => s.sourceType === "cash")
-    .reduce((sum, s) => sum + Number(s.amount || 0), 0);
+          onlineAmt = nonCreditSplits
+            .filter((s) => ["bank", "upi", "card"].includes(s.sourceType))
+            .reduce((sum, s) => sum + Number(s.amount || 0), 0);
 
-  onlineAmt = nonCreditSplits
-    .filter((s) => ["bank", "upi", "card"].includes(s.sourceType))
-    .reduce((sum, s) => sum + Number(s.amount || 0), 0);
-
-  finalPaymentMethod =
-    cashAmt > 0 && onlineAmt > 0
-      ? "mixed"
-      : cashAmt > 0
-        ? "cash"
-        : onlineAmt > 0
-          ? "bank"
-          : "credit";
-
-} else if (isPostToRoom || paymentMode === "credit") {
-  cashAmt            = Number(paymentDetails?.cashAmount || 0);
-  finalPaymentMethod = "credit";
-  paidAmount         = Number(paymentDetails?.cashAmount || 0);
-}
+          finalPaymentMethod =
+            cashAmt > 0 && onlineAmt > 0
+              ? "mixed"
+              : cashAmt > 0
+                ? "cash"
+                : onlineAmt > 0
+                  ? "bank"
+                  : "credit";
+        } else if (isPostToRoom || paymentMode === "credit") {
+          cashAmt = Number(paymentDetails?.cashAmount || 0);
+          finalPaymentMethod = "credit";
+          paidAmount = Number(paymentDetails?.cashAmount || 0);
+        }
 
         const pendingAmount =
           itemTotal - (paidAmount + Number(item?.Totaladvance || 0));
@@ -459,6 +457,41 @@ if (paymentMode === "single") {
           paidAmount,
           pendingAmount,
           applicableSplitsCount: applicableSplits.length,
+
+          splitSummary: [
+            ...paymentSplittingArray.map((s) => ({
+              section: "hotel",
+              type: s.type,
+              sourceType: s.sourceType,
+              subsource: s.subsource,
+              amount: Number(s.amount || 0),
+              underCategory: s.underCategory || "room",
+              source: s.source,
+              customer: s.customer,
+              customerName: s.customerName || null,
+              isCredit: s.sourceType === "credit" || s.type === "credit",
+            })),
+            ...restaurantSplitArray.map((s) => ({
+              section: "restaurant",
+              type: s.type,
+              sourceType: s.sourceType,
+              subsource: s.subsource,
+              amount: Number(s.amount || 0),
+              underCategory: s.underCategory || "food",
+              source: s.source,
+              customer: s.customer,
+              customerName: s.customerName || null,
+              isCredit: s.sourceType === "credit" || s.type === "credit",
+            })),
+          ],
+
+          totalNonCredit: [...paymentSplittingArray, ...restaurantSplitArray]
+            .filter((s) => (s.sourceType || s.type) !== "credit")
+            .reduce((sum, s) => sum + Number(s.amount || 0), 0),
+
+          totalCredit: [...paymentSplittingArray, ...restaurantSplitArray]
+            .filter((s) => (s.sourceType || s.type) === "credit")
+            .reduce((sum, s) => sum + Number(s.amount || 0), 0),
         });
       }
       // ======================================================================
@@ -766,42 +799,44 @@ async function createPaymentSplittingArray(
   const getCustomerId = (customer) => customer?._id ?? customer ?? undefined;
 
   if (paymentMode === "split" && applicableSplits.length > 0) {
-  for (const split of applicableSplits) {
-    const splitSourceType = split.sourceType;
-    const isCredit = splitSourceType === "credit";
-    const resolvedCustomerId = getCustomerId(split.customer);
-    const resolvedSourceId = isCredit ? resolvedCustomerId : split.source;
+    for (const split of applicableSplits) {
+      const splitSourceType = split.sourceType;
+      const isCredit = splitSourceType === "credit";
+      const resolvedCustomerId = getCustomerId(split.customer);
+      const resolvedSourceId = isCredit ? resolvedCustomerId : split.source;
 
-    if (!resolvedSourceId) {
-      throw new Error(
-        `Missing source id for split sourceType=${splitSourceType}, underCategory=${split.underCategory}`
-      );
+      if (!resolvedSourceId) {
+        throw new Error(
+          `Missing source id for split sourceType=${splitSourceType}, underCategory=${split.underCategory}`,
+        );
+      }
+
+      const splitObj = {
+        type: splitSourceType,
+        amount: Number(split.amount || 0),
+        ref_id: resolvedSourceId,
+        customer: resolvedCustomerId,
+        customerName: split.customerName,
+        remarks: split.remarks ?? null,
+        source: resolvedSourceId,
+        sourceType: splitSourceType,
+        subsource: split.subsource ?? splitSourceType,
+        transactionNo: split.transactionNo ?? "",
+        underCategory: split.underCategory,
+        upiNo: split.upiNo ?? "",
+      };
+
+      if (split.underCategory === "room") {
+        arr.push(splitObj);
+      } else if (split.underCategory === "food") {
+        restaurantSplitArray.push(splitObj);
+      }
     }
-
-    const splitObj = {
-      type: splitSourceType,
-      amount: Number(split.amount || 0),
-      ref_id: resolvedSourceId,
-      customer: resolvedCustomerId,
-      customerName: split.customerName,
-      remarks: split.remarks ?? null,
-      source: resolvedSourceId,
-      sourceType: splitSourceType,
-      subsource: split.subsource ?? splitSourceType,
-      transactionNo: split.transactionNo ?? "",
-      underCategory: split.underCategory,
-      upiNo: split.upiNo ?? "",
-    };
-
-    if (split.underCategory === "room") {
-      arr.push(splitObj);
-    } else if (split.underCategory === "food") {
-      restaurantSplitArray.push(splitObj);
-    }
-  }
-} else if (paymentMode === "credit") {
+  } else if (paymentMode === "credit") {
     const totalCreditAmount = Number(paymentDetails?.cashAmount || 0);
-    const hotelCreditAmt = parseFloat((totalCreditAmount - restaurantTotal).toFixed(2));
+    const hotelCreditAmt = parseFloat(
+      (totalCreditAmount - restaurantTotal).toFixed(2),
+    );
     const creditorId = paymentDetails?.selectedCreditor?._id;
     const creditorName = paymentDetails?.selectedCreditor?.partyName;
 
@@ -836,7 +871,6 @@ async function createPaymentSplittingArray(
       underCategory: "food",
       upiNo: "",
     });
-
   } else {
     const split = paymentDetails?.splitDetails?.[0] ?? {};
 
@@ -854,7 +888,8 @@ async function createPaymentSplittingArray(
           remarks: split?.remarks ?? null,
           source: paymentDetails?.selectedCash,
           sourceType: "cash",
-          subsource: paymentDetails?.cashSubsource ?? split?.subsource ?? "Cash",
+          subsource:
+            paymentDetails?.cashSubsource ?? split?.subsource ?? "Cash",
           transactionNo: split?.transactionNo ?? "",
           underCategory: "room",
           upiNo: split?.upiNo ?? "",
@@ -871,7 +906,8 @@ async function createPaymentSplittingArray(
           remarks: split?.remarks ?? null,
           source: paymentDetails?.selectedCash,
           sourceType: "cash",
-          subsource: paymentDetails?.cashSubsource ?? split?.subsource ?? "Cash",
+          subsource:
+            paymentDetails?.cashSubsource ?? split?.subsource ?? "Cash",
           transactionNo: split?.transactionNo ?? "",
           underCategory: "food",
           upiNo: split?.upiNo ?? "",
@@ -887,7 +923,9 @@ async function createPaymentSplittingArray(
           Math.max(0, restaurantTotal - restaurantAlreadyCovered),
         ).toFixed(2),
       );
-      const hotelOnlineAmt = parseFloat((onlineAmt - restaurantOnlineAmt).toFixed(2));
+      const hotelOnlineAmt = parseFloat(
+        (onlineAmt - restaurantOnlineAmt).toFixed(2),
+      );
 
       if (hotelOnlineAmt > 0) {
         arr.push({
@@ -899,7 +937,8 @@ async function createPaymentSplittingArray(
           remarks: split?.remarks ?? null,
           source: paymentDetails?.selectedBank,
           sourceType: "bank",
-          subsource: paymentDetails?.bankSubsource ?? split?.subsource ?? "Bank",
+          subsource:
+            paymentDetails?.bankSubsource ?? split?.subsource ?? "Bank",
           transactionNo: split?.transactionNo ?? "",
           underCategory: "room",
           upiNo: split?.upiNo ?? "",
@@ -916,7 +955,8 @@ async function createPaymentSplittingArray(
           remarks: split?.remarks ?? null,
           source: paymentDetails?.selectedBank,
           sourceType: "bank",
-          subsource: paymentDetails?.bankSubsource ?? split?.subsource ?? "Bank",
+          subsource:
+            paymentDetails?.bankSubsource ?? split?.subsource ?? "Bank",
           transactionNo: split?.transactionNo ?? "",
           underCategory: "food",
           upiNo: split?.upiNo ?? "",
@@ -985,7 +1025,9 @@ async function createPaymentSplittingArray(
           }
         }
 
-        remainingSplits = remainingSplits.filter((s) => Number(s.amount || 0) > 0);
+        remainingSplits = remainingSplits.filter(
+          (s) => Number(s.amount || 0) > 0,
+        );
 
         updatePromises.push(
           salesModel.findOneAndUpdate(

@@ -90,6 +90,7 @@ function BookingList() {
   const [selectedCreditor, setSelectedCreditor] = useState("");
   const [dateandstaysdata, setdateandstaysdata] = useState([]);
   const [finalPrintData, setFinalPrintData] = useState([]);
+  const [splitDetailsAfterSave,setSplitDetailsAfterSave] = useState([])
   const [additionalChargeData, setAdditionalChargeData] = useState([]);
   const [selectedAdditionalCharge, setSelectedAdditionalCharge] = useState([]);
   const [discountType, setDiscountType] = useState("amount");
@@ -1320,8 +1321,14 @@ function BookingList() {
         if (response.status === 200 || response.status === 201) {
           console.log(response);
           toast.success(response?.data?.message);
-          console.log(response?.data.data.checkOutAfterSave);
+          const splitDetails = response?.data?.data?.results?.flatMap(
+            (item) => item?.splitSummary || [],
+          );
+
+          setSplitDetailsAfterSave(splitDetails);
           setFinalPrintData(response?.data.data.checkOutAfterSave);
+
+
           handleCloseBasedOnDate();
         }
       } catch (error) {
@@ -2407,6 +2414,7 @@ function BookingList() {
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
         selectedCheckOut: finalPrintData,
+        splitDetailsAfterSave:splitDetailsAfterSave,
         customerId: selectedCustomer,
         isForPreview: false,
       },
