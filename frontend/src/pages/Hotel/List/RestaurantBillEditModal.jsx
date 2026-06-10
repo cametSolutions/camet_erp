@@ -293,7 +293,7 @@ const RestaurantBillEditModal = ({
 
                         {/* Credit party picker OR Ledger source dropdown */}
                         {isCredit ? (
-                          <div className="space-y-1.5">
+                          <div className="space-y-1.5 pointer-events-none opacity-60">
                             <Label className="text-xs">
                               Credit Party
                               <span className="ml-1 text-amber-600 font-normal text-[11px]">
