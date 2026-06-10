@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo, lazy } from "react";
 import api from "../../../api/api";
 import { toast } from "sonner";
 import { FaEdit } from "react-icons/fa";
@@ -12,6 +12,7 @@ import Swal from "sweetalert2";
 import EnhancedCheckoutModal from "../Components/EnhancedCheckoutModal";
 import HoldModal from "../Components/HoldModal";
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
+const PaymentAllocation = lazy(() => import("../Components/PaymentAllocation"));
 import {
   setPaymentDetails,
   setSelectedParty,
@@ -20,6 +21,7 @@ import {
   setOnlinepartyName,
   setOnlineType,
   setPrintDetails,
+  setRestaurantTag,
   removeAll,
 } from "../../../../slices/hotelSlices/paymentSlice.js";
 import { VariableSizeList as List } from "react-window";
@@ -37,6 +39,7 @@ import {
   ArrowLeftRight,
   Pause,
   Play,
+  Settings,
 } from "lucide-react";
 import useFetch from "@/customHook/useFetch";
 import PrintModal from "../Components/PrintModal";
@@ -123,6 +126,9 @@ function BookingList() {
   const [fromDate, setFromDate] = useState(
     thirtyDaysAgo.toISOString().split("T")[0],
   );
+  const [restaurantSaleManageMent, setRestaurantSaleManageMent] =
+    useState(false);
+
   const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
   const ROOM_COLORS = [
     { bg: "#EEEDFE", border: "#AFA9EC", icon: "#534AB7", text: "#3C3489" },
@@ -137,6 +143,10 @@ function BookingList() {
 
   console.log(selectedEditBooking?.checkInId?.voucherNumber);
 
+  const [
+    restaurantSideDiscountAdjustmentArray,
+    setRestaurantSideDiscountAdjustmentArray,
+  ] = useState([]);
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -156,6 +166,7 @@ function BookingList() {
   const [restaurantBillTransfer, setShowRestaurantBillTransfer] =
     useState(false);
   const { roomId, roomName, filterByRoom } = location.state || {};
+
   const paymentDetails = useSelector((state) => state.paymentSlice);
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
@@ -244,8 +255,6 @@ function BookingList() {
           return sum + Number(room?.amountAfterTax || 0);
         }
 
-        console.log(room);
-
         let stayDays = Number(room?.stayDays || 1);
 
         const normalizeToDate = (d) => {
@@ -325,13 +334,19 @@ function BookingList() {
         );
       }, 0);
 
+      console.log("checkoutTotal", checkoutTotal);
       return (
         total +
         (checkoutTotal - advance) +
-        Number(checkout?.otherChargeDetails?.amount || 0)
+        Math.abs(
+          Number(checkout?.otherChargeAmount || 0) -
+            Number(checkout?.discountAmount || 0),
+        )
       );
     }, 0);
   };
+
+  console.log(restaurantSideDiscountAdjustmentArray);
 
   useEffect(() => {
     if (location.pathname === "/sUsers/bookingList") {
@@ -454,6 +469,10 @@ function BookingList() {
       setcheckinids(location?.state?.cheinids);
       setPaymentMode(paymentDetails?.paymentMode);
       setRemarks(paymentDetails?.paymentDetails?.remarks);
+      console.log(paymentDetails);
+      setRestaurantSideDiscountAdjustmentArray(
+        paymentDetails?.paymentDetails?.restaurantSideDiscountAdjustmentArray,
+      );
 
       if (paymentDetails?.paymentMode === "split") {
         setSplitPaymentRows(paymentDetails?.splitPayment);
@@ -507,17 +526,44 @@ function BookingList() {
       const restaurantSubTotal = selectedCheckOut.reduce((total, item) => {
         return total + (item.restaurantSubTotal || 0);
       }, 0);
+      console.log(restaurantSubTotal);
+      let taggedTotal = 0;
+      let taggedAdvance = 0;
+      if (restaurantSideDiscountAdjustmentArray?.length > 0) {
+        taggedTotal = restaurantSideDiscountAdjustmentArray?.reduce(
+          (total, item) => {
+            return total + (item.finalValue || 0);
+          },
+          0,
+        );
+        taggedAdvance = restaurantSideDiscountAdjustmentArray?.reduce(
+          (total, item) => {
+            return total + (item.advanceAmount || 0);
+          },
+          0,
+        );
+      }
+      console.log(taggedTotal, taggedAdvance);
+      console.log(restaurantSideDiscountAdjustmentArray);
+      console.log(
+        totalAmount,
+        restaurantSubTotal - taggedTotal,
+        restaurantSubTotal,
+      );
       console.log(totalAmount);
 
       setSelectedDataForPayment((prevData) => ({
         ...prevData,
         total: totalAmount,
-        advanceAmount: advanceAmount,
-        restaurantSubTotal: restaurantSubTotal,
-        totalWithRestaurantSubTotal: totalAmount + restaurantSubTotal,
+        advanceAmount: Math.round(advanceAmount - taggedAdvance),
+        restaurantSubTotal: Math.round(restaurantSubTotal - taggedTotal),
+        restaurantActualTotal: restaurantSubTotal,
+        restaurantActualAdvance: advanceAmount,
+        totalWithRestaurantSubTotal:
+          totalAmount + (restaurantSubTotal - taggedTotal),
       }));
     }
-  }, [selectedCheckOut]);
+  }, [selectedCheckOut, restaurantSideDiscountAdjustmentArray]);
 
   const searchData = (data) => {
     if (searchTimeoutRef.current) {
@@ -883,10 +929,48 @@ function BookingList() {
 
       updatedRows[index].customerName = name;
       updatedRows[index][field] = value;
-    } else if (field === "underCategory") {
+    } else if (field === "underCategory" && value == "food") {
+      console.log(splitPaymentRows);
+      let totalFoodAmount = splitPaymentRows.reduce(
+        (sum, item) =>
+          item?.underCategory == "food" ? sum + item.amount : sum,
+        0,
+      );
+      console.log(totalFoodAmount);
       updatedRows[index][field] = value;
-      updatedRows[index].amount =
-        selectedDataForPayment?.restaurantSubTotal || 0;
+      updatedRows[index].amount = Math.abs(
+        selectedDataForPayment?.restaurantSubTotal - totalFoodAmount,
+      );
+    } else if (
+      field === "amount" &&
+      updatedRows[index].underCategory === "food"
+    ) {
+      console.log(selectedDataForPayment);
+
+      // Calculate total food amount excluding current row
+      let totalFoodAmount =
+        splitPaymentRows.reduce((sum, item, i) => {
+          if (item?.underCategory === "food" && i !== index) {
+            return sum + Number(item.amount || 0);
+          }
+
+          return sum;
+        }, 0) + Number(value || 0);
+
+      console.log(totalFoodAmount);
+
+      if (
+        totalFoodAmount >
+        Number(selectedDataForPayment?.restaurantSubTotal || 0)
+      ) {
+        updatedRows[index][field] = 0;
+
+        toast.error(
+          "Food amount tagged is already equal to restaurant subtotal",
+        );
+      } else {
+        updatedRows[index][field] = Number(value || 0);
+      }
     } else {
       updatedRows[index][field] = value;
     }
@@ -935,9 +1019,11 @@ function BookingList() {
       const expectedRestaurantTotal = Number(
         selectedDataForPayment?.restaurantSubTotal || 0,
       );
-
+      console.log(selectedDataForPayment);
       console.log(expectedRestaurantTotal);
       console.log(restaurantSubTotal);
+      console.log(splitTotal);
+      console.log(expectedSplitTotal);
 
       if (
         Number(splitTotal.toFixed(2)) !== Number(expectedSplitTotal.toFixed(2))
@@ -1128,8 +1214,8 @@ function BookingList() {
         (row) =>
           !row.customer ||
           !row.source ||
-          !row.amount ||
-          parseFloat(row.amount) <= 0,
+          (!row.amount && row.underCategory != "food") ||
+          parseFloat(row.amount) < 0,
       );
 
       if (hasInvalidRows) {
@@ -1196,18 +1282,23 @@ function BookingList() {
 
     if (partial) {
       console.log("Hhhh");
-      console.log(dateandstaysdata);
+      console.log(additionalChargeDataBasedOnSelection);
 
-      console.log(paymentDetails);
+      restaurantSideDiscountAdjustmentArray.length > 0 &&
+        (paymentDetails.restaurantSideDiscountAdjustmentArray =
+          restaurantSideDiscountAdjustmentArray);
+
       dispatch(setPaymentDetails(paymentDetails));
       dispatch(setSelectedParty(selectedCustomer));
       dispatch(setSelectedPaymentMode(paymentMode));
       dispatch(setSelectedSplitPayment(splitPaymentRows));
       dispatch(setOnlinepartyName(selectedonlinePartyname));
       dispatch(setOnlineType(selectedOnlinetype));
+      dispatch(setRestaurantTag(additionalChargeDataBasedOnSelection));
       setIsPartial(false);
       proceedToCheckout(dateandstaysdata, processedCheckoutData);
     } else {
+      console.log(restaurantSideDiscountAdjustmentArray);
       try {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
@@ -1220,6 +1311,8 @@ function BookingList() {
             restaurantBaseSaleData: restaurantBaseSaleData,
             checkoutMode, //to check if the checkout is single or multiple
             checkinIds: checkinidsarray, //have array of checkinids ,if only its sinle checkout unless its null
+            restaurantSideDiscountAdjustmentArray:
+              restaurantSideDiscountAdjustmentArray,
           },
           { withCredentials: true },
         );
@@ -1788,6 +1881,154 @@ function BookingList() {
             // setShowEnhancedCheckoutModal(!showEnhancedCheckoutModal)
           }}
         >
+          <div className="flex items-center w-full md:hidden">
+            {/* SL No */}
+            <div className="w-18 text-center text-gray-700 font-medium text-xs">
+              {index + 1}
+            </div>
+
+            {/* Date */}
+            <div className="w-32 text-center text-gray-600 text-xs">
+              {location.pathname.includes("checkOutList")
+                ? formatDate(el?.checkOutDate)
+                : formatDate(el?.bookingDate)}
+            </div>
+
+            {/* Voucher No */}
+            <div className="w-32 text-center text-gray-700 font-semibold text-xs">
+              {el?.voucherNumber || "-"}
+            </div>
+
+            {/* ✅ ACTIONS — exact copy of desktop actions */}
+            <div className="w-32 flex flex-wrap items-center justify-center gap-1">
+              {((location.pathname === "/sUsers/bookingList" &&
+                el?.status != "checkIn") ||
+                (el?.status != "checkOut" &&
+                  location.pathname != "/sUsers/checkInList" &&
+                  location.pathname != "/sUsers/checkOutList")) && (
+                <button
+                  onClick={(e) => handleCheckin(e, el)}
+                  className="bg-black hover:bg-blue-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                >
+                  CheckIn
+                </button>
+              )}
+
+              {location.pathname === "/sUsers/checkInList" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/sUsers/CheckInPrint", {
+                      state: {
+                        selectedCheckOut: [el],
+                        customerId: el.customerId._id,
+                      },
+                    });
+                  }}
+                  className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                  title="Print Registration Card"
+                >
+                  Print
+                </button>
+              )}
+
+              {el?.status === "checkIn" &&
+                location.pathname === "/sUsers/bookingList" && (
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                  >
+                    CheckedIn
+                  </button>
+                )}
+
+              {el?.status === "checkOut" &&
+                location.pathname === "/sUsers/checkInList" && (
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                  >
+                    CheckedOut
+                  </button>
+                )}
+
+              {location.pathname === "/sUsers/checkOutList" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCustomer(el.customerId?._id);
+                    setSelectedCheckOut([el]);
+                    const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+                    navigate(
+                      hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
+                      {
+                        state: {
+                          selectedCheckOut: bookings?.filter(
+                            (item) => item.voucherNumber === el.voucherNumber,
+                          ),
+                          customerId: el.customerId?._id,
+                          isForPreview: false,
+                        },
+                      },
+                    );
+                  }}
+                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                >
+                  Print
+                </button>
+              )}
+
+              {(el?.status != "checkIn" &&
+                location.pathname == "/sUsers/bookingList") ||
+              (el?.status != "checkOut" &&
+                location.pathname == "/sUsers/checkInList") ? (
+                <div className="flex items-center gap-1">
+                  <FaEdit
+                    title="Edit"
+                    className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (location.pathname === "/sUsers/bookingList") {
+                        navigate("/sUsers/editBooking", { state: el });
+                      } else {
+                        navigate("/sUsers/editChecking", { state: el });
+                      }
+                    }}
+                  />
+                  <MdDelete
+                    title="Delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(el._id);
+                    }}
+                    className="text-red-500 cursor-pointer hover:text-red-700 text-sm"
+                  />
+                </div>
+              ) : null}
+
+              {location.pathname === "/sUsers/bookingList" &&
+                el?.status !== "checkIn" &&
+                el?.status !== "cancelled" && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancelBooking(el._id, el.voucherNumber);
+                    }}
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                    title="Cancel booking"
+                  >
+                    <MdCancel />
+                  </button>
+                )}
+
+              {el?.status === "cancelled" && (
+                <span className="bg-red-100 text-red-700 font-semibold py-1 px-2 rounded text-xs">
+                  Cancelled
+                </span>
+              )}
+            </div>
+          </div>
+
           <div className="hidden md:flex items-center w-full">
             <div className="w-10 text-center text-gray-700 font-medium">
               {index + 1}
@@ -2230,7 +2471,40 @@ function BookingList() {
     }
   };
 
-  console.log(selectedCheckOut);
+  const handlePaymentAllocationInRestaurant = (rows) => {
+    console.log("rows", rows);
+    if (rows?.length > 0) {
+      setRestaurantSideDiscountAdjustmentArray(rows);
+      let resturantTotal = rows.reduce(
+        (acc, item) => acc + Number(item?.finalValue || 0),
+        0,
+      );
+      let advanceAmount = rows.reduce(
+        (acc, item) => acc + Number(item?.advanceAmount || 0),
+        0,
+      );
+      setSelectedDataForPayment((prevData) => ({
+        ...prevData,
+        restaurantSubTotal: Math.round(
+          Number(prevData?.restaurantActualTotal || 0) -
+            Number(resturantTotal || 0),
+        ),
+        advanceAmount: Math.round(
+          Number(prevData?.restaurantActualAdvance || 0) -
+            Number(advanceAmount || 0),
+        ),
+      }));
+
+      setRestaurantSaleManageMent(false);
+      setSplitPaymentRows((prev) =>
+        prev.map((row) => ({
+          ...row,
+          amount: 0,
+        })),
+      );
+    }
+  };
+  console.log("selectedDataForPayment", restaurantSideDiscountAdjustmentArray);
 
   return (
     <>
@@ -2246,6 +2520,14 @@ function BookingList() {
                 : location.pathname === "/sUsers/bookingList"
                   ? "Hotel Booking List"
                   : "Hotel Check Out List"
+            }
+            // ✅ ADD THIS:
+            from={
+              location.pathname === "/sUsers/checkInList"
+                ? "/sUsers/hotelDashboard"
+                : location.pathname === "/sUsers/bookingList"
+                  ? "/sUsers/hotelDashboard"
+                  : "/sUsers/hotelDashboard"
             }
             dropdownContents={[
               {
@@ -2689,12 +2971,22 @@ function BookingList() {
                       // Validate last row — all 3 mandatory fields must be filled
                       const lastRow =
                         splitPaymentRows[splitPaymentRows.length - 1];
+                      console.log("lastRow", lastRow);
+                      console.log(selectedDataForPayment);
+                      let amount =
+                        lastRow?.underCategory !== "food"
+                          ? parseFloat(lastRow.amount)
+                          : selectedDataForPayment?.restaurantSubTotal == 0
+                            ? 0
+                            : parseFloat(lastRow.amount);
+                      console.log("amount", amount);
                       const lastRowValid =
                         lastRow &&
                         lastRow.customer?.trim() !== "" &&
                         lastRow.source?.trim() !== "" &&
-                        parseFloat(lastRow.amount) > 0;
+                        Number(amount) > 0;
 
+                      console.log(lastRowValid);
                       // Track which rows have validation errors (only shown after an add attempt)
                       // We store this as a derived set of incomplete row indices
                       const incompleteFields = (row) => {
@@ -2737,7 +3029,26 @@ function BookingList() {
                             <div className="col-span-3 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
                               Amount
                             </div>
-                            <div className="col-span-1"></div>
+                            {splitPaymentRows.some(
+                              (row) => row.underCategory === "food",
+                            ) ? (
+                              <div className="col-span-1 flex justify-center">
+                                <button
+                                  onClick={() => {
+                                    setRestaurantSaleManageMent(true);
+                                    restaurantSideDiscountAdjustmentArray?.length >
+                                      0 &&
+                                      handlePaymentAllocationInRestaurant(null);
+                                  }}
+                                  className="w-6 h-6 rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+                                  title="Restaurant Bill Management"
+                                >
+                                  <Settings className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="col-span-1"></div>
+                            )}
                           </div>
 
                           <div className="space-y-2.5">
@@ -2746,15 +3057,10 @@ function BookingList() {
                                 (s) => s.id === row.source,
                               );
                               const sourceType = sourceObj?.type || "";
-
-                              // Lock all inputs only for non-last rows when fully paid.
-                              // The last row stays editable so the user can adjust the amount,
-                              // but the amount is clamped to not exceed the remaining difference.
                               const rowLocked =
                                 isFullyPaid &&
                                 index !== splitPaymentRows.length - 1;
 
-                              // Show field-level errors only on the last row when it's incomplete
                               const isLastRow =
                                 index === splitPaymentRows.length - 1;
                               const missing =
@@ -2780,41 +3086,43 @@ function BookingList() {
                                     <span className="text-[11px] text-gray-400 font-medium">
                                       Under:
                                     </span>
-                                    {["food", "room", "laundry"].map(
-                                      (category) => (
-                                        <button
-                                          key={category}
-                                          type="button"
-                                          disabled={rowLocked}
-                                          onClick={() =>
-                                            updateSplitPaymentRow(
-                                              index,
-                                              "underCategory",
-                                              row.underCategory === category
-                                                ? ""
-                                                : category,
-                                            )
-                                          }
-                                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors capitalize ${
-                                            rowLocked
-                                              ? "opacity-60 cursor-not-allowed bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-400"
-                                              : row.underCategory === category
-                                                ? category === "food"
-                                                  ? "bg-orange-100 border-orange-300 text-orange-700 dark:bg-orange-950 dark:border-orange-700 dark:text-orange-300"
-                                                  : category === "room"
-                                                    ? "bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-950 dark:border-blue-700 dark:text-blue-300"
-                                                    : "bg-purple-100 border-purple-300 text-purple-700 dark:bg-purple-950 dark:border-purple-700 dark:text-purple-300"
-                                                : "bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-500 dark:text-gray-400 hover:border-gray-300"
-                                          }`}
-                                        >
-                                          {category === "food" && "🍽 "}
-                                          {category === "room" && "🛏 "}
-                                          {category === "laundry" && "👕 "}
-                                          {category.charAt(0).toUpperCase() +
-                                            category.slice(1)}
-                                        </button>
-                                      ),
-                                    )}
+                                    {(selectedDataForPayment?.restaurantSubTotal >
+                                    0
+                                      ? ["food", "room", "laundry"]
+                                      : ["room", "laundry"]
+                                    ).map((category) => (
+                                      <button
+                                        key={category}
+                                        type="button"
+                                        disabled={rowLocked}
+                                        onClick={() =>
+                                          updateSplitPaymentRow(
+                                            index,
+                                            "underCategory",
+                                            row.underCategory === category
+                                              ? ""
+                                              : category,
+                                          )
+                                        }
+                                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors capitalize ${
+                                          rowLocked
+                                            ? "opacity-60 cursor-not-allowed bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-400"
+                                            : row.underCategory === category
+                                              ? category === "food"
+                                                ? "bg-orange-100 border-orange-300 text-orange-700 dark:bg-orange-950 dark:border-orange-700 dark:text-orange-300"
+                                                : category === "room"
+                                                  ? "bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-950 dark:border-blue-700 dark:text-blue-300"
+                                                  : "bg-purple-100 border-purple-300 text-purple-700 dark:bg-purple-950 dark:border-purple-700 dark:text-purple-300"
+                                              : "bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-600 text-gray-500 dark:text-gray-400 hover:border-gray-300"
+                                        }`}
+                                      >
+                                        {category === "food" && "🍽 "}
+                                        {category === "room" && "🛏 "}
+                                        {category === "laundry" && "👕 "}
+                                        {category.charAt(0).toUpperCase() +
+                                          category.slice(1)}
+                                      </button>
+                                    ))}
                                     {row.underCategory && (
                                       <span className="text-[11px] text-gray-400 italic">
                                         Selected:{" "}
@@ -2824,6 +3132,7 @@ function BookingList() {
                                       </span>
                                     )}
                                   </div>
+
                                   <div className="grid grid-cols-12 gap-2 items-center mt-2.5">
                                     {/* Customer */}
                                     <div className="col-span-4">
@@ -2931,7 +3240,7 @@ function BookingList() {
                                     </div>
 
                                     {/* Source */}
-                                    <div className="col-span-4">
+                                    <div className="col-span-3">
                                       <select
                                         disabled={rowLocked}
                                         value={row.source}
@@ -3019,7 +3328,6 @@ function BookingList() {
                                         />
                                       </div>
                                     </div>
-
                                     {/* Delete — always allowed so user can free up allocation */}
                                     <div className="col-span-1 flex justify-center">
                                       {splitPaymentRows.length > 1 && (
@@ -3569,6 +3877,20 @@ function BookingList() {
             selectedCheckIns={selectedCheckOut}
             onClose={setShowRestaurantBillTransfer}
             cmp_id={cmp_id}
+          />
+        )}
+        {restaurantSaleManageMent && (
+          <PaymentAllocation
+            isOpen={restaurantSaleManageMent}
+            onClose={() => setRestaurantSaleManageMent(false)}
+            onConfirm={handlePaymentAllocationInRestaurant}
+            selectedCheckIns={selectedCheckOut}
+            cmp_id={cmp_id}
+            advanceAmount={selectedDataForPayment?.advanceAmount}
+            otherCharges={additionalChargeData}
+            restaurantSideDiscountAdjustmentArray={
+              restaurantSideDiscountAdjustmentArray
+            }
           />
         )}
 

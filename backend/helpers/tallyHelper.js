@@ -262,10 +262,12 @@ const calculateTaxAmount = (
   roomId,
   bookingType,
   stayDays,
+  additionalPaxDetails,
+  doc
 ) => {
   let foodPlanTax = 5;
 
-  console.log(roomPrice);
+
 
   if (bookingType === "offline") {
     foodPlanTax = taxPercentage;
@@ -275,14 +277,28 @@ const calculateTaxAmount = (
   let specificFoodPlanTotal =
     (foodPlanArray || []).reduce(
       (acc, item) =>
-        item.roomId.toString() === roomId.toString()
+        item.roomId?.toString() === roomId?.toString()
           ? acc + Number(item.rate || 0)
           : acc,
       0,
     ) * Number(stayDays || 1);
 
+    let specificAdditionalPaxDetails = (additionalPaxDetails || []).reduce(
+      (acc, item) =>
+        item.roomId?.toString() === roomId?.toString()
+          ? acc + Number(item.rate || 0)
+          : acc,
+      0,
+    ) * Number(stayDays || 1);
+
+ 
+  
   // Food plan taxable amount
   let taxableSpecificFoodPlan = specificFoodPlanTotal / (1 + foodPlanTax / 100);
+
+    // additionalPax  taxable amount
+  let additionalPaxTaxAmount = (Number(specificAdditionalPaxDetails) * Number(taxPercentage)) / 100;
+
 
   // Room amount including tax
   let amountWithTax = Math.max(
@@ -298,6 +314,8 @@ const calculateTaxAmount = (
 
   // Food plan tax amount
   let foodPlanTaxAmount = specificFoodPlanTotal - taxableSpecificFoodPlan;
+   // Food plan tax amount
+
 
   return {
     taxableAmount,
@@ -306,6 +324,9 @@ const calculateTaxAmount = (
     taxableSpecificFoodPlan,
     foodPlanTaxAmount,
     foodPlanTaxPercentage: foodPlanTax,
+    additionalPaxWithTax: specificAdditionalPaxDetails + additionalPaxTaxAmount ,
+    additionalPaxWithoutTax:  specificAdditionalPaxDetails,
+    additionalPaxTaxAmount: additionalPaxTaxAmount,
   };
 };
 
@@ -383,7 +404,7 @@ export const fetchDataHotel = async (
           $gt: serialNumber,
         };
       } else {
-        query.serialNumber = { $gt: serialNumber };
+        query.uniqueReceiptNumber = { $gt: serialNumber };
       }
     }
 
@@ -462,9 +483,11 @@ export const fetchDataHotel = async (
           selectedRooms
           _id
           foodPlan
+          additionalPaxDetails
           addTaxWithRate
           bookingType
           stayDays
+          paxTotal
           cmp_id
           Primary_user_id
         `,
@@ -488,7 +511,11 @@ export const fetchDataHotel = async (
           0,
         );
 
-        let newItemsArranged = selectedRooms.map((room) => {
+     
+
+        let newItemsArranged = selectedRooms.map(async(room) => {
+
+          let stayDays = await calculateStayDays(doc,room);
           let taxDetails = calculateTaxAmount(
             room.taxPercentage,
             room?.totalAmount,
@@ -496,12 +523,17 @@ export const fetchDataHotel = async (
             doc?.foodPlan,
             room?.roomId,
             doc?.bookingType,
-            room?.stayDays,
+            stayDays,
+            doc?.additionalPaxDetails,
+            doc,
           );
+
+          if(doc.voucherNumber == "CO-910-2025"){
+            console.log("taxDetailsddddd",taxDetails)
+          }
 
           return {
             _id: room._id,
-
             product_name: room?.roomName,
 
             cmp_id: doc?.cmp_id,
@@ -565,8 +597,20 @@ export const fetchDataHotel = async (
             foodPlanTaxPercentage: taxDetails?.foodPlanTaxPercentage.toFixed(2),
 
             foodPlanAmountWithTax: taxDetails?.specificFoodPlanTotal.toFixed(2),
+
+            additionalPaxWithTax: taxDetails?.additionalPaxWithTax.toFixed(2),
+
+            additionalPaxWithoutTax: taxDetails?.additionalPaxWithoutTax.toFixed(
+              2,
+            ),
+            additionalPaxTaxAmount: taxDetails?.additionalPaxTaxAmount.toFixed(2),
+
+            additionalPaxTaxPercentage: Number(room?.taxPercentage).toFixed(2),
+
+            paxTotal: doc?.paxTotal,
           };
         });
+
 
         checkoutMap.set(doc.voucherNumber.toString(), {
           totalFoodPlanAmount,
@@ -935,4 +979,56 @@ const createReceipt = async (sale, count, orgId, session) => {
       });
     }
   }
+};
+
+
+const calculateStayDays = async (doc, room) => {
+
+  let fullDaysAre = doc.stayDays;
+     const normalizeToDate = (d) => {
+        const nd = new Date(d);
+        nd.setHours(0, 0, 0, 0);
+        return nd;
+      };
+   const swapDate = room?.swappingDateFrom
+        ? new Date(room.swappingDateFrom).toISOString().split("T")[0]
+        : "";
+      console.log(swapDate);
+      if (room.isSwapped && room.swappingDateFrom) {
+
+        const swappingDate = normalizeToDate(room.swappingDateFrom);
+        const arrivalDate = normalizeToDate(doc.arrivalDate);
+
+        fullDaysAre = Math.floor(
+          (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24),
+        );
+
+        if (fullDaysAre <= 0) {
+          if (swapDate == doc.arrivalDate) {
+            fullDaysAre = 0;
+          } else {
+            fullDaysAre = 1;
+          }
+        }
+      }
+
+      if (!room.isSwapped && room.swappingDateFrom) {
+        console.log(room.roomName);
+        const swappingDate = normalizeToDate(room.swappingDateFrom);
+        const checkoutDate = normalizeToDate(doc.checkOutDate);
+
+        fullDaysAre = Math.floor(
+          (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
+        );
+
+        if (fullDaysAre <= 0) {
+          if (swapDate == doc.arrivalDate) {
+            fullDaysAre = 1;
+          } else {
+            fullDaysAre = 0;
+          }
+        }
+      }
+
+      return fullDaysAre;
 };

@@ -9,6 +9,9 @@ import AdditionalCharges from "../models/additionalChargesModel.js";
 import { fetchData, getApiLogs ,fetchDataHotel} from "../helpers/tallyHelper.js";
 import { getUserFriendlyMessage } from "../helpers/getUserFreindlyMessage.js";
 import { Booking,CheckIn } from "../models/bookingModal.js";
+import receiptModel from "../models/receiptModel.js";
+import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
+import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import mongoose from "mongoose";
 import {
   Godown,
@@ -19,6 +22,7 @@ import {
 } from "../models/subDetails.js";
 import accountGroupModel from "../models/accountGroup.js";
 import salesModel from "../models/salesModel.js";
+
 export const saveDataFromTally = async (req, res) => {
   try {
     const { data, partyIds } = await req.body;
@@ -2523,6 +2527,7 @@ export const giveReceipts = async (req, res) => {
   return fetchData("receipt", cmp_id, serialNumber, res);
 };
 
+
 export const giveReceiptsHotel = async (req, res) => {
 
   const cmp_id = req.params.cmp_id;
@@ -2586,11 +2591,60 @@ export const backfillUniqueSaleNumber = async (req, res) => {
   }
 };
 
+export const backfillUniqueReceiptNumber = async (req, res) => {
+  try {
+
+    const { cmp_id } = req.params;
+
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Company ID required"
+      });
+    }
+
+    const receipts = await receiptModel
+      .find({ cmp_id })
+      .sort({ date: 1, _id: 1 }) // or createdAt:1 if preferred
+      .select("_id date");
+
+    let number = 1;
+
+    for (const receipt of receipts) {
+
+      await receiptModel.updateOne(
+        { _id: receipt._id },
+        {
+          $set: {
+            uniqueReceiptNumber: number
+          }
+        }
+      );
+
+      console.log(
+        `Receipt ${receipt._id} -> ${number}`
+      );
+
+      number++;
+    }
+
+    return res.status(200).json({
+      success: true,
+      totalUpdated: receipts.length,
+      message: "Receipt numbers rebuilt successfully"
+    });
+
+  } catch (error) {
+
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+
+  }
+};
 
 
-import receiptModel from "../models/receiptModel.js";
-import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
-import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 
 const BATCH_SIZE = 20; // safe limit per transaction
 
@@ -2616,7 +2670,7 @@ export const createReceiptForSales = async (req, res) => {
 // ─────────────────────────────────────────────
 export const createReceiptForSalesFully = async (cmp) => {
   // Fetch all sales OUTSIDE any transaction — just a plain read
-  const sales = await salesModel.find({ cmp_id: cmp }).lean();
+  const sales = await salesModel.find({ cmp_id: cmp  }).lean();
   console.log(`🔵 Total sales found: ${sales.length}`);
 
   // Fetch voucher series OUTSIDE transaction — reused across all batches
@@ -2708,8 +2762,7 @@ const processBatch = async (batch, cmp, voucher, batchNumber) => {
 // ─────────────────────────────────────────────
 const createReceipt = async (sale, orgId, session, voucher) => {
   // Skip non-party sales
-  if (sale.party?.partyType !== "party" || sale.party?.partyName?.toLowerCase() === "gpay" ||
-sale.party?.partyName?.toLowerCase() === "cash") {
+  if (!sale.isPostToRoom && !sale.checkInId ) {
     console.log(`⏭️ Skipping sale ${sale._id} — partyType: ${sale.party?.partyType}`);
     return false;
   }
@@ -2754,16 +2807,17 @@ sale.party?.partyName?.toLowerCase() === "cash") {
     ];
 
     let type = "cash";
+    
     if(data?.type != "cash"){
       type = "bank";
     }
 
     const paymentDetails = {
       _id: data?.source ||  data?.ref_id,
-      cash_ledname: data.type === "cash" ? data?.subsource   || "cash" : null,
-      cash_name:    data.type === "cash" ? data?.subsource ? data?.subsource : type || "cash" : null,
-      bank_ledname: data.type !=="cash" ? data?.subsource ? data?.subsource : type : null,
-      bank_name:    data.type !=="cash" ? data?.subsource ? data?.subsource : type : null,
+      cash_ledname: data.type === "cash" ? type : null,
+      cash_name:    data.type === "cash" ? type  : null,
+      bank_ledname: data.type !=="cash" ? type: null,
+      bank_name:    data.type !=="cash" ? type: null,
     };
 
     const receipt = new receiptModel({

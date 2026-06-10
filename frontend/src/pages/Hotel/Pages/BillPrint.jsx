@@ -34,6 +34,11 @@ const HotelBillPrint = () => {
   const paymentDetails = useSelector((state) => state.paymentSlice);
   const navigate = useNavigate();
   const [paymentModeDetails, setPaymentModeDetails] = useState([]);
+
+const [showPageSelectModal, setShowPageSelectModal] = useState(false);
+const [rowPageAssignments, setRowPageAssignments] = useState({}); // { "billIdx-chargeIdx": pageNumber }
+const [pageSelectBillIdx, setPageSelectBillIdx] = useState(0); // which bill to show
+
   // Props from location state
   const selectedCheckOut = location.state?.selectedCheckOut || [];
   console.log(selectedCheckOut[0]);
@@ -98,7 +103,7 @@ const HotelBillPrint = () => {
 
   // Fetch debit and KOT once for all docs shown
   const fetchDebitData = async (data) => {
-    console.log(data);
+    console.log(data[0]?.restaurantPaymentSplittingData);
     try {
       const res = await api.post(
         `/api/sUsers/fetchOutStandingAndFoodData/${organization._id}`,
@@ -120,13 +125,12 @@ const HotelBillPrint = () => {
     if (selectedCheckOut?.length > 0) {
       console.log(isForPreview);
       if (!isForPreview) {
-        const rawData = selectedCheckOut[0].checkoutpaymenttypedetails || [];
-        console.log(rawData);
+        const rawData = selectedCheckOut[0].restaurantPaymentSplittingData || [];
         // ✅ Convert to normal array
         const cleanData = rawData.map((item) =>
           item?.toObject ? item.toObject() : item._doc ? item._doc : item,
         );
-        console.log("cleanData", cleanData);
+
         const mergedMap = {};
         let mapData = [...cleanData];
         mapData?.forEach((item) => {
@@ -404,6 +408,7 @@ const HotelBillPrint = () => {
 
     const roomServiceTotals = {};
     const dineInTotals = {};
+    console.log("currentDocKots", currentDocKots);
 
     currentDocKots.forEach((kot) => {
       const kotRoomId = String(kot?.kotDetails?.roomId || kot?.roomId || "");
@@ -464,7 +469,9 @@ const HotelBillPrint = () => {
       const roomName =
         (doc.selectedRooms || []).find(
           (r) => String(r?.roomId || r?._id || r?.id) === roomId,
-        )?.roomName || "Unknown Room";
+        )?.roomName || "Unknown Room"; 
+
+   
 
       lines.push({
         date: roomServiceTotals[roomId].date,
@@ -615,7 +622,11 @@ const HotelBillPrint = () => {
       .filter((l) => l.type === "dineIn")
       .reduce((t, l) => t + Number(l.amount || 0), 0);
 
-    const restaurantTotal = roomServiceTotal + dineInTotal;
+  const newlyAppliedDiscount = paymentDetails?.paymentDetails?.restaurantSideDiscountAdjustmentArray?.length > 0 &&
+            paymentDetails?.paymentDetails?.restaurantSideDiscountAdjustmentArray?.reduce((acc, curr) => (acc + Number(curr.finalValue || 0)), 0);
+         console.log(newlyAppliedDiscount);
+
+    const restaurantTotal = (roomServiceTotal + dineInTotal) - newlyAppliedDiscount;
 
     console.log("Room Service Total:", roomServiceTotal);
     console.log("Dine In Total:", dineInTotal);
@@ -1089,6 +1100,7 @@ const HotelBillPrint = () => {
     }, 0);
     console.log(roomWiseDiscount, otherChargesAmount, discount);
     console.log(paymentDetails?.paymentDetails);
+    console.log(doc);
     console.log(doc.createdDate);
 
     return {
@@ -1141,6 +1153,7 @@ const HotelBillPrint = () => {
         cgst: cgstAmount,
         restaurant: dineInTotal, // ✅ Only dine-in restaurant amount
         roomService: roomServiceTotal, // ✅ Only room service amount
+        restaurantSideDiscount: newlyAppliedDiscount,
         foodPlan: planAmount + Number(foodPlanAmountWithTax),
         additionalPax: additionalPaxAmount,
         otherChargeAmount,
@@ -1539,6 +1552,32 @@ ${hotelName}`;
     }
   };
 
+
+  const handlePrintWithPageAssignment = () => {
+  // Group charges by assigned page number per bill
+  // Build a modified bills array where each bill has charges split across virtual "pages"
+  const modifiedBills = bills.flatMap((bill, bIdx) => {
+    // Collect page groups for this bill
+    const pageGroups = {};
+    (bill.charges || []).forEach((charge, cIdx) => {
+      const key = `${bIdx}-${cIdx}`;
+      const pageNum = rowPageAssignments[key] ?? 1;
+      if (!pageGroups[pageNum]) pageGroups[pageNum] = [];
+      pageGroups[pageNum].push(charge);
+    });
+
+    const sortedPages = Object.keys(pageGroups).sort((a, b) => Number(a) - Number(b));
+
+    // One bill entry per assigned page
+    return sortedPages.map((pg) => ({
+      ...bill,
+      charges: pageGroups[pg],
+      _pageLabel: `Page ${pg}`,
+    }));
+  });
+
+  handleBillPrintInvoice(modifiedBills, organization, paymentModeDetails, isForPreview);
+};
   console.log(paymentModeDetails);
   console.log("bills", bills);
   return (
@@ -2263,6 +2302,30 @@ ${hotelName}`;
                           </td>
                         </tr>
                       )}
+                            {activeMode !== "room" &&
+                      billData?.summary?.restaurantSideDiscount > 0 && (
+                        <tr>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                     Newly added restaurant discount
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {billData?.summary?.restaurantSideDiscount?.toLocaleString(
+                              "en-IN",
+                              {
+                                minimumFractionDigits: 2,
+                              },
+                            )}
+                          </td>
+                        </tr>
+                      )}
                     {activeMode !== "restaurant" &&
                       billData?.summary?.otherChargeAmount > 0 && (
                         <tr>
@@ -2724,11 +2787,27 @@ ${hotelName}`;
     {/* Visual separator */}
     <div className="w-px bg-gray-200 dark:bg-zinc-700 self-stretch mx-1" />
 
-    <button onClick={handleSplitPayment} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 dark:border-zinc-600 hover:bg-gray-100 dark:hover:bg-zinc-800 active:scale-95 transition-all">
-      <GridIcon className="w-4 h-4 text-gray-500" />
-      Arrange Print
-    </button>
-
+ <button
+  onClick={() => {
+    // Initialize all rows to page 1 if not already set
+    const init = { ...rowPageAssignments };
+    bills.forEach((bill, bIdx) => {
+      bill.charges?.forEach((_, cIdx) => {
+        const key = `${bIdx}-${cIdx}`;
+        if (init[key] === undefined) init[key] = 1;
+      });
+    });
+    setRowPageAssignments(init);
+    setPageSelectBillIdx(0);
+    setShowPageSelectModal(true);
+  }}
+  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 dark:border-zinc-600 hover:bg-gray-100 dark:hover:bg-zinc-800 active:scale-95 transition-all"
+>
+  <GridIcon className="w-4 h-4 text-gray-500" />
+  Arrange Print
+</button>
+    
+    
     <button onClick={handleSplitPayment} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 dark:border-zinc-600 hover:bg-gray-100 dark:hover:bg-zinc-800 active:scale-95 transition-all">
       <CreditCardIcon className="w-4 h-4 text-gray-500" />
       Split Payment
@@ -2771,6 +2850,142 @@ ${hotelName}`;
 
   </div>
 </div>
+{/* ── Page Selection Modal ── */}
+{showPageSelectModal && bills.length > 0 && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      
+      {/* Modal Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-zinc-700">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+            Page Assignment — Bill #{bills[pageSelectBillIdx]?.guest?.billNo}
+          </h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Enter a page number for each row. Rows with the same page number will print together.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowPageSelectModal(false)}
+          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Bill tabs if multiple bills */}
+      {bills.length > 1 && (
+        <div className="flex gap-1 px-5 pt-3">
+          {bills.map((b, i) => (
+            <button
+              key={i}
+              onClick={() => setPageSelectBillIdx(i)}
+              className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                pageSelectBillIdx === i
+                  ? "bg-black text-white"
+                  : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-700"
+              }`}
+            >
+              Bill {i + 1} — {b?.guest?.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="overflow-auto flex-1 px-5 py-3">
+        <table className="w-full text-xs border-collapse border border-gray-300 dark:border-zinc-600">
+          <thead>
+            <tr className="bg-gray-100 dark:bg-zinc-800">
+              <th className="border border-gray-300 dark:border-zinc-600 px-2 py-2 text-left">Date</th>
+              <th className="border border-gray-300 dark:border-zinc-600 px-2 py-2 text-left">Doc No</th>
+              <th className="border border-gray-300 dark:border-zinc-600 px-2 py-2 text-left">Description</th>
+              <th className="border border-gray-300 dark:border-zinc-600 px-2 py-2 text-right">Amount</th>
+              <th className="border border-gray-300 dark:border-zinc-600 px-2 py-2 text-right">Taxes</th>
+              <th className="border border-gray-300 dark:border-zinc-600 px-2 py-2 text-right">Advance</th>
+              <th className="border border-gray-300 dark:border-zinc-600 px-2 py-2 text-right">Balance</th>
+              <th className="border border-gray-300 dark:border-zinc-600 px-2 py-2 text-center w-20 bg-blue-50 dark:bg-blue-900/20">
+                <span className="text-blue-700 dark:text-blue-300 font-semibold">Page</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {bills[pageSelectBillIdx]?.charges?.map((charge, chargeIdx) => {
+              const key = `${pageSelectBillIdx}-${chargeIdx}`;
+              const pageVal = rowPageAssignments[key] ?? 1;
+              return (
+                <tr key={chargeIdx} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50">
+                  <td className="border border-gray-200 dark:border-zinc-700 px-2 py-1.5">{charge.date}</td>
+                  <td className="border border-gray-200 dark:border-zinc-700 px-2 py-1.5 text-center">{charge.docNo}</td>
+                  <td className="border border-gray-200 dark:border-zinc-700 px-2 py-1.5">{charge.description}</td>
+                  <td className="border border-gray-200 dark:border-zinc-700 px-2 py-1.5 text-right">
+                    {Number(charge.amount || 0).toFixed(2)}
+                  </td>
+                  <td className="border border-gray-200 dark:border-zinc-700 px-2 py-1.5 text-right">{charge.taxes}</td>
+                  <td className="border border-gray-200 dark:border-zinc-700 px-2 py-1.5 text-right">{charge.advance}</td>
+                  <td className="border border-gray-200 dark:border-zinc-700 px-2 py-1.5 text-right">{charge.balance}</td>
+                  <td className="border border-gray-200 dark:border-zinc-700 px-2 py-1.5 text-center bg-blue-50/50 dark:bg-blue-900/10">
+                    <input
+                      type="number"
+                      min="1"
+                      value={pageVal}
+                      onChange={(e) => {
+                        const val = Math.max(1, parseInt(e.target.value) || 1);
+                        setRowPageAssignments((prev) => ({ ...prev, [key]: val }));
+                      }}
+                      className="w-14 text-center border border-blue-300 dark:border-blue-600 rounded px-1 py-0.5
+                                 text-xs bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-blue-500
+                                 text-gray-900 dark:text-white"
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer actions */}
+      <div className="flex items-center justify-between px-5 py-3 border-t border-gray-200 dark:border-zinc-700 gap-3">
+        <button
+          onClick={() => {
+            // Reset all to page 1
+            const reset = {};
+            bills.forEach((bill, bIdx) => {
+              bill.charges?.forEach((_, cIdx) => {
+                reset[`${bIdx}-${cIdx}`] = 1;
+              });
+            });
+            setRowPageAssignments(reset);
+          }}
+          className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline"
+        >
+          Reset all to Page 1
+        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowPageSelectModal(false)}
+            className="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              setShowPageSelectModal(false);
+              handlePrintWithPageAssignment();
+            }}
+            className="px-4 py-2 text-sm rounded-lg bg-black text-white hover:opacity-80 flex items-center gap-1.5"
+          >
+            <PrinterIcon className="w-4 h-4" />
+            Print with Page Split
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 };

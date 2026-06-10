@@ -34,7 +34,7 @@ import { transactions, addHsn, getSingleHsn, editHsn, deleteHsn, getOpeningBalan
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
-import { createReceipt, cancelReceipt, editReceipt, getReceiptDetails } from '../controllers/receiptController.js';
+import { createReceipt, cancelReceipt, editReceipt, getReceiptDetails ,getReceiptsByVoucherSeries } from '../controllers/receiptController.js';
 import { createPayment, cancelPayment, editPayment, getPaymentDetails } from '../controllers/paymentController.js';
 import { createInvoice, editInvoice, cancelSalesOrder, PartyListWithOrderPending, getInvoiceDetails } from '../controllers/saleOrderController.js';
 import { createStockTransfer, editStockTransfer, cancelStockTransfer, getStockTransferDetails } from '../controllers/stockTransferController.js';
@@ -62,7 +62,7 @@ import {
     updateVisitOfPurpose, deleteVisitOfPurpose, saveIdProof, getIdProof, updateIdProof, deleteIdProof, saveFoodPlan, getFoodPlan
     , updateFoodPlan, deleteFoodPlan, addRoom, getRooms, editRoom, deleteRoom, getAllRooms, roomBooking, getBookings, deleteBooking, updateBooking,
     fetchAdvanceDetails, getAllRoomsWithStatusForDate, updateRoomStatus, getDateBasedRoomsWithStatus, checkoutWithArrayOfData,
-    fetchOutStandingAndFoodData, convertCheckOutToSale, updateConfigurationForHotelAndRestaurant, swapRoom, getRoomSwapHistory, checkedInGuest,
+    fetchOutStandingAndFoodData, updateConfigurationForHotelAndRestaurant, swapRoom, getRoomSwapHistory, checkedInGuest,
     getallroomsCurrentStatus,
     getallnoncheckoutCheckins,
     getHotelSalesDetails, getRoomCheckInDetails, cancelBooking,getCheckoutStatementByDate,convertToAvailable,controlTaggedCheckIn,
@@ -74,8 +74,11 @@ import {
     getSaleBasedOnVoucher,
     updateCheckout,
     getSalesByCheckInNumber,
-    updateRestaurantSalePayments
+    updateRestaurantSalePayments,
+    getRestaurantSales,getTravelAgentSalesReport,getAgentList
 } from '../controllers/hotelController.js'
+
+import { convertCheckOutToSale } from '../controllers/hotelController2CheckOut.js';
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot,getKotDash, updateKotStatus, editKot,
     getRoomDataForRestaurant, updateKotPayment, getPaymentType, saveTableNumber, getSalePrintData, updateTable, getTables, deleteTable,
@@ -399,6 +402,8 @@ router.get("/getRoomSwapHistory/:checkInId",getRoomSwapHistory);
 router.get("/getCheckedInGuests/:cmp_id", checkedInGuest);
 router.get('/summary', getSummaryDashboard);
 router.get('/hotel-sales/:cmp_id/:type', getHotelSalesDetails);
+router.get("/receiptReport/:cmp_id",getReceiptsByVoucherSeries)
+// router.get("/unreconciled/:cmp_id", getUnreconciledSales);
 router.put("/cancel/:id", cancelKot);
 router.get('/getRoomCheckInDetails/:cmp_id/:roomId',getRoomCheckInDetails);
 router.put('/cancelBooking/:id', cancelBooking);
@@ -414,6 +419,8 @@ router.get("/flash-report", getFlashReportForDate);
 router.get("/restaurant-category-wise-sales", getRestaurantCategoryWiseSalesReport);
 router.get("/restaurant-date-wise-item-report", getRestaurantDateWiseItemReport);
 router.get("/tourist-report", getTouristReport);
+router.get("/travel-agent-sales", getTravelAgentSalesReport);
+router.get("/travel-agent-sales/agents", getAgentList);
 router.get("/foodplan-report", getFoodPlanReport);
 router.get("/occupancy-checkout-report", getOccupancyCheckoutReport);
 router.get("/register", getKotRegister);
@@ -429,6 +436,7 @@ router.put("/updateCheckout/:id", updateCheckout);
 router.get("/getSalesByCheckInNumber/:checkInNumber", getSalesByCheckInNumber);  
 router.put("/updateRestaurantSalePayment/:id", updateRestaurantSalePayments);
 
+router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
 // Route to get detailed booking information for a specific room and date
 
 export default router

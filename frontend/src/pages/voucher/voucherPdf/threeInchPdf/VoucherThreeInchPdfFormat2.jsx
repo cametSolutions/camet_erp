@@ -853,38 +853,44 @@ ${orgName}`;
               </div>
 
               {/* CGST + SGST (same state) */}
-              {isIndian && isSameState && calculateTotalTax() > 0 && (
-                <>
-                  <div style={flexRow}>
-                    <div
-                      style={{
-                        marginLeft: "auto",
-                        width: 70,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      CGST {cgstPercentage}%
-                    </div>
-                    <div style={textRight}>{cgst}</div>
-                  </div>
-                  <div style={flexRow}>
-                    <div
-                      style={{
-                        marginLeft: "auto",
-                        width: 70,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      SGST {sgstPercentage}%
-                    </div>
-                    {/* ✅ FIX: was showing cgst here before */}
-                    <div style={textRight}>{sgst}</div>
-                  </div>
-                </>
-              )}
+             {
+(
+  org?.industry == 7
+    ? calculateTotalTax() > 0
+    : isIndian && isSameState && calculateTotalTax() > 0
+) && (
+  <>
+    <div style={flexRow}>
+      <div
+        style={{
+          marginLeft: "auto",
+          width: 70,
+          fontWeight: "bold",
+        }}
+      >
+        CGST {cgstPercentage}%
+      </div>
+      <div style={textRight}>{cgst}</div>
+    </div>
+
+    <div style={flexRow}>
+      <div
+        style={{
+          marginLeft: "auto",
+          width: 70,
+          fontWeight: "bold",
+        }}
+      >
+        SGST {sgstPercentage}%
+      </div>
+
+      <div style={textRight}>{sgst}</div>
+    </div>
+  </>
+)}
 
               {/* IGST (inter-state) */}
-              {isIndian && !isSameState && calculateTotalTax() > 0 && (
+              {!org?.industry == 7 && isIndian && !isSameState && calculateTotalTax() > 0 && (
                 <div style={flexRow}>
                   <div
                     style={{

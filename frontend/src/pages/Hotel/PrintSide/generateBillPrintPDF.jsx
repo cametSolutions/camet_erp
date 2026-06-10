@@ -380,6 +380,13 @@ const drawSummaryAndPayment = (doc, billData, startY, isForPreview, paymentModeD
       Number(billData.summary.roomService).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
     ]);
   }
+  if (Number(billData?.summary?.restaurantSideDiscount || 0) > 0) {
+    summaryRows.push([
+      " Newly added restaurant discount",
+      Number(billData.summary.restaurantSideDiscount).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+    ]);
+  }
+
 
   if (Number(billData?.summary?.otherChargeAmount || 0) > 0) {
     summaryRows.push([

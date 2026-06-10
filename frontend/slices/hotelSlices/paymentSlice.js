@@ -11,6 +11,7 @@ const initialState = {
   onlinePartyName:"",
   onlineType:"",
   printData: {},
+  setRestaurantTag:null
 };
 
 export const paymentSlice = createSlice({
@@ -35,6 +36,9 @@ export const paymentSlice = createSlice({
     setOnlineType: (state, action) => {
       state.onlineType = action.payload;
     },
+     setRestaurantTag: (state, action) => {
+      state.onlineType = action.payload;
+    },
      setPrintDetails: (state, action) => {
       state.printData = action.payload;
     },
@@ -50,7 +54,8 @@ export const {
   setOnlinepartyName,
   setOnlineType,
   removeAll,
-  setPrintDetails
+  setPrintDetails,
+  setRestaurantTag
 } = paymentSlice.actions;
 
 export default paymentSlice.reducer;
