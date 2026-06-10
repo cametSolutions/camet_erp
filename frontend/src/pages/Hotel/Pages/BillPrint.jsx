@@ -217,11 +217,22 @@ console.log(mergedMap);
           : (Number(activePrice || 0) * Number(room?.taxPercentage || 0)) / 100;
       }
 
+
+const foodPlanTaxableAmount =
+  Number(room.foodPlanAmountWithTax || 0) /
+  (1 + Number(room.foodPlanTaxRate || 0) / 100)
+
       const foodPlanAmountWithTaxPerDay =
         Number(room.foodPlanAmountWithTax || 0) / stayDays;
-      const foodPlanAmountWithOutTaxPerDay =
-        Number(room.foodPlanAmountWithOutTax || 0) / stayDays;
 
+      const foodPlanAmountWithOutTaxPerDay =
+        (Number(foodPlanTaxableAmount || 0) / stayDays).toFixed(2)
+
+        console.log(foodPlanTaxableAmount -  foodPlanAmountWithOutTaxPerDay)
+
+      const foodPlanTax = foodPlanAmountWithTaxPerDay -  foodPlanAmountWithOutTaxPerDay
+      console.log(foodPlanTax)
+        console.log(foodPlanAmountWithOutTaxPerDay,foodPlanAmountWithTaxPerDay)
       // Additional pax, spread only across full days
       const totalAdditionalPaxWithTax = Number(
         room.additionalPaxAmountWithTax || 0,
@@ -324,6 +335,7 @@ console.log(mergedMap);
           customerName: doc.customerId?.partyName,
           foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay,
           foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay,
+          foodPlanTax:foodPlanTax,
           additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay,
           additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay,
           roomId: room?.roomId || room?._id,
@@ -364,6 +376,7 @@ console.log(mergedMap);
           customerName: doc.customerId?.partyName,
           foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay * 0.5,
           foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay * 0.5,
+          foodPlanTax:foodPlanTax,
           additionalPaxDataWithTax: 0,
           additionalPaxDataWithOutTax: 0,
           roomId: room?.roomId || room?._id,
@@ -527,8 +540,14 @@ console.log(mergedMap);
       (t, i) => t + Number(i.foodPlanAmountWithOutTax || 0),
       0,
     );
+    console.log(planAmount)
+    const foodPlanTax = (dateWiseLines.reduce(
+      (t, i) => t + Number(i.foodPlanTax || 0),
+      0,
+    )/2).toFixed(2);
 
-    console.log(planAmount);
+    console.log(foodPlanTax);
+
     const foodPlanAmountWithTax = dateWiseLines
       .reduce(
         (t, i) =>
@@ -1102,6 +1121,8 @@ console.log(mergedMap);
     let otherChargesAmount = doc.selectedRooms.reduce((acc, curr) => {
       return acc + Number(curr.otherChargeAmount || 0);
     }, 0);
+    console.log(doc)
+
     console.log(roomWiseDiscount, otherChargesAmount, discount);
     console.log(paymentDetails?.paymentDetails);
     console.log(doc);
@@ -1153,12 +1174,13 @@ console.log(mergedMap);
           Number(roomWiseDiscount || 0)
         ).toFixed(2),
         discount: discount,
-        sgst: sgstAmount,
-        cgst: cgstAmount,
+        sgst: Number(foodPlanTax) > 0 ? Number(sgstAmount) +Number(foodPlanTax) : sgstAmount,
+        cgst: Number(foodPlanTax) > 0 ? Number(cgstAmount) +Number(foodPlanTax) : cgstAmount,
         restaurant: dineInTotal, // ✅ Only dine-in restaurant amount
         roomService: roomServiceTotal, // ✅ Only room service amount
         restaurantSideDiscount: newlyAppliedDiscount,
-        foodPlan: planAmount + Number(foodPlanAmountWithTax),
+        foodPlan: planAmount,
+        foodPlanAmountTax:  Number(foodPlanAmountWithTax),
         additionalPax: additionalPaxAmount,
         otherChargeAmount,
         total: grandTotal,
