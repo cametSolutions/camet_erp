@@ -5,7 +5,7 @@ import Settlement from "../models/settlementModel.js";
 import Party from "../models/partyModel.js";
 import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
 import salesModel from "../models/salesModel.js";
-import VoucherSeriesModel from "../models/voucherSeriesModel.js";
+import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 import roomModal from "../models/roomModal.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import { saveSettlementDataHotel } from "../helpers/hotelHelper.js";
