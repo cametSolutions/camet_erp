@@ -184,13 +184,7 @@ export const convertCheckOutToSale = async (req, res) => {
             .reduce((sum, s) => sum + Number(s.amount || 0), 0);
 
           finalPaymentMethod =
-            cashAmt > 0 && onlineAmt > 0
-              ? "mixed"
-              : cashAmt > 0
-                ? "cash"
-                : onlineAmt > 0
-                  ? "bank"
-                  : "credit";
+            cashAmt > 0 ? "cash" : onlineAmt > 0 ? "bank" : "credit";
         } else if (isPostToRoom || paymentMode === "credit") {
           cashAmt = Number(paymentDetails?.cashAmount || 0);
           finalPaymentMethod = "credit";
@@ -211,6 +205,8 @@ export const convertCheckOutToSale = async (req, res) => {
             restaurantBaseSaleData,
             session,
           );
+
+          
 
         console.log("paymentSplittingArray", paymentSplittingArray);
         console.log("restaurantSplitArray", restaurantSplitArray);
@@ -612,103 +608,211 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
   session,
 ) => {
   try {
-    if (!Array.isArray(settlementData) || settlementData.length === 0)
-      return true;
-    if (!Array.isArray(selectedCheckOut) || selectedCheckOut.length === 0)
+    if (!Array.isArray(settlementData) || settlementData.length === 0) return true;
+    if (!Array.isArray(selectedCheckOut) || selectedCheckOut.length === 0) {
       throw new Error("selectedCheckOut is required");
+    }
     if (!cmp_id) throw new Error("Missing cmp_id");
 
-    const checkInIds = selectedCheckOut.map((item) => item._id).filter(Boolean);
-    const tallyData = await TallyData.find({
-      billId: { $in: checkInIds },
-    }).session(session);
+    const safeSub = (value, deduct) => {
+      const result = Number(value || 0) - Number(deduct || 0);
+      return result > 0 ? result : 0;
+    };
 
-    const restaurantSideDiscountAdjustmentArray = settlementData;
+    const adjustSplitArray = (splitArray = [], deductAmount = 0) => {
+      let remainingDeduction = Number(deductAmount || 0);
 
-    let totalOfDiscountAndAdvance =
-      restaurantSideDiscountAdjustmentArray.reduce(
-        (acc, item) =>
-          acc + Number(item.finalValue || 0) + Number(item.advanceAmount || 0),
+      const updatedSplits = (Array.isArray(splitArray) ? splitArray : [])
+        .map((split) => {
+          const currentAmount = Number(split.amount || 0);
+
+          if (remainingDeduction <= 0) {
+            return {
+              ...split,
+              amount: parseFloat(currentAmount.toFixed(2)),
+            };
+          }
+
+          const deductNow = Math.min(currentAmount, remainingDeduction);
+          const newAmount = currentAmount - deductNow;
+          remainingDeduction -= deductNow;
+
+          return {
+            ...split,
+            amount: parseFloat(newAmount.toFixed(2)),
+          };
+        })
+        .filter((split) => Number(split.amount || 0) > 0);
+
+      const updatedTotal = updatedSplits.reduce(
+        (sum, split) => sum + Number(split.amount || 0),
         0,
       );
 
-    if (restaurantSideDiscountAdjustmentArray.length > 0) {
-      for (const item of restaurantSideDiscountAdjustmentArray) {
-        const finalValue = Number(item.finalValue || 0);
-        const advanceAmount = Number(item.advanceAmount || 0);
-        const totalAmountToDeduct = finalValue + advanceAmount;
+      return {
+        updatedSplits,
+        updatedTotal: parseFloat(updatedTotal.toFixed(2)),
+      };
+    };
 
-        if (finalValue > 0) {
-          const discountObject = {
-            _id: item._id,
-            option: "discount",
-            value: item.value,
-            action: "sub",
-            taxPercentage: item.taxPercentage,
-            taxAmt: item.taxAmt,
-            hsn: item.hsn,
-            finalValue,
-          };
-          await salesModel.updateOne(
-            { _id: item.saleId },
-            {
-              $inc: { totalAdditionalCharges: finalValue },
-              $push: { additionalCharges: discountObject },
-            },
-            { session },
-          );
-        }
+    for (const item of settlementData) {
+      const saleId = item?.saleId;
+      if (!saleId) continue;
 
-        if (totalAmountToDeduct > 0) {
-          await TallyData.updateOne(
-            { billId: item.saleId },
-            {
-              $inc: {
-                bill_amount: -totalAmountToDeduct,
-                bill_pending_amt: -totalAmountToDeduct,
-              },
-            },
-            { session },
-          );
-        }
+      const finalValue = Number(item.finalValue || 0);
+      const advanceAmount = Number(item.advanceAmount || 0);
+      const totalAmountToDeduct = finalValue + advanceAmount;
+
+      if (totalAmountToDeduct <= 0) continue;
+
+      const saleDoc = await salesModel.findOne({
+        _id: saleId,
+        cmp_id,
+        isCancelled: false,
+      }).session(session);
+
+      if (!saleDoc) {
+        throw new Error(`Restaurant sale not found: ${saleId}`);
       }
-    }
 
-    if (tallyData.length > 0 && totalOfDiscountAndAdvance > 0) {
-      for (let i = 0; i < tallyData.length; i++) {
-        if (totalOfDiscountAndAdvance <= 0) break;
+      let updatedAdditionalCharges = Array.isArray(saleDoc.additionalCharges)
+        ? [...saleDoc.additionalCharges]
+        : [];
 
-        const currentBillAmount = Number(tallyData[i].bill_amount || 0);
-        const maximumAmountToDeduct =
-          currentBillAmount > totalOfDiscountAndAdvance
-            ? totalOfDiscountAndAdvance
-            : currentBillAmount;
+      let updatedTotalAdditionalCharges = Number(
+        saleDoc.totalAdditionalCharges || 0,
+      );
 
-        if (maximumAmountToDeduct > 0) {
-          await TallyData.updateOne(
-            { _id: tallyData[i]._id },
-            {
-              $inc: {
-                bill_amount: -maximumAmountToDeduct,
-                bill_pending_amt: -maximumAmountToDeduct,
-              },
+      if (finalValue > 0) {
+        const discountObject = {
+          _id: item._id,
+          option: "discount",
+          value: item.value,
+          action: "sub",
+          taxPercentage: item.taxPercentage,
+          taxAmt: item.taxAmt,
+          hsn: item.hsn,
+          finalValue,
+        };
+
+        updatedAdditionalCharges.push(discountObject);
+        updatedTotalAdditionalCharges += finalValue;
+      }
+
+      const subTotal = Number(saleDoc.subTotal || 0);
+      const updatedFinalAmount = safeSub(subTotal, updatedTotalAdditionalCharges);
+
+      const existingPaymentSplits = Array.isArray(saleDoc.paymentSplittingData)
+        ? saleDoc.paymentSplittingData
+        : [];
+
+      const { updatedSplits, updatedTotal } = adjustSplitArray(
+        existingPaymentSplits,
+        totalAmountToDeduct,
+      );
+
+      await salesModel.updateOne(
+        { _id: saleId },
+        {
+          $set: {
+            additionalCharges: updatedAdditionalCharges,
+            totalAdditionalCharges: updatedTotalAdditionalCharges,
+            finalAmount: updatedFinalAmount,
+            totalWithAdditionalCharges: updatedFinalAmount,
+            totalPaymentSplits: updatedTotal,
+            paymentSplittingData: updatedSplits,
+          },
+        },
+        { session },
+      );
+
+      const saleTallies = await TallyData.find({
+        billId: saleId,
+        isCancelled: false,
+      }).session(session);
+
+      for (const tally of saleTallies) {
+        const currentBillAmount = Number(tally.bill_amount || 0);
+        const currentPendingAmount = Number(tally.bill_pending_amt || 0);
+
+        const newBillAmount = safeSub(currentBillAmount, totalAmountToDeduct);
+        const newPendingAmount = safeSub(
+          currentPendingAmount,
+          totalAmountToDeduct,
+        );
+
+        await TallyData.updateOne(
+          { _id: tally._id },
+          {
+            $set: {
+              bill_amount: newBillAmount,
+              bill_pending_amt: newPendingAmount,
             },
-            { session },
+          },
+          { session },
+        );
+
+        const matchedReceipt = await receiptModel.findOne({
+          "billData._id": tally._id,
+          isCancelled: false,
+        }).session(session);
+
+        if (matchedReceipt) {
+          const billRow = matchedReceipt.billData.find(
+            (b) => String(b._id) === String(tally._id),
           );
 
-          await receiptModel.updateOne(
-            { "billData.billId": tallyData[i]._id },
-            {
-              $set: {
-                totalBillAmount: maximumAmountToDeduct,
-                enteredAmount: maximumAmountToDeduct,
-                "billData.$.settledAmount": maximumAmountToDeduct,
-              },
-            },
-            { session },
-          );
+          if (billRow) {
+            const oldSettledAmount = Number(billRow.settledAmount || 0);
+            const oldTotalBillAmount = Number(matchedReceipt.totalBillAmount || 0);
+            const oldEnteredAmount = Number(matchedReceipt.enteredAmount || 0);
 
-          totalOfDiscountAndAdvance -= maximumAmountToDeduct;
+            const receiptSettledReduction = Math.min(
+              totalAmountToDeduct,
+              oldSettledAmount,
+            );
+
+            const updatedBillPending = newPendingAmount;
+            const updatedSettledAmount = safeSub(
+              oldSettledAmount,
+              receiptSettledReduction,
+            );
+            const updatedBillRemaining =
+              updatedBillPending > 0 ? updatedBillPending : 0;
+
+            const updatedReceiptTotalBill = safeSub(
+              oldTotalBillAmount,
+              totalAmountToDeduct,
+            );
+
+            const updatedReceiptEntered = safeSub(
+              oldEnteredAmount,
+              receiptSettledReduction,
+            );
+
+            const updatedReceiptRemaining =
+              updatedReceiptTotalBill > updatedReceiptEntered
+                ? updatedReceiptTotalBill - updatedReceiptEntered
+                : 0;
+
+            await receiptModel.updateOne(
+              {
+                _id: matchedReceipt._id,
+                "billData._id": tally._id,
+              },
+              {
+                $set: {
+                  totalBillAmount: updatedReceiptTotalBill,
+                  enteredAmount: updatedReceiptEntered,
+                  remainingAmount: updatedReceiptRemaining,
+                  "billData.$.bill_pending_amt": updatedBillPending,
+                  "billData.$.settledAmount": updatedSettledAmount,
+                  "billData.$.remainingAmount": updatedBillRemaining,
+                },
+              },
+              { session },
+            );
+          }
         }
       }
     }
@@ -722,7 +826,6 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
     throw error;
   }
 };
-
 // =============================================================================
 // hotelVoucherSeries
 // =============================================================================
@@ -812,19 +915,20 @@ async function createPaymentSplittingArray(
       }
 
       const splitObj = {
-        type: splitSourceType,
-        amount: Number(split.amount || 0),
-        ref_id: resolvedSourceId,
-        customer: resolvedCustomerId,
-        customerName: split.customerName,
-        remarks: split.remarks ?? null,
-        source: resolvedSourceId,
-        sourceType: splitSourceType,
-        subsource: split.subsource ?? splitSourceType,
-        transactionNo: split.transactionNo ?? "",
-        underCategory: split.underCategory,
-        upiNo: split.upiNo ?? "",
-      };
+  type: splitSourceType,
+  amount: Number(split.amount || 0),
+  ref_id: resolvedSourceId,
+  customer: resolvedCustomerId,
+  customerName: split.customerName,
+  remarks: split.remarks ?? null,
+  source: resolvedSourceId,
+  sourceType: splitSourceType,
+  subsource: split.subsource ?? splitSourceType,
+  transactionNo: split.transactionNo ?? "",
+  underCategory: split.underCategory,
+  upiNo: split.upiNo ?? "",
+  splitSaleId: split.splitSaleId || split.saleId || null,
+};
 
       if (split.underCategory === "room") {
         arr.push(splitObj);
@@ -966,42 +1070,90 @@ async function createPaymentSplittingArray(
   }
 
   // distribute restaurant splits into restaurant sale docs
-  if (restaurantBaseSaleData.length > 0 && restaurantTotal > 0) {
-    let splitsToDistribute = [];
+if (restaurantBaseSaleData.length > 0 && restaurantTotal > 0) {
+  let splitsToDistribute = [];
 
-    if (paymentMode === "split" && restaurantSplitArray.length > 0) {
-      splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
-    } else if (paymentMode === "credit") {
-      const creditorId = paymentDetails?.selectedCreditor?._id;
-      const creditorName = paymentDetails?.selectedCreditor?.partyName;
+  if (paymentMode === "split" && restaurantSplitArray.length > 0) {
+    splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
+  } else if (paymentMode === "credit") {
+    const creditorId = paymentDetails?.selectedCreditor?._id;
+    const creditorName = paymentDetails?.selectedCreditor?.partyName;
 
-      splitsToDistribute.push({
-        type: "credit",
-        amount: restaurantTotal,
-        ref_id: creditorId,
-        reference_name: creditorName,
-        customer: getCustomerId(paymentDetails?.selectedCreditor),
-        customerName: creditorName,
-        remarks: paymentDetails?.remarks ?? null,
-        source: creditorId,
-        sourceType: "credit",
-        subsource: creditorName,
-        transactionNo: "",
-        underCategory: "food",
-        upiNo: "",
-      });
-    } else {
-      splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
+    splitsToDistribute.push({
+      type: "credit",
+      amount: restaurantTotal,
+      ref_id: creditorId,
+      reference_name: creditorName,
+      customer: getCustomerId(paymentDetails?.selectedCreditor),
+      customerName: creditorName,
+      remarks: paymentDetails?.remarks ?? null,
+      source: creditorId,
+      sourceType: "credit",
+      subsource: creditorName,
+      transactionNo: "",
+      underCategory: "food",
+      upiNo: "",
+      splitSaleId: null,
+    });
+  } else {
+    splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
+  }
+
+  // if splitSaleId exists, use exact mapping
+  const hasMappedSaleIds = splitsToDistribute.some((s) => s.splitSaleId);
+
+  if (hasMappedSaleIds) {
+    const groupedRestaurantSplits = new Map();
+
+    for (const split of splitsToDistribute) {
+      const targetSaleId = String(split.splitSaleId || "");
+      if (!targetSaleId) continue;
+
+      if (!groupedRestaurantSplits.has(targetSaleId)) {
+        groupedRestaurantSplits.set(targetSaleId, []);
+      }
+
+      groupedRestaurantSplits.get(targetSaleId).push({ ...split });
     }
 
+    for (const saleItem of restaurantBaseSaleData) {
+      const saleKey = String(saleItem._id);
+      const itemSplits = groupedRestaurantSplits.get(saleKey) || [];
+      const totalPaymentSplits = itemSplits.reduce(
+        (sum, s) => sum + Number(s.amount || 0),
+        0,
+      );
+
+      await salesModel.findOneAndUpdate(
+        { _id: saleItem._id },
+        {
+          $set: {
+            paymentSplittingData: itemSplits,
+            totalPaymentSplits: parseFloat(totalPaymentSplits.toFixed(2)),
+          },
+        },
+        { session, new: true },
+      );
+    }
+  } else {
+    // fallback old logic if splitSaleId not sent
     if (restaurantBaseSaleData.length === 1) {
       await salesModel.findOneAndUpdate(
         { _id: restaurantBaseSaleData[0]._id },
-        { $set: { paymentSplittingData: splitsToDistribute } },
+        {
+          $set: {
+            paymentSplittingData: splitsToDistribute,
+            totalPaymentSplits: parseFloat(
+              splitsToDistribute.reduce(
+                (sum, s) => sum + Number(s.amount || 0),
+                0,
+              ).toFixed(2),
+            ),
+          },
+        },
         { session, new: true },
       );
     } else {
-      const updatePromises = [];
       let remainingSplits = splitsToDistribute.map((s) => ({ ...s }));
 
       for (const saleItem of restaurantBaseSaleData) {
@@ -1029,18 +1181,25 @@ async function createPaymentSplittingArray(
           (s) => Number(s.amount || 0) > 0,
         );
 
-        updatePromises.push(
-          salesModel.findOneAndUpdate(
-            { _id: saleItem._id },
-            { $set: { paymentSplittingData: itemSplits } },
-            { session, new: true },
-          ),
+        const totalPaymentSplits = itemSplits.reduce(
+          (sum, s) => sum + Number(s.amount || 0),
+          0,
+        );
+
+        await salesModel.findOneAndUpdate(
+          { _id: saleItem._id },
+          {
+            $set: {
+              paymentSplittingData: itemSplits,
+              totalPaymentSplits: parseFloat(totalPaymentSplits.toFixed(2)),
+            },
+          },
+          { session, new: true },
         );
       }
-
-      await Promise.all(updatePromises);
     }
   }
+}
 
   return { arr, restaurantSplitArray };
 }
