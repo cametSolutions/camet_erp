@@ -36,6 +36,11 @@ export const generateVoucherNumber = async (
     options
   );
 
+
+  console.log("doc", doc);
+  
+  console.log("doc", cmp_id,voucherType,seriesId);
+
   if (!doc) throw new Error("Voucher series not found");
 
   const series = doc.series.find((s) => s._id.toString() === seriesId);

@@ -62,7 +62,7 @@ import {
     updateVisitOfPurpose, deleteVisitOfPurpose, saveIdProof, getIdProof, updateIdProof, deleteIdProof, saveFoodPlan, getFoodPlan
     , updateFoodPlan, deleteFoodPlan, addRoom, getRooms, editRoom, deleteRoom, getAllRooms, roomBooking, getBookings, deleteBooking, updateBooking,
     fetchAdvanceDetails, getAllRoomsWithStatusForDate, updateRoomStatus, getDateBasedRoomsWithStatus, checkoutWithArrayOfData,
-    fetchOutStandingAndFoodData, convertCheckOutToSale, updateConfigurationForHotelAndRestaurant, swapRoom, getRoomSwapHistory, checkedInGuest,
+    fetchOutStandingAndFoodData, updateConfigurationForHotelAndRestaurant, swapRoom, getRoomSwapHistory, checkedInGuest,
     getallroomsCurrentStatus,
     getallnoncheckoutCheckins,
     getHotelSalesDetails, getRoomCheckInDetails, cancelBooking,getCheckoutStatementByDate,convertToAvailable,controlTaggedCheckIn,
@@ -72,6 +72,8 @@ import {
     viewReport,
     getRestaurantSales, deleteAdvance,getTravelAgentSalesReport,getAgentList
 } from '../controllers/hotelController.js'
+
+import { convertCheckOutToSale } from '../controllers/hotelController2CheckOut.js';
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot,getKotDash, updateKotStatus, editKot,
     getRoomDataForRestaurant, updateKotPayment, getPaymentType, saveTableNumber, getSalePrintData, updateTable, getTables, deleteTable,

@@ -2847,9 +2847,13 @@ export const convertCheckOutToSale = async (req, res) => {
 
       let results = [];
       let salesarray = [];
+
       for (const item of selectedCheckOut) {
+
         const bookingVoucherNumber =
           item?.bookingId?.voucherNumber || item?.bookingId;
+
+        
         const checkingVoucherNumber = item?.voucherNumber;
 
         const matchedBooking = bookingMap.get(bookingVoucherNumber);
@@ -2879,6 +2883,8 @@ export const convertCheckOutToSale = async (req, res) => {
           cmp_id,
           session,
         );
+
+        
         const party = mapPartyData(partyData);
 
         // -----------------------------
@@ -2954,6 +2960,7 @@ export const convertCheckOutToSale = async (req, res) => {
         console.log("paymentSplittingArray", paymentSplittingArray);
         console.log("restaurantSplitArray", restaurantSplitArray);
 
+
         const saleNumber = await generateVoucherNumber(
           cmp_id,
           "sales",
@@ -2988,7 +2995,7 @@ export const convertCheckOutToSale = async (req, res) => {
 
         const roomTotal = itemTotal;
         let checkoutamounttypes = [];
-
+n // checked
         if (paymentMode !== "credit") {
           checkoutamounttypes = split
             .filter((splitItem) => splitItem.underCategory !== "food")
@@ -3006,6 +3013,9 @@ export const convertCheckOutToSale = async (req, res) => {
             },
           ];
         }
+
+
+        console.log("checkoutamounttypes")
 
         const paymentTotals = restaurantSplitArray.reduce(
           (acc, splitItem) => {
@@ -3263,6 +3273,9 @@ export const convertCheckOutToSale = async (req, res) => {
             (item) => item.source === "credit",
           ) || [];
 
+
+          console.log("creditItems",creditItems)
+
         for (const item of creditItems) {
           const partyid = item?.customer;
           const partyData = await getSelectedParty(partyid, cmp_id, session);
@@ -3326,6 +3339,8 @@ export const convertCheckOutToSale = async (req, res) => {
                 : "bank";
 
           const agId = results[0]?.salesRecord?.party?.accountGroup_id;
+
+          console.log("paymentDetailsvvvvv",paymentDetails)
 
           await createReceiptForSales(
             cmp_id,
@@ -3431,31 +3446,44 @@ async function createPaymentSplittingArray(
         restaurantSplitArray.push(splitObj);
       }
     }
-  } else if (paymentMode === "credit") {
-    const hotelAmt = cashAmt - restaurantTotal;
+  }
+  
+ else if (paymentMode === "credit") {
+  // FIX: use paymentDetails.cashAmount (total) to derive hotel amount
+  // cashAmt here = 0 (set by credit branch in loop), so we read directly
+  const totalCreditAmount = Number(paymentDetails?.cashAmount || 0);
+  const hotelCreditAmt    = totalCreditAmount - restaurantTotal;  // 16392 - 438 = 15954
 
-    arr.push({
-      type: "credit",
-      amount: hotelAmt,
-      ref_id: paymentDetails?.selectedCreditor?._id,
-      reference_name: paymentDetails?.selectedCreditor?.partyName,
-      customer: getCustomerId(paymentDetails?.selectedCreditor),
-      customerName: paymentDetails?.selectedCreditor?.partyName,
-      remarks: paymentDetails.paymentDetails?.remarks ?? null,
-      source: paymentDetails?.selectedCreditor?._id,
-    });
+  arr.push({
+    type:           "credit",
+    amount:         hotelCreditAmt,
+    ref_id:         paymentDetails?.selectedCreditor?._id,
+    reference_name: paymentDetails?.selectedCreditor?.partyName,
+    customer:       paymentDetails?.selectedCreditor?._id,
+    customerName:   paymentDetails?.selectedCreditor?.partyName,
+    remarks:        paymentDetails?.remarks ?? null,
+    source:         paymentDetails?.selectedCreditor?._id,
+    sourceType:     "credit",
+    subsource:      paymentDetails?.selectedCreditor?.partyName,
+  });
 
-    restaurantSplitArray.push({
-      type: "credit",
-      amount: restaurantTotal,
-      ref_id: paymentDetails?.selectedCreditor?._id,
-      reference_name: paymentDetails?.selectedCreditor?.partyName,
-      customer: getCustomerId(paymentDetails?.selectedCreditor),
-      customerName: paymentDetails?.selectedCreditor?.partyName,
-      remarks: paymentDetails?.remarks ?? null,
-      source: paymentDetails?.selectedCreditor?._id,
-    });
-  } else {
+  restaurantSplitArray.push({
+    type:           "credit",
+    amount:         restaurantTotal,                               // 438
+    ref_id:         paymentDetails?.selectedCreditor?._id,
+    reference_name: paymentDetails?.selectedCreditor?.partyName,
+    customer:       paymentDetails?.selectedCreditor?._id,
+    customerName:   paymentDetails?.selectedCreditor?.partyName,
+    remarks:        paymentDetails?.remarks ?? null,
+    source:         paymentDetails?.selectedCreditor?._id,
+    sourceType:     "credit",
+    subsource:      paymentDetails?.selectedCreditor?.partyName,
+  });
+
+
+
+
+ } else {
     const split = paymentDetails.splitDetails[0];
 
     if (cashAmt > 0) {
@@ -3551,24 +3579,26 @@ async function createPaymentSplittingArray(
 
     if (paymentMode === "split" && restaurantSplitArray.length > 0) {
       splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
-    } else if (paymentMode === "credit") {
-      const split = paymentDetails.splitDetails[0];
-      splitsToDistribute.push({
-        type: "credit",
-        amount: restaurantTotal,
-        ref_id: paymentDetails?.selectedCreditor?._id,
-        reference_name: paymentDetails?.selectedCreditor?.partyName,
-        customer: getCustomerId(paymentDetails?.selectedCreditor),
-        customerName: paymentDetails?.selectedCreditor?.partyName,
-        remarks: split.remarks ?? null,
-        source: split.source,
-        sourceType: split.sourceType,
-        subsource: split.subsource,
-        transactionNo: split.transactionNo,
-        underCategory: split.underCategory,
-        upiNo: split.upiNo,
-      });
-    } else {
+    }
+     else if (paymentMode === "credit") {
+  // FIX: No splitDetails[0] in credit mode — read from selectedCreditor directly
+  splitsToDistribute.push({
+    type:           "credit",
+    amount:         restaurantTotal,
+    ref_id:         paymentDetails?.selectedCreditor?._id,
+    reference_name: paymentDetails?.selectedCreditor?.partyName,
+    customer:       paymentDetails?.selectedCreditor?._id,
+    customerName:   paymentDetails?.selectedCreditor?.partyName,
+    remarks:        paymentDetails?.remarks ?? null,
+    source:         paymentDetails?.selectedCreditor?._id,
+    sourceType:     "credit",
+    subsource:      paymentDetails?.selectedCreditor?.partyName,
+    transactionNo:  "",
+    underCategory:  "food",
+    upiNo:          "",
+  });
+}
+     else {
       splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
     }
 
@@ -6805,18 +6835,34 @@ export const viewReport = async (req, res) => {
     end.setHours(23, 59, 59, 999);
 
     // Fetch sales vouchers in date range
-    const sales = await salesModel
-      .find({
-        cmp_id,
-        voucherType: "sales",
-        date: { $gte: start, $lte: end },
-        isCancelled: false,
-      })
-      // .populate("cmp_id", "state")
-      .lean();
+   const restaurantSeries = await VoucherSeriesModel.findOne({
+  cmp_id,
+  voucherType: "sales",
+});
+
+const restaurantSeriesIds =
+  restaurantSeries?.series
+    ?.filter((s) => s.under === "restaurant")
+    .map((s) => s._id) || [];
+
+const sales = await salesModel.find({
+  cmp_id,
+  voucherType: "sales",
+  date: { $gte: start, $lte: end },
+  isCancelled: false,
+  series_id: { $nin: restaurantSeriesIds },
+}).lean();
+
+      const hotelSalesOnly = sales.filter((sale) => {
+  const ref =
+    sale.convertedFrom?.[0]?.checkInNumber ||
+    sale.convertedFrom?.[0]?.voucherNumber;
+  return !!ref;
+});
+
 
     // Collect all checkIn IDs from convertedFrom
-    const checkInNumbers = sales
+    const checkInNumbers = hotelSalesOnly
       .map(
         (s) =>
           s.convertedFrom?.[0]?.checkInNumber ||
@@ -6838,7 +6884,7 @@ export const viewReport = async (req, res) => {
       checkInMap[ci.voucherNumber] = ci;
     });
 
-    const reportRows = sales.map((sale) => {
+    const reportRows = hotelSalesOnly.map((sale) => {
       const checkInRef =
         sale.convertedFrom?.[0]?.checkInNumber ||
         sale.convertedFrom?.[0]?.voucherNumber;
@@ -7076,9 +7122,9 @@ export const getTravelAgentSalesReport = async (req, res) => {
       agentId: { $exists: true, $ne: null },
     };
 
-    if (agentId) {
-      checkoutFilter.agentId = new mongoose.Types.ObjectId(agentId);
-    }
+if (agentId) {
+  checkoutFilter.agentId = new mongoose.Types.ObjectId(agentId);
+}
 
     if (fromNorm || toNorm) {
       checkoutFilter.checkOutDate = {};
@@ -7117,7 +7163,6 @@ export const getTravelAgentSalesReport = async (req, res) => {
               },
             },
           ],
-          as: "agentDoc",
         },
       },
 
