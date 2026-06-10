@@ -19,7 +19,7 @@ import {
 import { Loader2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/api/api";
-import CustomerSearchInputBox from "../Components/CustomerSearchInputBox";
+import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
 
 // ── Helpers ──
 const getPaymentMethod = (sourceType) => {
