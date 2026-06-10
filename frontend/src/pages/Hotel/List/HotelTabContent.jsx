@@ -10,13 +10,10 @@ import {
 } from "@/components/ui/select";
 import CustomerSearchInputBox from "../Components/CustomerSearchInputBox";
 
-
 const capitalize = (str) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
 
-
 const PAYMENT_TYPES = ["Cash", "Upi", "Card", "Bank", "Credit"];
-
 
 const HotelTabContent = ({
   saleData,
@@ -34,7 +31,6 @@ const HotelTabContent = ({
 }) => {
   return (
     <div className="px-6 py-5 space-y-5">
-
       {/* Read-only sale summary */}
       <div className="grid grid-cols-3 gap-3 bg-gray-50 rounded-lg p-3 text-xs">
         <div>
@@ -56,7 +52,7 @@ const HotelTabContent = ({
       {/* Party Section — disabled when ANY payment row is credit */}
       {(() => {
         const hasCredit = payments.some(
-          (p) => p.sourceType?.toLowerCase() === "credit"
+          (p) => p.sourceType?.toLowerCase() === "credit",
         );
         return (
           <div>
@@ -66,7 +62,9 @@ const HotelTabContent = ({
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label className="text-sm">Party Name</Label>
-                <div className={hasCredit ? "pointer-events-none opacity-60" : ""}>
+                <div
+                  className={hasCredit ? "pointer-events-none opacity-60" : ""}
+                >
                   <CustomerSearchInputBox
                     selectedParty={selectedParty}
                     onSelect={onPartySelect}
@@ -108,10 +106,15 @@ const HotelTabContent = ({
         <div className="space-y-3">
           {payments.map((row, index) => {
             const isCredit = row.sourceType?.toLowerCase() === "credit";
+            const filteredSources = combinedSources.filter(
+              (s) => s.type?.toLowerCase() === row.sourceType?.toLowerCase(),
+            );
 
             return (
-              <div key={index} className="rounded-lg border bg-gray-50 p-3 space-y-3">
-
+              <div
+                key={index}
+                className="rounded-lg border bg-gray-50 p-3 space-y-3"
+              >
                 {/* Row header */}
                 {payments.length > 1 && (
                   <div className="flex items-center justify-between">
@@ -137,12 +140,12 @@ const HotelTabContent = ({
                     <Select
                       value={capitalize(row.sourceType) || "Cash"}
                       onValueChange={(val) => onSourceTypeChange(index, val)}
-                      disabled={isCredit}
+                      disabled={isCredit} // ✅ keeps it locked when credit
                     >
                       <SelectTrigger
                         className={`h-9 text-sm bg-white ${
                           isCredit
-                            ? "opacity-60 cursor-not-allowed pointer-events-none"
+                            ? "opacity-70 cursor-not-allowed pointer-events-none bg-amber-50 border-amber-200 text-amber-700"
                             : ""
                         }`}
                       >
@@ -150,7 +153,16 @@ const HotelTabContent = ({
                       </SelectTrigger>
                       <SelectContent>
                         {PAYMENT_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>
+                          <SelectItem
+                            key={type}
+                            value={type}
+                            disabled={type === "Credit"}
+                            className={
+                              type === "Credit"
+                                ? "opacity-40 cursor-not-allowed"
+                                : ""
+                            }
+                          >
                             {type}
                           </SelectItem>
                         ))}
@@ -208,12 +220,12 @@ const HotelTabContent = ({
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        {combinedSources.length === 0 && (
+                        {filteredSources.length === 0 && (
                           <SelectItem value="loading" disabled>
                             Loading sources...
                           </SelectItem>
                         )}
-                        {combinedSources.map((s) => (
+                        {filteredSources.map((s) => (
                           <SelectItem key={s.id} value={s.id}>
                             {s.name}
                           </SelectItem>
