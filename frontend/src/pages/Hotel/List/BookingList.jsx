@@ -3903,6 +3903,7 @@ function BookingList() {
 
       <BookingListEditModal
         open={isEditModalOpen}
+        setOpen={setIsEditModalOpen}
         onOpenChange={(val) => {
           setIsEditModalOpen(val);
           if (!val) setSelectedEditBooking(null); // clear on close
@@ -3910,6 +3911,7 @@ function BookingList() {
         voucherNumber={selectedEditBooking?.voucherNumber}
         checkInNumber={selectedEditBooking?.checkInId?.voucherNumber || null}
         cmp_id={cmp_id}
+        fetchBookings={fetchBookings}
       />
     </>
   );

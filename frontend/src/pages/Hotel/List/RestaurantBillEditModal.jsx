@@ -24,12 +24,18 @@ import CustomerSearchInputBox from "../Components/CustomerSearchInputBox";
 // ── Helpers ──
 const getPaymentMethod = (sourceType) => {
   switch (sourceType?.toLowerCase()) {
-    case "cash":   return "Cash";
-    case "upi":    return "Upi";
-    case "card":   return "Card";
-    case "bank":   return "Bank";
-    case "credit": return "Credit";
-    default:       return "Online";
+    case "cash":
+      return "Cash";
+    case "upi":
+      return "Upi";
+    case "card":
+      return "Card";
+    case "bank":
+      return "Bank";
+    case "credit":
+      return "Credit";
+    default:
+      return "Online";
   }
 };
 
@@ -40,7 +46,6 @@ const formatCurrency = (amount) =>
   Number(amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 });
 
 const PAYMENT_TYPES = ["Cash", "Upi", "Card", "Bank", "Credit"];
-
 // ─────────────────────────────────────────────────────────────
 const RestaurantBillEditModal = ({
   open,
@@ -49,6 +54,8 @@ const RestaurantBillEditModal = ({
   combinedSources,
   cmp_id,
   refreshHook,
+  fetchBookings,
+  setOpen,
 }) => {
   const [payments, setPayments] = useState([]);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -59,33 +66,47 @@ const RestaurantBillEditModal = ({
       const rows = (sale.paymentSplittingData || []).map((p) => {
         const isCredit = p.sourceType?.toLowerCase() === "credit";
         return {
-          source:        p.source       || "",
-          sourceType:    p.sourceType   || "cash",
-          type:          p.type         || p.sourceType || "cash",
-          subsource:     p.subsource    || "",
-          amount:        p.amount       ?? "",
-          remarks:       p.remarks      || "",
-          customerName:  p.customerName || "",
+          source: p.source || "",
+          sourceType: p.sourceType || "cash",
+          type: p.type || p.sourceType || "cash",
+          subsource: p.subsource || "",
+          amount: p.amount ?? "",
+          remarks: p.remarks || "",
+          customerName: p.customerName || "",
           paymentMethod: getPaymentMethod(p.sourceType || "cash"),
           underCategory: p.underCategory || "food",
           transactionNo: p.transactionNo || "",
-          upiNo:         p.upiNo        || "",
+          upiNo: p.upiNo || "",
           creditParty: isCredit
-            ? { _id: p.customer || p.source || "", partyName: p.customerName || "" }
+            ? {
+                _id: p.customer || p.source || "",
+                partyName: p.customerName || "",
+              }
             : null,
-          creditPartyId: isCredit ? (p.customer || p.source || "") : "",
+          creditPartyId: isCredit ? p.customer || p.source || "" : "",
         };
       });
 
       setPayments(
         rows.length > 0
           ? rows
-          : [{
-              source: "", sourceType: "cash", type: "cash", subsource: "",
-              amount: "", remarks: "", customerName: "", paymentMethod: "Cash",
-              underCategory: "food", transactionNo: "", upiNo: "",
-              creditParty: null, creditPartyId: "",
-            }]
+          : [
+              {
+                source: "",
+                sourceType: "cash",
+                type: "cash",
+                subsource: "",
+                amount: "",
+                remarks: "",
+                customerName: "",
+                paymentMethod: "Cash",
+                underCategory: "food",
+                transactionNo: "",
+                upiNo: "",
+                creditParty: null,
+                creditPartyId: "",
+              },
+            ],
       );
     }
   }, [sale]);
@@ -103,14 +124,14 @@ const RestaurantBillEditModal = ({
         i === index
           ? {
               ...row,
-              source:        sourceId,
-              sourceType:    selected?.type || "cash",
-              type:          selected?.type || "cash",
-              subsource:     selected?.name || "",
+              source: sourceId,
+              sourceType: selected?.type || "cash",
+              type: selected?.type || "cash",
+              subsource: selected?.name || "",
               paymentMethod: getPaymentMethod(selected?.type || "cash"),
             }
-          : row
-      )
+          : row,
+      ),
     );
   };
 
@@ -122,16 +143,16 @@ const RestaurantBillEditModal = ({
         i === index
           ? {
               ...row,
-              sourceType:    newType.toLowerCase(),
-              type:          newType.toLowerCase(),
+              sourceType: newType.toLowerCase(),
+              type: newType.toLowerCase(),
               paymentMethod: getPaymentMethod(newType),
-              source:        isCredit ? "" : row.source,
-              subsource:     isCredit ? "credit" : row.subsource,
-              creditParty:   isCredit ? row.creditParty : null,
+              source: isCredit ? "" : row.source,
+              subsource: isCredit ? "credit" : row.subsource,
+              creditParty: isCredit ? row.creditParty : null,
               creditPartyId: isCredit ? row.creditPartyId : "",
             }
-          : row
-      )
+          : row,
+      ),
     );
   };
 
@@ -142,16 +163,20 @@ const RestaurantBillEditModal = ({
         i === index
           ? {
               ...row,
-              source:        party?._id || "",
-              subsource:     "credit",
-              creditParty:   party
-                ? { _id: party._id, partyName: party.partyName, mobileNumber: party.mobileNumber || "" }
+              source: party?._id || "",
+              subsource: "credit",
+              creditParty: party
+                ? {
+                    _id: party._id,
+                    partyName: party.partyName,
+                    mobileNumber: party.mobileNumber || "",
+                  }
                 : null,
               creditPartyId: party?._id || "",
-              customerName:  party?.partyName || row.customerName,
+              customerName: party?.partyName || row.customerName,
             }
-          : row
-      )
+          : row,
+      ),
     );
   };
 
@@ -161,16 +186,16 @@ const RestaurantBillEditModal = ({
       const formattedPayments = payments.map((p) => {
         const isCredit = p.sourceType?.toLowerCase() === "credit";
         return {
-          source:        isCredit ? (p.creditPartyId || p.source) : p.source,
-          sourceType:    capitalize(p.sourceType),
-          type:          p.sourceType?.toLowerCase(),
-          subsource:     p.subsource,
-          remarks:       p.remarks,
-          customerName:  p.customerName,
-          amount:        p.amount,
+          source: isCredit ? p.creditPartyId || p.source : p.source,
+          sourceType: capitalize(p.sourceType),
+          type: p.sourceType?.toLowerCase(),
+          subsource: p.subsource,
+          remarks: p.remarks,
+          customerName: p.customerName,
+          amount: p.amount,
           underCategory: p.underCategory,
           transactionNo: p.transactionNo,
-          upiNo:         p.upiNo,
+          upiNo: p.upiNo,
           ...(isCredit && { creditPartyId: p.creditPartyId }),
         };
       });
@@ -178,15 +203,19 @@ const RestaurantBillEditModal = ({
       await api.put(
         `/api/sUsers/updateRestaurantSalePayments/${sale._id}?cmp_id=${cmp_id}`,
         { payments: formattedPayments },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       toast.success("Restaurant bill updated successfully");
       refreshHook?.();
+      fetchBookings?.();
+      setOpen(false);
       handleClose(false);
     } catch (err) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Failed to update restaurant bill");
+      toast.error(
+        err?.response?.data?.message || "Failed to update restaurant bill",
+      );
     } finally {
       setSaveLoading(false);
     }
@@ -197,10 +226,11 @@ const RestaurantBillEditModal = ({
       <DialogOverlay className="bg-black/20 backdrop-blur-sm" />
 
       <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden flex flex-col max-h-[90vh]">
-
         {/* Header */}
         <DialogHeader className="px-6 pt-5 pb-3 border-b shrink-0">
-          <DialogTitle className="text-base font-semibold">Edit Restaurant Bill</DialogTitle>
+          <DialogTitle className="text-base font-semibold">
+            Edit Restaurant Bill
+          </DialogTitle>
           {sale && (
             <div className="flex items-center gap-1.5 mt-0.5">
               <Receipt className="w-3 h-3 text-muted-foreground" />
@@ -215,20 +245,27 @@ const RestaurantBillEditModal = ({
         {sale && (
           <>
             <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
-
               {/* Read-only bill summary */}
               <div className="grid grid-cols-3 gap-3 bg-gray-50 rounded-lg p-3 text-xs">
                 <div>
-                  <span className="text-muted-foreground block mb-0.5">Bill No.</span>
+                  <span className="text-muted-foreground block mb-0.5">
+                    Bill No.
+                  </span>
                   <span className="font-medium">{sale.salesNumber}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block mb-0.5">Date</span>
+                  <span className="text-muted-foreground block mb-0.5">
+                    Date
+                  </span>
                   <span className="font-medium">{sale.selectedDate}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block mb-0.5">Total</span>
-                  <span className="font-medium">₹{formatCurrency(sale.finalAmount)}</span>
+                  <span className="text-muted-foreground block mb-0.5">
+                    Total
+                  </span>
+                  <span className="font-medium">
+                    ₹{formatCurrency(sale.finalAmount)}
+                  </span>
                 </div>
               </div>
 
@@ -241,9 +278,16 @@ const RestaurantBillEditModal = ({
                   {payments.map((row, index) => {
                     const isCredit = row.sourceType?.toLowerCase() === "credit";
 
-                    return (
-                      <div key={index} className="rounded-lg border bg-gray-50 p-3 space-y-3">
+                    const filteredSources = combinedSources.filter(
+                      (s) =>
+                        s.type?.toLowerCase() === row.sourceType?.toLowerCase(),
+                    );
 
+                    return (
+                      <div
+                        key={index}
+                        className="rounded-lg border bg-gray-50 p-3 space-y-3"
+                      >
                         {/* Row header badge */}
                         {payments.length > 1 && (
                           <div className="flex items-center justify-between">
@@ -268,14 +312,32 @@ const RestaurantBillEditModal = ({
                             <Label className="text-xs">Payment Type</Label>
                             <Select
                               value={capitalize(row.sourceType) || "Cash"}
-                              onValueChange={(val) => handleSourceTypeChange(index, val)}
+                              onValueChange={(val) =>
+                                handleSourceTypeChange(index, val)
+                              }
+                              disabled={isCredit} // ✅ lock the whole select for credit rows
                             >
-                              <SelectTrigger className="h-9 text-sm bg-white">
+                              <SelectTrigger
+                                className={`h-9 text-sm bg-white ${
+                                  isCredit
+                                    ? "opacity-70 cursor-not-allowed pointer-events-none bg-amber-50 border-amber-200 text-amber-700"
+                                    : ""
+                                }`}
+                              >
                                 <SelectValue placeholder="Select type" />
                               </SelectTrigger>
                               <SelectContent>
                                 {PAYMENT_TYPES.map((type) => (
-                                  <SelectItem key={type} value={type}>
+                                  <SelectItem
+                                    key={type}
+                                    value={type}
+                                    disabled={type === "Credit"} // ✅ Credit visible but unclickable
+                                    className={
+                                      type === "Credit"
+                                        ? "opacity-40 cursor-not-allowed"
+                                        : ""
+                                    }
+                                  >
                                     {type}
                                   </SelectItem>
                                 ))}
@@ -302,7 +364,9 @@ const RestaurantBillEditModal = ({
                             </Label>
                             <CustomerSearchInputBox
                               selectedParty={row.creditParty || null}
-                              onSelect={(party) => handleCreditPartyChange(index, party)}
+                              onSelect={(party) =>
+                                handleCreditPartyChange(index, party)
+                              }
                               placeholder="Search credit party..."
                             />
                             {row.creditParty?.partyName && (
@@ -324,7 +388,9 @@ const RestaurantBillEditModal = ({
                             <Label className="text-xs">Payment Source</Label>
                             <Select
                               value={row.source}
-                              onValueChange={(val) => handleSourceChange(index, val)}
+                              onValueChange={(val) =>
+                                handleSourceChange(index, val)
+                              }
                             >
                               <SelectTrigger className="h-9 text-sm bg-white">
                                 <SelectValue placeholder="Select source">
@@ -332,12 +398,12 @@ const RestaurantBillEditModal = ({
                                 </SelectValue>
                               </SelectTrigger>
                               <SelectContent>
-                                {combinedSources.length === 0 && (
+                                {filteredSources.length === 0 && (
                                   <SelectItem value="loading" disabled>
                                     Loading sources...
                                   </SelectItem>
                                 )}
-                                {combinedSources.map((s) => (
+                                {filteredSources.map((s) => (
                                   <SelectItem key={s.id} value={s.id}>
                                     {s.name}
                                   </SelectItem>
@@ -379,7 +445,9 @@ const RestaurantBillEditModal = ({
                 disabled={saveLoading}
                 className="h-8 text-xs bg-blue-600 hover:bg-blue-500 text-white"
               >
-                {saveLoading && <Loader2 className="w-3 h-3 animate-spin mr-1.5" />}
+                {saveLoading && (
+                  <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
+                )}
                 Save Changes
               </Button>
             </div>

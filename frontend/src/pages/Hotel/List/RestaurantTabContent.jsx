@@ -14,6 +14,8 @@ const RestaurantTabContent = ({
   combinedSources,
   cmp_id,
   refreshHook,
+  fetchBookings,
+  setOpen
 }) => {
   const [editingSale, setEditingSale] = useState(null);
 
@@ -159,6 +161,8 @@ const RestaurantTabContent = ({
         combinedSources={combinedSources}
         cmp_id={cmp_id}
         refreshHook={refreshHook}
+        fetchBookings={fetchBookings}
+        setOpen={setOpen}
       />
     </div>
   );

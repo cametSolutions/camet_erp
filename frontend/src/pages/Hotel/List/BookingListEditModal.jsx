@@ -33,7 +33,7 @@ const capitalize = (str) =>
 
 
 // eslint-disable-next-line react/prop-types
-const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, checkInNumber }) => {
+const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, checkInNumber,fetchBookings,setOpen }) => {
 
   // ── Hotel sale fetch ──
   const { data: saleResponse, loading, error } = useFetch(
@@ -167,6 +167,9 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, check
   // ── Handler: payment type change (e.g. Cash → Credit) ──
   const handleSourceTypeChange = (index, newType) => {
     const isCredit = newType.toLowerCase() === "credit";
+
+ 
+    
     setPayments((prev) =>
       prev.map((row, i) =>
         i === index
@@ -237,6 +240,7 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, check
       );
       toast.success("Booking updated successfully");
       handleOpenChange(false);
+      fetchBookings?.();
     } catch (err) {
       console.error(err);
       toast.error(err?.response?.data?.message || "Failed to update booking");
@@ -320,6 +324,7 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, check
                     onSourceChange={handleSourceChange}
                     onSourceTypeChange={handleSourceTypeChange}
                     onCreditPartyChange={handleCreditPartyChange}
+                 
                   />
                 </TabsContent>
 
@@ -333,6 +338,8 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, check
                     combinedSources={combinedSources}
                     cmp_id={cmp_id}
                     refreshHook={refreshRestaurantHook}
+                    fetchBookings={fetchBookings}
+                    setOpen={setOpen}
                   />
                 </TabsContent>
 
