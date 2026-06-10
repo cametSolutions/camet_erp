@@ -434,7 +434,7 @@ router.get("/viewReport", viewReport);
 router.get("/getSaleBasedOnVoucher/:voucherNumber", getSaleBasedOnVoucher);
 router.put("/updateCheckout/:id", updateCheckout);
 router.get("/getSalesByCheckInNumber/:checkInNumber", getSalesByCheckInNumber);  
-router.put("/updateRestaurantSalePayment/:id", updateRestaurantSalePayments);
+router.put("/updateRestaurantSalePayments/:id", updateRestaurantSalePayments);
 
 router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
 // Route to get detailed booking information for a specific room and date
