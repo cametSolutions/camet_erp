@@ -26,7 +26,6 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
   let showPrintButton =
     org?.configurations?.[0]?.defaultPrint?.showBeforeSaleInRestaurant;
   const { isFinalized } = useParams();
-  console.log(data);
   // const isIndian = useSelector(
   //   (state) =>
   //     state?.secSelectedOrganization?.secSelectedOrg?.country === "India",
@@ -70,6 +69,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
 
     const discountValue = Number(data?.additionalCharges?.[0]?.finalValue || 0);
 
+    console.log(data);
     const taxableSubTotal = data.items.reduce(
       (acc, curr) =>
         acc +
@@ -80,6 +80,7 @@ function VoucherThreeInchPdfFormat2({ data, org, isPreview, sendToParent }) {
     );
 
     const finalSubTotal = taxableSubTotal - discountValue;
+    console.log(taxableSubTotal);
     setSubTotal(Number(finalSubTotal.toFixed(2)));
   }, [data, discountBasedOnGrossAmount]);
 
@@ -732,13 +733,16 @@ ${orgName}`;
 
           {/* Items */}
           {data?.items?.map((el, index) => {
+            const IsComplimentary = data?.isComplimentary;
             const total = Number(el?.total || 0);
             const count = Number(el?.totalCount || 1);
-            const totalTax =
-              el?.totalIgstAmt != null
+            const totalTax = IsComplimentary
+              ? 0
+              : el?.totalIgstAmt != null
                 ? Number(el.totalIgstAmt)
                 : Number(el?.totalCgstAmt || 0) + Number(el?.totalSgstAmt || 0);
-            const igst = Number(el?.igst || 0);
+            const igst = IsComplimentary ? 0 : Number(el?.igst || 0);
+            console.log(igst);
             const addRateWithTax =
               org?.configurations?.[0]?.addRateWithTax?.restaurantSale;
             const addRate = addRateWithTax
@@ -756,6 +760,7 @@ ${orgName}`;
                 : "0.00"
               : addRate;
             const amount = (Number(rate) * count).toFixed(2);
+
             return (
               <div key={index} style={itemGrid}>
                 <div style={textLeft}>{index + 1}</div>
@@ -834,76 +839,82 @@ ${orgName}`;
               )}
 
               {/* Gross Amount */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  marginBottom: "2px",
-                  fontWeight: "bold",
-                }}
-              >
-                <div
-                  style={{ marginLeft: "auto", width: 80, textAlign: "right" }}
-                >
-                  Gross Amount
-                </div>
-                <div style={{ width: 60, textAlign: "right" }}>
-                  {subTotal?.toFixed(2)}
-                </div>
-              </div>
-
-              {/* CGST + SGST (same state) */}
-             {
-(
-  org?.industry == 7
-    ? calculateTotalTax() > 0
-    : isIndian && isSameState && calculateTotalTax() > 0
-) && (
-  <>
-    <div style={flexRow}>
-      <div
-        style={{
-          marginLeft: "auto",
-          width: 70,
-          fontWeight: "bold",
-        }}
-      >
-        CGST {cgstPercentage}%
-      </div>
-      <div style={textRight}>{cgst}</div>
-    </div>
-
-    <div style={flexRow}>
-      <div
-        style={{
-          marginLeft: "auto",
-          width: 70,
-          fontWeight: "bold",
-        }}
-      >
-        SGST {sgstPercentage}%
-      </div>
-
-      <div style={textRight}>{sgst}</div>
-    </div>
-  </>
-)}
-
-              {/* IGST (inter-state) */}
-              {!org?.industry == 7 && isIndian && !isSameState && calculateTotalTax() > 0 && (
-                <div style={flexRow}>
+              {!data?.isComplimentary && (
+                <>
                   <div
                     style={{
-                      marginLeft: "auto",
-                      width: 70,
+                      display: "flex",
+                      flexDirection: "row",
+                      marginBottom: "2px",
                       fontWeight: "bold",
                     }}
                   >
-                    IGST {igstPercentage}%
+                    <div
+                      style={{
+                        marginLeft: "auto",
+                        width: 80,
+                        textAlign: "right",
+                      }}
+                    >
+                      Gross Amount
+                    </div>
+                    <div style={{ width: 60, textAlign: "right" }}>
+                      {subTotal?.toFixed(2)}
+                    </div>
                   </div>
-                  <div style={textRight}>{tax}</div>
-                </div>
+
+                  {(org?.industry == 7
+                    ? calculateTotalTax() > 0
+                    : isIndian && isSameState && calculateTotalTax() > 0) && (
+                    <>
+                      <div style={flexRow}>
+                        <div
+                          style={{
+                            marginLeft: "auto",
+                            width: 70,
+                            fontWeight: "bold",
+                          }}
+                        >
+                          CGST {cgstPercentage}%
+                        </div>
+                        <div style={textRight}>{cgst}</div>
+                      </div>
+
+                      <div style={flexRow}>
+                        <div
+                          style={{
+                            marginLeft: "auto",
+                            width: 70,
+                            fontWeight: "bold",
+                          }}
+                        >
+                          SGST {sgstPercentage}%
+                        </div>
+
+                        <div style={textRight}>{sgst}</div>
+                      </div>
+                    </>
+                  )}
+                </>
               )}
+              {/* IGST (inter-state) */}
+              {!org?.industry == 7 &&
+                isIndian &&
+                !isSameState &&
+                calculateTotalTax() > 0 && (
+                  <div style={flexRow}>
+                    <div
+                      style={{
+                        marginLeft: "auto",
+                        width: 70,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      IGST {igstPercentage}%
+                    </div>
+                    <div style={textRight}>{tax}</div>
+                  </div>
+                )}
 
               {/* Non-Indian tax */}
               {!isIndian && calculateTotalTax() > 0 && (
