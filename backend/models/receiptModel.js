@@ -94,7 +94,7 @@ const receiptSchema = new mongoose.Schema(
     paymentMethod: {
       type: String,
       required: true,
-      enum: ["Online", "Cash", "Cheque","credit"],
+      enum: ["Online", "Cash", "Cheque","credit","Bank","upi","card","bank"],
     },
 
     // Payment details with references

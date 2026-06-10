@@ -55,8 +55,8 @@ router.post("/master/backfillUniqueReceiptNumber/:cmp_id", backfillUniqueReceipt
 router.get("/getTransactions/:cmp_id/:SNo", giveTransaction);
 router.get("/getSalesOrders/:cmp_id/:SNo", giveInvoice);
 router.get("/getSales/:cmp_id/:SNo", giveSales);
-router.get("/getSalesHotel/:cmp_id/:SNo", giveSalesHotel);
-router.get("/getVanSales/:cmp_id/:SNo", giveVanSales);
+router.get("//:cmp_id/:SNo", giveSalesHotel);
+router.get("/getVanSagetSalesHotelles/:cmp_id/:SNo", giveVanSales);
 router.get("/getStockTransfers/:cmp_id/:SNo", getStockTransfers);
 router.get("/getReceipts/:cmp_id/:SNo", giveReceipts);
 router.post("/createReceipts/:cmp_id/:SNo", createReceiptForSales);

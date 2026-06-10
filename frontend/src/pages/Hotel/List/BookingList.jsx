@@ -44,6 +44,7 @@ import {
 import useFetch from "@/customHook/useFetch";
 import PrintModal from "../Components/PrintModal";
 import { calculateDiscountValues } from "../Helper/hotelHelper.js";
+import BookingListEditModal from "./BookingListEditModal";
 
 function BookingList() {
   const location = useLocation();
@@ -136,6 +137,12 @@ function BookingList() {
     { bg: "#E6F1FB", border: "#85B7EB", icon: "#185FA5", text: "#0C447C" },
     { bg: "#FBEAF0", border: "#ED93B1", icon: "#993556", text: "#72243E" },
   ];
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedEditBooking, setSelectedEditBooking] = useState(null);
+
+  console.log(selectedEditBooking?.checkInId?.voucherNumber);
+
   const [
     restaurantSideDiscountAdjustmentArray,
     setRestaurantSideDiscountAdjustmentArray,
@@ -1732,6 +1739,7 @@ function BookingList() {
   };
 
   console.log(checkoutMode);
+
   const TableHeader = () => (
     <div className="bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
       <div className="flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider md:hidden">
@@ -1808,6 +1816,8 @@ function BookingList() {
 
     const el = bookings[index];
     if (!el) return null;
+
+    // console.log(el.voucherNumber);
 
     const findSwappedRooms = (room) => {
       let specifcSwap = el.roomSwapHistory.find(
@@ -2187,6 +2197,18 @@ function BookingList() {
                   className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
                 >
                   Print
+                </button>
+              )}
+              {location.pathname === "/sUsers/checkOutList" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditModalOpen(true);
+                    setSelectedEditBooking(el);
+                  }}
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                >
+                  Edit
                 </button>
               )}
               {(el?.status != "checkIn" &&
@@ -3878,6 +3900,17 @@ function BookingList() {
           </div>
         )}
       </div>
+
+      <BookingListEditModal
+        open={isEditModalOpen}
+        onOpenChange={(val) => {
+          setIsEditModalOpen(val);
+          if (!val) setSelectedEditBooking(null); // clear on close
+        }}
+        voucherNumber={selectedEditBooking?.voucherNumber}
+        checkInNumber={selectedEditBooking?.checkInId?.voucherNumber || null}
+        cmp_id={cmp_id}
+      />
     </>
   );
 }

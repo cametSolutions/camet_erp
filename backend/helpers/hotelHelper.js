@@ -11,6 +11,7 @@ import { formatToLocalDate } from "../helpers/helper.js";
 import TallyData from "../models/TallyData.js";
 import settlementModel from "../models/settlementModel.js";
 import salesModel from "../models/salesModel.js";
+
 // helper function used to add search concept with room
 export const buildDatabaseFilterForRoom = (params) => {
   // console.log("params", params);
@@ -1366,3 +1367,6 @@ console.log("Removed rooms:", removedRooms);
     console.error(error);
   }
 };
+
+
+
