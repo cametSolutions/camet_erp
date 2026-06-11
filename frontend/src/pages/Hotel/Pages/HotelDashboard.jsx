@@ -1391,43 +1391,52 @@ console.log(baseStatus);
             </div>
           </div>
         )}
-        {showBookingOrCheckingSelection && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-white rounded-xl p-8 shadow-2xl max-w-md w-full">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
-                Confirm Your Booking
-              </h2>
+      {showBookingOrCheckingSelection && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="relative bg-white rounded-xl p-8 shadow-2xl max-w-md w-full">
 
-              <p className="text-gray-600 text-center mb-8">
-                Are you ready to proceed with your booking?
-              </p>
+      {/* Close Button */}
+      <button
+        onClick={() => setShowBookingOrCheckingSelection(false)}
+        className="absolute top-3 right-4 text-gray-500 hover:text-red-500 text-2xl font-bold"
+      >
+        ×
+      </button>
 
-              <div className="flex gap-4">
-                <button
-                  onClick={() => {
-                    navigate("/sUsers/bookingPage", {
-                      state: { rooms: selectedRooms },
-                    });
-                  }}
-                  className="flex-1 bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-all"
-                >
-                  Continue
-                </button>
+      <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
+        Confirm Your Booking
+      </h2>
 
-                <button
-                  onClick={() => {
-                    navigate("/sUsers/checkInPage", {
-                      state: { rooms: selectedRooms },
-                    });
-                  }}
-                  className="flex-1 bg-gray-100 text-gray-800 font-semibold py-3 rounded-lg border border-blue-600 hover:bg-gray-200 transition-all"
-                >
-                  Checking
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+      <p className="text-gray-600 text-center mb-8">
+        Are you ready to proceed with your booking?
+      </p>
+
+      <div className="flex gap-4">
+        <button
+          onClick={() => {
+            navigate("/sUsers/bookingPage", {
+              state: { rooms: selectedRooms },
+            });
+          }}
+          className="flex-1 bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-all"
+        >
+          Continue
+        </button>
+
+        <button
+          onClick={() => {
+            navigate("/sUsers/checkInPage", {
+              state: { rooms: selectedRooms },
+            });
+          }}
+          className="flex-1 bg-gray-100 text-gray-800 font-semibold py-3 rounded-lg border border-blue-600 hover:bg-gray-200 transition-all"
+        >
+          Check-In
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
         <RoomSwapModal
           isOpen={showRoomSwapModal}
