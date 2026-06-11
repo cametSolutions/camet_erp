@@ -431,9 +431,9 @@ router.post("/transferKotBills/:cmp_id", transferKotBills);
 router.delete("/deleteAdvance/:id", deleteAdvance);
 router.post('/send-bill-email', sendBillEmail);
 router.get("/viewReport", viewReport);
-router.get("/getSaleBasedOnVoucher/:voucherNumber", getSaleBasedOnVoucher);
+router.get("/getSaleBasedOnVoucher", getSaleBasedOnVoucher);
 router.put("/updateCheckout/:id", updateCheckout);
-router.get("/getSalesByCheckInNumber/:checkInNumber", getSalesByCheckInNumber);  
+router.get("/getSalesByCheckInNumber", getSalesByCheckInNumber);  
 router.put("/updateRestaurantSalePayments/:id", updateRestaurantSalePayments);
 
 router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
