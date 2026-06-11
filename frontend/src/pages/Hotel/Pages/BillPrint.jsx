@@ -768,7 +768,7 @@ console.log(merged);
 
             charges.push({
               // date: roomArrivalDate, // Use arrival date for full day taxes
-              description: `CGST on Rent @ ${halfRoomTaxPercentage}%`,
+              description: `CGST  @ ${halfRoomTaxPercentage}%`,
               docNo: "-",
               amount: 0,
               taxes: fullDayCGST.toFixed(2),
@@ -778,7 +778,7 @@ console.log(merged);
 
             charges.push({
               // date: roomArrivalDate, // Use arrival date for full day taxes
-              description: `SGST on Rent @ ${halfRoomTaxPercentage}%`,
+              description: `SGST  @ ${halfRoomTaxPercentage}%`,
               docNo: "-",
               amount: 0,
               taxes: fullDaySGST.toFixed(2),
@@ -1040,8 +1040,8 @@ console.log(merged);
       } else if (charge.description === "Advance") {
         cumulativeBalance += currentAmount;
       } else if (
-        String(charge.description).includes("CGST on Rent") ||
-        String(charge.description).includes("SGST on Rent")
+        String(charge.description).includes("CGST ") ||
+        String(charge.description).includes("SGST ")
       ) {
         // Room rent taxes already added with room rent, don't add again
       } else if (String(charge.description).includes("Food Plan")) {
@@ -2296,7 +2296,7 @@ ${hotelName}`;
                         <td
                           style={{ border: "1px solid #000", padding: "4px" }}
                         >
-                          SGST on Rent
+                          SGST 
                         </td>
                         <td
                           style={{
@@ -2316,7 +2316,7 @@ ${hotelName}`;
                         <td
                           style={{ border: "1px solid #000", padding: "4px" }}
                         >
-                          CGST on Rent
+                          CGST
                         </td>
                         <td
                           style={{
