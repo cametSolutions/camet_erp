@@ -1,598 +1,93 @@
-/* eslint-disable react/prop-types */
-import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import api from "@/api/api";
-import GraphHotelSummary from '../../Hotel/Pages/GraphHotelSummary'
-import { 
-  Calendar, Hotel, UtensilsCrossed, TrendingUp, DollarSign, CreditCard, 
-  Banknote, Wallet, PiggyBank, Receipt, BarChart3, ArrowUpRight, 
-  ArrowDownRight, Target, Clock, Users, Building2, ChefHat, Bed,
-  RefreshCw, Loader2, AlertCircle, Smartphone, FileText, TrendingDown
-} from 'lucide-react';
-import TableSummary from './TableSummary';
+import TitleDiv from "@/components/common/TitleDiv";
+import SummaryCards from "../Components/SummaryDashboard/SummaryCards";
 
 const SummaryDashboard = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [dateRange, setDateRange] = useState('day');
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [companyIndustry, setCompanyIndustry] = useState(null);
-
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
- 
-  const owner = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.owner
-  );
-
-  // NEW: Get industry from selected organization
-  const selectedOrg = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
-  );
-
-  // Helper functions for determining what to show based on industry
-  const shouldShowHotel = () => {
-    if (!companyIndustry) return true; // Show all if industry not yet loaded
-    return companyIndustry === 6 || companyIndustry === 7; // Hotel only (6) or Both (7)
-  };
-
-  const shouldShowRestaurant = () => {
-    if (!companyIndustry) return true; // Show all if industry not yet loaded
-    return companyIndustry === 3 || companyIndustry === 7 || companyIndustry === 8; // Restaurant only (3, 8) or Both (7)
-  };
-
-  const shouldShowCombined = () => {
-    return companyIndustry === 7; // Only show combined when industry is 7 (both)
-  };
-
-  const getMonthStartDate = (dateString) => {
-    const date = new Date(dateString);
-    return new Date(date.getFullYear(), date.getMonth(), 1).toISOString().split('T')[0];
-  };
-
-  const getMonthEndDate = (dateString) => {
-    const date = new Date(dateString);
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0];
-  };
-
-  // NEW: Fetch company details to get industry
-  const fetchCompanyIndustry = async () => {
-    try {
-      if (selectedOrg?.industry !== undefined) {
-        setCompanyIndustry(selectedOrg.industry);
-        console.log('Industry from Redux:', selectedOrg.industry);
-        return;
-      }
-
-      // Fallback: fetch from API if not in Redux
-      const response = await api.get(`/api/organization/${cmp_id}`);
-      if (response.data && response.data.industry !== undefined) {
-        setCompanyIndustry(response.data.industry);
-        console.log('Industry from API:', response.data.industry);
-      }
-    } catch (err) {
-      console.error('Error fetching company industry:', err);
-      // Default to showing all if we can't determine industry
-      setCompanyIndustry(7);
-    }
-  };
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const dailyParams = {
-        cmp_id,
-        owner,
-        date: selectedDate,
-        dateRange: 'day',
-        ...(cmp_id && owner && { cmp_id, owner })
-      };
-
-      const monthStartDate = getMonthStartDate(selectedDate);
-      const monthEndDate = getMonthEndDate(selectedDate);
-      
-      const monthlyParams = {
-        cmp_id,
-        owner,
-        startDate: monthStartDate,
-        endDate: monthEndDate,
-        dateRange: 'month',
-        ...(cmp_id && owner && { cmp_id, owner })
-      };
-
-      const [dailyResponse, monthlyResponse] = await Promise.all([
-        api.get('/api/sUsers/summary', { params: dailyParams }),
-        api.get('/api/sUsers/summary', { params: monthlyParams })
-      ]);
-
-      if (dailyResponse.data.success && monthlyResponse.data.success) {
-        console.log(dailyResponse.data)
-        setDashboardData({
-          daily: dailyResponse.data.data?.daily,
-          monthly: monthlyResponse.data.data.monthly,
-          analytics: {
-            paymentMethodBreakdown: dailyResponse.data.data.analytics?.paymentMethodBreakdown || {
-              cashPercentage: 0,
-              bankPercentage: 0,
-              creditPercentage: 0
-            },
-            businessMix: dailyResponse.data.data.analytics?.businessMix || {
-              hotelPercentage: 0,
-              restaurantPercentage: 0
-            }
-          }
-        });
-      } else {
-        throw new Error('Failed to fetch dashboard data');
-      }
-    } catch (err) {
-      console.error('Dashboard fetch error:', err);
-      setError(err.message);
-      
-      setDashboardData({
-        daily: {
-          hotel: { 
-            totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0, 
-            chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0, netSales: 0
-          },
-          restaurant: { 
-            totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
-            chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0, netSales: 0
-          },
-          combined: { 
-            totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
-            chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0, averageTicketSize: 0, netSales: 0
-          }
-        },
-        monthly: {
-          hotel: { 
-            totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
-            chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0, netSales: 0
-          },
-          restaurant: { 
-            totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
-            chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0, netSales: 0
-          },
-          combined: { 
-            totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
-            chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0, averageTicketSize: 0, netSales: 0
-          }
-        },
-        analytics: {
-          paymentMethodBreakdown: {
-            cashPercentage: 0,
-            bankPercentage: 0,
-            creditPercentage: 0
-          },
-          businessMix: {
-            hotelPercentage: 0,
-            restaurantPercentage: 0
-          }
-        }
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCompanyIndustry();
-  }, [cmp_id, selectedOrg]);
-
-  useEffect(() => {
-    if (companyIndustry !== null) {
-      fetchDashboardData();
-    }
-  }, [selectedDate, cmp_id, owner, companyIndustry]);
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
-  };
-
-  const formatSelectedDate = () => {
-    const date = new Date(selectedDate);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
-
-  const formatSelectedMonth = () => {
-    const date = new Date(selectedDate);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long'
-    });
-  };
-
-  const StatCard = ({ title, icon: Icon, data, gradient, mainIcon: MainIcon }) => (
-    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${gradient} p-4 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02] group`}>
-      <div className="absolute top-0 right-0 w-20 h-20 -mt-10 -mr-10 opacity-10 group-hover:opacity-20 transition-opacity">
-        <MainIcon size={80} />
-      </div>
-      
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-3">
-          <div className="p-2 rounded-lg bg-white/25 backdrop-blur-sm group-hover:bg-white/35 transition-colors">
-            <Icon size={18} className="text-white" />
-          </div>
-          <div className="text-right">
-            <h3 className="text-white/85 text-xs font-semibold uppercase tracking-wide">{title}</h3>
-            <p className="text-white/60 text-xs">{data?.transactionCount || 0} transactions</p>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <TrendingUp size={12} className="text-white/70" />
-              <span className="text-white/90 text-xs font-medium">Total Sales</span>
-            </div>
-            <span className="text-white font-bold text-sm">{formatCurrency(data?.totalSales)}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <Banknote size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Cash</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.cashReceipt)}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Bank</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.bankReceipt)}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Total Discount</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalDiscount)}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Total Tax</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalTax)}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Net Sales</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.netSales)}</span>
-          </div>
-          
-          {/* <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <ArrowDownRight size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Expenses</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.expense)}</span>
-          </div> */}
-          
-          <div className="border-t border-white/25 pt-2 mt-2">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-1">
-                <PiggyBank size={12} className="text-white/70" />
-                <span className="text-white font-semibold text-xs">Balance</span>
-              </div>
-              <span className="text-white font-bold text-sm">{formatCurrency(data?.balance)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="absolute top-2 left-2 w-2 h-2 bg-white/40 rounded-full animate-pulse"></div>
-    </div>
-  );
-
-  const CombinedCard = ({ title, icon: Icon, data, gradient, period, mainIcon: MainIcon }) => (
-    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${gradient} p-4 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02] group`}>
-      <div className="absolute top-0 right-0 w-24 h-24 -mt-12 -mr-12 opacity-10 group-hover:opacity-20 transition-opacity">
-        <MainIcon size={96} />
-      </div>
-      
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-4">
-          <div className="p-2 rounded-lg bg-white/25 backdrop-blur-sm group-hover:bg-white/35 transition-colors">
-            <Icon size={20} className="text-white" />
-          </div>
-          <div className="text-right">
-            <h3 className="text-white/85 text-xs font-semibold uppercase tracking-wide">{title}</h3>
-            <p className="text-white/60 text-xs">{period} SUMMARY</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          <div className="bg-white/15 backdrop-blur-sm rounded-lg p-2 group-hover:bg-white/20 transition-colors">
-            <div className="flex items-center gap-1 mb-1">
-              <DollarSign size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs font-medium">Revenue</span>
-            </div>
-            <span className="text-white font-bold text-sm">{formatCurrency(data?.totalSales)}</span>
-          </div>
-          
-          <div className="bg-white/15 backdrop-blur-sm rounded-lg p-2 group-hover:bg-white/20 transition-colors">
-            <div className="flex items-center gap-1 mb-1">
-              <Wallet size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs font-medium">Balance</span>
-            </div>
-            <span className="text-white font-bold text-sm">{formatCurrency(data?.balance)}</span>
-          </div>
-        </div>
-
-        <div className="space-y-1">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <Receipt size={10} className="text-white/70" />
-              <span className="text-white/90 text-xs">Cash</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.cashReceipt)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <Building2 size={10} className="text-white/70" />
-              <span className="text-white/90 text-xs">Bank</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.bankReceipt)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Total Discount</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalDiscount)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Total Tax</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalTax)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Net Sales</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.netSales)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <Target size={10} className="text-white/70" />
-              <span className="text-white/90 text-xs">Expenses</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">0</span>
-          </div>
-          
-          <div className="border-t border-white/25 pt-1 mt-2">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-1">
-                <FileText size={10} className="text-white/70" />
-                <span className="text-white/90 text-xs">Avg Ticket</span>
-              </div>
-              <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.averageTicketSize)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="absolute bottom-2 left-2 flex gap-1">
-        <div className="w-1 h-1 bg-white/60 rounded-full"></div>
-        <div className="w-1 h-1 bg-white/40 rounded-full"></div>
-        <div className="w-1 h-1 bg-white/20 rounded-full"></div>
-      </div>
-    </div>
-  );
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="bg-white rounded-lg p-8 shadow-lg flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin text-blue-600" size={32} />
-          <p className="text-gray-600">Loading dashboard data...</p>
-        </div>
-      </div>
-    );
-  }
+  const today = new Date().toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-white rounded-xl shadow-lg">
-              <BarChart3 className="text-indigo-600" size={24} />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Financial Dashboard</h1>
-              <p className="text-gray-600 text-sm">
-                {companyIndustry === 6 && "Hotel Financial Overview"}
-                {(companyIndustry === 3 || companyIndustry === 8) && "Restaurant Financial Overview"}
-                {companyIndustry === 7 && "Hotel & Restaurant Financial Overview"}
-              </p>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Top nav bar */}
+      <div >
+        <TitleDiv title="Summary Dashboard" />
+      </div>
+
+      {/* Page body */}
+      <div className="px-6 py-6 max-w-6xl mx-auto">
+
+        {/* Header row */}
+        <div className="flex items-start justify-between mb-8">
+          {/* Left — greeting */}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+              
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">{today}</p>
           </div>
+
+          {/* Right — search + action */}
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={16} />
-              <input
-                type="date"
-                className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-              />
-            </div>
-            <button
-              onClick={fetchDashboardData}
-              disabled={loading}
-              className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              <RefreshCw className={`${loading ? 'animate-spin' : ''}`} size={16} />
-              Refresh
+            <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm text-gray-600 hover:bg-gray-50 transition">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="7"
+                  cy="7"
+                  r="4.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                />
+                <path
+                  d="M10.5 10.5L13 13"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+              Search
+            </button>
+
+            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0f172a] text-sm text-white font-medium hover:bg-[#1e293b] transition">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M8 3v10M3 8h10"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+              Export Report
             </button>
           </div>
         </div>
-        
-        {error && (
-          <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
-            <AlertCircle className="text-red-600" size={16} />
-            <p className="text-red-700 text-sm">Error: {error}</p>
-          </div>
-        )}
+
+        {/* Section label */}
+        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">
+          Overview
+        </p>
+
+        {/* Summary Cards */}
+        <SummaryCards
+          totalRevenue="₹24,80,632"
+          dailyCollection="₹98,450"
+          monthlyCollection="₹9,80,632"
+        />
       </div>
-
-      {dashboardData && (
-        <>
-          {/* Daily Summary Row */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full"></div>
-              <h2 className="text-xl font-bold text-gray-800">
-                Daily Summary - {formatSelectedDate()}
-              </h2>
-              <Clock size={16} className="text-gray-500" />
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              {shouldShowHotel() && !shouldShowRestaurant() && (
-                <StatCard
-                  title="Hotel Daily"
-                  icon={Bed}
-                  mainIcon={Hotel}
-                  data={dashboardData.daily.hotel}
-                  gradient="from-blue-600 via-blue-500 to-indigo-600"
-                />
-              )}
-              {shouldShowRestaurant() && !shouldShowHotel() && (
-                <StatCard
-                  title="Restaurant Daily"
-                  icon={ChefHat}
-                  mainIcon={UtensilsCrossed}
-                  data={dashboardData.daily.restaurant}
-                  gradient="from-green-600 via-emerald-500 to-teal-600"
-                />
-              )}
-              {shouldShowCombined() && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  <StatCard
-                    title="Hotel Daily"
-                    icon={Bed}
-                    mainIcon={Hotel}
-                    data={dashboardData.daily.hotel}
-                    gradient="from-blue-600 via-blue-500 to-indigo-600"
-                  />
-                  <StatCard
-                    title="Restaurant Daily"
-                    icon={ChefHat}
-                    mainIcon={UtensilsCrossed}
-                    data={dashboardData.daily.restaurant}
-                    gradient="from-green-600 via-emerald-500 to-teal-600"
-                  />
-                  <CombinedCard
-                    title="Combined Daily"
-                    icon={BarChart3}
-                    mainIcon={TrendingUp}
-                    data={dashboardData.daily.combined}
-                    gradient="from-purple-600 via-violet-500 to-indigo-600"
-                    period="DAILY"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Monthly Summary Row */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-600 rounded-full"></div>
-              <h2 className="text-xl font-bold text-gray-800">
-                Monthly Summary - {formatSelectedMonth()}
-              </h2>
-              <Calendar size={16} className="text-gray-500" />
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              {shouldShowHotel() && !shouldShowRestaurant() && (
-                <StatCard
-                  title="Hotel Monthly"
-                  icon={Building2}
-                  mainIcon={Hotel}
-                  data={dashboardData.monthly.hotel}
-                  gradient="from-orange-600 via-amber-500 to-yellow-600"
-                />
-              )}
-              {shouldShowRestaurant() && !shouldShowHotel() && (
-                <StatCard
-                  title="Restaurant Monthly"
-                  icon={UtensilsCrossed}
-                  mainIcon={ChefHat}
-                  data={dashboardData.monthly.restaurant}
-                  gradient="from-red-600 via-rose-500 to-pink-600"
-                />
-              )}
-              {shouldShowCombined() && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  <StatCard
-                    title="Hotel Monthly"
-                    icon={Building2}
-                    mainIcon={Hotel}
-                    data={dashboardData.monthly.hotel}
-                    gradient="from-orange-600 via-amber-500 to-yellow-600"
-                  />
-                  <StatCard
-                    title="Restaurant Monthly"
-                    icon={UtensilsCrossed}
-                    mainIcon={ChefHat}
-                    data={dashboardData.monthly.restaurant}
-                    gradient="from-red-600 via-rose-500 to-pink-600"
-                  />
-                  <CombinedCard
-                    title="Combined Monthly"
-                    icon={TrendingUp}
-                    mainIcon={BarChart3}
-                    data={dashboardData.monthly.combined}
-                    gradient="from-slate-700 via-gray-600 to-zinc-700"
-                    period="MONTHLY"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <TableSummary dashboardData={dashboardData} selectedDate={selectedDate} />
-          </div>
-          
-          <div className="mb-6">
-            <GraphHotelSummary dashboardData={dashboardData} selectedDate={selectedDate} />
-          </div>
-        </>
-      )}
     </div>
   );
 };
