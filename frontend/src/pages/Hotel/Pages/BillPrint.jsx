@@ -157,25 +157,20 @@ const HotelBillPrint = () => {
           console.log("ha");
           cleanData = location?.state?.splitDetailsAfterSave;
         }
-        const mergedMap = {};
+        
         let mapData = [...cleanData];
+        let splitArray=[]
         mapData?.forEach((item) => {
-          const key = `${item.customerName || selectedCheckOut[0].customerName}-${item.mode || item.subsource || item.type}`;
-
-          if (!mergedMap[key]) {
-            mergedMap[key] = {
+            splitArray.push( {
               customerName:
                 item.customerName || selectedCheckOut[0].customerName,
               mode: item.mode || item.subsource || item.type,
               amount: Number(item.amount),
               underCategory: item.underCategory,
-            };
-          } else {
-            mergedMap[key].amount += Number(item.amount);
-          }
+            });
         });
-        console.log(mergedMap);
-        setPaymentModeDetails(Object.values(mergedMap));
+        console.log(splitArray);
+        setPaymentModeDetails(splitArray);
       }
       console.log("hh");
       fetchDebitData(selectedCheckOut);
