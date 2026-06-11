@@ -37,8 +37,7 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, check
 
   // ── Hotel sale fetch ──
   const { data: saleResponse, loading, error } = useFetch(
-    voucherNumber ? `/api/sUsers/getSaleBasedOnVoucher/${voucherNumber}` : null,
-    { cmp_id }
+    voucherNumber ? `/api/sUsers/getSaleBasedOnVoucher?cmp_id=${cmp_id}&voucherNumber=${voucherNumber}` : null,
   );
 
   const { data: sourcesResponse } = useFetch(
@@ -48,14 +47,21 @@ const BookingListEditModal = ({ open, onOpenChange, voucherNumber, cmp_id, check
   const saleData = saleResponse?.data;
 
   // ── Restaurant sales fetch ──
-  const {
-    data: restaurantSalesResponse,
-    loading: restaurantLoading,
-    error: restaurantError,
-    refreshHook: refreshRestaurantHook
-  } = useFetch(
-    `/api/sUsers/getSalesByCheckInNumber/${encodeURIComponent(checkInNumber)}?cmp_id=${cmp_id}`
-  );
+const restaurantSalesUrl =
+  checkInNumber && cmp_id
+    ? `/api/sUsers/getSalesByCheckInNumber?checkInNumber=${checkInNumber}&cmp_id=${cmp_id}`
+    : null
+
+const {
+  data: restaurantSalesResponse,
+  loading: restaurantLoading,
+  error: restaurantError,
+  refreshHook: refreshRestaurantHook,
+} = useFetch(restaurantSalesUrl)
+
+  // useEffect(() => {
+  //   refreshRestaurantHook();
+  // }, [refreshRestaurantHook]);
 
   const restaurantSales = restaurantSalesResponse?.data ?? [];
 
