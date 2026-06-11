@@ -50,6 +50,10 @@ export const convertCheckOutToSale = async (req, res) => {
       if (!["single", "split", "credit"].includes(paymentMode))
         throw new Error("Invalid payment mode");
 
+      let effectiveRestaurantBaseSaleData = Array.isArray(restaurantBaseSaleData)
+        ? [...restaurantBaseSaleData]
+        : [];
+
       // ── Step 1: Restaurant discount / advance adjustments ────────────────
       if (restaurantSideDiscountAdjustmentArray?.length > 0) {
         await handleAdvanceAndDiscountSettlementInRestaurant(
@@ -58,6 +62,28 @@ export const convertCheckOutToSale = async (req, res) => {
           cmp_id,
           session,
         );
+
+        const restaurantSaleIds = effectiveRestaurantBaseSaleData
+          .map((sale) => sale?._id)
+          .filter(Boolean);
+
+        if (restaurantSaleIds.length > 0) {
+          const refreshedRestaurantSales = await salesModel
+            .find({
+              _id: { $in: restaurantSaleIds },
+              cmp_id,
+              isCancelled: false,
+            })
+            .session(session);
+
+          const refreshedSaleMap = new Map(
+            refreshedRestaurantSales.map((sale) => [String(sale._id), sale]),
+          );
+
+          effectiveRestaurantBaseSaleData = restaurantSaleIds
+            .map((saleId) => refreshedSaleMap.get(String(saleId)))
+            .filter(Boolean);
+        }
       }
 
       const split = paymentDetails?.splitDetails || [];
@@ -65,8 +91,8 @@ export const convertCheckOutToSale = async (req, res) => {
       const splitDetails = split;
 
       const restaurantTotal =
-        restaurantBaseSaleData.length > 0
-          ? restaurantBaseSaleData.reduce(
+        effectiveRestaurantBaseSaleData.length > 0
+          ? effectiveRestaurantBaseSaleData.reduce(
               (acc, item) => acc + Number(item.finalAmount || 0),
               0,
             )
@@ -202,7 +228,7 @@ export const convertCheckOutToSale = async (req, res) => {
             onlineAmt,
             applicableSplits,
             restaurantTotal,
-            restaurantBaseSaleData,
+            effectiveRestaurantBaseSaleData,
             session,
           );
 
@@ -552,7 +578,7 @@ export const convertCheckOutToSale = async (req, res) => {
           hotelTallyData: hotelTallyDoc,
           hotelSales,
           hotelTallyDataList,
-          restaurantBaseSaleData,
+          restaurantBaseSaleData: effectiveRestaurantBaseSaleData,
           customerPartyData: mapPartyData(customerPartyDoc),
           guestPartyData: mapPartyData(guestPartyDoc),
           cmp_id,
