@@ -8,248 +8,6 @@ import debitNoteModel from "../models/debitNoteModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import mongoose from "mongoose";
 
-//summary report controller
-// export const getSummary = async (req, res) => {
-//   const {
-//     startOfDayParam,
-//     endOfDayParam,
-//     selectedVoucher,
-//     summaryType,
-//     selectedOption
-//   } = req.query;
-
-//   try {
-//     const cmp_id = req.params.cmp_id;
-//     const companyObjectId = new mongoose.Types.ObjectId(cmp_id);
-
-//     /* ---------------- DATE FILTER ---------------- */
-//     let dateFilter = {};
-//     if (startOfDayParam && endOfDayParam) {
-//       const startDate = parseISO(startOfDayParam);
-//       const endDate = parseISO(endOfDayParam);
-//       dateFilter = {
-//         date: {
-//           $gte: startOfDay(startDate),
-//           $lte: endOfDay(endDate),
-//         },
-//       };
-//     }
-
-//     const matchCriteria = {
-//       ...dateFilter,
-//       cmp_id: companyObjectId,
-//     };
-
-//     /* ---------------- CONFIG ---------------- */
-//     const config = {
-//       "sales summary": {
-//         alltype: [
-//           { model: salesModel, billField: "salesNumber" },
-//           { model: vanSaleModel, billField: "salesNumber" },
-//           { model: creditNoteModel, billField: "creditNoteNumber" },
-//         ],
-//         sale: [{ model: salesModel, billField: "salesNumber" }],
-//         vansale: [{ model: vanSaleModel, billField: "salesNumber" }],
-//         creditnote: [{ model: creditNoteModel, billField: "creditNoteNumber" }],
-//       },
-//       "purchase summary": {
-//         alltype: [
-//           { model: purchaseModel, billField: "purchaseNumber" },
-//           { model: debitNoteModel, billField: "debitNoteNumber" },
-//         ],
-//         purchase: [{ model: purchaseModel, billField: "purchaseNumber" }],
-//         debitnote: [{ model: debitNoteModel, billField: "debitNoteNumber" }],
-//       },
-//       "order summary": {
-//         saleorder: [{ model: invoiceModel, billField: "orderNumber" }],
-//       },
-//     };
-
-//     const selectedSummary = config[summaryType?.toLowerCase()];
-//     if (!selectedSummary) throw new Error("Invalid summaryType");
-
-//     const selectedModels = selectedSummary[selectedVoucher?.toLowerCase()];
-//     if (!selectedModels) throw new Error("Invalid voucherType");
-
-//     /* ---------------- GROUP ID ---------------- */
-//     let groupId = {};
-//     switch (selectedOption) {
-//       case "Ledger":
-//         groupId = {
-//           partyName: "$party.partyName",
-//           itemName: "$items.product_name",
-//         };
-//         break;
-//       case "Stock Category":
-//         groupId = { categoryName: "$categoryInfo.category" };
-//         break;
-//       case "Stock Group":
-//         groupId = { groupName: "$brandInfo.brand" };
-//         break;
-//       case "Stock Item":
-//         groupId = { itemName: "$items.product_name" };
-//         break;
-//       default:
-//         groupId = { itemName: "$items.product_name" };
-//     }
-
-//     /* ---------------- PIPELINES ---------------- */
-//     const pipelines = [];
-
-//     for (const { model, billField } of selectedModels) {
-//       pipelines.push(
-//         model.aggregate([
-//           { $match: matchCriteria },
-//           { $unwind: "$items" },
-
-//           /* ---------- SAFE UNWIND ---------- */
-//           {
-//             $unwind: {
-//               path: "$items.GodownList",
-//               preserveNullAndEmptyArrays: true,
-//             },
-//           },
-
-//           /* ---------- CATEGORY LOOKUP ---------- */
-//           {
-//             $lookup: {
-//               from: "categories",
-//               localField: "items.category",
-//               foreignField: "_id",
-//               as: "categoryInfo",
-//             },
-//           },
-//           { $unwind: { path: "$categoryInfo", preserveNullAndEmptyArrays: true } },
-
-//           /* ---------- BRAND LOOKUP ---------- */
-//           {
-//             $lookup: {
-//               from: "brands",
-//               localField: "items.brand",
-//               foreignField: "_id",
-//               as: "brandInfo",
-//             },
-//           },
-//           { $unwind: { path: "$brandInfo", preserveNullAndEmptyArrays: true } },
-
-//           /* ---------- GROUP ---------- */
-//           {
-//             $group: {
-//               _id: {
-//                 ...groupId,
-//                 voucherSeries: `$${billField}`,
-//               },
-
-//               gstNo: { $first: "$party.gstNo" },
-//               seriesid: { $first: "$series_id" },
-
-//               godownList: {
-//                 $push: {
-//                   godown_id: "$items.GodownList.godown_id",
-//                   batch: "$items.GodownList.batch",
-//                   count: { $ifNull: ["$items.GodownList.count", "$items.qty"] },
-//                   rate: { $ifNull: ["$items.GodownList.basePrice", "$items.rate"] },
-//                   taxableAmount: {
-//                     $ifNull: ["$items.GodownList.taxableAmount", "$items.taxableAmount"],
-//                   },
-//                   individualTotal: {
-//                     $ifNull: ["$items.GodownList.individualTotal", "$items.totalAmount"],
-//                   },
-//                   discountAmount: {
-//                     $ifNull: ["$items.GodownList.discountAmount", 0],
-//                   },
-//                   igstValue: { $ifNull: ["$items.GodownList.igstValue", "$items.taxPercentage"] },
-//                   igstAmount: { $ifNull: ["$items.GodownList.igstAmount", "$items.taxAmount"] },
-//                   partyName: "$party.partyName",
-//                   hsn: "$items.hsn_code",
-//                 },
-//               },
-
-//               itemMeta: {
-//                 $first: {
-//                   billnumber: `$${billField}`,
-//                   billDate: {
-//                     $dateToString: { format: "%d-%m-%Y", date: "$date" },
-//                   },
-//                   itemName: "$items.product_name",
-//                   item_mrp: "$items.item_mrp",
-//                   product_code: "$items.product_code",
-//                   categoryName: "$categoryInfo.category",
-//                   groupName: "$brandInfo.brand",
-//                 },
-//               },
-//             },
-//           },
-//         ])
-//       );
-//     }
-
-//     /* ---------------- EXECUTION ---------------- */
-//     const output = await Promise.all(pipelines);
-//     const mergedResults = output.flat();
-
-//     /* ---------------- POST PROCESS ---------------- */
-//     const grouped = new Map();
-
-//     for (const record of mergedResults) {
-//       const key =
-//         selectedOption === "Ledger"
-//           ? record._id.partyName
-//           : selectedOption === "Stock Category"
-//           ? record._id.categoryName
-//           : selectedOption === "Stock Group"
-//           ? record._id.groupName
-//           : record._id.itemName;
-
-//       if (!grouped.has(key)) {
-//         grouped.set(key, {
-//           itemType: key,
-//           seriesID: record.seriesid,
-//           saleAmount: 0,
-//           sale: [],
-//         });
-//       }
-
-//       const group = grouped.get(key);
-
-//       for (const g of record.godownList) {
-//         const amount = g.taxableAmount || 0;
-//         group.saleAmount += amount;
-
-//         group.sale.push({
-//           ...record.itemMeta,
-//           quantity: g.count || 0,
-//           rate: g.rate || 0,
-//           taxPercentage: g.igstValue || 0,
-//           taxAmount: g.igstAmount || 0,
-//           netAmount: g.individualTotal || 0,
-//           gstNo: record.gstNo,
-//           hsn: g.hsn,
-//           amount,
-//           partyName: g.partyName,
-//         });
-//       }
-//     }
-
-//     const mergedsummary = Array.from(grouped.values());
-
-//     if (!mergedsummary.length) {
-//       return res.status(404).json({ message: "No summary data found" });
-//     }
-
-//     return res.status(200).json({
-//       message: "Summary data found",
-//       mergedsummary,
-//     });
-//   } catch (error) {
-//     console.error("Summary Error:", error);
-//     return res.status(500).json({
-//       status: false,
-//       message: "Error retrieving summary data",
-//       error: error.message,
-//     });
-//   }
-// };
 
 export const getSummary = async (req, res) => {
   const {
@@ -772,4 +530,238 @@ export const getSummaryReport = async (req, res) => {
   }
 };
 
-// Aggregation helper function
+/// get summary of hotel
+
+export const fetchDashboardConsolidatedTotals = async (req, res) => {
+  try {
+    const { cmp_id, primaryUserId } = req.params;
+
+    // ── IST boundaries ──────────────────────────────────────────
+    const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+    const nowIST = new Date(Date.now() + IST_OFFSET_MS);
+
+    // Today: 00:00:00 IST → 23:59:59 IST (stored as UTC in Mongo)
+    const todayStartIST = new Date(
+      Date.UTC(
+        nowIST.getUTCFullYear(),
+        nowIST.getUTCMonth(),
+        nowIST.getUTCDate(),
+        0, 0, 0, 0
+      ) - IST_OFFSET_MS
+    );
+    const todayEndIST = new Date(
+      Date.UTC(
+        nowIST.getUTCFullYear(),
+        nowIST.getUTCMonth(),
+        nowIST.getUTCDate(),
+        23, 59, 59, 999
+      ) - IST_OFFSET_MS
+    );
+
+    // This month: 1st 00:00:00 IST → last day 23:59:59 IST
+    const monthStartIST = new Date(
+      Date.UTC(
+        nowIST.getUTCFullYear(),
+        nowIST.getUTCMonth(),
+        1, 0, 0, 0, 0
+      ) - IST_OFFSET_MS
+    );
+    const monthEndIST = new Date(
+      Date.UTC(
+        nowIST.getUTCFullYear(),
+        nowIST.getUTCMonth() + 1,
+        0, 23, 59, 59, 999
+      ) - IST_OFFSET_MS
+    );
+    // ─────────────────────────────────────────────────────────────
+
+    const result = await salesModel.aggregate([
+
+      // ── Stage 1: Base filter ──────────────────────────────────
+      {
+        $match: {
+          Primary_user_id: new mongoose.Types.ObjectId(primaryUserId),
+          cmp_id: new mongoose.Types.ObjectId(cmp_id),
+          isComplimentary: { $ne: true },
+        },
+      },
+
+      // ── Stage 2: Faceted calculations ─────────────────────────
+      {
+        $facet: {
+
+          // ── A. All-time total revenue ─────────────────────────
+          allTimeTotal: [
+            {
+              $group: {
+                _id: null,
+                total: { $sum: "$finalAmount" },
+              },
+            },
+          ],
+
+          // ── B. This month total ───────────────────────────────
+          monthlyTotal: [
+            {
+              $match: {
+                date: { $gte: monthStartIST, $lte: monthEndIST },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: "$finalAmount" },
+              },
+            },
+          ],
+
+          // ── C. Today total ────────────────────────────────────
+          dailyTotal: [
+            {
+              $match: {
+                date: { $gte: todayStartIST, $lte: todayEndIST },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: "$finalAmount" },
+              },
+            },
+          ],
+
+          // ── D. Cash & Bank — daily ────────────────────────────
+          cashBankDaily: [
+            {
+              $match: {
+                date: { $gte: todayStartIST, $lte: todayEndIST },
+              },
+            },
+            { $unwind: "$paymentSplittingData" },
+            {
+              $match: {
+                "paymentSplittingData.type": { $ne: "credit" },
+                "paymentSplittingData.amount": { $gt: 0 },
+              },
+            },
+            {
+              $group: {
+                _id: {
+                  $cond: {
+                    if: { $eq: ["$paymentSplittingData.type", "cash"] },
+                    then: "cash",
+                    else: "bank",
+                  },
+                },
+                total: { $sum: "$paymentSplittingData.amount" },
+              },
+            },
+          ],
+
+          // ── E. Cash & Bank — monthly (includes today) ─────────
+          cashBankMonthly: [
+            {
+              $match: {
+                date: { $gte: monthStartIST, $lte: monthEndIST },
+              },
+            },
+            { $unwind: "$paymentSplittingData" },
+            {
+              $match: {
+                "paymentSplittingData.type": { $ne: "credit" },
+                "paymentSplittingData.amount": { $gt: 0 },
+              },
+            },
+            {
+              $group: {
+                _id: {
+                  $cond: {
+                    if: { $eq: ["$paymentSplittingData.type", "cash"] },
+                    then: "cash",
+                    else: "bank",
+                  },
+                },
+                total: { $sum: "$paymentSplittingData.amount" },
+              },
+            },
+          ],
+
+          // ── F. Cash & Bank — all-time ─────────────────────────
+          cashBankAllTime: [
+            { $unwind: "$paymentSplittingData" },
+            {
+              $match: {
+                "paymentSplittingData.type": { $ne: "credit" },
+                "paymentSplittingData.amount": { $gt: 0 },
+              },
+            },
+            {
+              $group: {
+                _id: {
+                  $cond: {
+                    if: { $eq: ["$paymentSplittingData.type", "cash"] },
+                    then: "cash",
+                    else: "bank",
+                  },
+                },
+                total: { $sum: "$paymentSplittingData.amount" },
+              },
+            },
+          ],
+        },
+      },
+
+      // ── Stage 3: Shape the response ───────────────────────────
+      {
+        $project: {
+          totalRevenue: {
+            $ifNull: [{ $arrayElemAt: ["$allTimeTotal.total", 0] }, 0],
+          },
+          monthlyCollection: {
+            $ifNull: [{ $arrayElemAt: ["$monthlyTotal.total", 0] }, 0],
+          },
+          dailyCollection: {
+            $ifNull: [{ $arrayElemAt: ["$dailyTotal.total", 0] }, 0],
+          },
+          cashBankDaily:   1,
+          cashBankMonthly: 1,
+          cashBankAllTime: 1,
+        },
+      },
+    ]);
+
+    // ── Helper: [{_id: "cash", total: X}] → { cash: X, bank: Y } 
+    const toMap = (arr) => {
+      const map = { cash: 0, bank: 0 };
+      (arr || []).forEach(({ _id, total }) => {
+        map[_id] = total;
+      });
+      return map;
+    };
+
+    const daily   = toMap(result[0]?.cashBankDaily);
+    const monthly = toMap(result[0]?.cashBankMonthly);
+    const allTime = toMap(result[0]?.cashBankAllTime);
+
+    return res.status(200).json({
+      totalRevenue:      result[0]?.totalRevenue      ?? 0,
+      monthlyCollection: result[0]?.monthlyCollection ?? 0,
+      dailyCollection:   result[0]?.dailyCollection   ?? 0,
+      cashCollection: {
+        allTime: allTime.cash,
+        monthly: monthly.cash,
+        daily:   daily.cash,
+      },
+      bankCollection: {
+        allTime: allTime.bank,
+        monthly: monthly.bank,
+        daily:   daily.bank,
+      },
+    });
+
+  } catch (error) {
+    console.log("error:", error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

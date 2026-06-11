@@ -45,7 +45,7 @@ import { addAccountGroupIdToOutstanding, addAccountGroupIdToParties, convertPrim
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
 import { addSecondaryConfigurations, addSecUsers, allocateCompany, allocateSubDetails, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getSecUserDetails,updateTransactionAccess } from '../controllers/primaryUserController.js';
 
-import { getSummary } from "../controllers/summaryController.js"
+import { fetchDashboardConsolidatedTotals, getSummary } from "../controllers/summaryController.js"
 import { getSummaryReport } from "../controllers/summaryController.js";
 import { fetchOutstandingDetails, fetchOutstandingTotal, getOutstandingSummary } from '../controllers/outStandingController.js';
 import { addProduct, deleteProduct, productDetails, editProduct, getProducts, addProductSubDetails, getProductSubDetails, deleteProductSubDetails, editProductSubDetails, getAllProductsForExcel } from '../controllers/productController.js';
@@ -435,6 +435,7 @@ router.get("/getSaleBasedOnVoucher", getSaleBasedOnVoucher);
 router.put("/updateCheckout/:id", updateCheckout);
 router.get("/getSalesByCheckInNumber", getSalesByCheckInNumber);  
 router.put("/updateRestaurantSalePayments/:id", updateRestaurantSalePayments);
+router.get("/fetchDashboardConsolidatedTotals/:cmp_id/:primaryUserId",fetchDashboardConsolidatedTotals );
 
 router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
 // Route to get detailed booking information for a specific room and date

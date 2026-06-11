@@ -1,5 +1,14 @@
 import TitleDiv from "@/components/common/TitleDiv";
 import SummaryCards from "../Components/SummaryDashboard/SummaryCards";
+import SummaryCardsSkeleton from "../Components/SummaryDashboard/SummaryCardsSkeleton";
+import { useSelector } from "react-redux";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/api/api";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+
+const fmt = (n) => "₹" + Number(n ?? 0).toLocaleString("en-IN");
 
 const SummaryDashboard = () => {
   const today = new Date().toLocaleDateString("en-IN", {
@@ -9,69 +18,61 @@ const SummaryDashboard = () => {
     year: "numeric",
   });
 
+  const company = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg
+  );
+
+  const cmp_id = company._id;
+  const primaryUserId = company.owner;
+
+  const fetchDashboardConsolidatedTotals = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardConsolidatedTotals/${cmp_id}/${primaryUserId}`,
+      { withCredentials: true }
+    );
+    return response.data;
+  };
+
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
+    queryKey: ["dashboard", "consolidatedTotals", cmp_id],
+    queryFn: fetchDashboardConsolidatedTotals,
+    enabled: !!cmp_id,
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top nav bar */}
-      <div >
+      <div>
         <TitleDiv title="Summary Dashboard" />
       </div>
 
-      {/* Page body */}
-      <div className="px-6 py-6 max-w-6xl mx-auto">
+      <div className="px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6 max-w-6xl mx-auto">
 
         {/* Header row */}
-        <div className="flex items-start justify-between mb-8">
-          {/* Left — greeting */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-              
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6 sm:mb-8">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-700 leading-tight truncate">
+              {company?.name}
             </h1>
             <p className="text-sm text-gray-500 mt-1">{today}</p>
           </div>
 
-          {/* Right — search + action */}
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm text-gray-600 hover:bg-gray-50 transition">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                aria-hidden="true"
-              >
-                <circle
-                  cx="7"
-                  cy="7"
-                  r="4.5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-                <path
-                  d="M10.5 10.5L13 13"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <button className="flex items-center gap-2 px-3 py-2 sm:px-4 rounded-xl border border-gray-200 bg-white text-sm text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M10.5 10.5L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
-              Search
+              <span className="hidden sm:inline">Search</span>
             </button>
 
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0f172a] text-sm text-white font-medium hover:bg-[#1e293b] transition">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M8 3v10M3 8h10"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
+            <button className="flex items-center gap-2 px-3 py-2 sm:px-4 rounded-xl bg-[#0f172a] text-sm text-white font-medium hover:bg-[#1e293b] active:bg-[#0a101e] transition">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
-              Export Report
+              <span className="hidden sm:inline">Export Report</span>
             </button>
           </div>
         </div>
@@ -81,12 +82,44 @@ const SummaryDashboard = () => {
           Overview
         </p>
 
-        {/* Summary Cards */}
-        <SummaryCards
-          totalRevenue="₹24,80,632"
-          dailyCollection="₹98,450"
-          monthlyCollection="₹9,80,632"
-        />
+        {/* Loading */}
+        {isLoading && <SummaryCardsSkeleton />}
+
+        {/* Error */}
+        {isError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Failed to load summary</AlertTitle>
+            <AlertDescription className="flex flex-col gap-3 mt-1">
+              <span className="text-sm">
+                {error?.message ?? "Something went wrong. Please try again."}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="w-fit flex items-center gap-2"
+              >
+                <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} />
+                {isFetching ? "Retrying…" : "Retry"}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Success */}
+        {!isLoading && !isError && data && (
+          <SummaryCards
+            totalRevenue={fmt(data.totalRevenue)}
+            dailyCollection={fmt(data.dailyCollection)}
+            monthlyCollection={fmt(data.monthlyCollection)}
+            dailyCash={fmt(data.cashCollection?.daily)}
+            dailyBank={fmt(data.bankCollection?.daily)}
+            monthlyCash={fmt(data.cashCollection?.monthly)}
+            monthlyBank={fmt(data.bankCollection?.monthly)}
+          />
+        )}
       </div>
     </div>
   );
