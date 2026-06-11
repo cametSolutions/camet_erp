@@ -11,6 +11,8 @@ export const createReceiptsAndSettlements = async ({
   paymentDetails,
   hotelSale,
   hotelTallyData,
+  hotelSales = [],
+  hotelTallyDataList = [],
   restaurantBaseSaleData = [],
   customerPartyData,
   guestPartyData,
@@ -100,27 +102,135 @@ export const createReceiptsAndSettlements = async ({
     }
   }
 
+  const effectiveHotelSales = hotelSales.length
+    ? hotelSales
+    : hotelSale
+      ? [hotelSale]
+      : [];
+  const effectiveHotelTallies = hotelTallyDataList.length
+    ? hotelTallyDataList
+    : hotelTallyData
+      ? [hotelTallyData]
+      : [];
+
+  const hotelEntries =
+    paymentMode === "split"
+      ? effectiveHotelSales.flatMap((sale) => {
+          const saleId = String(sale?._id || "");
+          const matchingTallies = effectiveHotelTallies.filter(
+            (tally) => String(tally?.billId || "") === saleId,
+          );
+          const roomSplits = (Array.isArray(sale?.paymentSplittingData)
+            ? sale.paymentSplittingData
+            : []
+          ).filter((split) => split?.underCategory === "room");
+
+          return roomSplits
+            .map((split, index) => {
+              if (isCreditSource(split)) return null;
+
+              const pairedTally =
+                matchingTallies[index] ||
+                matchingTallies.find(
+                  (tally) =>
+                    String(tally?.party_id || "") ===
+                    String(customerPartyData?._id || ""),
+                ) ||
+                matchingTallies[0] ||
+                null;
+
+              const remaining = Number(split?.amount || 0);
+
+              if (!pairedTally || remaining <= 0) return null;
+
+              return {
+                sale,
+                tally: pairedTally,
+                remaining: Number(remaining.toFixed(2)),
+              };
+            })
+            .filter(Boolean);
+        })
+      : effectiveHotelSales
+          .map((sale) => {
+            const saleId = String(sale?._id || "");
+            const matchingTallies = effectiveHotelTallies.filter(
+              (tally) => String(tally?.billId || "") === saleId,
+            );
+            const customerTallies = matchingTallies.filter(
+              (tally) =>
+                String(tally?.party_id || "") ===
+                String(customerPartyData?._id || ""),
+            );
+
+            const preferredTally =
+              customerTallies.find(
+                (tally) => Number(tally?.bill_pending_amt || 0) > 0,
+              ) ||
+              customerTallies[0] ||
+              matchingTallies.find(
+                (tally) => Number(tally?.bill_pending_amt || 0) > 0,
+              ) ||
+              matchingTallies[0] ||
+              (effectiveHotelSales.length === 1 &&
+              effectiveHotelTallies.length === 1
+                ? effectiveHotelTallies[0]
+                : null);
+
+            if (!preferredTally) return null;
+
+            const tallyPending = Number(preferredTally?.bill_pending_amt || 0);
+            const salePending = Number(sale?.finalAmount || 0);
+            const remaining = tallyPending > 0 ? tallyPending : salePending;
+
+            if (remaining <= 0) return null;
+
+            return {
+              sale,
+              tally: preferredTally,
+              remaining: Number(remaining.toFixed(2)),
+            };
+          })
+          .filter(Boolean);
+
   // ------------------------------------------------------------
   // HOTEL RECEIPTS
   // ------------------------------------------------------------
-  let hotelTallyPending = Number(
-    hotelTallyData?.bill_pending_amt ?? hotelTallyData?.billamount ?? 0,
-  );
+  if (hotelEntries.length > 0) {
+    let hotelEntryIndex = 0;
 
-  if (paymentMode === "single") {
-    if (hotelTallyPending > 0) {
-      for (const source of roomSources) {
-        if (source.isCreditType) continue;
+    for (const source of roomSources) {
+      if (isCreditSource(source) || source?.isCreditType) continue;
 
-        const payAmount = Math.min(Number(source.amount || 0), hotelTallyPending);
-        if (payAmount <= 0) continue;
+      let remainingSourceAmount = Number(source.amount || 0);
+      if (remainingSourceAmount <= 0) continue;
 
-        const sourceParty = await Party.findOne({ _id: source.sourceId }).session(
-          session,
-        );
-        if (!sourceParty) {
-          throw new Error(`Hotel source party not found: ${source.sourceId}`);
+      const sourceParty = await Party.findOne({ _id: source.sourceId }).session(
+        session,
+      );
+      if (!sourceParty) {
+        throw new Error(`Hotel source party not found: ${source.sourceId}`);
+      }
+
+      while (
+        remainingSourceAmount > 0 &&
+        hotelEntryIndex < hotelEntries.length
+      ) {
+        const currentEntry = hotelEntries[hotelEntryIndex];
+
+        if (!currentEntry || Number(currentEntry.remaining || 0) <= 0) {
+          hotelEntryIndex += 1;
+          continue;
         }
+
+        const currentPending = Number(currentEntry.remaining || 0);
+        const payAmount = Math.min(remainingSourceAmount, currentPending);
+
+        if (payAmount <= 0) break;
+
+        const nextPending = Number(
+          Math.max(0, currentPending - payAmount).toFixed(2),
+        );
 
         const receiptNum = await generateVoucherNumber(
           cmp_id,
@@ -129,53 +239,72 @@ export const createReceiptsAndSettlements = async ({
           session,
         );
 
-        const [hotelReceipt] = await receiptModel.create(
-          [
+        const receiptPayload = {
+          date: new Date(),
+          voucherType: "receipt",
+          receiptNumber: receiptNum.voucherNumber,
+          series_id: specificVoucherSeries._id.toString(),
+          usedSeriesNumber: receiptNum.usedSeriesNumber,
+          serialNumber: receiptNum.usedSeriesNumber,
+          Primary_user_id: req.pUserId || req.owner,
+          Secondary_user_id: req.sUserId,
+          cmp_id,
+          party: buildPartyEmbedded(customerPartyData),
+          billData: [
             {
-              date: new Date(),
-              voucherType: "receipt",
-              receiptNumber: receiptNum.voucherNumber,
-              series_id: specificVoucherSeries._id.toString(),
-              usedSeriesNumber: receiptNum.usedSeriesNumber,
-              serialNumber: receiptNum.usedSeriesNumber,
-              Primary_user_id: req.pUserId || req.owner,
-              Secondary_user_id: req.sUserId,
-              cmp_id,
-              party: buildPartyEmbedded(customerPartyData),
-              billData: [
-                {
-                  _id: hotelTallyData._id,
-                  bill_no: hotelSale.salesNumber,
-                  billId: hotelSale._id,
-                  bill_date: hotelTallyData.bill_date,
-                  bill_pending_amt: hotelTallyPending,
-                  source: "sales",
-                  settledAmount: payAmount,
-                  remainingAmount: hotelTallyPending - payAmount,
-                },
-              ],
-              totalBillAmount: hotelTallyPending,
-              enteredAmount: payAmount,
-              advanceAmount: 0,
-              remainingAmount: hotelTallyPending - payAmount,
-              paymentMethod: mapSourceTypeToReceiptMethod(source.sourceType),
-              paymentDetails: buildPaymentDetails(source, sourceParty),
-              note: "",
-              isCancelled: false,
+              _id: currentEntry.tally._id,
+              bill_no: currentEntry.sale.salesNumber,
+              billId: currentEntry.sale._id,
+              bill_date: currentEntry.tally.bill_date,
+              bill_pending_amt: currentPending,
+              source: "sales",
+              settledAmount: payAmount,
+              remainingAmount: nextPending,
             },
           ],
+          totalBillAmount: currentPending,
+          enteredAmount: payAmount,
+          advanceAmount: 0,
+          remainingAmount: nextPending,
+          paymentMethod: mapSourceTypeToReceiptMethod(source.sourceType),
+          paymentDetails: buildPaymentDetails(source, sourceParty),
+          note: "",
+          isCancelled: false,
+        };
+
+        if (paymentMode === "split") {
+          receiptPayload.paymentSplittingData = [
+            {
+              source: source.sourceId,
+              sourceId: source.sourceId,
+              sourceType: source.sourceType,
+              subsource: source.subsource,
+              amount: payAmount,
+            },
+          ];
+        }
+
+        const [hotelReceipt] = await receiptModel.create(
+          [receiptPayload],
           { session },
         );
 
         allHotelReceipts.push(hotelReceipt);
 
         await TallyData.updateOne(
-          { _id: hotelTallyData._id },
-          { $inc: { bill_pending_amt: -payAmount } },
+          { _id: currentEntry.tally._id },
+          {
+            $set: {
+              bill_pending_amt: nextPending,
+            },
+          },
           { session },
         );
 
-        hotelTallyPending = Number((hotelTallyPending - payAmount).toFixed(2));
+        currentEntry.remaining = nextPending;
+        remainingSourceAmount = Number(
+          Math.max(0, remainingSourceAmount - payAmount).toFixed(2),
+        );
 
         const hs = await createSettlementForReceipt({
           receipt: hotelReceipt,
@@ -189,90 +318,11 @@ export const createReceiptsAndSettlements = async ({
         });
 
         allSettlements.push(hs);
+
+        if (currentEntry.remaining <= 0) {
+          hotelEntryIndex += 1;
+        }
       }
-    }
-  } else if (paymentMode === "split") {
-    for (const source of roomSources) {
-      if (source.isCreditType) continue;
-
-      const payAmount = Number(source.amount || 0);
-      if (payAmount <= 0) continue;
-
-      const sourceParty = await Party.findOne({ _id: source.sourceId }).session(
-        session,
-      );
-      if (!sourceParty) {
-        throw new Error(`Hotel source party not found: ${source.sourceId}`);
-      }
-
-      const receiptNum = await generateVoucherNumber(
-        cmp_id,
-        "receipt",
-        specificVoucherSeries._id.toString(),
-        session,
-      );
-
-      const [hotelReceipt] = await receiptModel.create(
-        [
-          {
-            date: new Date(),
-            voucherType: "receipt",
-            receiptNumber: receiptNum.voucherNumber,
-            series_id: specificVoucherSeries._id.toString(),
-            usedSeriesNumber: receiptNum.usedSeriesNumber,
-            serialNumber: receiptNum.usedSeriesNumber,
-            Primary_user_id: req.pUserId || req.owner,
-            Secondary_user_id: req.sUserId,
-            cmp_id,
-            party: buildPartyEmbedded(customerPartyData),
-            billData: [
-              {
-                _id: hotelTallyData._id,
-                bill_no: hotelSale.salesNumber,
-                billId: hotelSale._id,
-                bill_date: hotelTallyData.bill_date,
-                bill_pending_amt: payAmount,
-                source: "sales",
-                settledAmount: payAmount,
-                remainingAmount: 0,
-              },
-            ],
-            totalBillAmount: payAmount,
-            enteredAmount: payAmount,
-            advanceAmount: 0,
-            remainingAmount: 0,
-            paymentMethod: mapSourceTypeToReceiptMethod(source.sourceType),
-            paymentDetails: buildPaymentDetails(source, sourceParty),
-            paymentSplittingData: [
-              {
-                source: source.sourceId,
-                sourceId: source.sourceId,
-                sourceType: source.sourceType,
-                subsource: source.subsource,
-                amount: payAmount,
-              },
-            ],
-            note: "",
-            isCancelled: false,
-          },
-        ],
-        { session },
-      );
-
-      allHotelReceipts.push(hotelReceipt);
-
-      const hs = await createSettlementForReceipt({
-        receipt: hotelReceipt,
-        partyDoc: customerPartyData,
-        sourceParty,
-        source,
-        payAmount,
-        cmp_id,
-        req,
-        session,
-      });
-
-      allSettlements.push(hs);
     }
   }
 
@@ -304,11 +354,6 @@ export const createReceiptsAndSettlements = async ({
       restaurantTallies.map((t) => [String(t.billId), t]),
     );
 
-    const allocationsBySaleId = allocateFoodSplitsToSales(
-      refreshedRestaurantSales,
-      foodSources,
-    );
-
     for (const sale of refreshedRestaurantSales) {
       const saleId = String(sale._id);
       const tally = tallyByBillId.get(saleId);
@@ -318,7 +363,31 @@ export const createReceiptsAndSettlements = async ({
         continue;
       }
 
-      const allocations = allocationsBySaleId.get(saleId) || [];
+      const savedSaleSplits = Array.isArray(sale.paymentSplittingData)
+        ? sale.paymentSplittingData
+        : [];
+
+      const allocations = savedSaleSplits.length
+        ? savedSaleSplits
+            .map((split) => ({
+              sourceId:
+                split.sourceId || split.source || split.ref_id || split.refid || null,
+              sourceType: normalizeSourceType(
+                split.type || split.sourceType || split.subsource,
+              ),
+              subsource: split.subsource || split.sourceType || "",
+              amount: Number(split.amount || 0),
+            }))
+            .filter(
+              (split) =>
+                split.sourceId &&
+                split.amount > 0 &&
+                !isCreditSource(split),
+            )
+        : allocateFoodSplitsToSales(refreshedRestaurantSales, foodSources).get(
+            saleId,
+          ) || [];
+
       if (!allocations.length) {
         console.log(`[Restaurant] No allocation for ${sale.salesNumber}`);
         continue;
@@ -328,6 +397,7 @@ export const createReceiptsAndSettlements = async ({
 
       for (const alloc of allocations) {
         if (remainingForSale <= 0) break;
+        if (isCreditSource(alloc)) continue;
 
         const payAmount = Math.min(
           Number(alloc.amount || 0),
@@ -481,6 +551,7 @@ function allocateFoodSplitsToSales(sales, foodSplits) {
       (s) =>
         s.sourceId &&
         s.amount > 0 &&
+        !isCreditSource(s) &&
         ["cash", "bank", "upi", "card", "credit", "cheque"].includes(
           s.sourceType,
         ),
@@ -527,6 +598,16 @@ async function createSettlementForReceipt({
   req,
   session,
 }) {
+  const existingSettlement = await Settlement.findOne({
+    voucherId: receipt._id,
+    voucherModel: "Receipt",
+    voucherType: "receipt",
+  }).session(session);
+
+  if (existingSettlement) {
+    return existingSettlement;
+  }
+
   const settlementSourceType =
     normalizeSourceType(source.sourceType) === "cash" ? "cash" : "bank";
 
@@ -554,6 +635,14 @@ async function createSettlementForReceipt({
   );
 
   return settlement;
+}
+
+function isCreditSource(source) {
+  const sourceType = normalizeSourceType(
+    source?.type || source?.sourceType || source?.subsource || source,
+  );
+
+  return sourceType === "credit";
 }
 
 function normalizeSourceType(value) {

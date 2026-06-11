@@ -445,6 +445,7 @@ export const convertCheckOutToSale = async (req, res) => {
           saleNumber,
           salesRecord: savedVoucherData[0],
           tallyId: tallyRows?.[0]?._id,
+          tallyRows,
           checkInId,
           checkOutId: createdDoc._id,
           isPartial: isThisPartial,
@@ -516,10 +517,17 @@ export const convertCheckOutToSale = async (req, res) => {
           session,
         );
 
-        const hotelTallyDoc = await TallyData.findById(
-          results[0]?.tallyId,
-        ).session(session);
-        if (!hotelTallyDoc)
+        const hotelTallyDoc = await TallyData.findById(results[0]?.tallyId).session(
+          session,
+        );
+        const hotelSales = results
+          .map((result) => result?.salesRecord)
+          .filter(Boolean);
+        const hotelTallyDataList = results
+          .flatMap((result) => result?.tallyRows || [])
+          .filter(Boolean);
+
+        if (!hotelTallyDoc && hotelTallyDataList.length === 0)
           throw new Error("Hotel TallyData not found after createTallyEntry");
 
         const specificVoucherSeriesReceipt = await hotelVoucherSeries(
@@ -542,6 +550,8 @@ export const convertCheckOutToSale = async (req, res) => {
           paymentDetails,
           hotelSale: results[0]?.salesRecord,
           hotelTallyData: hotelTallyDoc,
+          hotelSales,
+          hotelTallyDataList,
           restaurantBaseSaleData,
           customerPartyData: mapPartyData(customerPartyDoc),
           guestPartyData: mapPartyData(guestPartyDoc),

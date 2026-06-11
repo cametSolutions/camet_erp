@@ -1385,19 +1385,19 @@ export const updateKotPayment = async (req, res) => {
           session,
         );
       }
-      if (party?.paymentType != "party" && paymentMethod != "credit") {
-        await saveSettlement(
-          paymentDetails,
-          selectedParty,
-          cmp_id,
-          savedVoucherData[0],
-          paidAmount,
-          cashAmt,
-          onlineAmt,
-          req,
-          session,
-        );
-      }
+      // if (party?.paymentType != "party" && paymentMethod != "credit") {
+      //   await saveSettlement(
+      //     paymentDetails,
+      //     selectedParty,
+      //     cmp_id,
+      //     savedVoucherData[0],
+      //     paidAmount,
+      //     cashAmt,
+      //     onlineAmt,
+      //     req,
+      //     session,
+      //   );
+      // }
       let findCredit =
         paymentSplittingArray?.length > 0
           ? paymentSplittingArray.filter((item) => item.type === "credit")
