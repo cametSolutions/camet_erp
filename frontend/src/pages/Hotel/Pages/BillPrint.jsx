@@ -159,6 +159,7 @@ const HotelBillPrint = () => {
         }
         
         let mapData = [...cleanData];
+        console.log(mapData);
         let splitArray=[]
         mapData?.forEach((item) => {
             splitArray.push( {
@@ -166,11 +167,25 @@ const HotelBillPrint = () => {
                 item.customerName || selectedCheckOut[0].customerName,
               mode: item.mode || item.subsource || item.type,
               amount: Number(item.amount),
-              underCategory: item.underCategory,
+              under: item.underCategory,
             });
         });
-        console.log(splitArray);
-        setPaymentModeDetails(splitArray);
+        const merged = Object.values(
+  splitArray.reduce((acc, item) => {
+    const key = `${item.customerName}-${item.mode}-${item.under}`;
+
+    if (!acc[key]) {
+      acc[key] = { ...item };
+    } else {
+      acc[key].amount += Number(item.amount);
+    }
+
+    return acc;
+  }, {})
+);
+
+console.log(merged);
+        setPaymentModeDetails(merged);
       }
       console.log("hh");
       fetchDebitData(selectedCheckOut);
