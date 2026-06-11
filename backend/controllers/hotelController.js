@@ -3946,6 +3946,22 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
           [`configurations.0.orderTypes.${data.field}`]: data.checked,
         },
       };
+    } else if (data.fieldType === "saveSaleBasedOn") {
+      if (data.field === "agent") {
+        updateData = {
+          $set: {
+            [`configurations.0.saveSaleBasedOn.agent`]: data.checked,
+            [`configurations.0.saveSaleBasedOn.guest`]: false,
+          },
+        };
+      } else if (data.field === "guest") {
+        updateData = {
+          $set: {
+            [`configurations.0.saveSaleBasedOn.guest`]: data.checked,
+            [`configurations.0.saveSaleBasedOn.agent`]: false,
+          },
+        };
+      }
     } else if (data.title == "restaurantPrint") {
       updateData = {
         $set: {

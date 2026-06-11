@@ -54,6 +54,20 @@ function SettingsCard({
           value: shouldBeChecked,
         });
       });
+    } else if (option.title === "Save sale based on agent or guest") {
+      if (currentValue === true) {
+        return;
+      }
+
+      if (dbField.includes('.')) {
+        const [parentField, childField] = dbField.split('.');
+
+        handleToggleChangeFromParent({
+          fieldType: parentField,
+          field: childField,
+          checked: true
+        });
+      }
     } else {
 
     // Handle nested fields (like "defaultPrint.print1")
