@@ -50,6 +50,7 @@ import { PriceLevel } from "../models/subDetails.js";
 import nodemailer from "nodemailer";
 import { transactions } from "./commonController.js";
 import settlementModel from "../models/settlementModel.js";
+import { statesData } from "../../frontend/constants/states.js";
 // function used to save additional pax details
 export const saveAdditionalPax = async (req, res) => {
   try {
@@ -7051,8 +7052,8 @@ const sales = await salesModel.find({
 
 export const getSaleBasedOnVoucher = async (req, res) => {
   try {
-    const voucherNumber = req.params.voucherNumber;
-    const cmp_id = req.query.cmp_id;
+   
+    const {cmp_id,voucherNumber} = req.query;
 
     console.log(voucherNumber, cmp_id);
 
@@ -7267,9 +7268,20 @@ export const updateCheckout = async (req, res) => {
 
     checkout.paymenttypeDetails = paymentTotals;
     checkout.markModified("paymenttypeDetails");
+
+    /// update guest info of checkout accriding to party
+
+    checkout.guestId=party._id || checkout.guestId ;
+    checkout.guestName=party.partyName || checkout.guestName  ;
+    // checkout.guestCountry=party._id;
+    checkout.guestState=statesData.find((el)=>(el?.stateCode===party?.state_reference)) || checkout.guestState;
+    checkout.guestPinCode=party.guestPinCode || checkout.guestPinCode;
+    checkout.guestDetailedAddress=address || checkout.guestDetailedAddress;
+    checkout.guestMobileNumber=party.mobileNumber || checkout.guestMobileNumber;
+    checkout.gstNo=gstNo || checkout.gstNo;
+
+
     await checkout.save({ session });
-
-
 
 
     // ── Update Settlements ──
@@ -7367,8 +7379,7 @@ export const updateCheckout = async (req, res) => {
 
 export const getSalesByCheckInNumber = async (req, res) => {
   try {
-    const { cmp_id } = req.query;
-    const { checkInNumber } = req.params;
+    const { cmp_id ,checkInNumber} = req.query;
 
     console.log(checkInNumber);
 
