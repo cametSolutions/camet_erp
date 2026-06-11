@@ -71,6 +71,13 @@ const organizationSchema = new mongoose.Schema(
             hotelSales: false,
           },
         },
+        saveSaleBasedOn: {
+          type: Object,
+          default: {
+            agent: true,
+            guest: false,
+          },
+        },
 
         defaultPrint: {
           type: Object,
