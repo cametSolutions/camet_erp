@@ -8,7 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import CustomerSearchInputBox from "../Components/CustomerSearchInputBox";
+import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
+
 
 const capitalize = (str) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";

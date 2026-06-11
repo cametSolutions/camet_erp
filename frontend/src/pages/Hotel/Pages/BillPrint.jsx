@@ -76,22 +76,48 @@ const HotelBillPrint = () => {
       ]);
       return;
     }
+    let restaurantAmount =
+      paymentDetails?.paymentDetails?.selectedDataForPayment
+        ?.restaurantSubTotal || 0;
+    if (
+      paymentDetails?.paymentDetails?.paymentMode === "single" &&
+      Number(restaurantAmount) > 0
+    ) {
+      let split = [];
+
+      split.push({
+        customerName: splitDetails[0].customerName,
+        mode: splitDetails[0].subsource || splitDetails[0].source,
+        amount: Number(splitDetails[0]?.amount) - Number(restaurantAmount),
+        under: "room",
+      });
+      split.push({
+        customerName: splitDetails[0].customerName,
+        mode: splitDetails[0].subsource || splitDetails[0].source,
+        amount: Number(restaurantAmount),
+        under: "food",
+      });
+      setPaymentModeDetails(split);
+      return;
+    }
 
     if (!splitDetails || !splitDetails.length) {
       setPaymentModeDetails([]);
       return;
     }
 
-   const mergedMap = splitDetails?.map((item) => ({
-  customerName: item.customerName,
-  mode: item.subsource || item.source,
-  amount: Number(item.amount),
-  under: item.underCategory,
-}));
+    console.log(splitDetails);
 
-console.log(mergedMap);
+    const mergedMap = splitDetails?.map((item) => ({
+      customerName: item.customerName,
+      mode: item.subsource || item.source,
+      amount: Number(item.amount),
+      under: item.underCategory,
+    }));
+
     console.log(mergedMap);
-        console.log(splitDetails)
+    console.log(mergedMap);
+    console.log(splitDetails);
     setPaymentModeDetails(Object.values(mergedMap));
   }, [paymentDetails]);
 
@@ -131,25 +157,20 @@ console.log(mergedMap);
           console.log("ha");
           cleanData = location?.state?.splitDetailsAfterSave;
         }
-        const mergedMap = {};
+        
         let mapData = [...cleanData];
+        let splitArray=[]
         mapData?.forEach((item) => {
-          const key = `${item.customerName || selectedCheckOut[0].customerName}-${item.mode || item.subsource || item.type}`;
-
-          if (!mergedMap[key]) {
-            mergedMap[key] = {
+            splitArray.push( {
               customerName:
                 item.customerName || selectedCheckOut[0].customerName,
               mode: item.mode || item.subsource || item.type,
               amount: Number(item.amount),
               underCategory: item.underCategory,
-            };
-          } else {
-            mergedMap[key].amount += Number(item.amount);
-          }
+            });
         });
-        console.log(mergedMap);
-        setPaymentModeDetails(Object.values(mergedMap));
+        console.log(splitArray);
+        setPaymentModeDetails(splitArray);
       }
       console.log("hh");
       fetchDebitData(selectedCheckOut);
@@ -217,11 +238,23 @@ console.log(mergedMap);
           : (Number(activePrice || 0) * Number(room?.taxPercentage || 0)) / 100;
       }
 
+      const foodPlanTaxableAmount =
+        Number(room.foodPlanAmountWithTax || 0) /
+        (1 + Number(room.foodPlanTaxRate || 0) / 100);
+
       const foodPlanAmountWithTaxPerDay =
         Number(room.foodPlanAmountWithTax || 0) / stayDays;
-      const foodPlanAmountWithOutTaxPerDay =
-        Number(room.foodPlanAmountWithOutTax || 0) / stayDays;
 
+      const foodPlanAmountWithOutTaxPerDay = (
+        Number(foodPlanTaxableAmount || 0) / stayDays
+      ).toFixed(2);
+
+      console.log(foodPlanTaxableAmount - foodPlanAmountWithOutTaxPerDay);
+
+      const foodPlanTax =
+        foodPlanAmountWithTaxPerDay - foodPlanAmountWithOutTaxPerDay;
+      console.log(foodPlanTax);
+      console.log(foodPlanAmountWithOutTaxPerDay, foodPlanAmountWithTaxPerDay);
       // Additional pax, spread only across full days
       const totalAdditionalPaxWithTax = Number(
         room.additionalPaxAmountWithTax || 0,
@@ -324,6 +357,7 @@ console.log(mergedMap);
           customerName: doc.customerId?.partyName,
           foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay,
           foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay,
+          foodPlanTax: foodPlanTax,
           additionalPaxDataWithTax: additionalPaxDataWithTaxPerDay,
           additionalPaxDataWithOutTax: additionalPaxDataWithOutTaxPerDay,
           roomId: room?.roomId || room?._id,
@@ -364,6 +398,7 @@ console.log(mergedMap);
           customerName: doc.customerId?.partyName,
           foodPlanAmountWithTax: foodPlanAmountWithTaxPerDay * 0.5,
           foodPlanAmountWithOutTax: foodPlanAmountWithOutTaxPerDay * 0.5,
+          foodPlanTax: foodPlanTax,
           additionalPaxDataWithTax: 0,
           additionalPaxDataWithOutTax: 0,
           roomId: room?.roomId || room?._id,
@@ -527,8 +562,13 @@ console.log(mergedMap);
       (t, i) => t + Number(i.foodPlanAmountWithOutTax || 0),
       0,
     );
-
     console.log(planAmount);
+    const foodPlanTax = (
+      dateWiseLines.reduce((t, i) => t + Number(i.foodPlanTax || 0), 0) / 2
+    ).toFixed(2);
+
+    console.log(foodPlanTax);
+
     const foodPlanAmountWithTax = dateWiseLines
       .reduce(
         (t, i) =>
@@ -1070,12 +1110,13 @@ console.log(mergedMap);
     const convertNumberToWords = (amount) =>
       `${Math.round(amount || 0)} Rupees Only`;
     let partyName = doc?.guestId?.partyName;
-    let partyAddress = doc?.guestId?.billingAddress || "";
-    let partyPhone = doc?.guestId?.mobileNumber || "";
-    let partyGstNo = doc?.customerId?.gstNo || "";
+    let partyAddress =
+      doc?.guestDetailedAddress || doc?.guestId?.billingAddress || "";
+    let partyPhone = doc?.guestMobileNumber || doc?.guestId?.mobileNumber || "";
+    let partyGstNo = doc?.gstNo || doc?.customerId?.gstNo || "";
     let partyCompanyName = doc?.customerId?.partyName;
     console.log(partyGstNo);
-    console.log(doc?.customerId);
+    console.log(doc);
     if (
       paymentDetails?.paymentMode == "credit" &&
       paymentDetails?.paymentDetails?.selectedCreditor
@@ -1102,6 +1143,8 @@ console.log(mergedMap);
     let otherChargesAmount = doc.selectedRooms.reduce((acc, curr) => {
       return acc + Number(curr.otherChargeAmount || 0);
     }, 0);
+    console.log(doc);
+
     console.log(roomWiseDiscount, otherChargesAmount, discount);
     console.log(paymentDetails?.paymentDetails);
     console.log(doc);
@@ -1153,12 +1196,19 @@ console.log(mergedMap);
           Number(roomWiseDiscount || 0)
         ).toFixed(2),
         discount: discount,
-        sgst: sgstAmount,
-        cgst: cgstAmount,
+        sgst:
+          Number(foodPlanTax) > 0
+            ? Number(sgstAmount) + Number(foodPlanTax)
+            : sgstAmount,
+        cgst:
+          Number(foodPlanTax) > 0
+            ? Number(cgstAmount) + Number(foodPlanTax)
+            : cgstAmount,
         restaurant: dineInTotal, // ✅ Only dine-in restaurant amount
         roomService: roomServiceTotal, // ✅ Only room service amount
         restaurantSideDiscount: newlyAppliedDiscount,
-        foodPlan: planAmount + Number(foodPlanAmountWithTax),
+        foodPlan: planAmount,
+        foodPlanAmountTax: Number(foodPlanAmountWithTax),
         additionalPax: additionalPaxAmount,
         otherChargeAmount,
         total: grandTotal,
@@ -1307,7 +1357,7 @@ console.log(mergedMap);
         organization,
         paymentModeDetails,
         isForPreview,
-        selected
+        selected,
       ); // pass array
     } else {
       handleBillPrintInvoice(
@@ -1315,7 +1365,7 @@ console.log(mergedMap);
         organization,
         paymentModeDetails,
         isForPreview,
-        selected
+        selected,
       ); // pass array
     }
   };
@@ -2458,7 +2508,8 @@ ${hotelName}`;
                                 padding: "4px",
                               }}
                             >
-                              {item.customerName} ({item.mode.toUpperCase()}) - {item.under == "food" ? "Restaurant" : "Room"}
+                              {item.customerName} ({item.mode.toUpperCase()}) -{" "}
+                              {item.under == "food" ? "Restaurant" : "Room"}
                             </td>
                             <td
                               style={{

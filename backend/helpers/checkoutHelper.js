@@ -266,52 +266,62 @@ export const createReceiptsAndSettlements = async ({
       restaurantTallies.map((t) => [t.billId.toString(), t]),
     );
 
-    const nonCreditFoodSources = foodSources.filter((s) => !s.isCreditType);
-    const creditFoodSources = foodSources.filter((s) => s.isCreditType);
-
-    let remainingNonCredit = nonCreditFoodSources.reduce(
-      (sum, s) => sum + Number(s.amount || 0),
-      0,
-    );
-
-    let remainingCredit = creditFoodSources.reduce(
-      (sum, s) => sum + Number(s.amount || 0),
-      0,
-    );
-
-    const paymentSourceQueue = nonCreditFoodSources.map((s) => ({
-      ...s,
-      amount: Number(s.amount || 0),
-    }));
-
     for (const sale of restaurantBaseSaleData) {
       const tally = tallyByBillId.get(sale._id.toString());
       if (!tally) continue;
 
       const saleAmount = Number(tally.bill_amount || sale.finalAmount || 0);
-      const settleNow = Math.min(saleAmount, remainingNonCredit);
-      const pendingAfterReceipt = Math.max(0, saleAmount - settleNow);
 
-      if (settleNow > 0) {
+      let saleSplits = Array.isArray(sale.paymentSplittingData)
+        ? sale.paymentSplittingData.map((s) => ({
+            sourceId: s.sourceId || s.source || s.ref_id || null,
+            sourceType: s.sourceType || s.type,
+            subsource: s.subsource || s.sourceType || s.type,
+            amount: Number(s.amount || 0),
+            isCreditType: (s.sourceType || s.type) === "credit",
+            customer: s.customer || null,
+            customerName: s.customerName || null,
+            underCategory: s.underCategory || "food",
+          }))
+        : [];
+
+      saleSplits = saleSplits.filter((s) => Number(s.amount || 0) > 0);
+
+      const nonCreditSaleSplits = saleSplits.filter((s) => !s.isCreditType);
+      const creditSaleSplits = saleSplits.filter((s) => s.isCreditType);
+
+      const settleNow = nonCreditSaleSplits.reduce(
+        (sum, s) => sum + Number(s.amount || 0),
+        0,
+      );
+
+      const creditAmount = creditSaleSplits.reduce(
+        (sum, s) => sum + Number(s.amount || 0),
+        0,
+      );
+
+      const cappedSettleNow = Math.min(saleAmount, settleNow);
+      const pendingAfterReceipt = Math.max(0, saleAmount - cappedSettleNow);
+
+      if (cappedSettleNow > 0) {
+        let running = cappedSettleNow;
         const receiptPaymentSplits = [];
-        let amountToFill = settleNow;
 
-        while (amountToFill > 0 && paymentSourceQueue.length > 0) {
-          const src = paymentSourceQueue[0];
-          const take = Math.min(amountToFill, Number(src.amount || 0));
+        for (const split of nonCreditSaleSplits) {
+          if (running <= 0) break;
+
+          const take = Math.min(running, Number(split.amount || 0));
+          if (take <= 0) continue;
 
           receiptPaymentSplits.push({
-            source: src.sourceId,
-            sourceId: src.sourceId,
-            sourceType: src.sourceType,
-            subsource: src.subsource,
+            source: split.sourceId,
+            sourceId: split.sourceId,
+            sourceType: split.sourceType,
+            subsource: split.subsource,
             amount: take,
           });
 
-          src.amount = Number(src.amount || 0) - take;
-          amountToFill -= take;
-
-          if (src.amount <= 0) paymentSourceQueue.shift();
+          running = parseFloat((running - take).toFixed(2));
         }
 
         const receiptNum = await generateVoucherNumber(
@@ -330,6 +340,7 @@ export const createReceiptsAndSettlements = async ({
           const firstSourceParty = await Party.findOne({
             _id: firstSplit.sourceId,
           }).session(session);
+
           if (!firstSourceParty) {
             throw new Error(
               `Restaurant first source party not found: ${firstSplit.sourceId}`,
@@ -366,18 +377,15 @@ export const createReceiptsAndSettlements = async ({
                   bill_date: tally.bill_date,
                   bill_pending_amt: saleAmount,
                   source: "sales",
-                  settledAmount: settleNow,
+                  settledAmount: cappedSettleNow,
                   remainingAmount: pendingAfterReceipt,
                 },
               ],
               totalBillAmount: saleAmount,
-              enteredAmount: settleNow,
+              enteredAmount: cappedSettleNow,
               advanceAmount: 0,
               remainingAmount: pendingAfterReceipt,
-              paymentMethod:
-                receiptPaymentSplits.length > 1
-                  ? "mixed"
-                  : mapSourceTypeToReceiptMethod(firstType),
+              paymentMethod: mapSourceTypeToReceiptMethod(firstType),
               paymentDetails: restaurantPaymentDetails,
               paymentSplittingData: receiptPaymentSplits,
               note: "",
@@ -393,6 +401,7 @@ export const createReceiptsAndSettlements = async ({
           const sourceParty = await Party.findOne({
             _id: split.sourceId,
           }).session(session);
+
           if (!sourceParty) {
             throw new Error(
               `Source party not found for restaurant split source ${split.sourceId}`,
@@ -419,18 +428,15 @@ export const createReceiptsAndSettlements = async ({
         }
       }
 
-      if (pendingAfterReceipt > 0 && remainingCredit > 0) {
-        const creditUsed = Math.min(pendingAfterReceipt, remainingCredit);
-        remainingCredit -= creditUsed;
-      }
-
       await TallyData.updateOne(
         { _id: tally._id },
-        { $set: { bill_pending_amt: pendingAfterReceipt } },
+        {
+          $set: {
+            bill_pending_amt: Math.max(0, pendingAfterReceipt - creditAmount),
+          },
+        },
         { session },
       );
-
-      remainingNonCredit -= settleNow;
     }
   }
 
@@ -484,12 +490,17 @@ const mapSourceTypeToReceiptMethod = (sourceType) => {
     case "cash":
       return "Cash";
     case "cheque":
-      return "Cheque";
+      return "cheque";
     case "bank":
+      return "Bank";
     case "upi":
+      return "upi";
     case "card":
+      return "card";
+    case "credit":
+      return "credit";
     default:
-      return "Online";
+      return "Bank";
   }
 };
 
