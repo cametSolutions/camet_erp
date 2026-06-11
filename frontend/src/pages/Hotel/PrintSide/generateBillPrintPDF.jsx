@@ -354,14 +354,14 @@ const drawSummaryAndPayment = (doc, billData, startY, isForPreview, paymentModeD
 
   if (Number(billData?.summary?.sgst || 0) > 0) {
     summaryRows.push([
-      "SGST on Rent",
+      "SGST",
       Number(billData.summary.sgst).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
     ]);
   }
 
   if (Number(billData?.summary?.cgst || 0) > 0) {
     summaryRows.push([
-      "CGST on Rent",
+      "CGST",
       Number(billData.summary.cgst).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
     ]);
   }
