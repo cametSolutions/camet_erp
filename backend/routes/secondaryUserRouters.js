@@ -75,7 +75,7 @@ import {
     updateCheckout,
     getSalesByCheckInNumber,
     updateRestaurantSalePayments,
-    getRestaurantSales,getTravelAgentSalesReport,getAgentList
+    getRestaurantSales,getTravelAgentSalesReport,getAgentList,getFOSalesSummary
 } from '../controllers/hotelController.js'
 
 import { convertCheckOutToSale } from '../controllers/hotelController2CheckOut.js';
@@ -435,6 +435,7 @@ router.get("/getSaleBasedOnVoucher", getSaleBasedOnVoucher);
 router.put("/updateCheckout/:id", updateCheckout);
 router.get("/getSalesByCheckInNumber", getSalesByCheckInNumber);  
 router.put("/updateRestaurantSalePayments/:id", updateRestaurantSalePayments);
+router.get("/fo-sales-summary", getFOSalesSummary);
 router.get("/fetchDashboardConsolidatedTotals/:cmp_id/:primaryUserId",fetchDashboardConsolidatedTotals );
 
 router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
