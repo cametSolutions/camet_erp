@@ -12,7 +12,6 @@ import ReceiptModel from "../models/receiptModel.js";
 import bankModel from "../models/bankModel.js";
 import cashModel from "../models/cashModel.js";
 import Party from "../models/partyModel.js";
-import { saveSettlementData } from "../helpers/salesHelper.js";
 import Organization from "../models/OragnizationModel.js";
 import Table from "../models/TableModel.js";
 import { Godown } from "../models/subDetails.js";
@@ -21,6 +20,7 @@ import partyModel from "../models/partyModel.js";
 import { FoodPlan } from "../models/hotelSubMasterModal.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
 import { recalculateKotItem, round2 } from "../helpers/restaurantHelper.js";
+import Settlement from "../models/settlementModel.js";
 // Helper functions (you may need to create these or adjust based on your existing ones)
 import {
   buildDatabaseFilterForRoom,
@@ -1156,7 +1156,10 @@ export const directSale = async (req, res) => {
       );
 
       // Cash/Bank or Customer account
-      const selectedParty = await getSelectedParty(
+      let selectedParty = null;
+      let selectedGuest = null;
+
+      const { partyIdFetched, guestIdFetched } = await getSelectedParty(
         cmp_id,
         paymentDetails,
         cashAmt,
@@ -1165,6 +1168,9 @@ export const directSale = async (req, res) => {
         false,
         session,
       );
+
+      selectedParty = partyIdFetched;
+      selectedGuest = guestIdFetched;
 
       // Prepare structured party & payment arrays
       const paymentSplittingArray = await createPaymentSplittingArray(
@@ -1323,18 +1329,24 @@ export const updateKotPayment = async (req, res) => {
 
       // console.log("creditParty", paymentMethod);
       // Selected party
-      const selectedParty =
-        paymentMethod == "credit"
-          ? creditParty
-          : await getSelectedParty(
-              cmp_id,
-              paymentDetails,
-              cashAmt,
-              onlineAmt,
-              kotData,
-              isPostToRoom,
-              session,
-            );
+      let selectedParty = null;
+      let selectedGuest = null;
+      if (paymentMethod == "credit") {
+        selectedParty = creditParty;
+        selectedGuest = creditParty;
+      } else {
+        const { partyIdFetched, guestIdFetched } = await getSelectedParty(
+          cmp_id,
+          paymentDetails,
+          cashAmt,
+          onlineAmt,
+          kotData,
+          isPostToRoom,
+          session,
+        );
+        selectedParty = partyIdFetched;
+        selectedGuest = guestIdFetched;
+      }
 
       // Payment splitting
       const paymentSplittingArray = await createPaymentSplittingArray(
@@ -1346,7 +1358,8 @@ export const updateKotPayment = async (req, res) => {
       console.log("paymentSplittingArray", paymentSplittingArray);
 
       const party = mapPartyData(selectedParty);
-      console.log("selectedParty", isPostToRoom);
+      const guest = mapPartyData(selectedGuest);
+
       // Save voucher
       const savedVoucherData = await createSalesVoucher(
         cmp_id,
@@ -1355,7 +1368,9 @@ export const updateKotPayment = async (req, res) => {
         req,
         kotData,
         party,
+        guest,
         selectedParty,
+        selectedGuest,
         paymentSplittingArray,
         req.body.additionalCharges || [],
         discountBasedOnGrossAmount,
@@ -1371,9 +1386,12 @@ export const updateKotPayment = async (req, res) => {
       const netPayable = originalTotal - discountTotal;
       // Outstanding balance
       const paidAmount = isPostToRoom ? originalTotal : cashAmt + onlineAmt;
-      const pendingAmount = isPostToRoom ? originalTotal : netPayable - paidAmount;
+      const pendingAmount = isPostToRoom
+        ? originalTotal
+        : netPayable - paidAmount;
       let tallyData;
-      if (isPostToRoom || paymentMethod == "credit") {
+
+      if (isPostToRoom && paymentMethod !== "credit") {
         tallyData = await createTallyEntry(
           cmp_id,
           req,
@@ -1385,25 +1403,83 @@ export const updateKotPayment = async (req, res) => {
           session,
         );
       }
-      // if (party?.paymentType != "party" && paymentMethod != "credit") {
-      //   await saveSettlement(
-      //     paymentDetails,
-      //     selectedParty,
-      //     cmp_id,
-      //     savedVoucherData[0],
-      //     paidAmount,
-      //     cashAmt,
-      //     onlineAmt,
-      //     req,
-      //     session,
-      //   );
-      // }
+      console.log(paymentMethod, "paymentMethod");
+
+      if (!isPostToRoom && kotData?.voucherNumber[0]?.checkInNumber && paymentMethod !== "credit") {
+        let totalAmount = paymentSplittingArray.reduce((acc,item)=> item.type == "credit" ? acc : acc + Number(item.amount), 0)
+        tallyData = await createTallyEntry(
+          cmp_id,
+          req,
+          selectedParty,
+          kotData,
+          savedVoucherData[0],
+          totalAmount,
+          0,
+          session,
+        );
+        console.log("tallyData", paymentSplittingArray);
+
+        if (paymentSplittingArray && paymentSplittingArray?.length > 0) {
+          // One receipt per split row
+          for (const split of paymentSplittingArray) {
+            if (split.type == "credit") continue;
+            let receipt = await buildReceipt({
+              cmp_id,
+              selectedParty: party,
+              selectedGuest: guest,
+              advanceObject: tallyData[0],
+              saleData: savedVoucherData[0],
+              amount: split.amount,
+              paymentDetails: {
+                ...(split.type === "cash" && {
+                  cash_id: split.source, // ObjectId of Cash ledger
+                  cash_ledname: split.subsource, // or however you store the ledger name
+                  cash_name: split.subsource, // display name of the cash account
+                }),
+
+                // Bank / UPI / Card / Online split
+                ...(split.type !== "cash" && {
+                  bank_id: split.source, // ObjectId of BankDetails
+                  bank_ledname: split.subsource, // bank group/category name
+                  bank_name: split.subsource, // specific bank account name
+                }),
+              },
+
+              paymentMethod:
+                split.type == "cash"
+                  ? "Cash"
+                  : split.type == "bank"
+                    ? "Bank"
+                    : split.type,
+              req,
+              session,
+            });
+
+            await Settlement.create({
+              voucherNumber: receipt.receiptNumber,
+              voucherId: receipt._id,
+              voucherModel: "Receipt",
+              voucherType: "receipt",
+              amount: split.amount,
+              payment_mode: split.type,
+              partyId: party._id,
+              partyName: party.partyName,
+              partyType: "party",
+              sourceId: split.source,
+              sourceType: split.type == "cash" ? "cash" : "bank",
+              cmp_id: cmp_id,
+              Primary_user_id: req.owner,
+              settlement_date: new Date(),
+              voucher_date: receipt.date, // date on the receipt/sale
+            });
+          }
+        }
+      }
+
       let findCredit =
         paymentSplittingArray?.length > 0
           ? paymentSplittingArray.filter((item) => item.type === "credit")
           : [];
-
-      console.log("findCredit", findCredit);
 
       if (findCredit.length > 0) {
         for (const item of findCredit) {
@@ -1715,44 +1791,56 @@ async function getSelectedParty(
   isPostToRoom,
   session,
 ) {
-  let partyId;
+  let partyId, guestId;
 
-  console.log("isPostToRoom", isPostToRoom);
-  console.log("paymentDetails", paymentDetails);
-  console.log(cashAmt, onlineAmt);
-  if (isPostToRoom) {
-    console.log("koptData", kotData?.voucherNumber[0]?.checkInNumber);
-    let checkInData = await CheckIn.findOne({
+  if (isPostToRoom || kotData?.voucherNumber[0]?.checkInNumber) {
+    const checkInData = await CheckIn.findOne({
       voucherNumber: kotData?.voucherNumber[0]?.checkInNumber,
-      cmp_id: cmp_id,
+      cmp_id,
     }).session(session);
-    console.log("checkInData", checkInData);
-    partyId = checkInData?.guestId.toString();
-    console.log("partyId", partyId);
-  } else {
-    if (paymentDetails?.paymentMode == "single") {
-      if (cashAmt > 0) {
-        partyId = paymentDetails?.selectedCash;
-      } else if (onlineAmt > 0) {
-        partyId = paymentDetails?.selectedBank;
-      }
+
+    if (!checkInData)
+      throw new Error(
+        `CheckIn not found: ${kotData?.voucherNumber[0]?.checkInNumber}`,
+      );
+
+    partyId = checkInData.customerId.toString();
+    guestId = checkInData.guestId.toString();
+  } else if (paymentDetails?.paymentMode === "single") {
+    if (cashAmt > 0) {
+      partyId = guestId = paymentDetails?.selectedCash;
+    } else if (onlineAmt > 0) {
+      partyId = guestId = paymentDetails?.selectedBank;
     } else {
-      
-      partyId = paymentDetails?.splitRow.find(
-        (it) => it.type == "credit",
-      )?.source;
-      if(!partyId){
-         partyId = paymentDetails?.splitRow[0]?.source
-      }
+      throw new Error("Single payment mode: no valid cashAmt or onlineAmt");
     }
+  } else {
+    partyId =
+      paymentDetails?.splitRow?.find((it) => it.type === "credit")?.source ??
+      paymentDetails?.splitRow?.[0]?.source;
+
+    if (!partyId)
+      throw new Error(
+        "Split payment mode: could not resolve partyId from splitRow",
+      );
+    guestId = partyId;
   }
-  console.log("partyId", partyId);
-  const selectedParty = await Party.findOne({ _id: partyId, cmp_id: cmp_id })
+
+  const selectedParty = await Party.findOne({ _id: partyId, cmp_id })
     .populate("accountGroup")
     .session(session);
-  if (!selectedParty) throw new Error(`Party not found: `);
 
-  return selectedParty;
+  const selectedGuest =
+    partyId === guestId
+      ? selectedParty
+      : await Party.findOne({ _id: guestId, cmp_id })
+          .populate("accountGroup")
+          .session(session);
+
+  if (!selectedParty) throw new Error(`Party not found: ${partyId}`);
+  if (!selectedGuest) throw new Error(`Guest not found: ${guestId}`);
+
+  return { partyIdFetched: selectedParty, guestIdFetched: selectedGuest };
 }
 
 async function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
@@ -1912,7 +2000,9 @@ async function createSalesVoucher(
   req,
   kotData,
   party,
+  guest,
   selectedParty,
+  selectedGuest,
   paymentSplittingArray,
   additionalChargesArray = null,
   discountBasedOnGrossAmount,
@@ -1987,8 +2077,8 @@ async function createSalesVoucher(
         Primary_user_id: req.pUserId || req.owner,
         cmp_id,
         Secondary_user_id: req.sUserId,
-
         party,
+        guest,
         partyAccount: selectedParty.accountGroup?.accountGroup,
         items: items,
         despatchDetails: {}, // ✅ Added missing
