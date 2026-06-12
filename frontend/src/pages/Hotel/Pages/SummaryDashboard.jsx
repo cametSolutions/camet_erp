@@ -216,8 +216,8 @@ const SummaryDashboard = () => {
       <div className="px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6 max-w-6xl mx-auto">
 
         {/* Header row */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6 sm:mb-8">
-          <div className="min-w-0">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6 sm:mb-8 bg-slate-100 px-4 py-4 sm:px-6 sm:py-5 rounded-xl">
+          <div className="min-w-0"> 
             <h1 className="text-xl sm:text-2xl font-bold text-gray-700 leading-tight truncate">
               {company?.name}
             </h1>
@@ -242,11 +242,7 @@ const SummaryDashboard = () => {
           </div>
         </div>
 
-        {/* Section label */}
-        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">
-          Overview
-        </p>
-
+      
         {/* Loading */}
         {isLoading && <SummaryCardsSkeleton />}
 

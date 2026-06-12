@@ -123,28 +123,30 @@ const SummaryCards = ({
 
   return (
     <>
-      <div className="mb-3">
-        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
-          Revenue Summary
-        </p>
-      </div>
+      <div className=" py-10 px-5 rounded-xl">
+        <div className="mb-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+            Revenue Summary
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 w-full">
-        {financialCards.map((card) => (
-          <StatCard key={card.title} {...card} />
-        ))}
-      </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 w-full">
+          {financialCards.map((card) => (
+            <StatCard key={card.title} {...card} />
+          ))}
+        </div>
 
-      <div className="mt-6 mb-3">
-        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
-          Property Summary
-        </p>
-      </div>
+        <div className="mt-6 mb-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+            Property Summary
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full mt-5">
-        {roomCards.map((card) => (
-          <StatCard key={card.title} {...card} />
-        ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full mt-5">
+          {roomCards.map((card) => (
+            <StatCard key={card.title} {...card} />
+          ))}
+        </div>
       </div>
 
       <RevenueBreakdownSheet
