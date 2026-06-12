@@ -6914,7 +6914,8 @@ const sales = await salesModel.find({
       const foodPlanEntry = ci.foodPlan?.[0] || {};
       const roomName = room.roomName || sale.items?.[0]?.product_name || "";
       const stayDays = ci.stayDays || room.stayDays || 1;
-      const noPax = room.pax || 2;
+     const pax = Number(room.pax || 0);
+const extraPerson = pax > 2 ? pax - 2 : 0;
       const plan = foodPlanEntry.foodPlan || "EP";
 
       console.log(foodPlanEntry);
@@ -6923,7 +6924,7 @@ const sales = await salesModel.find({
       const foodPlanAmountWithTax =
         room.foodPlanAmountWithTax ||
         room.foodPlanAmount ||
-        (foodPlanEntry.rate || 0) * noPax * stayDays;
+        (foodPlanEntry.rate || 0) * pax * stayDays;
 
       const foodPlanAmountWithoutTax =
         room.foodPlanAmountWithOutTax ||
@@ -6933,6 +6934,7 @@ const sales = await salesModel.find({
       const planTaxable = +foodPlanAmountWithoutTax.toFixed(2);
       const planSales = +(planTaxable * stayDays).toFixed(2);
       const planRate = foodPlanEntry.rate || 0;
+const dayPlanSales = +foodPlanAmountWithoutTax.toFixed(2);
 
       // ✅ Room rent — from checkin room level
       const baseRoomRent = room.priceLevelRate
@@ -6959,6 +6961,10 @@ const sales = await salesModel.find({
       const item = sale.items?.[0] || {};
       const isIGST = item.igst > 0 && item.cgst === 0;
 
+
+      const dayPlanCGST = isIGST ? 0 : +(dayPlanSales * 0.025).toFixed(2);
+const dayPlanSGST = isIGST ? 0 : +(dayPlanSales * 0.025).toFixed(2);
+const dayPlanIGST = isIGST ? +(dayPlanSales * 0.05).toFixed(2) : 0;
       const roomRentTaxable = roomRent / 1.05;
       const roomRentCGST = isIGST ? 0 : roomRentTaxable * 0.025;
       const roomRentSGST = isIGST ? 0 : roomRentTaxable * 0.025;
@@ -7020,10 +7026,17 @@ const sales = await salesModel.find({
         totalAmount: netTotal,
         perDayRevenue:
           stayDays > 0 ? +(netTotal / stayDays).toFixed(2) : netTotal,
-        noPax,
+        pax,
+        extraPerson,
         planRate: +planRate.toFixed(2),
         planTotal: +planTotal.toFixed(2),
         planTaxable,
+
+
+        dayPlanSales,
+  dayPlanCGST,
+  dayPlanSGST,
+
         roomRent: +roomRent.toFixed(2),
         roomRentTaxable: +roomRentTaxable.toFixed(2),
         roomRentTotal: +(roomRentTaxable * stayDays).toFixed(2),
@@ -7896,3 +7909,169 @@ export const getAgentList = async (req, res) => {
     return res.status(500).json({ success: false, message: err.message });
   }
 }
+
+export const getFOSalesSummary = async (req, res) => {
+  try {
+    const { cmp_id, fromDate, toDate } = req.query;
+
+    const sales = await salesModel.find({
+      cmp_id,
+      voucherType: "sales",
+      date: {
+        $gte: new Date(fromDate),
+        $lte: new Date(toDate),
+      },
+      isCancelled: false,
+    }).lean();
+
+    console.log("Sales Count:", sales.length);
+
+    const reportMap = new Map();
+
+    // Group sales by checkInNumber
+    const salesByCheckIn = new Map();
+    for (const sale of sales) {
+      const checkInNumber = sale.convertedFrom?.[0]?.checkInNumber;
+      if (!checkInNumber) continue;
+      
+      if (!salesByCheckIn.has(checkInNumber)) {
+        salesByCheckIn.set(checkInNumber, []);
+      }
+      salesByCheckIn.get(checkInNumber).push(sale);
+    }
+
+    // Process each checkInNumber
+    for (const [checkInNumber, salesForCheckIn] of salesByCheckIn) {
+      const checkIn = await CheckIn.findOne({
+        voucherNumber: checkInNumber,
+      }).lean();
+
+      if (!checkIn) continue;
+
+      const checkout = await CheckOut.findOne({
+        $or: [
+          { checkInId: checkIn._id },
+          { originalCheckInId: checkIn._id },
+        ],
+      }).lean();
+
+      if (!checkout) continue;
+
+      const extraPersonCount =
+        checkout?.selectedRooms?.reduce((total, room) => {
+          const pax = Number(room.pax || 0);
+          return total + (pax > 2 ? pax - 2 : 0);
+        }, 0) || 0;
+
+      // Room sale amount = amountWithOutTax (base amount before tax)
+      const roomSaleAmount = checkout.selectedRooms?.reduce(
+        (sum, room) => sum + Number(room.amountWithOutTax || room.baseAmount || 0),
+        0
+      ) || 0;
+
+      // CGST and SGST from selectedRooms.totalCgstAmt and selectedRooms.totalSgstAmt
+      const cgst = checkout.selectedRooms?.reduce(
+        (sum, room) => sum + Number(room.totalCgstAmt || 0),
+        0
+      ) || 0;
+
+      const sgst = checkout.selectedRooms?.reduce(
+        (sum, room) => sum + Number(room.totalSgstAmt || 0),
+        0
+      ) || 0;
+      
+      // Total room tax = cgst + sgst
+      const totalTax = cgst + sgst;
+
+      // Find restaurant sale (the sale with isPostToRoom: true)
+      const restaurantSale = salesForCheckIn.find(sale => sale.isPostToRoom === true);
+      const rtBillNo = restaurantSale?.salesNumber || "";
+      const restaurantSaleAmount = Number(restaurantSale?.finalAmount || 0);
+
+      // MOD sale = other charges from checkout
+      const modSale = Number(checkout.otherChargeAmount || checkout.otherChargeWithOutTax || 0);
+
+      // Advance from checkout
+      const advance = Number(checkout.totalAdvance || 0);
+
+      // Bill total = roomBaseAmount + tax + restaurantSale - advance
+      const billTotal = roomSaleAmount + totalTax + restaurantSaleAmount - advance;
+
+      // Aggregate payment splits from ALL sales (restaurant + checkout)
+      let cash = 0;
+      let bank = 0;
+      let credit = 0;
+      let upi = 0;
+      let card = 0;
+
+      for (const sale of salesForCheckIn) {
+        const paymentSplittingData = sale.paymentSplittingData || [];
+        
+        for (const split of paymentSplittingData) {
+          const splitAmount = Number(split.amount || 0);
+          const splitType = split.sourceType || split.mode;
+          
+          // Map split types to cash/bank/credit
+          if (splitType === "cash" || splitType === "Cash" || splitType.toLowerCase() === "cash") {
+            cash += splitAmount;
+          } else if (splitType === "bank" || splitType === "Bank" || splitType === "upi" || splitType === "card") {
+            bank += splitAmount;
+          } else if (splitType === "credit" || splitType === "Credit") {
+            credit += splitAmount;
+          }
+        }
+      }
+
+      if (!reportMap.has(checkInNumber)) {
+        reportMap.set(checkInNumber, {
+          date: checkout.currentDate,
+          billNo: checkout.voucherNumber,
+          grcNo: checkout.grcno,
+          agentName: checkout.isHotelAgent
+            ? checkout.customerName
+            : "DIRECT",
+          guestName: checkout.guestName,
+          room: checkout.selectedRooms
+            ?.map((r) => r.roomName)
+            .join(", "),
+          days: checkout.stayDays || 0,
+          extraPerson: extraPersonCount,
+          plan: checkout.foodPlan?.[0]?.foodPlan || "",
+          
+          roomSaleAmount: roomSaleAmount,
+          planSaleAmount: checkout.foodPlanTotal || 0,
+          
+          cgst: cgst,
+          sgst: sgst,
+          totalTax: totalTax,
+          
+          rtBillNo: rtBillNo,
+          restaurantSale: restaurantSaleAmount,
+          modSale: modSale,
+          
+          advance: advance,
+          bank: bank,
+          cash: cash,
+          credit: credit,
+          upi: upi,
+          card: card,
+          
+          billTotal: billTotal,
+        });
+      }
+    }
+
+    const report = Array.from(reportMap.values());
+
+    return res.status(200).json({
+      success: true,
+      data: report,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
