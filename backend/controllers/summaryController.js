@@ -582,7 +582,7 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
       {
         $match: {
           Primary_user_id: new mongoose.Types.ObjectId(primaryUserId),
-          cmp_id: new mongoose.Types.ObjectId(cmp_id),
+          // cmp_id: new mongoose.Types.ObjectId(cmp_id),
           isComplimentary: { $ne: true },
         },
       },
