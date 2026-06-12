@@ -8,6 +8,7 @@ import debitNoteModel from "../models/debitNoteModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import OrganizationModel from "../models/OragnizationModel.js";
 import RoomModel from "../models/roomModal.js";
+import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 import mongoose from "mongoose";
 
 
@@ -1120,6 +1121,151 @@ export const fetchDashboardRoomCountSummary = async (req, res) => {
       totalAvailableRooms,
       totalBlockedRooms,
       companyWiseRoomCount,
+    });
+  } catch (error) {
+    console.log("error:", error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const fetchDashboardPropertySalesSummary = async (req, res) => {
+  try {
+    const { primaryUserId } = req.params;
+    const primaryUserObjectId = new mongoose.Types.ObjectId(primaryUserId);
+
+    const companyWisePropertySales = await OrganizationModel.aggregate([
+      {
+        $match: {
+          owner: primaryUserObjectId,
+        },
+      },
+      {
+        $lookup: {
+          from: salesModel.collection.name,
+          let: { companyId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$cmp_id", "$$companyId"] },
+                    { $eq: ["$Primary_user_id", primaryUserObjectId] },
+                    { $ne: ["$isComplimentary", true] },
+                  ],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: VoucherSeriesModel.collection.name,
+                let: { saleSeriesId: "$series_id", saleCmpId: "$cmp_id" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $eq: ["$cmp_id", "$$saleCmpId"] },
+                    },
+                  },
+                  { $unwind: "$series" },
+                  {
+                    $match: {
+                      $expr: { $eq: ["$series._id", "$$saleSeriesId"] },
+                    },
+                  },
+                  {
+                    $project: {
+                      _id: 0,
+                      under: { $toLower: "$series.under" },
+                    },
+                  },
+                ],
+                as: "seriesMeta",
+              },
+            },
+            {
+              $addFields: {
+                saleUnder: { $arrayElemAt: ["$seriesMeta.under", 0] },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                hotelSales: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ["$saleUnder", "hotel"] },
+                      { $ifNull: ["$finalAmount", 0] },
+                      0,
+                    ],
+                  },
+                },
+                restaurantSales: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ["$saleUnder", "restaurant"] },
+                      { $ifNull: ["$finalAmount", 0] },
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
+          ],
+          as: "propertySalesData",
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          cmp_id: "$_id",
+          companyName: { $ifNull: ["$name", "Unknown Company"] },
+          hotelSales: {
+            $round: [
+              { $ifNull: [{ $arrayElemAt: ["$propertySalesData.hotelSales", 0] }, 0] },
+              2,
+            ],
+          },
+          restaurantSales: {
+            $round: [
+              {
+                $ifNull: [
+                  { $arrayElemAt: ["$propertySalesData.restaurantSales", 0] },
+                  0,
+                ],
+              },
+              2,
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          totalSales: {
+            $round: [
+              { $add: ["$hotelSales", "$restaurantSales"] },
+              2,
+            ],
+          },
+        },
+      },
+      { $sort: { totalSales: -1, companyName: 1 } },
+    ]);
+
+    const totalHotelSales = companyWisePropertySales.reduce(
+      (sum, company) => sum + Number(company.hotelSales || 0),
+      0
+    );
+    const totalRestaurantSales = companyWisePropertySales.reduce(
+      (sum, company) => sum + Number(company.restaurantSales || 0),
+      0
+    );
+    const totalPropertySales = totalHotelSales + totalRestaurantSales;
+
+    return res.status(200).json({
+      message: "Property sales summary fetched successfully",
+      totalPropertySales: Number(totalPropertySales.toFixed(2)),
+      totalHotelSales: Number(totalHotelSales.toFixed(2)),
+      totalRestaurantSales: Number(totalRestaurantSales.toFixed(2)),
+      companyWisePropertySales,
     });
   } catch (error) {
     console.log("error:", error.message);

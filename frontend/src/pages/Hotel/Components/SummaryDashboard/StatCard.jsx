@@ -36,6 +36,24 @@ const StatCard = ({
       );
     }
 
+    if (type === "hotel") {
+      return (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
+          <path d="M4 20V7C4 5.89543 4.89543 5 6 5H18C19.1046 5 20 5.89543 20 7V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M8 9H10M14 9H16M8 13H10M14 13H16M10 20V16H14V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+    }
+
+    if (type === "restaurant") {
+      return (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
+          <path d="M7 4V11M10 4V11M7 8H10M8.5 11V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M15 4C17 6 17 9 15 11V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+    }
+
     if (type === "bank") {
       return (
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">

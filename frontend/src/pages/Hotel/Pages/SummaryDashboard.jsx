@@ -65,6 +65,14 @@ const SummaryDashboard = () => {
     return response.data;
   };
 
+  const fetchDashboardPropertySalesSummary = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardPropertySalesSummary/${cmp_id}/${primaryUserId}`,
+      { withCredentials: true }
+    );
+    return response.data;
+  };
+
   const {
     data,
     isLoading: isTotalsLoading,
@@ -145,30 +153,50 @@ const SummaryDashboard = () => {
     refetchOnWindowFocus: false,
   });
 
+  const {
+    data: propertySalesSummaryData,
+    isLoading: isPropertySalesSummaryLoading,
+    isError: isPropertySalesSummaryError,
+    error: propertySalesSummaryError,
+    refetch: refetchPropertySalesSummary,
+    isFetching: isPropertySalesSummaryFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "propertySalesSummary", primaryUserId],
+    queryFn: fetchDashboardPropertySalesSummary,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
   const isLoading =
     isTotalsLoading ||
     isRevenueBreakdownLoading ||
     isDailyCollectionBreakdownLoading ||
     isMonthlyCollectionBreakdownLoading ||
-    isRoomCountSummaryLoading;
+    isRoomCountSummaryLoading ||
+    isPropertySalesSummaryLoading;
   const isError =
     isTotalsError ||
     isRevenueBreakdownError ||
     isDailyCollectionBreakdownError ||
     isMonthlyCollectionBreakdownError ||
-    isRoomCountSummaryError;
+    isRoomCountSummaryError ||
+    isPropertySalesSummaryError;
   const error =
     totalsError ||
     revenueBreakdownError ||
     dailyCollectionBreakdownError ||
     monthlyCollectionBreakdownError ||
-    roomCountSummaryError;
+    roomCountSummaryError ||
+    propertySalesSummaryError;
   const isFetching =
     isTotalsFetching ||
     isRevenueBreakdownFetching ||
     isDailyCollectionBreakdownFetching ||
     isMonthlyCollectionBreakdownFetching ||
-    isRoomCountSummaryFetching;
+    isRoomCountSummaryFetching ||
+    isPropertySalesSummaryFetching;
 
   const refetch = () => {
     refetchTotals();
@@ -176,6 +204,7 @@ const SummaryDashboard = () => {
     refetchDailyCollectionBreakdown();
     refetchMonthlyCollectionBreakdown();
     refetchRoomCountSummary();
+    refetchPropertySalesSummary();
   };
 
   return (
@@ -256,6 +285,12 @@ const SummaryDashboard = () => {
             monthlyCollection={fmt(data.monthlyCollection)}
             monthlyCollectionBreakdown={
               monthlyCollectionBreakdownData?.companyWiseCollection ?? []
+            }
+            totalPropertySales={fmt(propertySalesSummaryData?.totalPropertySales)}
+            totalHotelSales={fmt(propertySalesSummaryData?.totalHotelSales)}
+            totalRestaurantSales={fmt(propertySalesSummaryData?.totalRestaurantSales)}
+            propertySalesBreakdown={
+              propertySalesSummaryData?.companyWisePropertySales ?? []
             }
             totalRooms={String(roomCountSummaryData?.totalRooms ?? 0)}
             totalAvailableRooms={String(roomCountSummaryData?.totalAvailableRooms ?? 0)}

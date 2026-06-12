@@ -50,6 +50,7 @@ import {
     fetchDashboardCompanyMonthlyCollectionBreakdown,
     fetchDashboardCompanyRevenueBreakdown,
     fetchDashboardConsolidatedTotals,
+    fetchDashboardPropertySalesSummary,
     fetchDashboardRoomCountSummary,
     getSummary
 } from "../controllers/summaryController.js"
@@ -446,6 +447,7 @@ router.get("/fetchDashboardConsolidatedTotals/:cmp_id/:primaryUserId",fetchDashb
 router.get("/fetchDashboardCompanyRevenueBreakdown/:cmp_id/:primaryUserId", fetchDashboardCompanyRevenueBreakdown);
 router.get("/fetchDashboardCompanyDailyCollectionBreakdown/:cmp_id/:primaryUserId", fetchDashboardCompanyDailyCollectionBreakdown);
 router.get("/fetchDashboardCompanyMonthlyCollectionBreakdown/:cmp_id/:primaryUserId", fetchDashboardCompanyMonthlyCollectionBreakdown);
+router.get("/fetchDashboardPropertySalesSummary/:cmp_id/:primaryUserId", fetchDashboardPropertySalesSummary);
 router.get("/fetchDashboardRoomCountSummary/:cmp_id/:primaryUserId", fetchDashboardRoomCountSummary);
 
 router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);

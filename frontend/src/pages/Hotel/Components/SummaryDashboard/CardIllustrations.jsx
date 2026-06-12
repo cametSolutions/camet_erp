@@ -162,3 +162,29 @@ export const RoomsIllustration = () => (
     </g>
   </svg>
 );
+
+export const PropertySalesIllustration = () => (
+  <svg
+    width="130"
+    height="130"
+    viewBox="0 0 130 130"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className="absolute right-0 bottom-0 pointer-events-none"
+    aria-hidden="true"
+  >
+    <circle cx="100" cy="100" r="70" fill="rgba(255,255,255,0.08)" />
+    <g opacity="0.28">
+      <rect x="22" y="72" width="22" height="34" rx="4" fill="white" />
+      <rect x="48" y="58" width="24" height="48" rx="4" fill="white" />
+      <rect x="76" y="42" width="28" height="64" rx="4" fill="white" />
+      <path d="M22 106H106" stroke="white" strokeWidth="3" strokeLinecap="round" />
+      <path d="M30 48L42 36L56 44L72 28L92 36" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="30" cy="48" r="3" fill="white" />
+      <circle cx="42" cy="36" r="3" fill="white" />
+      <circle cx="56" cy="44" r="3" fill="white" />
+      <circle cx="72" cy="28" r="3" fill="white" />
+      <circle cx="92" cy="36" r="3" fill="white" />
+    </g>
+  </svg>
+);
