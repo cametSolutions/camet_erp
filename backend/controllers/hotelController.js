@@ -7581,6 +7581,7 @@ export const getRestaurantSales = async (req, res) => {
       checkInNumbers.map(async (element) => {
         return await salesModel.find({
           cmp_id,
+          isPostToRoom : true,
           "convertedFrom.checkInNumber": {
             $exists: true,
             $in: checkInNumbers,
