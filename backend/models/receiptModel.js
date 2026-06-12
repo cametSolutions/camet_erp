@@ -66,6 +66,31 @@ const receiptSchema = new mongoose.Schema(
       newAddress: { type: Object },
     },
 
+     guest: {
+      _id: { type: Schema.Types.ObjectId, ref: "Party" },
+      partyName: { type: String },
+      partyType: { type: String },
+      accountGroupName: { type: String },
+      accountGroup_id: {
+        type: mongoose.Types.ObjectId,
+        ref: "AccountGroup",
+        required: true,
+      },
+      subGroupName: { type: String },
+      subGroup_id: { type: mongoose.Schema.Types.ObjectId, ref: "SubGroup" },
+      mobileNumber: { type: String },
+      country: { type: String },
+      state: { type: String },
+      pin: { type: String },
+      emailID: { type: String },
+      gstNo: { type: String },
+      party_master_id: { type: String },
+      billingAddress: { type: String },
+      shippingAddress: { type: String },
+      accountGroup: { type: String },
+      newAddress: { type: Object },
+    },
+
     // Bill data with references
     billData: [
       {

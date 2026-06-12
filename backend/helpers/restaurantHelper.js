@@ -6,21 +6,19 @@ import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import { getNewSerialNumber } from "../helpers/secondaryHelper.js";
 import ReceiptModel from "../models/receiptModel.js";
+import Party from "../models/partyModel.js";
 import { formatToLocalDate } from "./helper.js";
-// import voucherModal from "../models/voucherModal.js";
-// helper function used to add search concept with room
+
 export const buildDatabaseFilterForRoom = (params) => {
   const filter = {
     cmp_id: params.cmp_id,
     Primary_user_id: params.Primary_user_id,
   };
-  console.log("params.type", params);
 
-  // Add search functionality if search term is provided
   if (params.searchTerm) {
     filter.$or = [
       { product_name: { $regex: params.searchTerm, $options: "i" } },
-       { itemCode: { $regex:params.searchTerm, $options: "i" } },
+      { itemCode: { $regex: params.searchTerm, $options: "i" } },
     ];
   }
 
@@ -28,32 +26,26 @@ export const buildDatabaseFilterForRoom = (params) => {
 };
 
 export const fetchRoomsFromDatabase = async (filter, params) => {
-  // Count total products matching the filter for pagination
   const totalItems = await product.countDocuments(filter);
-  // Build query with pagination
- let query = product.find(filter)
-  .populate({
-    path: "Priceleveles.pricelevel",
-    model: "PriceLevel",
-    select: "pricelevel dineIn takeaway roomService delivery"
-  })
-  .populate("hsn_code");
 
-  
+  let query = product
+    .find(filter)
+    .populate({
+      path: "Priceleveles.pricelevel",
+      model: "PriceLevel",
+      select: "pricelevel dineIn takeaway roomService delivery",
+    })
+    .populate("hsn_code");
 
-  // Apply pagination if limit is specified
   if (params?.limit > 0) {
     query = query.skip(params?.skip).limit(params?.limit);
   }
 
-  // Execute query with population and sorting
   const items = await query.sort({ itemName: 1 });
-
   return { items, totalItems };
 };
 
 export const sendRoomResponse = (res, items, totalItems, params) => {
-  console.log(items?.length);
   if (items && items.length > 0) {
     return res.status(200).json({
       roomData: items,
@@ -65,17 +57,44 @@ export const sendRoomResponse = (res, items, totalItems, params) => {
       },
       message: "Rooms fetched successfully",
     });
-  } else {
-    return res.status(404).json({
-      message: "No rooms were found matching the criteria",
-    });
   }
+
+  return res.status(404).json({
+    message: "No rooms were found matching the criteria",
+  });
 };
 
-// function use to build receipt
+export const mapSourceTypeToReceiptMethod = (sourceType) => {
+  const value = String(sourceType || "")
+    .trim()
+    .toLowerCase();
+
+  if (["cash"].includes(value)) return "Cash";
+  if (["cheque", "check"].includes(value)) return "Cheque";
+  if (
+    ["upi", "phonepe", "phonepay", "gpay", "googlepay", "paytm"].includes(value)
+  ) {
+    return "upi";
+  }
+  if (["card", "creditcard", "debitcard"].includes(value)) {
+    return "card";
+  }
+  if (["credit"].includes(value)) return "credit";
+  if (
+    ["bank", "online", "sbi", "federal", "canara", "hdfc", "icici"].includes(
+      value,
+    )
+  ) {
+    return "bank";
+  }
+
+  return "bank";
+};
+
 export const buildReceipt = async ({
   cmp_id,
   selectedParty,
+  selectedGuest,
   advanceObject,
   saleData,
   amount,
@@ -84,46 +103,51 @@ export const buildReceipt = async ({
   req,
   session,
 }) => {
-  
-  const billData =  [
+  const receiptAmount = Number(amount || 0);
+  if (receiptAmount <= 0) return null;
+
+  const billData = [
     {
-      _id: advanceObject?._id || saleData._id.toString(),
+      _id: advanceObject?._id || saleData?._id?.toString(),
       bill_no: saleData?.salesNumber,
-      billId: saleData._id.toString(),
+      billId: saleData?._id?.toString(),
       bill_date: new Date(),
-      bill_pending_amt: 0,
+      bill_pending_amt: 0, // caller is responsible for passing correct pending
       source: "restaurant",
-      settledAmount: amount,
+      settledAmount: receiptAmount, // this split's amount only
       remainingAmount: 0,
     },
   ];
-
-  console.log("billData", billData);
-    console.log("billData", cmp_id);
-
   const voucher = await VoucherSeriesModel.findOne({
     cmp_id,
     voucherType: "receipt",
   }).session(session);
 
-  console.log("voucher", voucher);
+  if (!voucher) {
+    throw new Error("Receipt voucher series not found");
+  }
+
   const series_idReceipt = voucher?.series
     ?.find((s) => s.under === "restaurant")
-    ?._id.toString();
+    ?._id?.toString();
+
+  if (!series_idReceipt) {
+    throw new Error("Restaurant receipt series not found");
+  }
 
   const receiptVoucher = await generateVoucherNumber(
     cmp_id,
     "receipt",
     series_idReceipt,
-    session
+    session,
   );
 
   const serialNumber = await getNewSerialNumber(
     ReceiptModel,
     "serialNumber",
-    session
+    session,
   );
-console.log("line 125 restarurant")
+
   const receipt = new ReceiptModel({
     createdAt: new Date(),
     date: await formatToLocalDate(new Date(), cmp_id, session),
@@ -133,9 +157,10 @@ console.log("line 125 restarurant")
     serialNumber,
     cmp_id,
     party: selectedParty,
+    guest: selectedGuest,
     billData,
-    totalBillAmount: amount,
-    enteredAmount: amount,
+    totalBillAmount: receiptAmount,
+    enteredAmount: receiptAmount,
     advanceAmount: 0,
     remainingAmount: 0,
     paymentMethod,
@@ -147,8 +172,6 @@ console.log("line 125 restarurant")
 
   return await receipt.save({ session });
 };
-
-
 
 export const round2 = (num) => Number((Number(num) || 0).toFixed(2));
 
@@ -167,8 +190,6 @@ export const calculateTax = ({
 }) => {
   const qty = Number(remainingQty || 0);
   const unitPrice = Number(price || 0);
-
-  console.log("unitPrice", qty);
 
   const cgstRate = Number(cgst || 0);
   const sgstRate = Number(sgst || 0);
@@ -190,13 +211,11 @@ export const calculateTax = ({
   unitDiscount = Math.min(unitDiscount, unitPrice);
 
   const discountedUnitPrice = Math.max(unitPrice - unitDiscount, 0);
-console.log("discountedUnitPrice", discountedUnitPrice)
-  const totalTaxRate =
-    cgstRate + sgstRate ;
+  const totalTaxRate = cgstRate + sgstRate;
 
   let basePricePerUnit = 0;
   let taxableAmount = 0;
-console.log("isTaxIncluded", isTaxIncluded)
+
   if (isTaxIncluded) {
     basePricePerUnit =
       totalTaxRate > 0
@@ -208,7 +227,6 @@ console.log("isTaxIncluded", isTaxIncluded)
     basePricePerUnit = discountedUnitPrice;
     taxableAmount = discountedUnitPrice * qty;
   }
-  console.log("taxableAmount",basePricePerUnit, taxableAmount)
 
   const cgstAmount = (taxableAmount * cgstRate) / 100;
   const sgstAmount = (taxableAmount * sgstRate) / 100;
@@ -216,50 +234,39 @@ console.log("isTaxIncluded", isTaxIncluded)
   const cessAmount = (taxableAmount * cessRate) / 100;
   const additionalCessAmount = (taxableAmount * addlCessRate) / 100;
 
-  const totalTaxAmount =
-    cgstAmount +
-    sgstAmount 
-
+  const totalTaxAmount = cgstAmount + sgstAmount;
   const total = isTaxIncluded
     ? discountedUnitPrice * qty
     : taxableAmount + totalTaxAmount;
-console.log("total",total)
+
   return {
     remainingQty: qty,
     price: round2(unitPrice),
-
     discountType,
     discountPercentage: round2(discountPct),
     discountAmount: round2(unitDiscount),
     discountedUnitPrice: round2(discountedUnitPrice),
-
     basePrice: round2(basePricePerUnit),
     taxableAmount: round2(taxableAmount),
-
     cgstValue: round2(cgstRate),
     sgstValue: round2(sgstRate),
     igstValue: round2(igstRate),
     cessValue: round2(cessRate),
     addlCessValue: round2(addlCessRate),
-
     cgstAmount: round2(cgstAmount),
     sgstAmount: round2(sgstAmount),
     igstAmount: round2(igstAmount),
     cessAmount: round2(cessAmount),
     additionalCessAmount: round2(additionalCessAmount),
-
     totalTaxAmount: round2(totalTaxAmount),
     total: round2(total),
     isTaxIncluded,
   };
 };
 
-
 export const recalculateKotItem = (item = {}) => {
-  const remainingQty = Number(item?.remainingQty ?? item?.remainingQty ?? 0);
-
-  // ❌ skip if no remaining
-  if (remainingQty <= 0 ) return null;
+  const remainingQty = Number(item?.remainingQty ?? 0);
+  if (remainingQty <= 0) return null;
 
   const calc = calculateTax({
     remainingQty,
@@ -272,44 +279,123 @@ export const recalculateKotItem = (item = {}) => {
     igst: item?.igst || 0,
     cess: item?.cess || 0,
     addlCess: item?.addlCess || 0,
-    isTaxIncluded:
-      item?.taxInclusive ?? item?.isTaxIncluded ?? true,
+    isTaxIncluded: item?.taxInclusive ?? item?.isTaxIncluded ?? true,
   });
 
   return {
     ...item,
     remainingQty: calc.remainingQty,
     quantity: calc.remainingQty,
-
     price: calc.price,
     discountType: calc.discountType,
     discountPercentage: calc.discountPercentage,
     discountAmount: calc.discountAmount,
-
     basePrice: calc.basePrice,
     taxableAmount: calc.taxableAmount,
-
     cgstValue: calc.cgstValue,
     sgstValue: calc.sgstValue,
     igstValue: calc.igstValue,
     cessValue: calc.cessValue,
     addlCessValue: calc.addlCessValue,
-
     cgstAmount: calc.cgstAmount,
     sgstAmount: calc.sgstAmount,
     igstAmount: calc.igstAmount,
     cessAmount: calc.cessAmount,
     additionalCessAmount: calc.additionalCessAmount,
-
     totalCgstAmt: calc.cgstAmount,
     totalSgstAmt: calc.sgstAmount,
     totalIgstAmt: calc.igstAmount,
     totalCessAmt: calc.cessAmount,
     totalAddlCessAmt: calc.additionalCessAmount,
-
     total: calc.total,
     individualTotal: calc.total,
     isTaxIncluded: calc.isTaxIncluded,
     taxInclusive: calc.isTaxIncluded,
   };
+};
+
+export const normalizeRestaurantSplitRows = (paymentDetails = {}) => {
+  const splitRows = Array.isArray(paymentDetails?.splitRow)
+    ? paymentDetails.splitRow
+    : [];
+
+  return splitRows
+    .map((row) => ({
+      ...row,
+      sourceType: row?.sourceType || row?.type || "",
+      type: row?.type || row?.sourceType || "",
+      source: row?.source || row?.sourceId || null,
+      subsource: row?.subsource || "",
+      amount: Number(row?.amount || 0),
+      underCategory: row?.underCategory || "food",
+    }))
+    .filter((row) => row.amount > 0);
+};
+
+export const buildSplitReceiptsForRestaurant = async ({
+  cmp_id,
+  selectedParty,
+  advanceObject,
+  saleData,
+  paymentDetails,
+  req,
+  session,
+}) => {
+  const splitRows = normalizeRestaurantSplitRows(paymentDetails);
+
+  const nonCreditRows = splitRows.filter(
+    (row) =>
+      row.underCategory === "food" &&
+      row.sourceType &&
+      row.sourceType !== "credit",
+  );
+
+  const createdReceipts = [];
+
+  for (const split of nonCreditRows) {
+    let sourceParty = null;
+
+    if (split.source) {
+      sourceParty = await Party.findById(split.source).session(session);
+    }
+
+    const paymentMethod = mapSourceTypeToReceiptMethod(split.sourceType);
+
+    const splitPaymentDetails =
+      split.sourceType === "cash"
+        ? {
+            cash: {
+              cashLedger: split.source,
+              cashLedgerName:
+                sourceParty?.partyName || split.subsource || "Cash",
+            },
+          }
+        : {
+            bank: {
+              bankLedger: split.source,
+              bankLedgerName:
+                sourceParty?.partyName || split.subsource || "Bank",
+              transactionNo: split.transactionNo || "",
+              upiNo: split.upiNo || "",
+            },
+          };
+
+    const receipt = await buildReceipt({
+      cmp_id,
+      selectedParty,
+      advanceObject,
+      saleData,
+      amount: Number(split.amount || 0),
+      paymentDetails: splitPaymentDetails,
+      paymentMethod,
+      req,
+      session,
+    });
+
+    if (receipt) {
+      createdReceipts.push(receipt);
+    }
+  }
+
+  return createdReceipts;
 };
