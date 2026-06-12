@@ -33,14 +33,179 @@ const SummaryDashboard = () => {
     return response.data;
   };
 
-  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["dashboard", "consolidatedTotals", cmp_id],
+  const fetchDashboardCompanyRevenueBreakdown = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardCompanyRevenueBreakdown/${cmp_id}/${primaryUserId}`,
+      { withCredentials: true }
+    );
+    return response.data;
+  };
+
+  const fetchDashboardCompanyDailyCollectionBreakdown = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardCompanyDailyCollectionBreakdown/${cmp_id}/${primaryUserId}`,
+      { withCredentials: true }
+    );
+    return response.data;
+  };
+
+  const fetchDashboardCompanyMonthlyCollectionBreakdown = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardCompanyMonthlyCollectionBreakdown/${cmp_id}/${primaryUserId}`,
+      { withCredentials: true }
+    );
+    return response.data;
+  };
+
+  const fetchDashboardRoomCountSummary = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardRoomCountSummary/${cmp_id}/${primaryUserId}`,
+      { withCredentials: true }
+    );
+    return response.data;
+  };
+
+  const fetchDashboardPropertySalesSummary = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardPropertySalesSummary/${cmp_id}/${primaryUserId}`,
+      { withCredentials: true }
+    );
+    return response.data;
+  };
+
+  const {
+    data,
+    isLoading: isTotalsLoading,
+    isError: isTotalsError,
+    error: totalsError,
+    refetch: refetchTotals,
+    isFetching: isTotalsFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "consolidatedTotals", cmp_id],
     queryFn: fetchDashboardConsolidatedTotals,
-    enabled: !!cmp_id,
+    enabled: !!cmp_id && !!primaryUserId,
     staleTime: 30 * 60 * 1000, // 30 minutes
     retry: 1,
     refetchOnWindowFocus: false,
   });
+
+  const {
+    data: revenueBreakdownData,
+    isLoading: isRevenueBreakdownLoading,
+    isError: isRevenueBreakdownError,
+    error: revenueBreakdownError,
+    refetch: refetchRevenueBreakdown,
+    isFetching: isRevenueBreakdownFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "companyRevenueBreakdown", primaryUserId],
+    queryFn: fetchDashboardCompanyRevenueBreakdown,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const {
+    data: dailyCollectionBreakdownData,
+    isLoading: isDailyCollectionBreakdownLoading,
+    isError: isDailyCollectionBreakdownError,
+    error: dailyCollectionBreakdownError,
+    refetch: refetchDailyCollectionBreakdown,
+    isFetching: isDailyCollectionBreakdownFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "dailyCollectionBreakdown", primaryUserId],
+    queryFn: fetchDashboardCompanyDailyCollectionBreakdown,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const {
+    data: monthlyCollectionBreakdownData,
+    isLoading: isMonthlyCollectionBreakdownLoading,
+    isError: isMonthlyCollectionBreakdownError,
+    error: monthlyCollectionBreakdownError,
+    refetch: refetchMonthlyCollectionBreakdown,
+    isFetching: isMonthlyCollectionBreakdownFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "monthlyCollectionBreakdown", primaryUserId],
+    queryFn: fetchDashboardCompanyMonthlyCollectionBreakdown,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const {
+    data: roomCountSummaryData,
+    isLoading: isRoomCountSummaryLoading,
+    isError: isRoomCountSummaryError,
+    error: roomCountSummaryError,
+    refetch: refetchRoomCountSummary,
+    isFetching: isRoomCountSummaryFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "roomCountSummary", primaryUserId],
+    queryFn: fetchDashboardRoomCountSummary,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const {
+    data: propertySalesSummaryData,
+    isLoading: isPropertySalesSummaryLoading,
+    isError: isPropertySalesSummaryError,
+    error: propertySalesSummaryError,
+    refetch: refetchPropertySalesSummary,
+    isFetching: isPropertySalesSummaryFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "propertySalesSummary", primaryUserId],
+    queryFn: fetchDashboardPropertySalesSummary,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const isLoading =
+    isTotalsLoading ||
+    isRevenueBreakdownLoading ||
+    isDailyCollectionBreakdownLoading ||
+    isMonthlyCollectionBreakdownLoading ||
+    isRoomCountSummaryLoading ||
+    isPropertySalesSummaryLoading;
+  const isError =
+    isTotalsError ||
+    isRevenueBreakdownError ||
+    isDailyCollectionBreakdownError ||
+    isMonthlyCollectionBreakdownError ||
+    isRoomCountSummaryError ||
+    isPropertySalesSummaryError;
+  const error =
+    totalsError ||
+    revenueBreakdownError ||
+    dailyCollectionBreakdownError ||
+    monthlyCollectionBreakdownError ||
+    roomCountSummaryError ||
+    propertySalesSummaryError;
+  const isFetching =
+    isTotalsFetching ||
+    isRevenueBreakdownFetching ||
+    isDailyCollectionBreakdownFetching ||
+    isMonthlyCollectionBreakdownFetching ||
+    isRoomCountSummaryFetching ||
+    isPropertySalesSummaryFetching;
+
+  const refetch = () => {
+    refetchTotals();
+    refetchRevenueBreakdown();
+    refetchDailyCollectionBreakdown();
+    refetchMonthlyCollectionBreakdown();
+    refetchRoomCountSummary();
+    refetchPropertySalesSummary();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -51,8 +216,8 @@ const SummaryDashboard = () => {
       <div className="px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6 max-w-6xl mx-auto">
 
         {/* Header row */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6 sm:mb-8">
-          <div className="min-w-0">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6 sm:mb-8 bg-slate-100 px-4 py-4 sm:px-6 sm:py-5 rounded-xl">
+          <div className="min-w-0"> 
             <h1 className="text-xl sm:text-2xl font-bold text-gray-700 leading-tight truncate">
               {company?.name}
             </h1>
@@ -77,11 +242,7 @@ const SummaryDashboard = () => {
           </div>
         </div>
 
-        {/* Section label */}
-        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">
-          Overview
-        </p>
-
+      
         {/* Loading */}
         {isLoading && <SummaryCardsSkeleton />}
 
@@ -112,8 +273,25 @@ const SummaryDashboard = () => {
         {!isLoading && !isError && data && (
           <SummaryCards
             totalRevenue={fmt(data.totalRevenue)}
+            revenueBreakdown={revenueBreakdownData?.companyWiseRevenue ?? []}
             dailyCollection={fmt(data.dailyCollection)}
+            dailyCollectionBreakdown={
+              dailyCollectionBreakdownData?.companyWiseCollection ?? []
+            }
             monthlyCollection={fmt(data.monthlyCollection)}
+            monthlyCollectionBreakdown={
+              monthlyCollectionBreakdownData?.companyWiseCollection ?? []
+            }
+            totalPropertySales={fmt(propertySalesSummaryData?.totalPropertySales)}
+            totalHotelSales={fmt(propertySalesSummaryData?.totalHotelSales)}
+            totalRestaurantSales={fmt(propertySalesSummaryData?.totalRestaurantSales)}
+            propertySalesBreakdown={
+              propertySalesSummaryData?.companyWisePropertySales ?? []
+            }
+            totalRooms={String(roomCountSummaryData?.totalRooms ?? 0)}
+            totalAvailableRooms={String(roomCountSummaryData?.totalAvailableRooms ?? 0)}
+            totalBlockedRooms={String(roomCountSummaryData?.totalBlockedRooms ?? 0)}
+            roomCountBreakdown={roomCountSummaryData?.companyWiseRoomCount ?? []}
             dailyCash={fmt(data.cashCollection?.daily)}
             dailyBank={fmt(data.bankCollection?.daily)}
             monthlyCash={fmt(data.cashCollection?.monthly)}
