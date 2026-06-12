@@ -6,11 +6,12 @@ import React, { useMemo } from "react";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import { GiCancel } from "react-icons/gi";
+import { LuTimer } from "react-icons/lu";
 
 const DashboardTransaction = ({ filteredData, from }) => {
-console.log(filteredData)
+  console.log(filteredData);
   const navigate = useNavigate();
-console.log("hhh")
+  console.log("hhh");
   const typeColors = useMemo(
     () => ({
       Receipt: "bg-red-500",
@@ -23,12 +24,12 @@ console.log("hhh")
       "Debit Note": "bg-[#3b429f]",
       default: "bg-[#227c9d]",
     }),
-    []
+    [],
   );
 
   const getNavigationPath = useMemo(
     () => (type, id) => {
-console.log(type)
+      console.log(type);
       const routes = {
         Receipt: `/sUsers/receipt/details/${id}`,
         Payment: `/sUsers/payment/details/${id}`,
@@ -42,13 +43,13 @@ console.log(type)
       };
       return routes[type] || routes.default;
     },
-    []
+    [],
   );
 
   const handleTransactionClick = (type, id) => {
     const path = getNavigationPath(type, id);
-console.log(path)
-console.log(from)
+    console.log(path);
+    console.log(from);
     navigate(path, { state: { from } });
   };
 
@@ -86,7 +87,7 @@ console.log(from)
                 <p className="font-bold mt-2 text-[11.3px]  text-left text-gray-600 ">
                   {party_name}
                 </p>
-                 {/* <p className="font-bold mt-2 text-[11.3px]  text-left text-gray-600 ">
+                {/* <p className="font-bold mt-2 text-[11.3px]  text-left text-gray-600 ">
                   {party_name}
                 </p> */}
               </div>
@@ -100,15 +101,15 @@ console.log(from)
                       {dayjs(date).format("DD/MM/YYYY")}
                     </p>
 
-                   <div
-  className={`${
-    typeColors[type] || typeColors.default
-  } flex items-center text-white px-2 rounded-sm`}
->
-  <p className="p-1 rounded-lg font-bold text-[10px]">
-    {type}
-  </p>
-</div>
+                    <div
+                      className={`${
+                        typeColors[type] || typeColors.default
+                      } flex items-center text-white px-2 rounded-sm`}
+                    >
+                      <p className="p-1 rounded-lg font-bold text-[10px]">
+                        {type}
+                      </p>
+                    </div>
                   </section>
                 </div>
               </div>
@@ -129,6 +130,18 @@ console.log(from)
                     <p className="font-bold  md:font-semibold text-xs text-left  text-gray-500 flex ">
                       Created by : {secondaryUserName || ""}
                     </p>
+                    <p className="font-bold  md:font-semibold text-xs text-left   text-gray-500 flex items-center gap-1">
+                      <LuTimer />
+                      {new Date(transaction.createdAt).toLocaleTimeString(
+                        "en-IN",
+                        {
+                          timeZone: "Asia/Kolkata",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        },
+                      )}
+                    </p>
                   </div>
                   {isCancelled && (
                     <div className="flex text-gray-500  items-center gap-1 text-xs   font-semibold">
@@ -143,7 +156,7 @@ console.log(from)
         </div>
       );
     },
-    [typeColors, getNavigationPath, handleTransactionClick]
+    [typeColors, getNavigationPath, handleTransactionClick],
   );
 
   const memoizedData = useMemo(() => filteredData, [filteredData]);
