@@ -2276,6 +2276,8 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
       } else if (bookedRoomIds.has(room._id.toString())) {
         status = "booked";
       }
+    
+
 
       return { ...room, status };
     });
