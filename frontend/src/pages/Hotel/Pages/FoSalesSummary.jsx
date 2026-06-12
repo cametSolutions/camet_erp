@@ -525,7 +525,7 @@ export default function FOSalesSummaryReport() {
                     color: theme.colors.heading,
                   }}
                 >
-                  FO Sales Summary Report
+                  FO Bill Summary Report
                 </div>
                 <div
                   style={{
