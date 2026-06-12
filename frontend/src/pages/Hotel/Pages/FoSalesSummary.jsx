@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import api from "@/api/api";
+import { Card } from "@/components/ui/card";
 
 const formatNumber = (value) =>
   Number(value || 0).toLocaleString("en-IN", {
@@ -95,7 +96,7 @@ const buttonStyle = (variant = "primary") => {
 
 export default function FOSalesSummaryReport() {
   const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
+    (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
 
   const [loading, setLoading] = useState(false);
@@ -140,7 +141,9 @@ export default function FOSalesSummaryReport() {
         row.guestName?.toLowerCase().includes(searchText) ||
         row.agentName?.toLowerCase().includes(searchText) ||
         row.billNo?.toLowerCase().includes(searchText) ||
-        String(row.grcNo || "").toLowerCase().includes(searchText) ||
+        String(row.grcNo || "")
+          .toLowerCase()
+          .includes(searchText) ||
         row.room?.toLowerCase().includes(searchText)
       );
     });
@@ -158,6 +161,8 @@ export default function FOSalesSummaryReport() {
         acc.billTotal += toNumber(row.billTotal);
         acc.advance += toNumber(row.advance);
         acc.bank += toNumber(row.bank);
+        acc.upi += toNumber(row.upi);
+        acc.card += toNumber(row.card);
         acc.cash += toNumber(row.cash);
         acc.credit += toNumber(row.credit);
         return acc;
@@ -172,9 +177,11 @@ export default function FOSalesSummaryReport() {
         billTotal: 0,
         advance: 0,
         bank: 0,
+        upi: 0,
+        card: 0,
         cash: 0,
         credit: 0,
-      }
+      },
     );
   }, [filteredData]);
 
@@ -199,6 +206,8 @@ export default function FOSalesSummaryReport() {
       "Bill Total": toNumber(row.billTotal),
       Advance: toNumber(row.advance),
       Bank: toNumber(row.bank),
+      Upi: toNumber(row.upi),
+      Card: toNumber(row.card),
       Cash: toNumber(row.cash),
       Credit: toNumber(row.credit),
     }));
@@ -223,6 +232,8 @@ export default function FOSalesSummaryReport() {
       "Bill Total": totals.billTotal,
       Advance: totals.advance,
       Bank: totals.bank,
+      Upi: totals.upi,
+      Card: totals.card,
       Cash: totals.cash,
       Credit: totals.credit,
     });
@@ -258,7 +269,10 @@ export default function FOSalesSummaryReport() {
       const numericCols = [6, 7, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19, 20];
       numericCols.forEach((C) => {
         const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-        if (worksheet[cellAddress] && typeof worksheet[cellAddress].v === "number") {
+        if (
+          worksheet[cellAddress] &&
+          typeof worksheet[cellAddress].v === "number"
+        ) {
           worksheet[cellAddress].z = "#,##0.00";
         }
       });
@@ -277,7 +291,7 @@ export default function FOSalesSummaryReport() {
       new Blob([excelBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       }),
-      `FO_Sales_Summary_${fromDate}_to_${toDate}.xlsx`
+      `FO_Sales_Summary_${fromDate}_to_${toDate}.xlsx`,
     );
   };
 
@@ -545,7 +559,15 @@ export default function FOSalesSummaryReport() {
               }}
             >
               <div>
-                <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: theme.colors.muted, marginBottom: 5 }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: theme.colors.muted,
+                    marginBottom: 5,
+                  }}
+                >
                   FROM DATE
                 </label>
                 <input
@@ -557,7 +579,15 @@ export default function FOSalesSummaryReport() {
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: theme.colors.muted, marginBottom: 5 }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: theme.colors.muted,
+                    marginBottom: 5,
+                  }}
+                >
                   TO DATE
                 </label>
                 <input
@@ -569,7 +599,15 @@ export default function FOSalesSummaryReport() {
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: theme.colors.muted, marginBottom: 5 }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: theme.colors.muted,
+                    marginBottom: 5,
+                  }}
+                >
                   SEARCH
                 </label>
                 <input
@@ -630,7 +668,13 @@ export default function FOSalesSummaryReport() {
             </div>
 
             {loading ? (
-              <div style={{ padding: 28, textAlign: "center", color: theme.colors.muted }}>
+              <div
+                style={{
+                  padding: 28,
+                  textAlign: "center",
+                  color: theme.colors.muted,
+                }}
+              >
                 Loading...
               </div>
             ) : (
@@ -641,7 +685,13 @@ export default function FOSalesSummaryReport() {
                   maxHeight: "74vh",
                 }}
               >
-                <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "separate",
+                    borderSpacing: 0,
+                  }}
+                >
                   <thead>
                     <tr>
                       <TH>Date</TH>
@@ -663,6 +713,8 @@ export default function FOSalesSummaryReport() {
                       <TH right>Total</TH>
                       <TH right>Adv.</TH>
                       <TH right>Bank</TH>
+                      <TH right>Upi</TH>
+                      <TH right>Card</TH>
                       <TH right>Cash</TH>
                       <TH right>Credit</TH>
                     </tr>
@@ -674,7 +726,8 @@ export default function FOSalesSummaryReport() {
                         <tr
                           key={index}
                           style={{
-                            background: index % 2 === 0 ? "#fff" : theme.colors.rowAlt,
+                            background:
+                              index % 2 === 0 ? "#fff" : theme.colors.rowAlt,
                           }}
                         >
                           <TD>{formatDate(row.date)}</TD>
@@ -693,9 +746,13 @@ export default function FOSalesSummaryReport() {
                           <TD>{row.rtBillNo}</TD>
                           <TD right>{formatNumber(row.restaurantSale)}</TD>
                           <TD right>{formatNumber(row.modSale)}</TD>
-                          <TD right bold>{formatNumber(row.billTotal)}</TD>
+                          <TD right bold>
+                            {formatNumber(row.billTotal)}
+                          </TD>
                           <TD right>{formatNumber(row.advance)}</TD>
                           <TD right>{formatNumber(row.bank)}</TD>
+                          <TD right>{formatNumber(row.upi)}</TD>
+                          <TD right>{formatNumber(row.card)}</TD>
                           <TD right>{formatNumber(row.cash)}</TD>
                           <TD right>{formatNumber(row.credit)}</TD>
                         </tr>
@@ -745,6 +802,8 @@ export default function FOSalesSummaryReport() {
                         totals.billTotal,
                         totals.advance,
                         totals.bank,
+                        totals.upi,
+                        totals.card,
                         totals.cash,
                         totals.credit,
                       ].map((value, i) => (
