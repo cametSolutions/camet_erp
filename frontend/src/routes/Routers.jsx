@@ -17,6 +17,9 @@ const FoodPlanReportPage = lazy(
 const OccupancyCheckoutReport = lazy(
   () => import("../pages/Hotel/Pages/OccupancyCheckoutReport"),
 );
+const FOSalesSummaryReport = lazy(
+  () => import("../pages/Hotel/Pages/FoSalesSummary"),
+);
 
 const OutstandingDetails = lazy(
   () => import("../pages/voucherReports/outstanding/OutstandingDetails"),
@@ -2233,6 +2236,15 @@ const Routers = () => {
             </ProtectedSecRoute>
           }
         />
+          <Route
+          path="/sUsers/FOSalesSummaryReport"
+          element={
+            <ProtectedSecRoute>
+              <FOSalesSummaryReport />
+            </ProtectedSecRoute>
+          }
+        />
+      
         <Route
           path="/sUsers/register"
           element={
