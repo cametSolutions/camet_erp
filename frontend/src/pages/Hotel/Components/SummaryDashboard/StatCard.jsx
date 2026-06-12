@@ -9,9 +9,48 @@ const StatCard = ({
   onClick,
   cashTotal,
   bankTotal,
+  cashLabel = "Cash",
+  bankLabel = "Bank",
+  cashIcon = "cash",
+  bankIcon = "bank",
 }) => {
   const isClickable = !!onClick;
   const hasBreakdown = !!cashTotal && !!bankTotal;
+
+  const DetailIcon = ({ type }) => {
+    if (type === "available") {
+      return (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
+          <path d="M4 10L12 4L20 10V20H4V10Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+          <path d="M9 14L11 16L15 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    }
+
+    if (type === "blocked") {
+      return (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
+          <rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M8 11V8C8 5.79086 9.79086 4 12 4C14.2091 4 16 5.79086 16 8V11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+    }
+
+    if (type === "bank") {
+      return (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
+          <path d="M3 10h18M3 10V20h18V10M3 10L12 3l9 7" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+        </svg>
+      );
+    }
+
+    return (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
+        <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="1.8"/>
+        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/>
+      </svg>
+    );
+  };
 
   return (
     <div
@@ -57,11 +96,8 @@ const StatCard = ({
         <div className="z-10 mt-3 pt-3 border-t border-white/20 flex items-center justify-between gap-2 sm:gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-1 text-white/80">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
-                <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="1.8"/>
-                <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/>
-              </svg>
-              <p className="text-[8px] sm:text-[9px] text-white uppercase tracking-wider leading-none">Cash</p>
+              <DetailIcon type={cashIcon} />
+              <p className="text-[8px] sm:text-[9px] text-white uppercase tracking-wider leading-none">{cashLabel}</p>
             </div>
             <p className="text-[12px] sm:text-[14px] font-semibold text-white leading-tight mt-1 break-all">
               {cashTotal}
@@ -72,10 +108,8 @@ const StatCard = ({
 
           <div className="min-w-0 text-right">
             <div className="flex items-center justify-end gap-1 text-white/80">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
-                <path d="M3 10h18M3 10V20h18V10M3 10L12 3l9 7" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
-              </svg>
-              <p className="text-[8px] sm:text-[9px] text-white uppercase tracking-wider leading-none">Bank</p>
+              <DetailIcon type={bankIcon} />
+              <p className="text-[8px] sm:text-[9px] text-white uppercase tracking-wider leading-none">{bankLabel}</p>
             </div>
             <p className="text-[12px] sm:text-[14px] font-semibold text-white leading-tight mt-1 break-all">
               {bankTotal}

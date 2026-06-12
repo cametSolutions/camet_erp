@@ -57,6 +57,14 @@ const SummaryDashboard = () => {
     return response.data;
   };
 
+  const fetchDashboardRoomCountSummary = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardRoomCountSummary/${cmp_id}/${primaryUserId}`,
+      { withCredentials: true }
+    );
+    return response.data;
+  };
+
   const {
     data,
     isLoading: isTotalsLoading,
@@ -121,32 +129,53 @@ const SummaryDashboard = () => {
     refetchOnWindowFocus: false,
   });
 
+  const {
+    data: roomCountSummaryData,
+    isLoading: isRoomCountSummaryLoading,
+    isError: isRoomCountSummaryError,
+    error: roomCountSummaryError,
+    refetch: refetchRoomCountSummary,
+    isFetching: isRoomCountSummaryFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "roomCountSummary", primaryUserId],
+    queryFn: fetchDashboardRoomCountSummary,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
   const isLoading =
     isTotalsLoading ||
     isRevenueBreakdownLoading ||
     isDailyCollectionBreakdownLoading ||
-    isMonthlyCollectionBreakdownLoading;
+    isMonthlyCollectionBreakdownLoading ||
+    isRoomCountSummaryLoading;
   const isError =
     isTotalsError ||
     isRevenueBreakdownError ||
     isDailyCollectionBreakdownError ||
-    isMonthlyCollectionBreakdownError;
+    isMonthlyCollectionBreakdownError ||
+    isRoomCountSummaryError;
   const error =
     totalsError ||
     revenueBreakdownError ||
     dailyCollectionBreakdownError ||
-    monthlyCollectionBreakdownError;
+    monthlyCollectionBreakdownError ||
+    roomCountSummaryError;
   const isFetching =
     isTotalsFetching ||
     isRevenueBreakdownFetching ||
     isDailyCollectionBreakdownFetching ||
-    isMonthlyCollectionBreakdownFetching;
+    isMonthlyCollectionBreakdownFetching ||
+    isRoomCountSummaryFetching;
 
   const refetch = () => {
     refetchTotals();
     refetchRevenueBreakdown();
     refetchDailyCollectionBreakdown();
     refetchMonthlyCollectionBreakdown();
+    refetchRoomCountSummary();
   };
 
   return (
@@ -228,6 +257,10 @@ const SummaryDashboard = () => {
             monthlyCollectionBreakdown={
               monthlyCollectionBreakdownData?.companyWiseCollection ?? []
             }
+            totalRooms={String(roomCountSummaryData?.totalRooms ?? 0)}
+            totalAvailableRooms={String(roomCountSummaryData?.totalAvailableRooms ?? 0)}
+            totalBlockedRooms={String(roomCountSummaryData?.totalBlockedRooms ?? 0)}
+            roomCountBreakdown={roomCountSummaryData?.companyWiseRoomCount ?? []}
             dailyCash={fmt(data.cashCollection?.daily)}
             dailyBank={fmt(data.bankCollection?.daily)}
             monthlyCash={fmt(data.cashCollection?.monthly)}

@@ -7,6 +7,7 @@ import { aggregateSummary } from "../helpers/summaryHelper.js";
 import debitNoteModel from "../models/debitNoteModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
 import OrganizationModel from "../models/OragnizationModel.js";
+import RoomModel from "../models/roomModal.js";
 import mongoose from "mongoose";
 
 
@@ -1024,6 +1025,101 @@ export const fetchDashboardCompanyMonthlyCollectionBreakdown = async (req, res) 
     return res.status(200).json({
       message: "Company-wise monthly collection fetched successfully",
       companyWiseCollection,
+    });
+  } catch (error) {
+    console.log("error:", error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const fetchDashboardRoomCountSummary = async (req, res) => {
+  try {
+    const { primaryUserId } = req.params;
+    const primaryUserObjectId = new mongoose.Types.ObjectId(primaryUserId);
+
+    const companyWiseRoomCount = await OrganizationModel.aggregate([
+      {
+        $match: {
+          owner: primaryUserObjectId,
+        },
+      },
+      {
+        $lookup: {
+          from: RoomModel.collection.name,
+          let: { companyId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$cmp_id", "$$companyId"] },
+                    { $eq: ["$primary_user_id", primaryUserObjectId] },
+                  ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                roomCount: { $sum: 1 },
+                availableCount: {
+                  $sum: {
+                    $cond: [
+                      { $in: ["$status", ["available", "vacant"]] },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                blockedCount: {
+                  $sum: {
+                    $cond: [{ $eq: ["$status", "blocked"] }, 1, 0],
+                  },
+                },
+              },
+            },
+          ],
+          as: "roomData",
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          cmp_id: "$_id",
+          companyName: { $ifNull: ["$name", "Unknown Company"] },
+          roomCount: {
+            $ifNull: [{ $arrayElemAt: ["$roomData.roomCount", 0] }, 0],
+          },
+          availableCount: {
+            $ifNull: [{ $arrayElemAt: ["$roomData.availableCount", 0] }, 0],
+          },
+          blockedCount: {
+            $ifNull: [{ $arrayElemAt: ["$roomData.blockedCount", 0] }, 0],
+          },
+        },
+      },
+      { $sort: { roomCount: -1, companyName: 1 } },
+    ]);
+
+    const totalRooms = companyWiseRoomCount.reduce(
+      (sum, company) => sum + Number(company.roomCount || 0),
+      0
+    );
+    const totalAvailableRooms = companyWiseRoomCount.reduce(
+      (sum, company) => sum + Number(company.availableCount || 0),
+      0
+    );
+    const totalBlockedRooms = companyWiseRoomCount.reduce(
+      (sum, company) => sum + Number(company.blockedCount || 0),
+      0
+    );
+
+    return res.status(200).json({
+      message: "Room count summary fetched successfully",
+      totalRooms,
+      totalAvailableRooms,
+      totalBlockedRooms,
+      companyWiseRoomCount,
     });
   } catch (error) {
     console.log("error:", error.message);

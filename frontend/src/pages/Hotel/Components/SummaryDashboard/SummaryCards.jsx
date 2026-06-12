@@ -4,9 +4,11 @@ import {
   RevenueIllustration,
   DailyCollectionIllustration,
   MonthlyCollectionIllustration,
+  RoomsIllustration,
 } from "./CardIllustrations";
 import RevenueBreakdownSheet from "./RevenueBreakdownSheet";
 import CollectionBreakdownSheet from "./CollectionBreakdownSheet";
+import RoomCountBreakdownSheet from "./RoomCountBreakdownSheet";
 import { useState } from "react";
 
 const SummaryCards = ({
@@ -16,6 +18,10 @@ const SummaryCards = ({
   dailyCollectionBreakdown = [],
   monthlyCollection = "₹0",
   monthlyCollectionBreakdown = [],
+  totalRooms = "0",
+  totalAvailableRooms = "0",
+  totalBlockedRooms = "0",
+  roomCountBreakdown = [],
   dailyCash = "₹0",
   dailyBank = "₹0",
   monthlyCash = "₹0",
@@ -24,37 +30,68 @@ const SummaryCards = ({
   const [revenueSheetOpen, setRevenueSheetOpen] = useState(false);
   const [dailySheetOpen, setDailySheetOpen] = useState(false);
   const [monthlySheetOpen, setMonthlySheetOpen] = useState(false);
+  const [roomSheetOpen, setRoomSheetOpen] = useState(false);
 
-  const cards = [
-    {
-      title: "Total Revenue",
-      value: totalRevenue,
-      subtitle: "All time earnings",
-      bgColor: "#1db974",
-      illustration: RevenueIllustration,
-      onClick: () => setRevenueSheetOpen(true),
-    },
-    {
-      title: "Daily Collection",
-      value: dailyCollection,
-      subtitle: "Today's collection",
-      bgColor: "#2a5298",
-      illustration: DailyCollectionIllustration,
-      onClick: () => setDailySheetOpen(true),
-      cashTotal: dailyCash,
-      bankTotal: dailyBank,
-    },
-    {
-      title: "Monthly Collection",
-      value: monthlyCollection,
-      subtitle: "This month's total",
-      bgColor: "#7c4dcc",
-      illustration: MonthlyCollectionIllustration,
-      onClick: () => setMonthlySheetOpen(true),
-      cashTotal: monthlyCash,
-      bankTotal: monthlyBank,
-    },
-  ];
+const cards = [
+  {
+    title: "Total Revenue",
+    value: totalRevenue,
+    subtitle: "All time earnings",
+    bgColor: "#1db974",
+    textColor: "#ffffff",
+    subtitleColor: "#0a3d26",
+    accentColor: "#17a060",
+    badgeColor: "#e6fff4",
+    illustration: RevenueIllustration,
+    onClick: () => setRevenueSheetOpen(true),
+  },
+  {
+    title: "Daily Collection",
+    value: dailyCollection,
+    subtitle: "Today's collection",
+    bgColor: "#2a5298",
+    textColor: "#ffffff",
+    subtitleColor: "#0d1f3c",
+    accentColor: "#1e3d78",
+    badgeColor: "#dce8ff",
+    illustration: DailyCollectionIllustration,
+    onClick: () => setDailySheetOpen(true),
+    cashTotal: dailyCash,
+    bankTotal: dailyBank,
+  },
+  {
+    title: "Monthly Collection",
+    value: monthlyCollection,
+    subtitle: "This month's total",
+    bgColor: "#7c4dcc",
+    textColor: "#ffffff",
+    subtitleColor: "#2e1060",
+    accentColor: "#6438b0",
+    badgeColor: "#ede6ff",
+    illustration: MonthlyCollectionIllustration,
+    onClick: () => setMonthlySheetOpen(true),
+    cashTotal: monthlyCash,
+    bankTotal: monthlyBank,
+  },
+  {
+    title: "Total Property Rooms",
+    value: totalRooms,
+    subtitle: "Total rooms count",
+    bgColor: "#0096c7",
+    textColor: "#ffffff",
+    subtitleColor: "#003040",
+    accentColor: "#007aa3",
+    badgeColor: "#d9f4ff",
+    illustration: RoomsIllustration,
+    onClick: () => setRoomSheetOpen(true),
+    cashTotal: totalAvailableRooms,
+    bankTotal: totalBlockedRooms,
+    cashLabel: "Available",
+    bankLabel: "Blocked",
+    cashIcon: "available",
+    bankIcon: "blocked",
+  },
+];
 
   return (
     <>
@@ -89,6 +126,15 @@ const SummaryCards = ({
         totalAmount={monthlyCollection}
         periodLabel="this month's"
         collectionBreakdown={monthlyCollectionBreakdown}
+      />
+
+      <RoomCountBreakdownSheet
+        open={roomSheetOpen}
+        onOpenChange={setRoomSheetOpen}
+        totalRooms={totalRooms}
+        totalAvailableRooms={totalAvailableRooms}
+        totalBlockedRooms={totalBlockedRooms}
+        roomBreakdown={roomCountBreakdown}
       />
     </>
   );

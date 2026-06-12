@@ -50,6 +50,7 @@ import {
     fetchDashboardCompanyMonthlyCollectionBreakdown,
     fetchDashboardCompanyRevenueBreakdown,
     fetchDashboardConsolidatedTotals,
+    fetchDashboardRoomCountSummary,
     getSummary
 } from "../controllers/summaryController.js"
 import { getSummaryReport } from "../controllers/summaryController.js";
@@ -445,6 +446,7 @@ router.get("/fetchDashboardConsolidatedTotals/:cmp_id/:primaryUserId",fetchDashb
 router.get("/fetchDashboardCompanyRevenueBreakdown/:cmp_id/:primaryUserId", fetchDashboardCompanyRevenueBreakdown);
 router.get("/fetchDashboardCompanyDailyCollectionBreakdown/:cmp_id/:primaryUserId", fetchDashboardCompanyDailyCollectionBreakdown);
 router.get("/fetchDashboardCompanyMonthlyCollectionBreakdown/:cmp_id/:primaryUserId", fetchDashboardCompanyMonthlyCollectionBreakdown);
+router.get("/fetchDashboardRoomCountSummary/:cmp_id/:primaryUserId", fetchDashboardRoomCountSummary);
 
 router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
 // Route to get detailed booking information for a specific room and date
