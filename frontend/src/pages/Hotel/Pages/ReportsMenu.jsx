@@ -79,6 +79,14 @@ const reports = [
     iconColor: "text-orange-700",
     path: "/sUsers/TravelAgentReport",
   },
+   {
+    label: "FO Sales Summary",
+    desc: "Front office Sales report",
+    icon: FileText,
+    iconBg: "bg-blue-50",
+    iconColor: "text-blue-700",
+    path: "/sUsers/FOSalesSummaryReport",
+  },
           
 ];
 
