@@ -141,7 +141,7 @@ const salesSchema = new Schema(
       accountGroup_id: {
         type: mongoose.Types.ObjectId,
         ref: "AccountGroup",
-        required: true,
+        // required: true,
       },
       subGroupName: { type: String },
       subGroup_id: { type: mongoose.Schema.Types.ObjectId, ref: "SubGroup" },
