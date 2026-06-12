@@ -12,7 +12,6 @@ export const getFullRoomDetails = async (roomData, doc) => {
 
   for (const room of roomData || []) {
     const roomStayDays = calculateStayDays(doc, room);
-    console.log("ccccccc",roomStayDays);
 
     const taxDetails = calculateTaxAmount(
       room.taxPercentage,
