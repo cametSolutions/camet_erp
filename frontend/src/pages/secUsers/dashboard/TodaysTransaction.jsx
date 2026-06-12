@@ -34,6 +34,8 @@ console.log("hh")
     retry: 1,
   });
 
+  console.log(data)
+
   return (
     <div>
       {isLoading && <TransactionSkeleton />}

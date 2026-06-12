@@ -44,6 +44,8 @@ export const transactions = async (req, res) => {
 
   let returnFullDetails = fullDetails === "true";
 
+
+
   try {
     // Parse ignore parameter - split by comma to handle multiple collections
     const ignoredCollections = ignore
@@ -316,6 +318,7 @@ export const transactions = async (req, res) => {
     );
 
     const results = await Promise.all(transactionPromises);
+    console.log("results",results)
 
     const combined = results
       .flat()

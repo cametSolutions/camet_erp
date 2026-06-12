@@ -1291,13 +1291,13 @@ const complementaryWithTax =
     ...(cashOrBank?.cashDetails?.map((c) => ({
       id: c._id,
       name: `${c.partyName} - ${c.under}`,
-      type: "cash",
+      type: c.under,
       subSource: c.partyName,
     })) || []),
     ...(cashOrBank?.bankDetails?.map((b) => ({
       id: b._id,
       name: `${b.partyName} - ${b.under}`,
-      type: "bank",
+      type: b.under,
       subSource: b.partyName,
     })) || []),
     {

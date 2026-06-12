@@ -139,3 +139,52 @@ export const MonthlyCollectionIllustration = () => (
     </g>
   </svg>
 );
+
+export const RoomsIllustration = () => (
+  <svg
+    width="130"
+    height="130"
+    viewBox="0 0 130 130"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className="absolute right-0 bottom-0 pointer-events-none"
+    aria-hidden="true"
+  >
+    <circle cx="100" cy="100" r="70" fill="rgba(255,255,255,0.08)" />
+    <g opacity="0.3">
+      <rect x="26" y="54" width="78" height="42" rx="8" fill="white" />
+      <rect x="34" y="62" width="24" height="16" rx="3" fill="rgba(255,255,255,0.7)" />
+      <rect x="62" y="62" width="34" height="26" rx="3" fill="rgba(255,255,255,0.8)" />
+      <path d="M26 96H104" stroke="white" strokeWidth="3" strokeLinecap="round" />
+      <path d="M34 54V38C34 33.5817 37.5817 30 42 30H88C92.4183 30 96 33.5817 96 38V54" stroke="white" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="46" cy="42" r="4" fill="white" />
+      <path d="M70 48H86" stroke="white" strokeWidth="3" strokeLinecap="round" />
+    </g>
+  </svg>
+);
+
+export const PropertySalesIllustration = () => (
+  <svg
+    width="130"
+    height="130"
+    viewBox="0 0 130 130"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className="absolute right-0 bottom-0 pointer-events-none"
+    aria-hidden="true"
+  >
+    <circle cx="100" cy="100" r="70" fill="rgba(255,255,255,0.08)" />
+    <g opacity="0.28">
+      <rect x="22" y="72" width="22" height="34" rx="4" fill="white" />
+      <rect x="48" y="58" width="24" height="48" rx="4" fill="white" />
+      <rect x="76" y="42" width="28" height="64" rx="4" fill="white" />
+      <path d="M22 106H106" stroke="white" strokeWidth="3" strokeLinecap="round" />
+      <path d="M30 48L42 36L56 44L72 28L92 36" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="30" cy="48" r="3" fill="white" />
+      <circle cx="42" cy="36" r="3" fill="white" />
+      <circle cx="56" cy="44" r="3" fill="white" />
+      <circle cx="72" cy="28" r="3" fill="white" />
+      <circle cx="92" cy="36" r="3" fill="white" />
+    </g>
+  </svg>
+);
