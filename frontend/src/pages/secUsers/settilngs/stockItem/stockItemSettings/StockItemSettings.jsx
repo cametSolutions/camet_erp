@@ -139,6 +139,26 @@ const StockItemSettings = () => {
             dbField: "discountBasedOnGrossAmountInHotel",
           },
           {
+            title: "Save  restaurant sale based on agent or guest",
+            description: "Choose whether restaurant sale can be saved based on agent or guest",
+            icon: <GrClipboard />,
+            to: "sec",
+            active: true,
+            checkboxGroup: true,
+            checkboxes: [
+              {
+                label: "Agent",
+                checked: configurations?.[0]?.saveSaleBasedOn?.agent ?? true,
+                dbField: "saveSaleBasedOn.agent",
+              },
+              {
+                label: "Guest",
+                checked: configurations?.[0]?.saveSaleBasedOn?.guest ?? false,
+                dbField: "saveSaleBasedOn.guest",
+              },
+            ],
+          },
+          {
             title: "Default Print",
             description: "Select your default print options",
             icon: <GrClipboard />,
