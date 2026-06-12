@@ -28,21 +28,21 @@ const PropertySalesBreakdownSheet = ({
         side={isMobile ? "bottom" : "right"}
         className="w-full h-[70vh] sm:h-full sm:w-[420px] p-0 flex flex-col overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50"
       >
-        <SheetHeader className="px-6 pt-6 pb-4">
-          <SheetTitle className="text-base font-semibold text-gray-800">
+        <SheetHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
+          <SheetTitle className="text-sm sm:text-base font-semibold text-gray-800">
             Property Sales Breakdown
           </SheetTitle>
-          <SheetDescription className="text-xs text-gray-400">
+          <SheetDescription className="text-[11px] sm:text-xs text-gray-400">
             Company-wise hotel and restaurant sales under the primary user
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mx-6 mb-4 rounded-2xl bg-white border border-slate-200 px-4 py-3 shadow-sm flex flex-col items-center text-center gap-3 sm:flex-row sm:items-center sm:justify-between sm:text-left">
+        <div className="mx-4 sm:mx-6 mb-3 sm:mb-4 rounded-2xl bg-white border border-slate-200 px-3 sm:px-4 py-2.5 sm:py-3 shadow-sm flex flex-col items-center text-center gap-2 sm:gap-3 sm:flex-row sm:items-center sm:justify-between sm:text-left">
           <div className="flex min-w-0 flex-col items-center gap-1 sm:items-start">
             <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">
               Total Property Sales
             </p>
-            <p className="text-xl sm:text-2xl font-bold text-gray-800 leading-tight break-all">
+            <p className="text-lg sm:text-2xl font-bold text-gray-800 leading-tight break-all">
               {totalPropertySales}
             </p>
           </div>
@@ -51,8 +51,8 @@ const PropertySalesBreakdownSheet = ({
           </Badge>
         </div>
 
-        <div className="mx-6 mb-4 grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
+        <div className="mx-4 sm:mx-6 mb-3 sm:mb-4 grid grid-cols-2 gap-2 sm:gap-3">
+          <div className="rounded-xl bg-slate-50 border border-slate-100 px-2.5 sm:px-3 py-2">
             <div className="inline-flex items-center gap-1 rounded-full px-2 py-1 bg-amber-50 text-amber-700">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
                 <path d="M4 20V7C4 5.89543 4.89543 5 6 5H18C19.1046 5 20 5.89543 20 7V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -65,7 +65,7 @@ const PropertySalesBreakdownSheet = ({
             </p>
           </div>
 
-          <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
+          <div className="rounded-xl bg-slate-50 border border-slate-100 px-2.5 sm:px-3 py-2">
             <div className="inline-flex items-center gap-1 rounded-full px-2 py-1 bg-sky-50 text-sky-700">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
                 <path d="M7 4V11M10 4V11M7 8H10M8.5 11V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -81,7 +81,7 @@ const PropertySalesBreakdownSheet = ({
 
         <Separator />
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4">
           {propertySalesBreakdown.map((company, idx) => (
             <div
               key={`${company.companyName}-${idx}`}
@@ -141,7 +141,7 @@ const PropertySalesBreakdownSheet = ({
         </div>
 
         <Separator />
-        <div className="px-6 py-4">
+        <div className="px-4 sm:px-6 py-3 sm:py-4">
           <p className="text-[11px] text-gray-400 text-center">
             Showing company-wise hotel and restaurant sales
           </p>

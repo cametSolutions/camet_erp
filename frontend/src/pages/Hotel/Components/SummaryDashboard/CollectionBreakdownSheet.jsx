@@ -51,18 +51,18 @@ const CollectionBreakdownSheet = ({
         side={isMobile ? "bottom" : "right"}
         className="w-full h-[70vh] sm:h-full sm:w-[420px] p-0 flex flex-col overflow-hidden"
       >
-        <SheetHeader className="px-6 pt-6 pb-4">
-          <SheetTitle className="text-base font-semibold text-gray-800">
+        <SheetHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
+          <SheetTitle className="text-sm sm:text-base font-semibold text-gray-800">
             {title}
           </SheetTitle>
-          <SheetDescription className="text-xs text-gray-400">
+          <SheetDescription className="text-[11px] sm:text-xs text-gray-400">
             {description}
           </SheetDescription>
         </SheetHeader>
 
         {/* Total banner */}
         <div
-          className="mx-6 mb-4 rounded-xl bg-white border border-gray-100 px-4 py-3 flex flex-col items-center text-center gap-3 sm:flex-row sm:items-center sm:justify-between sm:text-left"
+          className="mx-4 sm:mx-6 mb-3 sm:mb-4 rounded-xl bg-white border border-gray-100 px-3 sm:px-4 py-2.5 sm:py-3 flex flex-col items-center text-center gap-2 sm:gap-3 sm:flex-row sm:items-center sm:justify-between sm:text-left"
       
         >
           <div className="flex min-w-0 flex-col items-center gap-1 sm:items-start">
@@ -72,7 +72,7 @@ const CollectionBreakdownSheet = ({
             >
               Total Collection
             </p>
-            <p className="text-xl sm:text-2xl font-bold text-gray-800 leading-tight break-all">
+            <p className="text-lg sm:text-2xl font-bold text-gray-800 leading-tight break-all">
               {totalAmount}
             </p>
           </div>
@@ -90,7 +90,7 @@ const CollectionBreakdownSheet = ({
 
         <Separator />
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 space-y-3">
           {collectionBreakdown.map((company, idx) => {
             const palette = COMPANY_PALETTES[idx % COMPANY_PALETTES.length];
             return (
@@ -162,7 +162,7 @@ const CollectionBreakdownSheet = ({
         </div>
 
         <Separator />
-        <div className="px-6 py-4">
+        <div className="px-4 sm:px-6 py-3 sm:py-4">
           <p className="text-[11px] text-gray-400 text-center">
             Showing {periodLabel} company-wise collection split
           </p>

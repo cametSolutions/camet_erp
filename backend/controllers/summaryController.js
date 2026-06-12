@@ -9,6 +9,7 @@ import creditNoteModel from "../models/creditNoteModel.js";
 import OrganizationModel from "../models/OragnizationModel.js";
 import RoomModel from "../models/roomModal.js";
 import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
+import receiptModel from "../models/receiptModel.js";
 import mongoose from "mongoose";
 
 
@@ -537,7 +538,7 @@ export const getSummaryReport = async (req, res) => {
 
 export const fetchDashboardConsolidatedTotals = async (req, res) => {
   try {
-    const { cmp_id, primaryUserId } = req.params;
+    const { primaryUserId } = req.params;
 
     // ── IST boundaries ──────────────────────────────────────────
     const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
@@ -579,159 +580,130 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
     );
     // ─────────────────────────────────────────────────────────────
 
-    const result = await salesModel.aggregate([
+    const primaryUserObjectId = new mongoose.Types.ObjectId(primaryUserId);
 
-      // ── Stage 1: Base filter ──────────────────────────────────
-      {
-        $match: {
-          Primary_user_id: new mongoose.Types.ObjectId(primaryUserId),
-          // cmp_id: new mongoose.Types.ObjectId(cmp_id),
-          isComplimentary: { $ne: true },
-        },
-      },
-
-      // ── Stage 2: Faceted calculations ─────────────────────────
-      {
-        $facet: {
-
-          // ── A. All-time total revenue ─────────────────────────
-          allTimeTotal: [
-            {
-              $group: {
-                _id: null,
-                total: { $sum: "$finalAmount" },
-              },
-            },
-          ],
-
-          // ── B. This month total ───────────────────────────────
-          monthlyTotal: [
-            {
-              $match: {
-                date: { $gte: monthStartIST, $lte: monthEndIST },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                total: { $sum: "$finalAmount" },
-              },
-            },
-          ],
-
-          // ── C. Today total ────────────────────────────────────
-          dailyTotal: [
-            {
-              $match: {
-                date: { $gte: todayStartIST, $lte: todayEndIST },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                total: { $sum: "$finalAmount" },
-              },
-            },
-          ],
-
-          // ── D. Cash & Bank — daily ────────────────────────────
-          cashBankDaily: [
-            {
-              $match: {
-                date: { $gte: todayStartIST, $lte: todayEndIST },
-              },
-            },
-            { $unwind: "$paymentSplittingData" },
-            {
-              $match: {
-                "paymentSplittingData.type": { $ne: "credit" },
-                "paymentSplittingData.amount": { $gt: 0 },
-              },
-            },
-            {
-              $group: {
-                _id: {
-                  $cond: {
-                    if: { $eq: ["$paymentSplittingData.type", "cash"] },
-                    then: "cash",
-                    else: "bank",
-                  },
-                },
-                total: { $sum: "$paymentSplittingData.amount" },
-              },
-            },
-          ],
-
-          // ── E. Cash & Bank — monthly (includes today) ─────────
-          cashBankMonthly: [
-            {
-              $match: {
-                date: { $gte: monthStartIST, $lte: monthEndIST },
-              },
-            },
-            { $unwind: "$paymentSplittingData" },
-            {
-              $match: {
-                "paymentSplittingData.type": { $ne: "credit" },
-                "paymentSplittingData.amount": { $gt: 0 },
-              },
-            },
-            {
-              $group: {
-                _id: {
-                  $cond: {
-                    if: { $eq: ["$paymentSplittingData.type", "cash"] },
-                    then: "cash",
-                    else: "bank",
-                  },
-                },
-                total: { $sum: "$paymentSplittingData.amount" },
-              },
-            },
-          ],
-
-          // ── F. Cash & Bank — all-time ─────────────────────────
-          cashBankAllTime: [
-            { $unwind: "$paymentSplittingData" },
-            {
-              $match: {
-                "paymentSplittingData.type": { $ne: "credit" },
-                "paymentSplittingData.amount": { $gt: 0 },
-              },
-            },
-            {
-              $group: {
-                _id: {
-                  $cond: {
-                    if: { $eq: ["$paymentSplittingData.type", "cash"] },
-                    then: "cash",
-                    else: "bank",
-                  },
-                },
-                total: { $sum: "$paymentSplittingData.amount" },
-              },
-            },
-          ],
-        },
-      },
-
-      // ── Stage 3: Shape the response ───────────────────────────
-      {
-        $project: {
-          totalRevenue: {
-            $ifNull: [{ $arrayElemAt: ["$allTimeTotal.total", 0] }, 0],
+    const [salesResult, receiptResult] = await Promise.all([
+      salesModel.aggregate([
+        {
+          $match: {
+            Primary_user_id: primaryUserObjectId,
+            isComplimentary: { $ne: true },
           },
-          monthlyCollection: {
-            $ifNull: [{ $arrayElemAt: ["$monthlyTotal.total", 0] }, 0],
-          },
-          dailyCollection: {
-            $ifNull: [{ $arrayElemAt: ["$dailyTotal.total", 0] }, 0],
-          },
-          cashBankDaily:   1,
-          cashBankMonthly: 1,
-          cashBankAllTime: 1,
         },
-      },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: "$finalAmount" },
+          },
+        },
+      ]),
+      receiptModel.aggregate([
+        {
+          $match: {
+            Primary_user_id: primaryUserObjectId,
+            isCancelled: { $ne: true },
+          },
+        },
+        {
+          $addFields: {
+            normalizedPaymentMethod: {
+              $toLower: { $ifNull: ["$paymentMethod", ""] },
+            },
+          },
+        },
+        {
+          $facet: {
+            monthlyTotal: [
+              {
+                $match: {
+                  date: { $gte: monthStartIST, $lte: monthEndIST },
+                },
+              },
+              {
+                $group: {
+                  _id: null,
+                  total: { $sum: "$enteredAmount" },
+                },
+              },
+            ],
+            dailyTotal: [
+              {
+                $match: {
+                  date: { $gte: todayStartIST, $lte: todayEndIST },
+                },
+              },
+              {
+                $group: {
+                  _id: null,
+                  total: { $sum: "$enteredAmount" },
+                },
+              },
+            ],
+            cashBankDaily: [
+              {
+                $match: {
+                  date: { $gte: todayStartIST, $lte: todayEndIST },
+                  enteredAmount: { $gt: 0 },
+                  normalizedPaymentMethod: { $ne: "credit" },
+                },
+              },
+              {
+                $group: {
+                  _id: {
+                    $cond: [
+                      { $eq: ["$normalizedPaymentMethod", "cash"] },
+                      "cash",
+                      "bank",
+                    ],
+                  },
+                  total: { $sum: "$enteredAmount" },
+                },
+              },
+            ],
+            cashBankMonthly: [
+              {
+                $match: {
+                  date: { $gte: monthStartIST, $lte: monthEndIST },
+                  enteredAmount: { $gt: 0 },
+                  normalizedPaymentMethod: { $ne: "credit" },
+                },
+              },
+              {
+                $group: {
+                  _id: {
+                    $cond: [
+                      { $eq: ["$normalizedPaymentMethod", "cash"] },
+                      "cash",
+                      "bank",
+                    ],
+                  },
+                  total: { $sum: "$enteredAmount" },
+                },
+              },
+            ],
+            cashBankAllTime: [
+              {
+                $match: {
+                  enteredAmount: { $gt: 0 },
+                  normalizedPaymentMethod: { $ne: "credit" },
+                },
+              },
+              {
+                $group: {
+                  _id: {
+                    $cond: [
+                      { $eq: ["$normalizedPaymentMethod", "cash"] },
+                      "cash",
+                      "bank",
+                    ],
+                  },
+                  total: { $sum: "$enteredAmount" },
+                },
+              },
+            ],
+          },
+        },
+      ]),
     ]);
 
     // ── Helper: [{_id: "cash", total: X}] → { cash: X, bank: Y } 
@@ -743,23 +715,26 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
       return map;
     };
 
-    const daily   = toMap(result[0]?.cashBankDaily);
-    const monthly = toMap(result[0]?.cashBankMonthly);
-    const allTime = toMap(result[0]?.cashBankAllTime);
+    const receiptSummary = receiptResult[0] || {};
+    const daily = toMap(receiptSummary.cashBankDaily);
+    const monthly = toMap(receiptSummary.cashBankMonthly);
+    const allTime = toMap(receiptSummary.cashBankAllTime);
 
     return res.status(200).json({
-      totalRevenue:      result[0]?.totalRevenue      ?? 0,
-      monthlyCollection: result[0]?.monthlyCollection ?? 0,
-      dailyCollection:   result[0]?.dailyCollection   ?? 0,
+      totalRevenue: salesResult[0]?.totalRevenue ?? 0,
+      monthlyCollection:
+        receiptSummary.monthlyTotal?.[0]?.total ?? 0,
+      dailyCollection:
+        receiptSummary.dailyTotal?.[0]?.total ?? 0,
       cashCollection: {
         allTime: allTime.cash,
         monthly: monthly.cash,
-        daily:   daily.cash,
+        daily: daily.cash,
       },
       bankCollection: {
         allTime: allTime.bank,
         monthly: monthly.bank,
-        daily:   daily.bank,
+        daily: daily.bank,
       },
     });
 
