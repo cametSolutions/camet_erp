@@ -7906,7 +7906,31 @@ export const getFOSalesSummary = async (req, res) => {
     endDate.setHours(0, 0, 0, 0);
     endDate.setDate(endDate.getDate() + 1);
 
-    // Step 1: get sales only in selected date range
+    const getSaleCheckInNumbers = (sale) => {
+      if (!Array.isArray(sale?.convertedFrom)) return [];
+      return sale.convertedFrom
+        .map((item) => item?.checkInNumber)
+        .filter(Boolean);
+    };
+
+    const processPayments = (paymentSplittingData = [], totals) => {
+      for (const split of paymentSplittingData) {
+        const splitAmount = Number(
+          split?.amount || split?.paidAmount || split?.value || 0
+        );
+
+        const splitType = String(
+          split?.sourceType || split?.type || split?.mode || split?.paymentMode || ""
+        ).toLowerCase();
+
+        if (splitType === "cash") totals.cash += splitAmount;
+        else if (splitType === "bank") totals.bank += splitAmount;
+        else if (splitType === "credit") totals.credit += splitAmount;
+        else if (splitType === "upi") totals.upi += splitAmount;
+        else if (splitType === "card") totals.card += splitAmount;
+      }
+    };
+
     const dateRangeSales = await salesModel
       .find({
         cmp_id,
@@ -7918,13 +7942,8 @@ export const getFOSalesSummary = async (req, res) => {
       })
       .lean();
 
-    // Step 2: collect unique checkInNumbers from convertedFrom
     const checkInNumbers = [
-      ...new Set(
-        dateRangeSales
-          .map((sale) => sale.convertedFrom?.[0]?.checkInNumber)
-          .filter(Boolean)
-      ),
+      ...new Set(dateRangeSales.flatMap((sale) => getSaleCheckInNumbers(sale))),
     ];
 
     if (!checkInNumbers.length) {
@@ -7934,31 +7953,35 @@ export const getFOSalesSummary = async (req, res) => {
       });
     }
 
-    // Step 3: fetch ALL sales for those checkInNumbers
     const allSalesForMatchedCheckIns = await salesModel
       .find({
         cmp_id,
         isCancelled: false,
-        "convertedFrom.0.checkInNumber": { $in: checkInNumbers },
+        "convertedFrom.checkInNumber": { $in: checkInNumbers },
       })
       .lean();
 
-    const reportMap = new Map();
     const salesByCheckIn = new Map();
 
-    // Step 4: group all fetched sales by checkInNumber
     for (const sale of allSalesForMatchedCheckIns) {
-      const checkInNumber = sale.convertedFrom?.[0]?.checkInNumber;
-      if (!checkInNumber) continue;
+      const linkedCheckIns = getSaleCheckInNumbers(sale);
 
-      if (!salesByCheckIn.has(checkInNumber)) {
-        salesByCheckIn.set(checkInNumber, []);
+      for (const checkInNumber of linkedCheckIns) {
+        if (!checkInNumbers.includes(checkInNumber)) continue;
+
+        if (!salesByCheckIn.has(checkInNumber)) {
+          salesByCheckIn.set(checkInNumber, []);
+        }
+
+        salesByCheckIn.get(checkInNumber).push(sale);
       }
-
-      salesByCheckIn.get(checkInNumber).push(sale);
     }
 
-    for (const [checkInNumber, salesForCheckIn] of salesByCheckIn) {
+    const reportMap = new Map();
+
+    for (const checkInNumber of checkInNumbers) {
+      const salesForCheckIn = salesByCheckIn.get(checkInNumber) || [];
+
       const checkIn = await CheckIn.findOne({
         voucherNumber: checkInNumber,
         cmp_id,
@@ -8012,44 +8035,48 @@ export const getFOSalesSummary = async (req, res) => {
 
       const advance = Number(checkout.totalAdvance || 0);
 
-      const billTotal = (roomDetails.taxableAmount || 0) +(roomDetails.roomTaxAmount || 0) + (roomDetails.specificFoodPlanTotal || 0) + (roomDetails.taxableAadditionalPaxWithTaxmount || 0)  - advance;
+      const billTotal =
+        restaurantSaleAmount +
+        Number(roomDetails?.taxableAmount || 0) +
+        Number(roomDetails?.roomTaxAmount || 0) +
+        Number(roomDetails?.specificFoodPlanTotal || 0) +
+        Number(roomDetails?.taxableAadditionalPaxWithTaxmount || 0) -
+        advance;
 
-      let cash = 0;
-      let bank = 0;
-      let credit = 0;
-      let upi = 0;
-      let card = 0;
+      const totals = {
+        cash: 0,
+        bank: 0,
+        credit: 0,
+        upi: 0,
+        card: 0,
+      };
 
+    
       for (const sale of salesForCheckIn) {
-        const paymentSplittingData = sale.paymentSplittingData || [];
-
-        for (const split of paymentSplittingData) {
-          const splitAmount = Number(split.amount || 0);
-          const splitType = String(
-            split.sourceType || split.mode || ""
-          ).toLowerCase();
-
-          if (splitType === "cash") cash += splitAmount;
-          else if (splitType === "bank") bank += splitAmount;
-          else if (splitType === "credit") credit += splitAmount;
-          else if (splitType === "upi") upi += splitAmount;
-          else if (splitType === "card") card += splitAmount;
+        if (Array.isArray(sale?.paymentSplittingData)) {
+          processPayments(sale.paymentSplittingData, totals);
         }
       }
+
+      if (Array.isArray(checkout?.paymentSplittingData)) {
+        processPayments(checkout.paymentSplittingData, totals);
+      }
+
+   
 
       reportMap.set(checkInNumber, {
         checkInNumber,
         date: checkout.currentDate,
         billNo: checkout.voucherNumber,
         grcNo: checkout.grcno,
-        agentName: checkout.isHotelAgent ? checkout.customerName : "DIRECT",
+        agentName:  checkout.customerName ,
         guestName: checkout.guestName,
         room: checkout.selectedRooms?.map((r) => r.roomName).join(", ") || "",
         days: checkout.stayDays || 0,
         extraPerson: extraPersonCount,
         plan: checkout.foodPlan?.[0]?.foodPlan || "",
         roomSaleAmount,
-        planSaleAmount: Number(checkout.foodPlanTotal || 0),
+        planSaleAmount: roomDetails?.taxableSpecificFoodPlan || 0,
         cgst,
         sgst,
         totalTax,
@@ -8057,11 +8084,11 @@ export const getFOSalesSummary = async (req, res) => {
         restaurantSale: restaurantSaleAmount,
         modSale,
         advance,
-        bank,
-        cash,
-        credit,
-        upi,
-        card,
+        bank: totals.bank,
+        cash: totals.cash,
+        credit: totals.credit,
+        upi: totals.upi,
+        card: totals.card,
         billTotal,
       });
     }
