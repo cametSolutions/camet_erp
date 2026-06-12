@@ -1052,6 +1052,45 @@ export const fetchDashboardRoomCountSummary = async (req, res) => {
                     $cond: [{ $eq: ["$status", "blocked"] }, 1, 0],
                   },
                 },
+                availableRooms: {
+                  $push: {
+                    $cond: [
+                      { $in: ["$status", ["available", "vacant"]] },
+                      "$roomName",
+                      null,
+                    ],
+                  },
+                },
+                blockedRooms: {
+                  $push: {
+                    $cond: [
+                      { $eq: ["$status", "blocked"] },
+                      "$roomName",
+                      null,
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                roomCount: 1,
+                availableCount: 1,
+                blockedCount: 1,
+                availableRooms: {
+                  $filter: {
+                    input: "$availableRooms",
+                    as: "roomName",
+                    cond: { $ne: ["$$roomName", null] },
+                  },
+                },
+                blockedRooms: {
+                  $filter: {
+                    input: "$blockedRooms",
+                    as: "roomName",
+                    cond: { $ne: ["$$roomName", null] },
+                  },
+                },
               },
             },
           ],
@@ -1071,6 +1110,12 @@ export const fetchDashboardRoomCountSummary = async (req, res) => {
           },
           blockedCount: {
             $ifNull: [{ $arrayElemAt: ["$roomData.blockedCount", 0] }, 0],
+          },
+          availableRooms: {
+            $ifNull: [{ $arrayElemAt: ["$roomData.availableRooms", 0] }, []],
+          },
+          blockedRooms: {
+            $ifNull: [{ $arrayElemAt: ["$roomData.blockedRooms", 0] }, []],
           },
         },
       },
