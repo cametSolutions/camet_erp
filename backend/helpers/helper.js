@@ -71,10 +71,16 @@ export const aggregateTransactions = (
   voucherNumber,
   returnFullDetails
 ) => {
-  // Define base projection fields that are always included
+
+const modelName = model.modelName; // Extracts "Sales", "Receipt", etc.
+
+let partyName = (modelName === "Sales" || modelName === "Receipt")
+    ? "$guest.partyName"
+    : "$party.partyName";
+
   const baseProjection = {
     voucherNumber: `$${voucherNumber}`,
-    party_name: "$party.partyName",
+    party_name: { $ifNull: [partyName, "$party.partyName"] },
     accountGroup: "$party.accountGroup",
     type: type,
     enteredAmount:
