@@ -45,7 +45,13 @@ import { addAccountGroupIdToOutstanding, addAccountGroupIdToParties, convertPrim
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
 import { addSecondaryConfigurations, addSecUsers, allocateCompany, allocateSubDetails, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getSecUserDetails,updateTransactionAccess } from '../controllers/primaryUserController.js';
 
-import { fetchDashboardConsolidatedTotals, getSummary } from "../controllers/summaryController.js"
+import {
+    fetchDashboardCompanyDailyCollectionBreakdown,
+    fetchDashboardCompanyMonthlyCollectionBreakdown,
+    fetchDashboardCompanyRevenueBreakdown,
+    fetchDashboardConsolidatedTotals,
+    getSummary
+} from "../controllers/summaryController.js"
 import { getSummaryReport } from "../controllers/summaryController.js";
 import { fetchOutstandingDetails, fetchOutstandingTotal, getOutstandingSummary } from '../controllers/outStandingController.js';
 import { addProduct, deleteProduct, productDetails, editProduct, getProducts, addProductSubDetails, getProductSubDetails, deleteProductSubDetails, editProductSubDetails, getAllProductsForExcel } from '../controllers/productController.js';
@@ -436,6 +442,9 @@ router.put("/updateCheckout/:id", updateCheckout);
 router.get("/getSalesByCheckInNumber", getSalesByCheckInNumber);  
 router.put("/updateRestaurantSalePayments/:id", updateRestaurantSalePayments);
 router.get("/fetchDashboardConsolidatedTotals/:cmp_id/:primaryUserId",fetchDashboardConsolidatedTotals );
+router.get("/fetchDashboardCompanyRevenueBreakdown/:cmp_id/:primaryUserId", fetchDashboardCompanyRevenueBreakdown);
+router.get("/fetchDashboardCompanyDailyCollectionBreakdown/:cmp_id/:primaryUserId", fetchDashboardCompanyDailyCollectionBreakdown);
+router.get("/fetchDashboardCompanyMonthlyCollectionBreakdown/:cmp_id/:primaryUserId", fetchDashboardCompanyMonthlyCollectionBreakdown);
 
 router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
 // Route to get detailed booking information for a specific room and date

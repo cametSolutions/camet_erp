@@ -10,29 +10,32 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "./useIsMobile";
 
-
-// 🔁 Replace this with a real API call / prop
-const COMPANY_REVENUES = [
-  { name: "The Misty Glen Resort",  revenue: 980632,  color: "#1db974" },
-  { name: "Hillview Cottages",       revenue: 742100,  color: "#e8960c" },
-  { name: "Green Valley Suites",     revenue: 520000,  color: "#7c4dcc" },
-  { name: "Sunrise Inn",             revenue: 238300,  color: "#e84c4c" },
-];
-
-const TOTAL = COMPANY_REVENUES.reduce((sum, c) => sum + c.revenue, 0);
+const COMPANY_COLORS = ["#1db974", "#e8960c", "#7c4dcc", "#e84c4c", "#2a5298", "#0f766e"];
 
 const fmt = (n) => "₹" + n.toLocaleString("en-IN");
-const pct = (n) => ((n / TOTAL) * 100).toFixed(1) + "%";
+const pct = (n, total) =>
+  `${(((Number(n) || 0) / (Number(total) || 1)) * 100).toFixed(1)}%`;
 
-const RevenueBreakdownSheet = ({ open, onOpenChange, totalRevenue }) => {
+const RevenueBreakdownSheet = ({
+  open,
+  onOpenChange,
+  totalRevenue,
+  revenueBreakdown = [],
+}) => {
 
   const isMobile = useIsMobile();
+  const companyRevenues = revenueBreakdown.map((company, idx) => ({
+    name: company.companyName,
+    revenue: Number(company.revenue) || 0,
+    color: COMPANY_COLORS[idx % COMPANY_COLORS.length],
+  }));
+  const total = companyRevenues.reduce((sum, company) => sum + company.revenue, 0);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent 
    side={isMobile ? "bottom" : "right"}   // 👈 only change
-       className="w-full sm:w-[420px] p-0 flex flex-col">
+       className="w-full h-[70vh] sm:h-full sm:w-[420px] p-0 flex flex-col overflow-hidden">
 
         {/* Header */}
         <SheetHeader className="px-6 pt-6 pb-4">
@@ -45,15 +48,17 @@ const RevenueBreakdownSheet = ({ open, onOpenChange, totalRevenue }) => {
         </SheetHeader>
 
         {/* Total revenue banner */}
-        <div className="mx-6 mb-4 rounded-xl bg-gray-50 border border-gray-100 px-4 py-3 flex items-center justify-between">
-          <div>
+        <div className="mx-6 mb-4 rounded-xl bg-gray-50 border border-gray-100 px-4 py-3 flex flex-col items-center text-center gap-3 sm:flex-row sm:items-center sm:justify-between sm:text-left">
+          <div className="flex min-w-0 flex-col items-center gap-1 sm:items-start">
             <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">
               Total Revenue
             </p>
-            <p className="text-2xl font-bold text-gray-800 mt-0.5">{totalRevenue}</p>
+            <p className="text-xl sm:text-2xl font-bold text-gray-800 leading-tight break-all">
+              {totalRevenue}
+            </p>
           </div>
-          <Badge variant="secondary" className="text-xs">
-            {COMPANY_REVENUES.length} companies
+          <Badge variant="secondary" className="text-xs self-center sm:self-center">
+            {companyRevenues.length} companies
           </Badge>
         </div>
 
@@ -61,22 +66,22 @@ const RevenueBreakdownSheet = ({ open, onOpenChange, totalRevenue }) => {
 
         {/* Company list */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
-          {COMPANY_REVENUES.map((company, idx) => (
-            <div key={company.name} className="space-y-2">
+          {companyRevenues.map((company, idx) => (
+            <div key={`${company.name}-${idx}`} className="space-y-2">
 
-              {/* Rank + Name + Amount */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="text-[11px] text-gray-400 font-medium w-4 flex-shrink-0">
-                    #{idx + 1}
-                  </span>
-                  <span className="text-sm font-medium text-gray-700 truncate">
-                    {company.name}
-                  </span>
-                </div>
-                <span className="text-sm font-semibold text-gray-800 flex-shrink-0 tabular-nums">
-                  {fmt(company.revenue)}
+              {/* Rank + Name */}
+              <div className="flex items-start gap-2.5 min-w-0">
+                <span className="text-[11px] text-gray-400 font-medium w-4 flex-shrink-0 pt-0.5">
+                  #{idx + 1}
                 </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-700 break-words leading-snug">
+                    {company.name}
+                  </p>
+                  <p className="text-xs font-semibold text-gray-800 tabular-nums mt-1 break-all">
+                    {fmt(company.revenue)}
+                  </p>
+                </div>
               </div>
 
               {/* Progress bar */}
@@ -84,7 +89,7 @@ const RevenueBreakdownSheet = ({ open, onOpenChange, totalRevenue }) => {
                 <div
                   className="h-full rounded-full transition-all duration-700 ease-out"
                   style={{
-                    width: pct(company.revenue),
+                    width: pct(company.revenue, total),
                     backgroundColor: company.color,
                     opacity: 0.75,
                   }}
@@ -93,10 +98,15 @@ const RevenueBreakdownSheet = ({ open, onOpenChange, totalRevenue }) => {
 
               {/* Percentage */}
               <p className="text-[11px] text-gray-400 tabular-nums">
-                {pct(company.revenue)} of total
+                {pct(company.revenue, total)} of total
               </p>
             </div>
           ))}
+          {companyRevenues.length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-8">
+              No revenue data available
+            </p>
+          )}
         </div>
 
         {/* Footer */}

@@ -33,14 +33,121 @@ const SummaryDashboard = () => {
     return response.data;
   };
 
-  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["dashboard", "consolidatedTotals", cmp_id],
+  const fetchDashboardCompanyRevenueBreakdown = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardCompanyRevenueBreakdown/${cmp_id}/${primaryUserId}`,
+      { withCredentials: true }
+    );
+    return response.data;
+  };
+
+  const fetchDashboardCompanyDailyCollectionBreakdown = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardCompanyDailyCollectionBreakdown/${cmp_id}/${primaryUserId}`,
+      { withCredentials: true }
+    );
+    return response.data;
+  };
+
+  const fetchDashboardCompanyMonthlyCollectionBreakdown = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardCompanyMonthlyCollectionBreakdown/${cmp_id}/${primaryUserId}`,
+      { withCredentials: true }
+    );
+    return response.data;
+  };
+
+  const {
+    data,
+    isLoading: isTotalsLoading,
+    isError: isTotalsError,
+    error: totalsError,
+    refetch: refetchTotals,
+    isFetching: isTotalsFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "consolidatedTotals", cmp_id],
     queryFn: fetchDashboardConsolidatedTotals,
-    enabled: !!cmp_id,
+    enabled: !!cmp_id && !!primaryUserId,
     staleTime: 30 * 60 * 1000, // 30 minutes
     retry: 1,
     refetchOnWindowFocus: false,
   });
+
+  const {
+    data: revenueBreakdownData,
+    isLoading: isRevenueBreakdownLoading,
+    isError: isRevenueBreakdownError,
+    error: revenueBreakdownError,
+    refetch: refetchRevenueBreakdown,
+    isFetching: isRevenueBreakdownFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "companyRevenueBreakdown", primaryUserId],
+    queryFn: fetchDashboardCompanyRevenueBreakdown,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const {
+    data: dailyCollectionBreakdownData,
+    isLoading: isDailyCollectionBreakdownLoading,
+    isError: isDailyCollectionBreakdownError,
+    error: dailyCollectionBreakdownError,
+    refetch: refetchDailyCollectionBreakdown,
+    isFetching: isDailyCollectionBreakdownFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "dailyCollectionBreakdown", primaryUserId],
+    queryFn: fetchDashboardCompanyDailyCollectionBreakdown,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const {
+    data: monthlyCollectionBreakdownData,
+    isLoading: isMonthlyCollectionBreakdownLoading,
+    isError: isMonthlyCollectionBreakdownError,
+    error: monthlyCollectionBreakdownError,
+    refetch: refetchMonthlyCollectionBreakdown,
+    isFetching: isMonthlyCollectionBreakdownFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "monthlyCollectionBreakdown", primaryUserId],
+    queryFn: fetchDashboardCompanyMonthlyCollectionBreakdown,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const isLoading =
+    isTotalsLoading ||
+    isRevenueBreakdownLoading ||
+    isDailyCollectionBreakdownLoading ||
+    isMonthlyCollectionBreakdownLoading;
+  const isError =
+    isTotalsError ||
+    isRevenueBreakdownError ||
+    isDailyCollectionBreakdownError ||
+    isMonthlyCollectionBreakdownError;
+  const error =
+    totalsError ||
+    revenueBreakdownError ||
+    dailyCollectionBreakdownError ||
+    monthlyCollectionBreakdownError;
+  const isFetching =
+    isTotalsFetching ||
+    isRevenueBreakdownFetching ||
+    isDailyCollectionBreakdownFetching ||
+    isMonthlyCollectionBreakdownFetching;
+
+  const refetch = () => {
+    refetchTotals();
+    refetchRevenueBreakdown();
+    refetchDailyCollectionBreakdown();
+    refetchMonthlyCollectionBreakdown();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -112,8 +219,15 @@ const SummaryDashboard = () => {
         {!isLoading && !isError && data && (
           <SummaryCards
             totalRevenue={fmt(data.totalRevenue)}
+            revenueBreakdown={revenueBreakdownData?.companyWiseRevenue ?? []}
             dailyCollection={fmt(data.dailyCollection)}
+            dailyCollectionBreakdown={
+              dailyCollectionBreakdownData?.companyWiseCollection ?? []
+            }
             monthlyCollection={fmt(data.monthlyCollection)}
+            monthlyCollectionBreakdown={
+              monthlyCollectionBreakdownData?.companyWiseCollection ?? []
+            }
             dailyCash={fmt(data.cashCollection?.daily)}
             dailyBank={fmt(data.bankCollection?.daily)}
             monthlyCash={fmt(data.cashCollection?.monthly)}

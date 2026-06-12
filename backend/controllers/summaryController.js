@@ -6,6 +6,7 @@ import purchaseModel from "../models/purchaseModel.js";
 import { aggregateSummary } from "../helpers/summaryHelper.js";
 import debitNoteModel from "../models/debitNoteModel.js";
 import creditNoteModel from "../models/creditNoteModel.js";
+import OrganizationModel from "../models/OragnizationModel.js";
 import mongoose from "mongoose";
 
 
@@ -760,6 +761,270 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
       },
     });
 
+  } catch (error) {
+    console.log("error:", error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const fetchDashboardCompanyRevenueBreakdown = async (req, res) => {
+  try {
+    const { primaryUserId } = req.params;
+    const primaryUserObjectId = new mongoose.Types.ObjectId(primaryUserId);
+
+    const companyWiseRevenue = await OrganizationModel.aggregate([
+      {
+        $match: {
+          owner: primaryUserObjectId,
+        },
+      },
+      {
+        $lookup: {
+          from: salesModel.collection.name,
+          let: { companyId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$cmp_id", "$$companyId"] },
+                    { $eq: ["$Primary_user_id", primaryUserObjectId] },
+                    { $ne: ["$isComplimentary", true] },
+                  ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                revenue: { $sum: { $ifNull: ["$finalAmount", 0] } },
+              },
+            },
+          ],
+          as: "revenueData",
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          cmp_id: "$_id",
+          companyName: { $ifNull: ["$name", "Unknown Company"] },
+          revenue: {
+            $round: [
+              {
+                $ifNull: [
+                  { $arrayElemAt: ["$revenueData.revenue", 0] },
+                  0,
+                ],
+              },
+              2,
+            ],
+          },
+        },
+      },
+      { $sort: { revenue: -1, companyName: 1 } },
+    ]);
+
+    return res.status(200).json({
+      message: "Company-wise revenue fetched successfully",
+      companyWiseRevenue,
+    });
+  } catch (error) {
+    console.log("error:", error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const getISTDateRanges = () => {
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+  const nowIST = new Date(Date.now() + IST_OFFSET_MS);
+
+  const todayStartIST = new Date(
+    Date.UTC(
+      nowIST.getUTCFullYear(),
+      nowIST.getUTCMonth(),
+      nowIST.getUTCDate(),
+      0, 0, 0, 0
+    ) - IST_OFFSET_MS
+  );
+
+  const todayEndIST = new Date(
+    Date.UTC(
+      nowIST.getUTCFullYear(),
+      nowIST.getUTCMonth(),
+      nowIST.getUTCDate(),
+      23, 59, 59, 999
+    ) - IST_OFFSET_MS
+  );
+
+  const monthStartIST = new Date(
+    Date.UTC(
+      nowIST.getUTCFullYear(),
+      nowIST.getUTCMonth(),
+      1, 0, 0, 0, 0
+    ) - IST_OFFSET_MS
+  );
+
+  const monthEndIST = new Date(
+    Date.UTC(
+      nowIST.getUTCFullYear(),
+      nowIST.getUTCMonth() + 1,
+      0, 23, 59, 59, 999
+    ) - IST_OFFSET_MS
+  );
+
+  return { todayStartIST, todayEndIST, monthStartIST, monthEndIST };
+};
+
+const getCompanyWiseCollectionBreakdown = async ({ primaryUserId, dateMatch }) => {
+  const primaryUserObjectId = new mongoose.Types.ObjectId(primaryUserId);
+
+  return OrganizationModel.aggregate([
+    {
+      $match: {
+        owner: primaryUserObjectId,
+      },
+    },
+    {
+      $lookup: {
+        from: salesModel.collection.name,
+        let: { companyId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$cmp_id", "$$companyId"] },
+                  { $eq: ["$Primary_user_id", primaryUserObjectId] },
+                  { $ne: ["$isComplimentary", true] },
+                  { $gte: ["$date", dateMatch.$gte] },
+                  { $lte: ["$date", dateMatch.$lte] },
+                ],
+              },
+            },
+          },
+          { $unwind: "$paymentSplittingData" },
+          {
+            $match: {
+              "paymentSplittingData.type": { $ne: "credit" },
+              "paymentSplittingData.amount": { $gt: 0 },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              cashTotal: {
+                $sum: {
+                  $cond: [
+                    { $eq: ["$paymentSplittingData.type", "cash"] },
+                    "$paymentSplittingData.amount",
+                    0,
+                  ],
+                },
+              },
+              bankTotal: {
+                $sum: {
+                  $cond: [
+                    { $eq: ["$paymentSplittingData.type", "cash"] },
+                    0,
+                    "$paymentSplittingData.amount",
+                  ],
+                },
+              },
+            },
+          },
+        ],
+        as: "collectionData",
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        cmp_id: "$_id",
+        companyName: { $ifNull: ["$name", "Unknown Company"] },
+        cashTotal: {
+          $round: [
+            {
+              $ifNull: [
+                { $arrayElemAt: ["$collectionData.cashTotal", 0] },
+                0,
+              ],
+            },
+            2,
+          ],
+        },
+        bankTotal: {
+          $round: [
+            {
+              $ifNull: [
+                { $arrayElemAt: ["$collectionData.bankTotal", 0] },
+                0,
+              ],
+            },
+            2,
+          ],
+        },
+        total: {
+          $round: [
+            {
+              $add: [
+                {
+                  $ifNull: [
+                    { $arrayElemAt: ["$collectionData.cashTotal", 0] },
+                    0,
+                  ],
+                },
+                {
+                  $ifNull: [
+                    { $arrayElemAt: ["$collectionData.bankTotal", 0] },
+                    0,
+                  ],
+                },
+              ],
+            },
+            2,
+          ],
+        },
+      },
+    },
+    { $sort: { total: -1, companyName: 1 } },
+  ]);
+};
+
+export const fetchDashboardCompanyDailyCollectionBreakdown = async (req, res) => {
+  try {
+    const { primaryUserId } = req.params;
+    const { todayStartIST, todayEndIST } = getISTDateRanges();
+
+    const companyWiseCollection = await getCompanyWiseCollectionBreakdown({
+      primaryUserId,
+      dateMatch: { $gte: todayStartIST, $lte: todayEndIST },
+    });
+
+    return res.status(200).json({
+      message: "Company-wise daily collection fetched successfully",
+      companyWiseCollection,
+    });
+  } catch (error) {
+    console.log("error:", error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const fetchDashboardCompanyMonthlyCollectionBreakdown = async (req, res) => {
+  try {
+    const { primaryUserId } = req.params;
+    const { monthStartIST, monthEndIST } = getISTDateRanges();
+
+    const companyWiseCollection = await getCompanyWiseCollectionBreakdown({
+      primaryUserId,
+      dateMatch: { $gte: monthStartIST, $lte: monthEndIST },
+    });
+
+    return res.status(200).json({
+      message: "Company-wise monthly collection fetched successfully",
+      companyWiseCollection,
+    });
   } catch (error) {
     console.log("error:", error.message);
     return res.status(500).json({ message: "Internal server error" });
