@@ -80,7 +80,7 @@ const reports = [
     path: "/sUsers/TravelAgentReport",
   },
    {
-    label: "FO Sales Summary",
+    label: "FO Bill Summary",
     desc: "Front office Sales report",
     icon: FileText,
     iconBg: "bg-blue-50",
