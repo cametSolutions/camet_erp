@@ -460,9 +460,8 @@ const handleRoomSwapConfirm = async () => {
       blocked: 0,
     };
     filteredRooms.forEach((room) => {
-      if (counts.hasOwnProperty(room.status)) {
-        counts[room.status]++;
-      }
+        const status = room.status === "available" ? "vacant" : room.status;
+      if (counts.hasOwnProperty(status)) counts[status]++;
     });
 
     return counts;
@@ -1068,7 +1067,7 @@ console.log(baseStatus);
                         <div className="flex justify-center items-center py-8">
                           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
                         </div>
-                      ) : bookings.filter((b) => {
+                      ) : bookings?.filter((b) => {
                           const bookingDate = new Date(b.bookingDate);
                           const today = new Date();
                           const isToday =
