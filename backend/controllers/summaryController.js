@@ -582,7 +582,7 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
 
     const primaryUserObjectId = new mongoose.Types.ObjectId(primaryUserId);
 
-    const [salesResult, receiptResult] = await Promise.all([
+    const [salesResult, receiptResult, restaurantDirectSummary] = await Promise.all([
       salesModel.aggregate([
         {
           $match: {
@@ -704,6 +704,13 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
           },
         },
       ]),
+      getRestaurantDirectCollectionSummary({
+        primaryUserObjectId,
+        todayStartIST,
+        todayEndIST,
+        monthStartIST,
+        monthEndIST,
+      }),
     ]);
 
     // ── Helper: [{_id: "cash", total: X}] → { cash: X, bank: Y } 
@@ -723,18 +730,20 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
     return res.status(200).json({
       totalRevenue: salesResult[0]?.totalRevenue ?? 0,
       monthlyCollection:
-        receiptSummary.monthlyTotal?.[0]?.total ?? 0,
+        (receiptSummary.monthlyTotal?.[0]?.total ?? 0) +
+        (restaurantDirectSummary.monthly.total ?? 0),
       dailyCollection:
-        receiptSummary.dailyTotal?.[0]?.total ?? 0,
+        (receiptSummary.dailyTotal?.[0]?.total ?? 0) +
+        (restaurantDirectSummary.daily.total ?? 0),
       cashCollection: {
-        allTime: allTime.cash,
-        monthly: monthly.cash,
-        daily: daily.cash,
+        allTime: allTime.cash + (restaurantDirectSummary.allTime.cashTotal ?? 0),
+        monthly: monthly.cash + (restaurantDirectSummary.monthly.cashTotal ?? 0),
+        daily: daily.cash + (restaurantDirectSummary.daily.cashTotal ?? 0),
       },
       bankCollection: {
-        allTime: allTime.bank,
-        monthly: monthly.bank,
-        daily: daily.bank,
+        allTime: allTime.bank + (restaurantDirectSummary.allTime.bankTotal ?? 0),
+        monthly: monthly.bank + (restaurantDirectSummary.monthly.bankTotal ?? 0),
+        daily: daily.bank + (restaurantDirectSummary.daily.bankTotal ?? 0),
       },
     });
 
@@ -853,6 +862,168 @@ const getISTDateRanges = () => {
   return { todayStartIST, todayEndIST, monthStartIST, monthEndIST };
 };
 
+const buildRestaurantDirectSalesPipeline = ({
+  primaryUserObjectId,
+  dateMatch = null,
+  companyExpr = { $eq: ["$Primary_user_id", primaryUserObjectId] },
+  groupByCompany = false,
+}) => {
+  const pipeline = [
+    {
+      $match: {
+        Primary_user_id: primaryUserObjectId,
+        isComplimentary: { $ne: true },
+        isCancelled: { $ne: true },
+      },
+    },
+    {
+      $lookup: {
+        from: VoucherSeriesModel.collection.name,
+        let: { saleSeriesId: "$series_id", saleCmpId: "$cmp_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$cmp_id", "$$saleCmpId"] },
+            },
+          },
+          { $unwind: "$series" },
+          {
+            $match: {
+              $expr: { $eq: ["$series._id", "$$saleSeriesId"] },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              under: { $toLower: "$series.under" },
+            },
+          },
+        ],
+        as: "seriesMeta",
+      },
+    },
+    {
+      $addFields: {
+        saleUnder: { $arrayElemAt: ["$seriesMeta.under", 0] },
+        hasCheckInNumber: {
+          $gt: [
+            {
+              $size: {
+                $filter: {
+                  input: { $ifNull: ["$convertedFrom", []] },
+                  as: "converted",
+                  cond: {
+                    $and: [
+                      { $ne: [{ $ifNull: ["$$converted.checkInNumber", null] }, null] },
+                      { $ne: ["$$converted.checkInNumber", ""] },
+                    ],
+                  },
+                },
+              },
+            },
+            0,
+          ],
+        },
+      },
+    },
+    {
+      $match: {
+        $expr: companyExpr,
+        saleUnder: "restaurant",
+        hasCheckInNumber: false,
+      },
+    },
+  ];
+
+  if (dateMatch) {
+    pipeline.push({
+      $match: {
+        date: dateMatch,
+      },
+    });
+  }
+
+  pipeline.push(
+    { $unwind: "$paymentSplittingData" },
+    {
+      $match: {
+        "paymentSplittingData.type": { $ne: "credit" },
+        "paymentSplittingData.amount": { $gt: 0 },
+      },
+    },
+    {
+      $group: {
+        _id: groupByCompany ? "$cmp_id" : null,
+        cashTotal: {
+          $sum: {
+            $cond: [
+              { $eq: ["$paymentSplittingData.type", "cash"] },
+              "$paymentSplittingData.amount",
+              0,
+            ],
+          },
+        },
+        bankTotal: {
+          $sum: {
+            $cond: [
+              { $eq: ["$paymentSplittingData.type", "cash"] },
+              0,
+              "$paymentSplittingData.amount",
+            ],
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        cashTotal: { $ifNull: ["$cashTotal", 0] },
+        bankTotal: { $ifNull: ["$bankTotal", 0] },
+        total: {
+          $add: [
+            { $ifNull: ["$cashTotal", 0] },
+            { $ifNull: ["$bankTotal", 0] },
+          ],
+        },
+      },
+    },
+  );
+
+  return pipeline;
+};
+
+const getRestaurantDirectCollectionSummary = async ({
+  primaryUserObjectId,
+  todayStartIST,
+  todayEndIST,
+  monthStartIST,
+  monthEndIST,
+}) => {
+  const [summary] = await salesModel.aggregate([
+    {
+      $facet: {
+        daily: buildRestaurantDirectSalesPipeline({
+          primaryUserObjectId,
+          dateMatch: { $gte: todayStartIST, $lte: todayEndIST },
+        }),
+        monthly: buildRestaurantDirectSalesPipeline({
+          primaryUserObjectId,
+          dateMatch: { $gte: monthStartIST, $lte: monthEndIST },
+        }),
+        allTime: buildRestaurantDirectSalesPipeline({
+          primaryUserObjectId,
+        }),
+      },
+    },
+  ]);
+
+  return {
+    daily: summary?.daily?.[0] ?? { cashTotal: 0, bankTotal: 0, total: 0 },
+    monthly: summary?.monthly?.[0] ?? { cashTotal: 0, bankTotal: 0, total: 0 },
+    allTime: summary?.allTime?.[0] ?? { cashTotal: 0, bankTotal: 0, total: 0 },
+  };
+};
+
 const getCompanyWiseCollectionBreakdown = async ({ primaryUserId, dateMatch }) => {
   const primaryUserObjectId = new mongoose.Types.ObjectId(primaryUserId);
 
@@ -864,7 +1035,7 @@ const getCompanyWiseCollectionBreakdown = async ({ primaryUserId, dateMatch }) =
     },
     {
       $lookup: {
-        from: salesModel.collection.name,
+        from: receiptModel.collection.name,
         let: { companyId: "$_id" },
         pipeline: [
           {
@@ -873,18 +1044,24 @@ const getCompanyWiseCollectionBreakdown = async ({ primaryUserId, dateMatch }) =
                 $and: [
                   { $eq: ["$cmp_id", "$$companyId"] },
                   { $eq: ["$Primary_user_id", primaryUserObjectId] },
-                  { $ne: ["$isComplimentary", true] },
                   { $gte: ["$date", dateMatch.$gte] },
                   { $lte: ["$date", dateMatch.$lte] },
+                  { $ne: ["$isCancelled", true] },
                 ],
               },
             },
           },
-          { $unwind: "$paymentSplittingData" },
+          {
+            $addFields: {
+              normalizedPaymentMethod: {
+                $toLower: { $ifNull: ["$paymentMethod", ""] },
+              },
+            },
+          },
           {
             $match: {
-              "paymentSplittingData.type": { $ne: "credit" },
-              "paymentSplittingData.amount": { $gt: 0 },
+              enteredAmount: { $gt: 0 },
+              normalizedPaymentMethod: { $ne: "credit" },
             },
           },
           {
@@ -893,8 +1070,8 @@ const getCompanyWiseCollectionBreakdown = async ({ primaryUserId, dateMatch }) =
               cashTotal: {
                 $sum: {
                   $cond: [
-                    { $eq: ["$paymentSplittingData.type", "cash"] },
-                    "$paymentSplittingData.amount",
+                    { $eq: ["$normalizedPaymentMethod", "cash"] },
+                    "$enteredAmount",
                     0,
                   ],
                 },
@@ -902,16 +1079,28 @@ const getCompanyWiseCollectionBreakdown = async ({ primaryUserId, dateMatch }) =
               bankTotal: {
                 $sum: {
                   $cond: [
-                    { $eq: ["$paymentSplittingData.type", "cash"] },
+                    { $eq: ["$normalizedPaymentMethod", "cash"] },
                     0,
-                    "$paymentSplittingData.amount",
+                    "$enteredAmount",
                   ],
                 },
               },
             },
           },
         ],
-        as: "collectionData",
+        as: "receiptCollectionData",
+      },
+    },
+    {
+      $lookup: {
+        from: salesModel.collection.name,
+        let: { companyId: "$_id" },
+        pipeline: buildRestaurantDirectSalesPipeline({
+          primaryUserObjectId,
+          dateMatch,
+          companyExpr: { $eq: ["$cmp_id", "$$companyId"] },
+        }),
+        as: "restaurantDirectCollectionData",
       },
     },
     {
@@ -922,9 +1111,24 @@ const getCompanyWiseCollectionBreakdown = async ({ primaryUserId, dateMatch }) =
         cashTotal: {
           $round: [
             {
-              $ifNull: [
-                { $arrayElemAt: ["$collectionData.cashTotal", 0] },
-                0,
+              $add: [
+                {
+                  $ifNull: [
+                    { $arrayElemAt: ["$receiptCollectionData.cashTotal", 0] },
+                    0,
+                  ],
+                },
+                {
+                  $ifNull: [
+                    {
+                      $arrayElemAt: [
+                        "$restaurantDirectCollectionData.cashTotal",
+                        0,
+                      ],
+                    },
+                    0,
+                  ],
+                },
               ],
             },
             2,
@@ -933,9 +1137,24 @@ const getCompanyWiseCollectionBreakdown = async ({ primaryUserId, dateMatch }) =
         bankTotal: {
           $round: [
             {
-              $ifNull: [
-                { $arrayElemAt: ["$collectionData.bankTotal", 0] },
-                0,
+              $add: [
+                {
+                  $ifNull: [
+                    { $arrayElemAt: ["$receiptCollectionData.bankTotal", 0] },
+                    0,
+                  ],
+                },
+                {
+                  $ifNull: [
+                    {
+                      $arrayElemAt: [
+                        "$restaurantDirectCollectionData.bankTotal",
+                        0,
+                      ],
+                    },
+                    0,
+                  ],
+                },
               ],
             },
             2,
@@ -946,15 +1165,45 @@ const getCompanyWiseCollectionBreakdown = async ({ primaryUserId, dateMatch }) =
             {
               $add: [
                 {
-                  $ifNull: [
-                    { $arrayElemAt: ["$collectionData.cashTotal", 0] },
-                    0,
+                  $add: [
+                    {
+                      $ifNull: [
+                        { $arrayElemAt: ["$receiptCollectionData.cashTotal", 0] },
+                        0,
+                      ],
+                    },
+                    {
+                      $ifNull: [
+                        {
+                          $arrayElemAt: [
+                            "$restaurantDirectCollectionData.cashTotal",
+                            0,
+                          ],
+                        },
+                        0,
+                      ],
+                    },
                   ],
                 },
                 {
-                  $ifNull: [
-                    { $arrayElemAt: ["$collectionData.bankTotal", 0] },
-                    0,
+                  $add: [
+                    {
+                      $ifNull: [
+                        { $arrayElemAt: ["$receiptCollectionData.bankTotal", 0] },
+                        0,
+                      ],
+                    },
+                    {
+                      $ifNull: [
+                        {
+                          $arrayElemAt: [
+                            "$restaurantDirectCollectionData.bankTotal",
+                            0,
+                          ],
+                        },
+                        0,
+                      ],
+                    },
                   ],
                 },
               ],
@@ -1052,6 +1301,45 @@ export const fetchDashboardRoomCountSummary = async (req, res) => {
                     $cond: [{ $eq: ["$status", "blocked"] }, 1, 0],
                   },
                 },
+                availableRooms: {
+                  $push: {
+                    $cond: [
+                      { $in: ["$status", ["available", "vacant"]] },
+                      "$roomName",
+                      null,
+                    ],
+                  },
+                },
+                blockedRooms: {
+                  $push: {
+                    $cond: [
+                      { $eq: ["$status", "blocked"] },
+                      "$roomName",
+                      null,
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                roomCount: 1,
+                availableCount: 1,
+                blockedCount: 1,
+                availableRooms: {
+                  $filter: {
+                    input: "$availableRooms",
+                    as: "roomName",
+                    cond: { $ne: ["$$roomName", null] },
+                  },
+                },
+                blockedRooms: {
+                  $filter: {
+                    input: "$blockedRooms",
+                    as: "roomName",
+                    cond: { $ne: ["$$roomName", null] },
+                  },
+                },
               },
             },
           ],
@@ -1071,6 +1359,12 @@ export const fetchDashboardRoomCountSummary = async (req, res) => {
           },
           blockedCount: {
             $ifNull: [{ $arrayElemAt: ["$roomData.blockedCount", 0] }, 0],
+          },
+          availableRooms: {
+            $ifNull: [{ $arrayElemAt: ["$roomData.availableRooms", 0] }, []],
+          },
+          blockedRooms: {
+            $ifNull: [{ $arrayElemAt: ["$roomData.blockedRooms", 0] }, []],
           },
         },
       },
