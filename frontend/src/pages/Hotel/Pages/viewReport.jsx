@@ -24,10 +24,49 @@ const NUMERIC_KEYS = [
   "netTotal", "cash", "upi", "bank", "card", "credit",
 ];
 
-const COLUMNS = [
+const SUMMARY_NUMERIC_KEYS = [
+  "dayTariff",
+  "cgst",
+  "sgst",
+  "dayPlanSales",
+  "dayPlanCGST",
+  "dayPlanSGST",
+  "roomSales",
+  "planSales",
+  "planSalesCGST",
+  "planSalesSGST",
+  "grossAmount",
+];
+
+const SUMMARY_COLUMNS = [
+  { key: "date", label: "Date", width: "90px", render: formatDate },
+  { key: "billNo", label: "Bill No", width: "120px" },
+  { key: "agentName", label: "Agent Name", width: "160px" },
+  { key: "guestName", label: "Guest Name", width: "160px" },
+  { key: "rooms", label: "Rooms", width: "110px" },
+  { key: "days", label: "Days", width: "70px" },
+  { key: "extraPerson", label: "Extra Person", width: "100px" },
+  { key: "plan", label: "Plan", width: "70px" },
+  { key: "perDayRevenue", label: "Day Tariff", width: "100px", render: fmt },
+  { key: "roomRentCGST", label: "CGST", width: "80px", render: fmt },
+  { key: "roomRentSGST", label: "SGST", width: "80px", render: fmt },
+  { key: "dayPlanSales", label: "Day Plan Sales", width: "120px", render: fmt },
+  { key: "dayPlanCGST", label: "Day Plan CGST", width: "100px", render: fmt },
+  { key: "dayPlanSGST", label: "Day Plan SGST", width: "100px", render: fmt },
+  { key: "roomRentTotal", label: "Room Sales", width: "100px", render: fmt },
+  { key: "planSales", label: "Plan Sales", width: "100px", render: fmt },
+  { key: "planSalesCGST", label: "Plan Sales CGST", width: "100px", render: fmt },
+  { key: "planSalesSGST", label: "Plan Sales SGST", width: "100px", render: fmt },
+  { key: "grossAmount", label: "Gross Amount", width: "110px", render: fmt },
+];
+
+
+
+const  DETAIL_COLUMNS = [
   { key: "billNo",            label: "Bill No",       width: "120px" },
   { key: "date",              label: "Date",           width: "90px",  render: formatDate },
   { key: "agentName",         label: "Agent Name",     width: "160px" },
+  { key: "guestName", label: "Guest Name", width: "160px" },
   { key: "plan",              label: "Plan",           width: "50px" },
   { key: "rooms",             label: "Rooms",          width: "80px" },
   { key: "noRooms",           label: "No.Rms",         width: "60px" },
@@ -37,6 +76,7 @@ const COLUMNS = [
   { key: "totalAmount",       label: "Total Amt",      width: "90px",  render: fmt },
   { key: "perDayRevenue",     label: "Per Day",        width: "80px",  render: fmt },
   { key: "noPax",             label: "Pax",            width: "50px" },
+   { key: "extraPerson", label: "Extra Person", width: "100px" },
   { key: "planRate",             label: "planRate",            width: "50px" },
   { key: "planTotal",         label: "Plan Total",     width: "90px",  render: fmt },
   { key: "planTaxable",       label: "Plan Taxable",   width: "100px", render: fmt },
@@ -45,6 +85,9 @@ const COLUMNS = [
   { key: "roomRentTotal",     label: "Rm Total",       width: "90px",  render: fmt },
   { key: "roomRentCGST",      label: "CGST",           width: "70px",  render: fmt },
   { key: "roomRentSGST",      label: "SGST",           width: "70px",  render: fmt },
+   { key: "dayPlanSales", label: "Day Plan Sales", width: "120px", render: fmt },
+  { key: "dayPlanCGST", label: "Day Plan CGST", width: "100px", render: fmt },
+  { key: "dayPlanSGST", label: "Day Plan SGST", width: "100px", render: fmt },
   { key: "planSales",    label: "Plan Sales",   width: "100px", render: fmt },
   { key: "planSalesCGST",     label: "Pl.CGST",        width: "70px",  render: fmt },
   { key: "planSalesSGST",     label: "Pl.SGST",        width: "70px",  render: fmt },
@@ -73,6 +116,7 @@ export default function ViewReport() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+   const [showDetails, setShowDetails] = useState(false);
 
   // ✅ Same pattern as OccupancyCheckoutReport
   const cmp_id = useSelector(
@@ -136,13 +180,14 @@ export default function ViewReport() {
   const total = (key) =>
     rows.reduce((s, r) => s + (Number(r[key]) || 0), 0);
 
+ const getColumns = () => (showDetails ? DETAIL_COLUMNS : SUMMARY_COLUMNS);
+
   const handleExportExcel = () => {
-    const headers = COLUMNS.map((c) => c.label);
-    const dataRows = rows.map((r) =>
-      COLUMNS.map((col) =>
-        col.render && NUMERIC_KEYS.includes(col.key)
-          ? Number(r[col.key]) || 0
-          : r[col.key] ?? ""
+     const cols = getColumns();
+    const headers = cols.map((c) => c.label);
+     const dataRows = rows.map((r) =>
+      cols.map((col) =>
+        col.render && col.key !== "date" ? col.render(r[col.key]) : r[col.key] ?? ""
       )
     );
 
@@ -169,9 +214,11 @@ export default function ViewReport() {
     const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     saveAs(
       new Blob([buf], { type: "application/octet-stream" }),
-      `Sales_Report_${filters.fromDate}_to_${filters.toDate}.xlsx`
+      `Sales_Report_${filters.fromDate}_to_${filters.toDate}${showDetails ? "_details" : ""}.xlsx`
     );
   };
+
+  const columns = getColumns();
 
   return (
     <>
@@ -263,13 +310,25 @@ export default function ViewReport() {
            
           
 
-            <div className="mt-4 flex flex-col gap-1 text-xs md:flex-row md:justify-between">
-              <div>
+           <div className="flex items-center justify-between gap-2">
+              <div className="text-xs">
                 <span className="font-medium">Period :- </span>
                 <span>
                   {filters.fromDate || "—"} to {filters.toDate || "—"}
                 </span>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowDetails((prev) => !prev)}
+                disabled={!rows.length}
+                className="inline-flex h-8 items-center justify-center rounded-md bg-indigo-600 px-3 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 print:hidden"
+              >
+                {showDetails ? "Hide Details" : "Details"}
+              </button>
+            </div>
+
+            <div className="mt-2 text-xs md:flex md:justify-between">
               <div>
                 <span className="font-medium">Print Date & Time :- </span>
                 <span>
@@ -278,13 +337,14 @@ export default function ViewReport() {
               </div>
             </div>
 
+
             {/* Table */}
             <div className="mt-4 overflow-x-auto">
               <table className="border-collapse text-xs min-w-max w-full">
                 <thead>
                   <tr className="bg-[#1E3A5F] text-white">
                     <th className="border border-slate-400 px-2 py-2 text-center">#</th>
-                    {COLUMNS.map((col) => (
+                    {columns.map((col) => (
                       <th
                         key={col.key}
                         className="border border-slate-400 px-2 py-2 text-center whitespace-nowrap"
@@ -299,7 +359,7 @@ export default function ViewReport() {
                   {loading ? (
                     <tr>
                       <td
-                        colSpan={COLUMNS.length + 1}
+                        colSpan={columns.length + 1}
                         className="px-2 py-6 text-center text-slate-500"
                       >
                         Loading report...
@@ -315,7 +375,7 @@ export default function ViewReport() {
                           <td className="border border-slate-200 px-2 py-1 text-center text-slate-400">
                             {idx + 1}
                           </td>
-                          {COLUMNS.map((col) => (
+                          {columns.map((col) => (
                             <td
                               key={col.key}
                               className="border border-slate-200 px-2 py-1 whitespace-nowrap"
@@ -336,12 +396,12 @@ export default function ViewReport() {
                         >
                           TOTAL
                         </td>
-                        {COLUMNS.slice(1).map((col) => (
+                        {columns.slice(1).map((col) => (
                           <td
                             key={col.key}
                             className="border border-slate-300 px-2 py-1.5 text-right"
                           >
-                            {NUMERIC_KEYS.includes(col.key)
+                            {SUMMARY_NUMERIC_KEYS.includes(col.key)
                               ? fmt(total(col.key))
                               : ""}
                           </td>
@@ -351,7 +411,7 @@ export default function ViewReport() {
                   ) : (
                     <tr>
                       <td
-                        colSpan={COLUMNS.length + 1}
+                        colSpan={columns.length + 1}
                         className="px-2 py-6 text-center text-slate-500"
                       >
                         {filters.fromDate
