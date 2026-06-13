@@ -54,7 +54,7 @@ api.interceptors.response.use(
         "pUserData"
       );
     } else if (
-      error.response.status == 403 &&
+      error.response?.status == 403 &&
       error.response.data.companyRestricted
     ) {
       showSwalAlert2("This company is restricted", "warning");
