@@ -7681,6 +7681,7 @@ export const getTravelAgentSalesReport = async (req, res) => {
               },
             },
           ],
+        as: "agentDoc", 
         },
       },
 
