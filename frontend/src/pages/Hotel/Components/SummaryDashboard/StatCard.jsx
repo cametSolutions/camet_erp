@@ -73,8 +73,8 @@ const StatCard = ({
   return (
     <div
       onClick={onClick}
-      className={`relative overflow-hidden rounded-2xl p-4 sm:p-5 flex flex-col
-                  justify-between min-h-[155px] sm:min-h-[130px] transition-all duration-200
+      className={`relative overflow-hidden rounded-2xl p-4 sm:p-[18px] flex flex-col
+                  justify-between min-h-[150px] sm:min-h-[126px] transition-all duration-200
                   ${isClickable
                     ? "cursor-pointer hover:scale-[1.02] hover:brightness-110 active:scale-[0.98]"
                     : ""
@@ -102,7 +102,7 @@ const StatCard = ({
       </p>
 
       {/* Value */}
-      <p className="text-[1.15rem] sm:text-[1.4rem] lg:text-[1.5rem] font-bold text-white z-10 leading-tight mt-1 tracking-tight break-all max-w-[65%] sm:max-w-[70%]">
+      <p className="text-[1rem] sm:text-[1.2rem] lg:text-[1.3rem] font-bold text-white z-10 leading-tight mt-1 tracking-tight break-all max-w-[68%] sm:max-w-[72%]">
         {value}
       </p>
 
@@ -117,7 +117,7 @@ const StatCard = ({
               <DetailIcon type={cashIcon} />
               <p className="text-[8px] sm:text-[9px] text-white uppercase tracking-wider leading-none">{cashLabel}</p>
             </div>
-            <p className="text-[12px] sm:text-[14px] font-semibold text-white leading-tight mt-1 break-all">
+            <p className="text-[11px] sm:text-[12px] font-semibold text-white leading-tight mt-1 break-all">
               {cashTotal}
             </p>
           </div>
@@ -129,7 +129,7 @@ const StatCard = ({
               <DetailIcon type={bankIcon} />
               <p className="text-[8px] sm:text-[9px] text-white uppercase tracking-wider leading-none">{bankLabel}</p>
             </div>
-            <p className="text-[12px] sm:text-[14px] font-semibold text-white leading-tight mt-1 break-all">
+            <p className="text-[11px] sm:text-[12px] font-semibold text-white leading-tight mt-1 break-all">
               {bankTotal}
             </p>
           </div>
