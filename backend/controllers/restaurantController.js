@@ -1209,21 +1209,7 @@ export const directSale = async (req, res) => {
         false
       );
 
-      // Settlement entries (cash/online)
-      // if (party?.paymentType !== "party") {
-      //   console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh");
-      //   await saveSettlement(
-      //     paymentDetails,
-      //     selectedParty,
-      //     cmp_id,
-      //     savedVoucherData[0],
-      //     cashAmt + onlineAmt,
-      //     cashAmt,
-      //     onlineAmt,
-      //     req,
-      //     session,
-      //   );
-      // }
+
 
       // ✅ Convert Mongoose document to plain object and ensure _id is included
       const salesRecordData = savedVoucherData[0].toObject
