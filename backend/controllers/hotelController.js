@@ -2277,8 +2277,6 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
       } else if (bookedRoomIds.has(room._id.toString())) {
         status = "booked";
       }
-    
-
 
       return { ...room, status };
     });
@@ -5810,7 +5808,9 @@ export const getFlashReportForDate = async (req, res) => {
     const { cmp_id, reportDate, reportMonth, reportYear } = req.query;
 
     if (!cmp_id) {
-      return res.status(400).json({ success: false, message: "cmp_id is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "cmp_id is required" });
     }
 
     const org = await Organization.findById(cmp_id).lean();
@@ -5818,17 +5818,22 @@ export const getFlashReportForDate = async (req, res) => {
 
     // ═══════ ROOMS MASTER ═══════
     const allRooms = await roomModal
-      .find({ cmp_id: new mongoose.Types.ObjectId(cmp_id) }, { roomName: 1, status: 1 })
+      .find(
+        { cmp_id: new mongoose.Types.ObjectId(cmp_id) },
+        { roomName: 1, status: 1 },
+      )
       .lean();
 
     const totalRooms = allRooms.length;
     const blockedRooms = allRooms.filter((r) =>
-      ["blocked", "block"].includes(String(r.status || "").toLowerCase())
+      ["blocked", "block"].includes(String(r.status || "").toLowerCase()),
     ).length;
     const saleableRooms = totalRooms - blockedRooms;
 
     const getOccupiedCountForDate = async (date) => {
-      const checkins = await CheckIn.aggregate(buildOccupancyPipeline(date, date));
+      const checkins = await CheckIn.aggregate(
+        buildOccupancyPipeline(date, date),
+      );
 
       const occupiedRooms = new Set();
 
@@ -5843,11 +5848,7 @@ export const getFlashReportForDate = async (req, res) => {
       return occupiedRooms.size;
     };
 
-    const getOccupiedRoomNights = (
-      checkins = [],
-      fromDate,
-      toDate
-    ) => {
+    const getOccupiedRoomNights = (checkins = [], fromDate, toDate) => {
       if (!Array.isArray(checkins)) {
         console.log("Invalid checkins:", checkins);
         return 0;
@@ -5869,11 +5870,11 @@ export const getFlashReportForDate = async (req, res) => {
 
         const days = Math.max(
           0,
-          Math.floor((stayEnd - stayStart) / (1000 * 60 * 60 * 24)) + 1
+          Math.floor((stayEnd - stayStart) / (1000 * 60 * 60 * 24)) + 1,
         );
 
         const roomCount = (doc?.selectedRooms || []).filter(
-          (r) => !r.isSwapped
+          (r) => !r.isSwapped,
         ).length;
 
         roomNights += days * roomCount;
@@ -5913,10 +5914,16 @@ export const getFlashReportForDate = async (req, res) => {
           $addFields: {
             checkoutDoc: { $first: "$checkoutDetails" },
             rawNewCheckoutDate: {
-              $ifNull: [{ $first: "$checkoutDetails.checkOutDate" }, "$checkOutDate"],
+              $ifNull: [
+                { $first: "$checkoutDetails.checkOutDate" },
+                "$checkOutDate",
+              ],
             },
             newCheckoutTime: {
-              $ifNull: [{ $first: "$checkoutDetails.checkoutTime" }, "$checkOutTime"],
+              $ifNull: [
+                { $first: "$checkoutDetails.checkoutTime" },
+                "$checkOutTime",
+              ],
             },
           },
         },
@@ -5924,10 +5931,18 @@ export const getFlashReportForDate = async (req, res) => {
         {
           $addFields: {
             arrivalDateObj: {
-              $dateFromString: { dateString: "$arrivalDate", onError: null, onNull: null },
+              $dateFromString: {
+                dateString: "$arrivalDate",
+                onError: null,
+                onNull: null,
+              },
             },
             newCheckoutDateObj: {
-              $dateFromString: { dateString: "$rawNewCheckoutDate", onError: null, onNull: null },
+              $dateFromString: {
+                dateString: "$rawNewCheckoutDate",
+                onError: null,
+                onNull: null,
+              },
             },
           },
         },
@@ -5976,22 +5991,16 @@ export const getFlashReportForDate = async (req, res) => {
 
       checkins.forEach((doc) => {
         const country =
-          doc?.guestCountry ||
-          doc?.country ||
-          doc?.guestDetails?.country ||
-          "";
+          doc?.guestCountry || doc?.country || doc?.guestDetails?.country || "";
 
-        const domestic =
-          String(country).trim().toLowerCase() === "india";
+        const domestic = String(country).trim().toLowerCase() === "india";
 
         const checkoutDoc = doc?.checkoutDoc || {};
 
         const checkoutDate = doc?.newCheckoutDateObj;
 
         const checkoutInRange =
-          checkoutDate &&
-          checkoutDate >= startDate &&
-          checkoutDate <= endDate;
+          checkoutDate && checkoutDate >= startDate && checkoutDate <= endDate;
 
         let docFoodPlanFromRooms = 0;
 
@@ -6014,7 +6023,7 @@ export const getFlashReportForDate = async (req, res) => {
               room.amountAfterTax ||
               room.totalAmount ||
               room.baseAmountWithTax ||
-              0
+              0,
           );
 
           roomApartment += tariff;
@@ -6024,40 +6033,32 @@ export const getFlashReportForDate = async (req, res) => {
               item?.roomId?.toString() === room?.roomId?.toString()
                 ? acc + Number(item?.rate || 0)
                 : acc,
-            0
+            0,
           );
 
           roomExtraBed += extraBed;
 
           const roomFoodPlans = (doc?.foodPlan || []).filter(
-            (p) =>
-              p?.roomId?.toString() === room?.roomId?.toString()
+            (p) => p?.roomId?.toString() === room?.roomId?.toString(),
           );
 
           roomFoodPlans.forEach((p) => {
             docFoodPlanFromRooms += Number(
-              p?.amount ||
-                p?.planAmount ||
-                p?.total ||
-                0
+              p?.amount || p?.planAmount || p?.total || 0,
             );
           });
         });
 
         if (checkoutInRange) {
           foodPlanTotal += Number(
-            checkoutDoc?.foodPlanTotal || docFoodPlanFromRooms || 0
+            checkoutDoc?.foodPlanTotal || docFoodPlanFromRooms || 0,
           );
 
           modRevenues += Number(
-            checkoutDoc?.otherCharges ||
-              checkoutDoc?.otherAmount ||
-              0
+            checkoutDoc?.otherCharges || checkoutDoc?.otherAmount || 0,
           );
 
-          grandTotal += Number(
-            checkoutDoc?.grandTotal || 0
-          );
+          grandTotal += Number(checkoutDoc?.grandTotal || 0);
         }
       });
 
@@ -6078,16 +6079,16 @@ export const getFlashReportForDate = async (req, res) => {
       const totalOccupied = occupiedPaid;
 
       const occPercent =
-        saleableRooms > 0
-          ? (occupiedPaid / saleableRooms) * 100
-          : 0;
+        saleableRooms > 0 ? (occupiedPaid / saleableRooms) * 100 : 0;
 
       const roomTotal = roomApartment + roomExtraBed;
       const fbTotal = foodPlanTotal;
 
       const arrTotalRooms = totalRooms > 0 ? roomTotal / totalRooms : 0;
-      const arrSaleableRooms = saleableRooms > 0 ? roomTotal / saleableRooms : 0;
-      const arrOccupiedRooms = totalOccupied > 0 ? roomTotal / totalOccupied : 0;
+      const arrSaleableRooms =
+        saleableRooms > 0 ? roomTotal / saleableRooms : 0;
+      const arrOccupiedRooms =
+        totalOccupied > 0 ? roomTotal / totalOccupied : 0;
 
       if (grandTotal === 0) {
         grandTotal = roomTotal + fbTotal + modRevenues;
@@ -6132,7 +6133,9 @@ export const getFlashReportForDate = async (req, res) => {
     // SINGLE DATE REPORT - occupiedPaid = unique rooms (17)
     // ═══════════════════════════════════════════════════════════════
     if (reportDate) {
-      const checkins = await CheckIn.aggregate(buildOccupancyPipeline(reportDate, reportDate));
+      const checkins = await CheckIn.aggregate(
+        buildOccupancyPipeline(reportDate, reportDate),
+      );
       const numbers = processCheckins(checkins, reportDate, reportDate);
 
       const occupiedToday = await getOccupiedCountForDate(reportDate);
@@ -6162,20 +6165,26 @@ export const getFlashReportForDate = async (req, res) => {
       const monthFull = `${reportYear}-${pad(reportMonth)}-${monthLastDay}`;
       const todayStr = new Date().toISOString().split("T")[0];
 
-      const monthEnd = todayStr >= monthStart && todayStr <= monthFull
-        ? todayStr
-        : monthFull;
+      const monthEnd =
+        todayStr >= monthStart && todayStr <= monthFull ? todayStr : monthFull;
 
-      const checkins = await CheckIn.aggregate(buildOccupancyPipeline(monthStart, monthEnd));
+      const checkins = await CheckIn.aggregate(
+        buildOccupancyPipeline(monthStart, monthEnd),
+      );
       const numbers = processCheckins(checkins, monthStart, monthEnd);
 
       // NEW: use room nights for month (17 rooms × multiple nights = 75)
-      const occupiedMonthTotal = getOccupiedRoomNights(checkins, monthStart, monthEnd);
+      const occupiedMonthTotal = getOccupiedRoomNights(
+        checkins,
+        monthStart,
+        monthEnd,
+      );
       numbers.occupiedPaid = occupiedMonthTotal;
       numbers.totalOccupied = occupiedMonthTotal;
 
-      const monthLabel = new Date(`${reportYear}-${pad(reportMonth)}-01`)
-        .toLocaleString("en-GB", { month: "long" });
+      const monthLabel = new Date(
+        `${reportYear}-${pad(reportMonth)}-01`,
+      ).toLocaleString("en-GB", { month: "long" });
 
       reportData = {
         companyName,
@@ -6198,15 +6207,22 @@ export const getFlashReportForDate = async (req, res) => {
       const yearStart = `${year}-04-01`;
       const fiscalEnd = new Date(year + 1, 2, 31);
       const todayDate = new Date();
-      const yearEnd = todayDate >= fiscalEnd
-        ? fiscalEnd.toISOString().split("T")[0]
-        : todayDate.toISOString().split("T")[0];
+      const yearEnd =
+        todayDate >= fiscalEnd
+          ? fiscalEnd.toISOString().split("T")[0]
+          : todayDate.toISOString().split("T")[0];
 
-      const checkins = await CheckIn.aggregate(buildOccupancyPipeline(yearStart, yearEnd));
+      const checkins = await CheckIn.aggregate(
+        buildOccupancyPipeline(yearStart, yearEnd),
+      );
       const numbers = processCheckins(checkins, yearStart, yearEnd);
 
       // NEW: use room nights for year
-      const occupiedYearTotal = getOccupiedRoomNights(checkins, yearStart, yearEnd);
+      const occupiedYearTotal = getOccupiedRoomNights(
+        checkins,
+        yearStart,
+        yearEnd,
+      );
       numbers.occupiedPaid = occupiedYearTotal;
       numbers.totalOccupied = occupiedYearTotal;
 
@@ -6219,9 +6235,7 @@ export const getFlashReportForDate = async (req, res) => {
         selectedYear: year,
         ...numbers,
       };
-    }
-
-    else {
+    } else {
       return res.status(400).json({
         success: false,
         message: "Provide reportDate OR reportMonth+reportYear OR reportYear",
@@ -6229,7 +6243,6 @@ export const getFlashReportForDate = async (req, res) => {
     }
 
     return res.json({ success: true, data: reportData });
-
   } catch (err) {
     console.error("Flash report error:", err);
     return res.status(500).json({
@@ -7794,7 +7807,7 @@ export const getRestaurantSales = async (req, res) => {
       checkInNumbers.map(async (element) => {
         return await salesModel.find({
           cmp_id,
-          isPostToRoom : true,
+          isPostToRoom: true,
           "convertedFrom.checkInNumber": {
             $exists: true,
             $in: checkInNumbers,
@@ -7892,7 +7905,7 @@ export const getTravelAgentSalesReport = async (req, res) => {
               },
             },
           ],
-        as: "agentDoc", 
+          as: "agentDoc",
         },
       },
 
@@ -8112,13 +8125,10 @@ export const getAgentList = async (req, res) => {
 export const getFOSalesSummary = async (req, res) => {
   try {
     const { cmp_id, fromDate, toDate } = req.query;
+    // ✅ Wrap in new Date() — proper Date objects with IST offset
+    const startDate = new Date(`${fromDate}T00:00:00.000+05:30`);
+    const endDate = new Date(`${toDate}T23:59:59.999+05:30`);
 
-    const startDate = new Date(fromDate);
-    startDate.setHours(0, 0, 0, 0);
-
-    const endDate = new Date(toDate);
-    endDate.setHours(0, 0, 0, 0);
-    endDate.setDate(endDate.getDate() + 1);
 
     const getSaleCheckInNumbers = (sale) => {
       if (!Array.isArray(sale?.convertedFrom)) return [];
@@ -8130,11 +8140,15 @@ export const getFOSalesSummary = async (req, res) => {
     const processPayments = (paymentSplittingData = [], totals) => {
       for (const split of paymentSplittingData) {
         const splitAmount = Number(
-          split?.amount || split?.paidAmount || split?.value || 0
+          split?.amount || split?.paidAmount || split?.value || 0,
         );
 
         const splitType = String(
-          split?.sourceType || split?.type || split?.mode || split?.paymentMode || ""
+          split?.sourceType ||
+            split?.type ||
+            split?.mode ||
+            split?.paymentMode ||
+            "",
         ).toLowerCase();
 
         if (splitType === "cash") totals.cash += splitAmount;
@@ -8145,16 +8159,20 @@ export const getFOSalesSummary = async (req, res) => {
       }
     };
 
+    console.log("xxxxxxxxx",startDate,endDate)
+
     const dateRangeSales = await salesModel
       .find({
         cmp_id,
         date: {
           $gte: startDate,
-          $lt: endDate,
+          $lte: endDate, // ✅ Inclusive end
         },
         isCancelled: false,
       })
       .lean();
+
+      console.log(dateRangeSales.length)
 
     const checkInNumbers = [
       ...new Set(dateRangeSales.flatMap((sale) => getSaleCheckInNumbers(sale))),
@@ -8205,13 +8223,14 @@ export const getFOSalesSummary = async (req, res) => {
 
       const checkout = await CheckOut.findOne({
         $or: [{ checkInId: checkIn._id }, { originalCheckInId: checkIn._id }],
+        checkOutDate: { $gte: fromDate, $lte: toDate },
       }).lean();
 
       if (!checkout) continue;
 
       const roomDetails = await getFullRoomDetails(
         checkout.selectedRooms,
-        checkout
+        checkout,
       );
 
       const extraPersonCount =
@@ -8231,7 +8250,7 @@ export const getFOSalesSummary = async (req, res) => {
       const sgst = roundedTotalTax / 2;
 
       const restaurantSales = salesForCheckIn.filter(
-        (sale) => sale.isPostToRoom === true
+        (sale) => sale.isPostToRoom === true,
       );
 
       const rtBillNo = restaurantSales
@@ -8244,7 +8263,7 @@ export const getFOSalesSummary = async (req, res) => {
       }, 0);
 
       const modSale = Number(
-        checkout.otherChargeAmount || checkout.otherChargeWithOutTax || 0
+        checkout.otherChargeAmount || checkout.otherChargeWithOutTax || 0,
       );
 
       const advance = Number(checkout.totalAdvance || 0);
@@ -8265,7 +8284,6 @@ export const getFOSalesSummary = async (req, res) => {
         card: 0,
       };
 
-    
       for (const sale of salesForCheckIn) {
         if (Array.isArray(sale?.paymentSplittingData)) {
           processPayments(sale.paymentSplittingData, totals);
@@ -8276,14 +8294,14 @@ export const getFOSalesSummary = async (req, res) => {
         processPayments(checkout.paymentSplittingData, totals);
       }
 
-   
+      // console.log("checkOutDate",checkout)
 
       reportMap.set(checkInNumber, {
         checkInNumber,
-        date: checkout.currentDate,
+        date: checkout.checkOutDate,
         billNo: checkout.voucherNumber,
         grcNo: checkout.grcno,
-        agentName:  checkout.customerName ,
+        agentName: checkout.customerName,
         guestName: checkout.guestName,
         room: checkout.selectedRooms?.map((r) => r.roomName).join(", ") || "",
         days: checkout.stayDays || 0,
@@ -8311,7 +8329,7 @@ export const getFOSalesSummary = async (req, res) => {
       String(b.grcNo || "").localeCompare(String(a.grcNo || ""), undefined, {
         numeric: true,
         sensitivity: "base",
-      })
+      }),
     );
 
     return res.status(200).json({

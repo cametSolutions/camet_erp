@@ -315,6 +315,7 @@ const HotelDashboard = () => {
       });
       return;
     }
+    
 
     if (action === "editChecking") {
       setShowRoomModal(false);
@@ -353,7 +354,7 @@ const HotelDashboard = () => {
       return;
     }
 
-    if (["dirty", "blocked", "vacant"].includes(action)) {
+    if (["dirty", "blocked", "vacant" , "household"].includes(action)) {
       try {
         console.log("Updating room status:", {
           roomId: selectedRoomData._id,
@@ -1376,6 +1377,7 @@ console.log(baseStatus);
                     <option value="dirty">Mark as Dirty</option>
                     <option value="blocked">Mark as Blocked</option>
                     <option value="vacant">Mark as available</option>
+                    <option value="household">Mark as household</option>
                     <option value="swapRoom">Swap Room</option>
                   </>
                 )}

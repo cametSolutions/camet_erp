@@ -232,8 +232,10 @@ export const convertCheckOutToSale = async (req, res) => {
             session,
           );
 
-          
-
+          const hotelSplitTotal = paymentSplittingArray.reduce(
+  (sum, s) => sum + Number(s.amount || 0),
+  0,
+);const isHotelAmountZero = hotelSplitTotal === 0;
         console.log("paymentSplittingArray", paymentSplittingArray);
         console.log("restaurantSplitArray", restaurantSplitArray);
 
@@ -380,7 +382,7 @@ export const convertCheckOutToSale = async (req, res) => {
         //          createReceiptsAndSettlements reduces pending after receipts
 
         let tallyRows = [];
-
+ if (!isHotelAmountZero) {
         if (paymentMode === "split") {
           for (const splitEntry of paymentSplittingArray) {
             const isCredit = splitEntry.type === "credit";
@@ -416,7 +418,7 @@ export const convertCheckOutToSale = async (req, res) => {
           );
           tallyRows.push(...rows);
         }
-
+      }
         // ── Update booking receipts to point to new sale ─────────────────
         await updateReceiptForRooms(
           item?.voucherNumber,
@@ -526,7 +528,16 @@ export const convertCheckOutToSale = async (req, res) => {
       // Split mode   → hotel pending=0 so hotel receipt skipped,
       //                restaurant receipt created from paymentSplittingData
       // Credit mode  → skipped entirely
-      if (!isPostToRoom && paymentMode !== "credit") {
+
+      const totalHotelAmount = results.reduce((sum, result) => {
+  const hotelAmount = (result.splitSummary || [])
+    .filter((s) => s.section === "hotel")
+    .reduce((acc, s) => acc + Number(s.amount || 0), 0);
+
+  return sum + hotelAmount;
+}, 0);
+
+      if (!isPostToRoom && paymentMode !== "credit" && totalHotelAmount > 0) {
         const customerPartyDoc = await getSelectedParty(
           selectedCheckOut[0]?.customerId?._id ||
             selectedCheckOut[0]?.customerId,
