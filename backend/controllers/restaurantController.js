@@ -1180,8 +1180,14 @@ export const directSale = async (req, res) => {
       );
       console.log("paymentSplittingArray", paymentSplittingArray);
       const party = mapPartyData(selectedParty);
+      const guest = mapPartyData(selectedGuest);
+
+      console.log("selectedParty", selectedParty);
+      console.log("selectedGuest", selectedGuest);
 
       let additionalChargesArray = additionalCharges;
+
+      
       // Create a sales voucher entry (no KOT reference)
       const savedVoucherData = await createSalesVoucher(
         cmp_id,
@@ -1190,28 +1196,34 @@ export const directSale = async (req, res) => {
         req,
         selectedKotData, // hold items + total
         party,
+        guest,
         selectedParty,
+        selectedGuest,
         paymentSplittingArray,
         additionalChargesArray,
         discountBasedOnGrossAmount,
         session,
+        false,
+        false,
+        false,
+        false
       );
 
       // Settlement entries (cash/online)
-      if (party?.paymentType !== "party") {
-        console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh");
-        await saveSettlement(
-          paymentDetails,
-          selectedParty,
-          cmp_id,
-          savedVoucherData[0],
-          cashAmt + onlineAmt,
-          cashAmt,
-          onlineAmt,
-          req,
-          session,
-        );
-      }
+      // if (party?.paymentType !== "party") {
+      //   console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh");
+      //   await saveSettlement(
+      //     paymentDetails,
+      //     selectedParty,
+      //     cmp_id,
+      //     savedVoucherData[0],
+      //     cashAmt + onlineAmt,
+      //     cashAmt,
+      //     onlineAmt,
+      //     req,
+      //     session,
+      //   );
+      // }
 
       // ✅ Convert Mongoose document to plain object and ensure _id is included
       const salesRecordData = savedVoucherData[0].toObject
@@ -1793,7 +1805,7 @@ async function getSelectedParty(
 ) {
   let partyId, guestId;
 
-  if (isPostToRoom || kotData?.voucherNumber[0]?.checkInNumber) {
+  if (isPostToRoom || kotData?.voucherNumber?.[0]?.checkInNumber) {
     const checkInData = await CheckIn.findOne({
       voucherNumber: kotData?.voucherNumber[0]?.checkInNumber,
       cmp_id,
@@ -2012,7 +2024,7 @@ async function createSalesVoucher(
   // console.log("additionalChargesArray", additionalChargesArray);
   // ✅ FIXED: Use SUBTOTAL (BEFORE discount)
   const originalTotal = Number(kotData?.subtotal || kotData?.total || 0); // 1000 ✅
-  const additionalCharges = additionalChargesArray || [];
+  const additionalCharges = additionalChargesArray?.length > 0 ? additionalChargesArray : [];
   const isComplimentary = req.body.isComplimentary || false;
   const isPostToRoom = req.body.isPostToRoom || false;
 
