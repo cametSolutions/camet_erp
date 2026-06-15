@@ -8,7 +8,10 @@ import salesModel from "../models/salesModel.js";
 import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 import roomModal from "../models/roomModal.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
-import { saveSettlementDataHotel } from "../helpers/hotelHelper.js";
+import {
+  saveSettlementDataHotel,
+  updateStatus as syncRoomStatus,
+} from "../helpers/hotelHelper.js";
 import { createReceiptsAndSettlements } from "../helpers/checkoutHelper.js";
 
 // =============================================================================
@@ -1466,10 +1469,5 @@ export const updateReceiptForRooms = async (
 // updateStatus — marks rooms dirty/available after checkout
 // =============================================================================
 export const updateStatus = async (roomData, status, session) => {
-  const ids = roomData.map((room) => room.roomId);
-  await roomModal.updateMany(
-    { _id: { $in: ids } },
-    { $set: { status } },
-    { session },
-  );
+  await syncRoomStatus(roomData, status, session);
 };

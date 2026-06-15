@@ -1,4 +1,5 @@
 import roomModal from "../models/roomModal.js";
+import RoomStatusHistory from "../models/roomStatusHistory.js";
 import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
 import mongoose from "mongoose";
 import receiptModel from "../models/receiptModel.js";
@@ -418,9 +419,68 @@ export const extractRequestParamsForBookings = (req) => {
 
 export const updateStatus = async (roomData, status, session) => {
   const ids = roomData.map((room) => room.roomId);
+
+  if (ids.length === 0) {
+    return;
+  }
+
+  const rooms = await roomModal
+    .find({ _id: { $in: ids } })
+    .select("_id primary_user_id secondary_user_id cmp_id roomName status")
+    .session(session);
+
+  const roomsToUpdate = rooms.filter((room) => room.status !== status);
+
+  if (roomsToUpdate.length === 0) {
+    return;
+  }
+
+  const roomIds = roomsToUpdate.map((room) => room._id);
+  const now = new Date();
+
+  await RoomStatusHistory.updateMany(
+    { roomId: { $in: roomIds }, isCurrent: true },
+    { $set: { toDate: now, isCurrent: false } },
+    { session },
+  );
+
+  await RoomStatusHistory.insertMany(
+    roomsToUpdate.map((room) => ({
+      primary_user_id: room.primary_user_id,
+      secondary_user_id: room.secondary_user_id,
+      cmp_id: room.cmp_id,
+      roomId: room._id,
+      roomNumber: room.roomName,
+      status,
+      fromDate: now,
+      toDate: null,
+      isCurrent: true,
+    })),
+    { session },
+  );
+
   await roomModal.updateMany(
-    { _id: { $in: ids } },
+    { _id: { $in: roomIds } },
     { $set: { status } },
+    { session },
+  );
+};
+
+export const createInitialRoomStatusHistory = async (room, session) => {
+  await RoomStatusHistory.create(
+    [
+      {
+        primary_user_id: room.primary_user_id,
+        secondary_user_id: room.secondary_user_id,
+        cmp_id: room.cmp_id,
+        roomId: room._id,
+        roomNumber: room.roomName,
+        status: room.status,
+        fromDate: new Date(),
+        toDate: null,
+        isCurrent: true,
+      },
+    ],
     { session },
   );
 };
@@ -1367,6 +1427,5 @@ console.log("Removed rooms:", removedRooms);
     console.error(error);
   }
 };
-
 
 

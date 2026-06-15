@@ -23,6 +23,7 @@ import {
   sendBookingsResponse,
   extractRequestParamsForBookings,
   updateStatus,
+  createInitialRoomStatusHistory,
   saveSettlementDataHotel,
   handleAdvanceAndDiscountSettlementInRestaurant,
   updateSwapDetails,
@@ -726,6 +727,7 @@ export const addRoom = async (req, res) => {
 
     // Step 5: Save using session
     await newRoom.save({ session });
+    await createInitialRoomStatusHistory(newRoom, session);
 
     // Step 6: Commit the transaction
     await session.commitTransaction();
@@ -838,15 +840,15 @@ export const getRooms = async (req, res) => {
     // console.log("occupiedbookingid", occupiedRoomId)
     // console.log("overlappingchekins", overlappingCheckIns)
 
-    // Filter out occupied **and dirty/blocked** rooms
+    // Filter out occupied and non-saleable rooms
 
     const vacantRooms = rooms.filter((room) => {
       const roomId = room._id.toString();
       const isOccupied = occupiedRoomId.has(roomId);
 
-      // exclude rooms with status 'dirty' or 'blocked'
+      // Exclude rooms that housekeeping/manual ops have taken out of sale.
       const isCleanAndOpen =
-        room.status !== "dirty" && room.status !== "blocked";
+        !["dirty", "blocked"].includes(room.status);
       //  &&
       // room.status !== "checkIn";
 
@@ -2293,6 +2295,8 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
 };
 // Update room status
 export const updateRoomStatus = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
     const { id } = req.params; // Get room ID from URL
     const { status } = req.body; // Get status from request body
@@ -2303,7 +2307,7 @@ export const updateRoomStatus = async (req, res) => {
     }
 
     // Validate status
-    const validStatuses = ["vacant", "booked", "occupied", "dirty", "blocked"];
+    const validStatuses = roomModal.schema.path("status").enumValues;
     if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({
         message: "Invalid or missing status",
@@ -2311,14 +2315,29 @@ export const updateRoomStatus = async (req, res) => {
       });
     }
 
-    // Find room by ID and update
-    const updatedRoom = await roomModal
-      .findByIdAndUpdate(id, { status }, { new: true, runValidators: true })
-      .populate("roomType")
-      .populate("bedType")
-      .populate("roomFloor");
+    let existingRoom;
+    let updatedRoom;
 
-    if (!updatedRoom) {
+    await session.withTransaction(async () => {
+      existingRoom = await roomModal.findById(id).session(session);
+
+      if (!existingRoom) {
+        return;
+      }
+
+      if (existingRoom.status !== status) {
+        await updateStatus([{ roomId: existingRoom._id }], status, session);
+      }
+
+      updatedRoom = await roomModal
+        .findById(id)
+        .session(session)
+        .populate("roomType")
+        .populate("bedType")
+        .populate("roomFloor");
+    });
+
+    if (!existingRoom) {
       return res.status(404).json({ message: "Room not found" });
     }
 
@@ -2333,6 +2352,8 @@ export const updateRoomStatus = async (req, res) => {
       error: error.message,
       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
+  } finally {
+    session.endSession();
   }
 };
 // function used  to fetch date based booking details and checking details
@@ -5826,7 +5847,9 @@ export const getFlashReportForDate = async (req, res) => {
 
     const totalRooms = allRooms.length;
     const blockedRooms = allRooms.filter((r) =>
-      ["blocked", "block"].includes(String(r.status || "").toLowerCase()),
+      ["blocked", "block"].includes(
+        String(r.status || "").toLowerCase(),
+      ),
     ).length;
     const saleableRooms = totalRooms - blockedRooms;
 
@@ -6803,7 +6826,11 @@ export const getOccupancyCheckoutReport = async (req, res) => {
           status = "Occupied";
         } else if (statusRaw === "cleaning" || statusRaw === "dirty") {
           status = "Cleaning";
-        } else if (statusRaw === "blocked" || statusRaw === "block") {
+        } else if (
+          statusRaw === "blocked" ||
+          statusRaw === "block" ||
+          statusRaw === "household"
+        ) {
           status = "Blocked";
         } else {
           status = "Vacant";
