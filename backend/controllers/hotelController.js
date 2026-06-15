@@ -7139,6 +7139,8 @@ export const viewReport = async (req, res) => {
       // ✅ Room rent — from checkin room level
       const baseRoomRent = room.priceLevelRate
         ? parseFloat(room.priceLevelRate) * stayDays
+
+        
         : sale.subTotal || sale.finalAmount;
 
       // ✅ Discount — from additionalCharges where option === "discount"
