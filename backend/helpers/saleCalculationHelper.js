@@ -153,10 +153,6 @@ export const getFullRoomDetails = async (roomData, doc) => {
       doc
     );
 
-    if (doc.voucherNumber === "SJRR/0325/26-27") {
-      console.log("room", room.roomName, "stayDays", roomStayDays, "roomPrice", effectiveRoomPrice);
-      console.log("mummy", taxDetails);
-    }
 
     finalData.taxableAmount = round2(finalData.taxableAmount + taxDetails.taxableAmount);
     finalData.roomTaxAmount = round2(finalData.roomTaxAmount + taxDetails.roomTaxAmount);
