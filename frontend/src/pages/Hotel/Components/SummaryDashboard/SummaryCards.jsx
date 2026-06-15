@@ -31,6 +31,7 @@ const SummaryCards = ({
   dailyBank = "₹0",
   monthlyCash = "₹0",
   monthlyBank = "₹0",
+  selectedDateLabel = "",
 }) => {
   const [revenueSheetOpen, setRevenueSheetOpen] = useState(false);
   const [dailySheetOpen, setDailySheetOpen] = useState(false);
@@ -42,7 +43,7 @@ const SummaryCards = ({
     {
       title: "Total Revenue",
       value: totalPropertySales,
-      subtitle: "All time earnings",
+      subtitle: "Up to selected date",
       bgColor: "#1db974",
       illustration: RevenueIllustration,
       onClick: () => setPropertySalesSheetOpen(true),
@@ -56,7 +57,7 @@ const SummaryCards = ({
     {
       title: "Daily Collection",
       value: dailyCollection,
-      subtitle: "Today's collection",
+      subtitle: "Selected date collection",
       bgColor: "#2a5298",
       textColor: "#ffffff",
       subtitleColor: "#0d1f3c",
@@ -70,7 +71,7 @@ const SummaryCards = ({
     {
       title: "Monthly Collection",
       value: monthlyCollection,
-      subtitle: "This month's total",
+      subtitle: "Month to selected date",
       bgColor: "#7c4dcc",
       textColor: "#ffffff",
       subtitleColor: "#2e1060",
@@ -128,9 +129,9 @@ const SummaryCards = ({
         open={dailySheetOpen}
         onOpenChange={setDailySheetOpen}
         title="Daily Collection Breakdown"
-        description="Company-wise cash and bank split for today"
+        description={`Company-wise cash and bank split for ${selectedDateLabel}`}
         totalAmount={dailyCollection}
-        periodLabel="today's"
+        periodLabel={`${selectedDateLabel}'s`}
         collectionBreakdown={dailyCollectionBreakdown}
       />
 
@@ -138,9 +139,9 @@ const SummaryCards = ({
         open={monthlySheetOpen}
         onOpenChange={setMonthlySheetOpen}
         title="Monthly Collection Breakdown"
-        description="Company-wise cash and bank split for the current month"
+        description="Company-wise cash and bank split from the start of the selected month"
         totalAmount={monthlyCollection}
-        periodLabel="this month's"
+        periodLabel="the selected month's"
         collectionBreakdown={monthlyCollectionBreakdown}
       />
 

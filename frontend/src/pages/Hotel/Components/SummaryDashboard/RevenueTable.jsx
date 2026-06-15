@@ -2,7 +2,7 @@
 
 const fmt = (n) => "₹" + Number(n ?? 0).toLocaleString("en-IN");
 
-const RevenueTable = ({ rows = [] }) => {
+const RevenueTable = ({ rows = [], selectedDateLabel = "" }) => {
   const sortedRows = [...rows].sort(
     (a, b) => Number(b?.revenue ?? 0) - Number(a?.revenue ?? 0),
   );
@@ -16,7 +16,7 @@ const RevenueTable = ({ rows = [] }) => {
       <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-sky-50 px-4 py-4 sm:px-5">
         <h2 className="text-lg font-semibold text-slate-800">Revenue Table</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Company-wise total revenue sorted from highest to lowest
+          Company-wise total revenue up to {selectedDateLabel || "the selected date"}
         </p>
       </div>
 
