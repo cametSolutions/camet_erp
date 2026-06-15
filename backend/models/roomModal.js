@@ -71,5 +71,5 @@ const roomSchema = new mongoose.Schema({
     default: "vacant",
   },
 
-});
+}, { timestamps: true });
 export default mongoose.model("Room", roomSchema);

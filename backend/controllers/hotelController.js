@@ -27,6 +27,7 @@ import {
   saveSettlementDataHotel,
   handleAdvanceAndDiscountSettlementInRestaurant,
   updateSwapDetails,
+  findBlockedRooms
 } from "../helpers/hotelHelper.js";
 import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
@@ -5824,457 +5825,7 @@ export const getOtherCharges = async (req, res) => {
   }
 };
 
-export const getFlashReportForDate = async (req, res) => {
-  try {
-    const { cmp_id, reportDate, reportMonth, reportYear } = req.query;
 
-    if (!cmp_id) {
-      return res
-        .status(400)
-        .json({ success: false, message: "cmp_id is required" });
-    }
-
-    const org = await Organization.findById(cmp_id).lean();
-    const companyName = org?.orgName || org?.name || "Hotel";
-
-    // ═══════ ROOMS MASTER ═══════
-    const allRooms = await roomModal
-      .find(
-        { cmp_id: new mongoose.Types.ObjectId(cmp_id) },
-        { roomName: 1, status: 1 },
-      )
-      .lean();
-
-    const totalRooms = allRooms.length;
-    const blockedRooms = allRooms.filter((r) =>
-      ["blocked", "block"].includes(
-        String(r.status || "").toLowerCase(),
-      ),
-    ).length;
-    const saleableRooms = totalRooms - blockedRooms;
-
-    const getOccupiedCountForDate = async (date) => {
-      const checkins = await CheckIn.aggregate(
-        buildOccupancyPipeline(date, date),
-      );
-
-      const occupiedRooms = new Set();
-
-      checkins.forEach((doc) => {
-        (doc.selectedRooms || []).forEach((room) => {
-          if (!room.isSwapped) {
-            occupiedRooms.add(room.roomName);
-          }
-        });
-      });
-
-      return occupiedRooms.size;
-    };
-
-    const getOccupiedRoomNights = (checkins = [], fromDate, toDate) => {
-      if (!Array.isArray(checkins)) {
-        console.log("Invalid checkins:", checkins);
-        return 0;
-      }
-
-      const reportStart = new Date(fromDate);
-      const reportEnd = new Date(toDate);
-
-      let roomNights = 0;
-
-      checkins.forEach((doc) => {
-        const arrival = doc?.arrivalDateObj;
-        const departure = doc?.newCheckoutDateObj || reportEnd;
-
-        if (!arrival) return;
-
-        const stayStart = arrival > reportStart ? arrival : reportStart;
-        const stayEnd = departure < reportEnd ? departure : reportEnd;
-
-        const days = Math.max(
-          0,
-          Math.floor((stayEnd - stayStart) / (1000 * 60 * 60 * 24)) + 1,
-        );
-
-        const roomCount = (doc?.selectedRooms || []).filter(
-          (r) => !r.isSwapped,
-        ).length;
-
-        roomNights += days * roomCount;
-      });
-
-      return roomNights;
-    };
-
-    const buildOccupancyPipeline = (fromDate, toDate) => {
-      const pipeline = [
-        { $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id) } },
-
-        {
-          $lookup: {
-            from: "checkouts",
-            let: { checkInId: "$_id" },
-            pipeline: [
-              { $match: { $expr: { $eq: ["$checkInId", "$$checkInId"] } } },
-              {
-                $project: {
-                  _id: 0,
-                  checkOutDate: 1,
-                  checkoutTime: 1,
-                  grandTotal: 1,
-                  otherCharges: 1,
-                  otherAmount: 1,
-                  foodPlanTotal: 1,
-                  selectedRooms: 1,
-                },
-              },
-            ],
-            as: "checkoutDetails",
-          },
-        },
-
-        {
-          $addFields: {
-            checkoutDoc: { $first: "$checkoutDetails" },
-            rawNewCheckoutDate: {
-              $ifNull: [
-                { $first: "$checkoutDetails.checkOutDate" },
-                "$checkOutDate",
-              ],
-            },
-            newCheckoutTime: {
-              $ifNull: [
-                { $first: "$checkoutDetails.checkoutTime" },
-                "$checkOutTime",
-              ],
-            },
-          },
-        },
-
-        {
-          $addFields: {
-            arrivalDateObj: {
-              $dateFromString: {
-                dateString: "$arrivalDate",
-                onError: null,
-                onNull: null,
-              },
-            },
-            newCheckoutDateObj: {
-              $dateFromString: {
-                dateString: "$rawNewCheckoutDate",
-                onError: null,
-                onNull: null,
-              },
-            },
-          },
-        },
-
-        { $project: { checkoutDetails: 0, rawNewCheckoutDate: 0 } },
-      ];
-
-      if (fromDate && toDate) {
-        const startDate = new Date(fromDate);
-        const endDate = new Date(toDate);
-
-        pipeline.push({
-          $match: {
-            $or: [
-              {
-                status: "checkOut",
-                newCheckoutDateObj: { $gt: startDate },
-                arrivalDateObj: { $lte: endDate },
-              },
-              {
-                status: { $ne: "checkOut" },
-                arrivalDateObj: { $lte: endDate },
-              },
-            ],
-          },
-        });
-      }
-
-      return pipeline;
-    };
-
-    const processCheckins = (checkins, fromDate, toDate) => {
-      const startDate = new Date(fromDate);
-      const endDate = new Date(toDate);
-
-      const occupiedRoomNames = new Set();
-
-      let paxDomestic = 0;
-      let paxForeign = 0;
-
-      let roomApartment = 0;
-      let roomExtraBed = 0;
-      let foodPlanTotal = 0;
-      let modRevenues = 0;
-      let grandTotal = 0;
-
-      checkins.forEach((doc) => {
-        const country =
-          doc?.guestCountry || doc?.country || doc?.guestDetails?.country || "";
-
-        const domestic = String(country).trim().toLowerCase() === "india";
-
-        const checkoutDoc = doc?.checkoutDoc || {};
-
-        const checkoutDate = doc?.newCheckoutDateObj;
-
-        const checkoutInRange =
-          checkoutDate && checkoutDate >= startDate && checkoutDate <= endDate;
-
-        let docFoodPlanFromRooms = 0;
-
-        (doc?.selectedRooms || []).forEach((room) => {
-          if (room.isSwapped) return;
-
-          occupiedRoomNames.add(room.roomName);
-
-          const pax = Number(room?.pax || 0);
-
-          if (domestic) {
-            paxDomestic += pax;
-          } else {
-            paxForeign += pax;
-          }
-
-          const tariff = Number(
-            Math.round(room.priceLevelRate) ||
-              room.baseAmount ||
-              room.amountAfterTax ||
-              room.totalAmount ||
-              room.baseAmountWithTax ||
-              0,
-          );
-
-          roomApartment += tariff;
-
-          const extraBed = (doc?.additionalPaxDetails || []).reduce(
-            (acc, item) =>
-              item?.roomId?.toString() === room?.roomId?.toString()
-                ? acc + Number(item?.rate || 0)
-                : acc,
-            0,
-          );
-
-          roomExtraBed += extraBed;
-
-          const roomFoodPlans = (doc?.foodPlan || []).filter(
-            (p) => p?.roomId?.toString() === room?.roomId?.toString(),
-          );
-
-          roomFoodPlans.forEach((p) => {
-            docFoodPlanFromRooms += Number(
-              p?.amount || p?.planAmount || p?.total || 0,
-            );
-          });
-        });
-
-        if (checkoutInRange) {
-          foodPlanTotal += Number(
-            checkoutDoc?.foodPlanTotal || docFoodPlanFromRooms || 0,
-          );
-
-          modRevenues += Number(
-            checkoutDoc?.otherCharges || checkoutDoc?.otherAmount || 0,
-          );
-
-          grandTotal += Number(checkoutDoc?.grandTotal || 0);
-        }
-      });
-
-      let occupiedCount = 0;
-
-      allRooms.forEach((room) => {
-        if (occupiedRoomNames.has(room.roomName)) {
-          occupiedCount++;
-        }
-      });
-
-      const totalPax = paxDomestic + paxForeign;
-
-      // For SINGLE DATE: this will be overridden later with unique rooms
-      // For MONTH/YEAR: this will be overridden later with room nights
-      const occupiedPaid = occupiedCount;
-      const occupiedComp = 0;
-      const totalOccupied = occupiedPaid;
-
-      const occPercent =
-        saleableRooms > 0 ? (occupiedPaid / saleableRooms) * 100 : 0;
-
-      const roomTotal = roomApartment + roomExtraBed;
-      const fbTotal = foodPlanTotal;
-
-      const arrTotalRooms = totalRooms > 0 ? roomTotal / totalRooms : 0;
-      const arrSaleableRooms =
-        saleableRooms > 0 ? roomTotal / saleableRooms : 0;
-      const arrOccupiedRooms =
-        totalOccupied > 0 ? roomTotal / totalOccupied : 0;
-
-      if (grandTotal === 0) {
-        grandTotal = roomTotal + fbTotal + modRevenues;
-      }
-
-      return {
-        totalRooms,
-        blockedRooms,
-        saleableRooms,
-        occupiedPaid,
-        occupiedComp,
-        totalOccupied,
-        paxDomestic,
-        paxForeign,
-        totalPax,
-        adults: totalPax,
-        children: 0,
-        males: totalPax,
-        females: 0,
-        noShows: 0,
-        occPercent: Number(occPercent.toFixed(2)),
-        arrTotalRooms: Number(arrTotalRooms.toFixed(2)),
-        arrSaleableRooms: Number(arrSaleableRooms.toFixed(2)),
-        arrOccupiedRooms: Number(arrOccupiedRooms.toFixed(2)),
-        roomApartment: Number(roomApartment.toFixed(2)),
-        roomExtraBed: Number(roomExtraBed.toFixed(2)),
-        roomTotal: Number(roomTotal.toFixed(2)),
-        fbPlanRate: Number(fbTotal.toFixed(2)),
-        fbRoomService: 0,
-        fbRestaurant: 0,
-        fbTotal: Number(fbTotal.toFixed(2)),
-        modRevenues: Number(modRevenues.toFixed(2)),
-        otherRevenues: 0,
-        grandTotal: Number(grandTotal.toFixed(2)),
-        occupiedRoomNames,
-      };
-    };
-
-    let reportData = {};
-
-    // ═══════════════════════════════════════════════════════════════
-    // SINGLE DATE REPORT - occupiedPaid = unique rooms (17)
-    // ═══════════════════════════════════════════════════════════════
-    if (reportDate) {
-      const checkins = await CheckIn.aggregate(
-        buildOccupancyPipeline(reportDate, reportDate),
-      );
-      const numbers = processCheckins(checkins, reportDate, reportDate);
-
-      const occupiedToday = await getOccupiedCountForDate(reportDate);
-
-      numbers.occupiedPaid = occupiedToday;
-      numbers.totalOccupied = occupiedToday;
-
-      const dateObj = new Date(reportDate);
-
-      reportData = {
-        companyName,
-        fromDate: reportDate,
-        toDate: reportDate,
-        dayLabel: dateObj.toLocaleDateString("en-GB"),
-        monthLabel: dateObj.toLocaleString("en-GB", { month: "long" }),
-        ...numbers,
-      };
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // MONTH REPORT - occupiedPaid = room nights (75)
-    // ═══════════════════════════════════════════════════════════════
-    else if (reportMonth && reportYear) {
-      const pad = (n) => String(n).padStart(2, "0");
-      const monthStart = `${reportYear}-${pad(reportMonth)}-01`;
-      const monthLastDay = new Date(reportYear, reportMonth, 0).getDate();
-      const monthFull = `${reportYear}-${pad(reportMonth)}-${monthLastDay}`;
-      const todayStr = new Date().toISOString().split("T")[0];
-
-      const monthEnd =
-        todayStr >= monthStart && todayStr <= monthFull ? todayStr : monthFull;
-
-      const checkins = await CheckIn.aggregate(
-        buildOccupancyPipeline(monthStart, monthEnd),
-      );
-      const numbers = processCheckins(checkins, monthStart, monthEnd);
-
-      // NEW: use room nights for month (17 rooms × multiple nights = 75)
-      const occupiedMonthTotal = getOccupiedRoomNights(
-        checkins,
-        monthStart,
-        monthEnd,
-      );
-      numbers.occupiedPaid = occupiedMonthTotal;
-      numbers.totalOccupied = occupiedMonthTotal;
-
-      const monthLabel = new Date(
-        `${reportYear}-${pad(reportMonth)}-01`,
-      ).toLocaleString("en-GB", { month: "long" });
-
-      reportData = {
-        companyName,
-        fromDate: monthStart,
-        toDate: monthEnd,
-        dayLabel: monthEnd,
-        monthLabel,
-        selectedMonth: Number(reportMonth),
-        selectedYear: Number(reportYear),
-        fullMonthDays: monthLastDay,
-        ...numbers,
-      };
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // YEAR REPORT - occupiedPaid = room nights
-    // ═══════════════════════════════════════════════════════════════
-    else if (reportYear) {
-      const year = parseInt(reportYear);
-      const yearStart = `${year}-04-01`;
-      const fiscalEnd = new Date(year + 1, 2, 31);
-      const todayDate = new Date();
-      const yearEnd =
-        todayDate >= fiscalEnd
-          ? fiscalEnd.toISOString().split("T")[0]
-          : todayDate.toISOString().split("T")[0];
-
-      const checkins = await CheckIn.aggregate(
-        buildOccupancyPipeline(yearStart, yearEnd),
-      );
-      const numbers = processCheckins(checkins, yearStart, yearEnd);
-
-      // NEW: use room nights for year
-      const occupiedYearTotal = getOccupiedRoomNights(
-        checkins,
-        yearStart,
-        yearEnd,
-      );
-      numbers.occupiedPaid = occupiedYearTotal;
-      numbers.totalOccupied = occupiedYearTotal;
-
-      reportData = {
-        companyName,
-        fromDate: yearStart,
-        toDate: yearEnd,
-        dayLabel: `${yearStart} to ${yearEnd}`,
-        monthLabel: `FY ${year}-${year + 1}`,
-        selectedYear: year,
-        ...numbers,
-      };
-    } else {
-      return res.status(400).json({
-        success: false,
-        message: "Provide reportDate OR reportMonth+reportYear OR reportYear",
-      });
-    }
-
-    return res.json({ success: true, data: reportData });
-  } catch (err) {
-    console.error("Flash report error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error generating flash report",
-      error: err.message,
-    });
-  }
-};
 
 export const getTouristReport = async (req, res) => {
   try {
@@ -8368,6 +7919,487 @@ export const getFOSalesSummary = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: err.message,
+    });
+  }
+};
+
+
+
+export const getFlashReportForDate = async (req, res) => {
+  try {
+    const { cmp_id, reportDate, reportMonth, reportYear } = req.query;
+
+    if (!cmp_id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "cmp_id is required" });
+    }
+
+    const org = await Organization.findById(cmp_id).lean();
+    const companyName = org?.orgName || org?.name || "Hotel";
+
+    // ═══════ ROOMS MASTER ═══════
+    const allRooms = await roomModal
+      .find(
+        { cmp_id: new mongoose.Types.ObjectId(cmp_id) },
+        { roomName: 1, status: 1 },
+      )
+      .lean();
+
+    const totalRooms = allRooms.length;
+    const blockedCounts = await findBlockedRooms(
+  cmp_id,
+  reportDate,
+  reportMonth,
+  reportYear,
+);
+// expected shape from previous answer:
+// blockedCounts.data = { yearlyRooms, monthlyRooms, dailyRooms }
+
+    let blockedRooms =0
+    const saleableRooms = totalRooms - blockedRooms;
+
+    const getOccupiedCountForDate = async (date) => {
+      const checkins = await CheckIn.aggregate(
+        buildOccupancyPipeline(date, date),
+      );
+
+      const occupiedRooms = new Set();
+
+      checkins.forEach((doc) => {
+        (doc.selectedRooms || []).forEach((room) => {
+          if (!room.isSwapped) {
+            occupiedRooms.add(room.roomName);
+          }
+        });
+      });
+
+      return occupiedRooms.size;
+    };
+
+    const getOccupiedRoomNights = (checkins = [], fromDate, toDate) => {
+      if (!Array.isArray(checkins)) {
+        console.log("Invalid checkins:", checkins);
+        return 0;
+      }
+
+      const reportStart = new Date(fromDate);
+      const reportEnd = new Date(toDate);
+
+      let roomNights = 0;
+
+      checkins.forEach((doc) => {
+        const arrival = doc?.arrivalDateObj;
+        const departure = doc?.newCheckoutDateObj || reportEnd;
+
+        if (!arrival) return;
+
+        const stayStart = arrival > reportStart ? arrival : reportStart;
+        const stayEnd = departure < reportEnd ? departure : reportEnd;
+
+        const days = Math.max(
+          0,
+          Math.floor((stayEnd - stayStart) / (1000 * 60 * 60 * 24)) + 1,
+        );
+
+        const roomCount = (doc?.selectedRooms || []).filter(
+          (r) => !r.isSwapped,
+        ).length;
+
+        roomNights += days * roomCount;
+      });
+
+      return roomNights;
+    };
+
+    const buildOccupancyPipeline = (fromDate, toDate) => {
+      const pipeline = [
+        { $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id) } },
+
+        {
+          $lookup: {
+            from: "checkouts",
+            let: { checkInId: "$_id" },
+            pipeline: [
+              { $match: { $expr: { $eq: ["$checkInId", "$$checkInId"] } } },
+              {
+                $project: {
+                  _id: 0,
+                  checkOutDate: 1,
+                  checkoutTime: 1,
+                  grandTotal: 1,
+                  otherCharges: 1,
+                  otherAmount: 1,
+                  foodPlanTotal: 1,
+                  selectedRooms: 1,
+                },
+              },
+            ],
+            as: "checkoutDetails",
+          },
+        },
+
+        {
+          $addFields: {
+            checkoutDoc: { $first: "$checkoutDetails" },
+            rawNewCheckoutDate: {
+              $ifNull: [
+                { $first: "$checkoutDetails.checkOutDate" },
+                "$checkOutDate",
+              ],
+            },
+            newCheckoutTime: {
+              $ifNull: [
+                { $first: "$checkoutDetails.checkoutTime" },
+                "$checkOutTime",
+              ],
+            },
+          },
+        },
+
+        {
+          $addFields: {
+            arrivalDateObj: {
+              $dateFromString: {
+                dateString: "$arrivalDate",
+                onError: null,
+                onNull: null,
+              },
+            },
+            newCheckoutDateObj: {
+              $dateFromString: {
+                dateString: "$rawNewCheckoutDate",
+                onError: null,
+                onNull: null,
+              },
+            },
+          },
+        },
+
+        { $project: { checkoutDetails: 0, rawNewCheckoutDate: 0 } },
+      ];
+
+      if (fromDate && toDate) {
+        const startDate = new Date(fromDate);
+        const endDate = new Date(toDate);
+
+        pipeline.push({
+          $match: {
+            $or: [
+              {
+                status: "checkOut",
+                newCheckoutDateObj: { $gt: startDate },
+                arrivalDateObj: { $lte: endDate },
+              },
+              {
+                status: { $ne: "checkOut" },
+                arrivalDateObj: { $lte: endDate },
+              },
+            ],
+          },
+        });
+      }
+
+      return pipeline;
+    };
+
+    const processCheckins = (checkins, fromDate, toDate,roomMeta) => {
+       const { totalRooms, blockedRooms, saleableRooms } = roomMeta;
+      const startDate = new Date(fromDate);
+      const endDate = new Date(toDate);
+
+      const occupiedRoomNames = new Set();
+
+      let paxDomestic = 0;
+      let paxForeign = 0;
+
+      let roomApartment = 0;
+      let roomExtraBed = 0;
+      let foodPlanTotal = 0;
+      let modRevenues = 0;
+      let grandTotal = 0;
+
+      checkins.forEach((doc) => {
+        const country =
+          doc?.guestCountry || doc?.country || doc?.guestDetails?.country || "";
+
+        const domestic = String(country).trim().toLowerCase() === "india";
+
+        const checkoutDoc = doc?.checkoutDoc || {};
+
+        const checkoutDate = doc?.newCheckoutDateObj;
+
+        const checkoutInRange =
+          checkoutDate && checkoutDate >= startDate && checkoutDate <= endDate;
+
+        let docFoodPlanFromRooms = 0;
+
+        (doc?.selectedRooms || []).forEach((room) => {
+          if (room.isSwapped) return;
+
+          occupiedRoomNames.add(room.roomName);
+
+          const pax = Number(room?.pax || 0);
+
+          if (domestic) {
+            paxDomestic += pax;
+          } else {
+            paxForeign += pax;
+          }
+
+          const tariff = Number(
+            Math.round(room.priceLevelRate) ||
+              room.baseAmount ||
+              room.amountAfterTax ||
+              room.totalAmount ||
+              room.baseAmountWithTax ||
+              0,
+          );
+
+          roomApartment += tariff;
+
+          const extraBed = (doc?.additionalPaxDetails || []).reduce(
+            (acc, item) =>
+              item?.roomId?.toString() === room?.roomId?.toString()
+                ? acc + Number(item?.rate || 0)
+                : acc,
+            0,
+          );
+
+          roomExtraBed += extraBed;
+
+          const roomFoodPlans = (doc?.foodPlan || []).filter(
+            (p) => p?.roomId?.toString() === room?.roomId?.toString(),
+          );
+
+          roomFoodPlans.forEach((p) => {
+            docFoodPlanFromRooms += Number(
+              p?.amount || p?.planAmount || p?.total || 0,
+            );
+          });
+        });
+
+        if (checkoutInRange) {
+          foodPlanTotal += Number(
+            checkoutDoc?.foodPlanTotal || docFoodPlanFromRooms || 0,
+          );
+
+          modRevenues += Number(
+            checkoutDoc?.otherCharges || checkoutDoc?.otherAmount || 0,
+          );
+
+          grandTotal += Number(checkoutDoc?.grandTotal || 0);
+        }
+      });
+
+      let occupiedCount = 0;
+
+      allRooms.forEach((room) => {
+        if (occupiedRoomNames.has(room.roomName)) {
+          occupiedCount++;
+        }
+      });
+
+      const totalPax = paxDomestic + paxForeign;
+
+      // For SINGLE DATE: this will be overridden later with unique rooms
+      // For MONTH/YEAR: this will be overridden later with room nights
+      const occupiedPaid = occupiedCount;
+      const occupiedComp = 0;
+      const totalOccupied = occupiedPaid;
+
+      const occPercent =
+        saleableRooms > 0 ? (occupiedPaid / saleableRooms) * 100 : 0;
+
+      const roomTotal = roomApartment + roomExtraBed;
+      const fbTotal = foodPlanTotal;
+
+      const arrTotalRooms = totalRooms > 0 ? roomTotal / totalRooms : 0;
+      const arrSaleableRooms =
+        saleableRooms > 0 ? roomTotal / saleableRooms : 0;
+      const arrOccupiedRooms =
+        totalOccupied > 0 ? roomTotal / totalOccupied : 0;
+
+      if (grandTotal === 0) {
+        grandTotal = roomTotal + fbTotal + modRevenues;
+      }
+
+      return {
+        totalRooms,
+        blockedRooms,
+        saleableRooms,
+        occupiedPaid,
+        occupiedComp,
+        totalOccupied,
+        paxDomestic,
+        paxForeign,
+        totalPax,
+        adults: totalPax,
+        children: 0,
+        males: totalPax,
+        females: 0,
+        noShows: 0,
+        occPercent: Number(occPercent.toFixed(2)),
+        arrTotalRooms: Number(arrTotalRooms.toFixed(2)),
+        arrSaleableRooms: Number(arrSaleableRooms.toFixed(2)),
+        arrOccupiedRooms: Number(arrOccupiedRooms.toFixed(2)),
+        roomApartment: Number(roomApartment.toFixed(2)),
+        roomExtraBed: Number(roomExtraBed.toFixed(2)),
+        roomTotal: Number(roomTotal.toFixed(2)),
+        fbPlanRate: Number(fbTotal.toFixed(2)),
+        fbRoomService: 0,
+        fbRestaurant: 0,
+        fbTotal: Number(fbTotal.toFixed(2)),
+        modRevenues: Number(modRevenues.toFixed(2)),
+        otherRevenues: 0,
+        grandTotal: Number(grandTotal.toFixed(2)),
+        occupiedRoomNames,
+      };
+    };
+
+    let reportData = {};
+
+    // ═══════════════════════════════════════════════════════════════
+    // SINGLE DATE REPORT - occupiedPaid = unique rooms (17)
+    // ═══════════════════════════════════════════════════════════════
+    if (reportDate) {
+       blockedRooms = blockedCounts?.data?.dailyRooms || 0;
+       const saleableRooms = totalRooms - blockedRooms;
+      const checkins = await CheckIn.aggregate(
+        buildOccupancyPipeline(reportDate, reportDate),
+      );
+      const numbers = processCheckins(checkins, reportDate, reportDate, {
+  totalRooms,
+  blockedRooms,
+  saleableRooms,
+});
+
+      const occupiedToday = await getOccupiedCountForDate(reportDate);
+
+      numbers.occupiedPaid = occupiedToday;
+      numbers.totalOccupied = occupiedToday;
+
+      const dateObj = new Date(reportDate);
+
+      reportData = {
+        companyName,
+        fromDate: reportDate,
+        toDate: reportDate,
+        dayLabel: dateObj.toLocaleDateString("en-GB"),
+        monthLabel: dateObj.toLocaleString("en-GB", { month: "long" }),
+        ...numbers,
+      };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // MONTH REPORT - occupiedPaid = room nights (75)
+    // ═══════════════════════════════════════════════════════════════
+    else if (reportMonth && reportYear) {
+
+        blockedRooms = blockedCounts?.data?.monthlyRooms || 0;
+  const saleableRooms = totalRooms - blockedRooms;
+
+      const pad = (n) => String(n).padStart(2, "0");
+      const monthStart = `${reportYear}-${pad(reportMonth)}-01`;
+      const monthLastDay = new Date(reportYear, reportMonth, 0).getDate();
+      const monthFull = `${reportYear}-${pad(reportMonth)}-${monthLastDay}`;
+      const todayStr = new Date().toISOString().split("T")[0];
+
+      const monthEnd =
+        todayStr >= monthStart && todayStr <= monthFull ? todayStr : monthFull;
+
+      const checkins = await CheckIn.aggregate(
+        buildOccupancyPipeline(monthStart, monthEnd),
+      );
+      const numbers = processCheckins(checkins, monthStart, monthEnd , {
+  totalRooms,
+  blockedRooms,
+  saleableRooms,
+});
+
+      // NEW: use room nights for month (17 rooms × multiple nights = 75)
+      const occupiedMonthTotal = getOccupiedRoomNights(
+        checkins,
+        monthStart,
+        monthEnd,
+      );
+      numbers.occupiedPaid = occupiedMonthTotal;
+      numbers.totalOccupied = occupiedMonthTotal;
+
+      const monthLabel = new Date(
+        `${reportYear}-${pad(reportMonth)}-01`,
+      ).toLocaleString("en-GB", { month: "long" });
+
+      reportData = {
+        companyName,
+        fromDate: monthStart,
+        toDate: monthEnd,
+        dayLabel: monthEnd,
+        monthLabel,
+        selectedMonth: Number(reportMonth),
+        selectedYear: Number(reportYear),
+        fullMonthDays: monthLastDay,
+        ...numbers,
+      };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // YEAR REPORT - occupiedPaid = room nights
+    // ═══════════════════════════════════════════════════════════════
+    else if (reportYear) {
+
+        blockedRooms = blockedCounts?.data?.yearlyRooms || 0;
+  const saleableRooms = totalRooms - blockedRooms;
+      const year = parseInt(reportYear);
+      const yearStart = `${year}-04-01`;
+      const fiscalEnd = new Date(year + 1, 2, 31);
+      const todayDate = new Date();
+      const yearEnd =
+        todayDate >= fiscalEnd
+          ? fiscalEnd.toISOString().split("T")[0]
+          : todayDate.toISOString().split("T")[0];
+
+      const checkins = await CheckIn.aggregate(
+        buildOccupancyPipeline(yearStart, yearEnd),
+      );
+      const numbers = processCheckins(checkins, yearStart, yearEnd , {
+  totalRooms,
+  blockedRooms,
+  saleableRooms,
+});
+
+      // NEW: use room nights for year
+      const occupiedYearTotal = getOccupiedRoomNights(
+        checkins,
+        yearStart,
+        yearEnd,
+      );
+      numbers.occupiedPaid = occupiedYearTotal;
+      numbers.totalOccupied = occupiedYearTotal;
+
+      reportData = {
+        companyName,
+        fromDate: yearStart,
+        toDate: yearEnd,
+        dayLabel: `${yearStart} to ${yearEnd}`,
+        monthLabel: `FY ${year}-${year + 1}`,
+        selectedYear: year,
+        ...numbers,
+      };
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Provide reportDate OR reportMonth+reportYear OR reportYear",
+      });
+    }
+
+    return res.json({ success: true, data: reportData });
+  } catch (err) {
+    console.error("Flash report error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error generating flash report",
+      error: err.message,
     });
   }
 };

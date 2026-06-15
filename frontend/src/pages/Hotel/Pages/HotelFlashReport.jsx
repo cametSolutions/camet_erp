@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Document,
   Page,
@@ -19,7 +19,7 @@ Font.register({
 });
 
 const fmt = (n) =>
-  (n || 0).toLocaleString("en-IN", {
+  Number(n || 0).toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -27,7 +27,7 @@ const fmt = (n) =>
 const today = new Date().toISOString().split("T")[0];
 
 const getFiscalYearDays = (selectedYear) => {
-  const year = parseInt(selectedYear);
+  const year = parseInt(selectedYear, 10);
   const fiscalStart = new Date(year, 3, 1);
   const fiscalEnd = new Date(year + 1, 2, 31);
   const todayDate = new Date();
@@ -44,7 +44,7 @@ const getFiscalYearDays = (selectedYear) => {
 };
 
 const getFiscalYearLabel = (selectedYear) => {
-  const year = parseInt(selectedYear);
+  const year = parseInt(selectedYear, 10);
   const fiscalStart = new Date(year, 3, 1);
   const fiscalEnd = new Date(year + 1, 2, 31);
   const todayDate = new Date();
@@ -97,6 +97,7 @@ const TD = ({ children, right, bold, muted }) => (
 );
 
 let _rowIndex = 0;
+
 const TDRow = ({ label, d, m, y, isPercent = false, bold = false }) => {
   _rowIndex++;
   const bg = _rowIndex % 2 === 0 ? "#fff" : "#f9fafb";
@@ -133,7 +134,13 @@ const SectionHeader = ({ title }) => (
   </tr>
 );
 
-const FlashReportPDF = ({ dateData, monthData, yearData, selectedYear, fiscalYearDays }) => {
+const FlashReportPDF = ({
+  dateData,
+  monthData,
+  yearData,
+  selectedYear,
+  fiscalYearDays,
+}) => {
   const s = StyleSheet.create({
     page: { padding: 30, fontSize: 10, fontFamily: "Helvetica" },
     border: { border: "1px solid black", padding: 15 },
@@ -164,7 +171,12 @@ const FlashReportPDF = ({ dateData, monthData, yearData, selectedYear, fiscalYea
     col2: { width: "20%", textAlign: "right", paddingRight: 5 },
     col3: { width: "20%", textAlign: "right", paddingRight: 5 },
     col4: { width: "20%", textAlign: "right", paddingRight: 5 },
-    sectionTitle: { fontWeight: "bold", marginTop: 8, marginBottom: 4, paddingLeft: 5 },
+    sectionTitle: {
+      fontWeight: "bold",
+      marginTop: 8,
+      marginBottom: 4,
+      paddingLeft: 5,
+    },
     totalRow: {
       flexDirection: "row",
       paddingVertical: 3,
@@ -293,103 +305,95 @@ export default function HotelFlashReportPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const requestIdRef = useRef(0);
+  const didFirstLoadRef = useRef(false);
+
   const fiscalYearDays = getFiscalYearDays(selectedYear);
 
-  const fetchDateReport = async () => {
+  const loadReports = useCallback(async () => {
     if (!cmp_id) return;
+
+    const currentRequestId = ++requestIdRef.current;
+
     try {
-      const res = await api.get("/api/sUsers/flash-report", {
-        params: { cmp_id, reportDate: selectedDate },
-      });
-      if (res.data.success) setDateData({ ...res.data.data, selectedDate });
-    } catch (err) {
-      console.error("Date report error:", err);
-      setError("Failed to load date report.");
-    }
-  };
+      setLoading(true);
+      setError("");
 
-  const fetchMonthReport = async () => {
-    if (!cmp_id) return;
-    try {
-      const monthLastDay = new Date(selectedYear, selectedMonth, 0).getDate();
-      const pad = (n) => String(n).padStart(2, "0");
-      const fromDate = `${selectedYear}-${pad(selectedMonth)}-01`;
-      const toDate = `${selectedYear}-${pad(selectedMonth)}-${monthLastDay}`;
+      const [dateRes, monthRes, yearRes] = await Promise.all([
+        api.get("/api/sUsers/flash-report", {
+          params: { cmp_id, reportDate: selectedDate },
+        }),
+        api.get("/api/sUsers/flash-report", {
+          params: {
+            cmp_id,
+            reportMonth: selectedMonth,
+            reportYear: selectedYear,
+          },
+        }),
+        api.get("/api/sUsers/flash-report", {
+          params: {
+            cmp_id,
+            reportYear: selectedYear,
+          },
+        }),
+      ]);
 
-      const res = await api.get("/api/sUsers/flash-report", {
-        params: {
-          cmp_id,
-          reportMonth: selectedMonth,
-          reportYear: selectedYear,
-          fromDate,
-          toDate,
-        },
-      });
+      if (currentRequestId !== requestIdRef.current) return;
 
-      if (res.data.success) {
-        const monthName = new Date(`${selectedYear}-${pad(selectedMonth)}-01`).toLocaleString(
-          "en-GB",
-          { month: "long" }
-        );
+      if (dateRes?.data?.success) {
+        setDateData({ ...dateRes.data.data, selectedDate });
+      }
+
+      if (monthRes?.data?.success) {
+        const monthName = new Date(
+          `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-01`
+        ).toLocaleString("en-GB", { month: "long" });
+
+        const monthLastDay = new Date(selectedYear, selectedMonth, 0).getDate();
 
         setMonthData({
-          ...res.data.data,
+          ...monthRes.data.data,
           selectedMonth,
           selectedYear,
           monthName,
           fullMonthDays: monthLastDay,
         });
       }
-    } catch (err) {
-      console.error("Month report error:", err);
-      setError("Failed to load month report.");
-    }
-  };
 
-  const fetchYearReport = async () => {
-    if (!cmp_id) return;
-    try {
-      const yearStart = `${selectedYear}-04-01`;
-      const yearEnd = `${selectedYear + 1}-03-31`;
-
-      const res = await api.get("/api/sUsers/flash-report", {
-        params: { cmp_id, reportYear: selectedYear, fromDate: yearStart, toDate: yearEnd },
-      });
-
-      if (res.data.success) {
+      if (yearRes?.data?.success) {
         setYearData({
-          ...res.data.data,
+          ...yearRes.data.data,
           selectedYear,
         });
       }
     } catch (err) {
-      console.error("Year report error:", err);
-      setError("Failed to load year report.");
+      if (currentRequestId !== requestIdRef.current) return;
+      console.error("Flash report load error:", err);
+      setError("Failed to load flash report.");
+    } finally {
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
+  }, [cmp_id, selectedDate, selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    if (!cmp_id) return;
+
+    if (!didFirstLoadRef.current) {
+      didFirstLoadRef.current = true;
+    }
+
+    loadReports();
+  }, [cmp_id, selectedDate, selectedMonth, selectedYear, loadReports]);
+
+  const refreshAllReports = async () => {
+    await loadReports();
   };
-
-  useEffect(() => {
-    if (cmp_id) {
-      fetchDateReport();
-      fetchMonthReport();
-      fetchYearReport();
-    }
-  }, [cmp_id]);
-
-  useEffect(() => {
-    fetchDateReport();
-  }, [selectedDate]);
-
-  useEffect(() => {
-    fetchMonthReport();
-  }, [selectedMonth, selectedYear]);
-
-  useEffect(() => {
-    fetchYearReport();
-  }, [selectedYear]);
 
   const exportToPDF = async () => {
     if (!dateData || !monthData || !yearData) return;
+
     const blob = await pdf(
       <FlashReportPDF
         dateData={dateData}
@@ -401,8 +405,11 @@ export default function HotelFlashReportPage() {
     ).toBlob();
 
     const url = URL.createObjectURL(blob);
-    const win = window.open(url, "_blank");
-    if (win) win.onload = () => { win.focus(); win.print(); };
+    window.open(url, "_blank", "noopener,noreferrer");
+
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 10000);
   };
 
   const exportToExcel = () => {
@@ -412,7 +419,12 @@ export default function HotelFlashReportPage() {
       ["HOTEL FLASH REPORT - COMPARISON"],
       [dateData.companyName],
       [],
-      ["Particulars", `Date: ${selectedDate}`, `Month: ${monthData.monthName} ${selectedYear}`, getFiscalYearLabel(selectedYear)],
+      [
+        "Particulars",
+        `Date: ${selectedDate}`,
+        `Month: ${monthData.monthName} ${selectedYear}`,
+        getFiscalYearLabel(selectedYear),
+      ],
       [],
       ["ROOM STATISTICS"],
       ["(A) Total Rooms", dateData.totalRooms, monthData.totalRooms, yearData.totalRooms],
@@ -454,6 +466,7 @@ export default function HotelFlashReportPage() {
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws["!cols"] = [44, 20, 20, 28].map((w) => ({ wch: w }));
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Flash Report");
     XLSX.writeFile(wb, `hotel-flash-report-${today}.xlsx`);
@@ -467,10 +480,9 @@ export default function HotelFlashReportPage() {
     });
 
   const pad = (n) => String(n).padStart(2, "0");
-  const monthName = new Date(`${selectedYear}-${pad(selectedMonth)}-01`).toLocaleString(
-    "en-GB",
-    { month: "long" }
-  );
+  const monthName = new Date(
+    `${selectedYear}-${pad(selectedMonth)}-01`
+  ).toLocaleString("en-GB", { month: "long" });
 
   const yearOptions = Array.from({ length: 5 }, (_, i) => getCurrentYear() - i);
 
@@ -503,7 +515,10 @@ export default function HotelFlashReportPage() {
                   type="date"
                   value={selectedDate}
                   max={today}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                  onChange={(e) => {
+                    setError("");
+                    setSelectedDate(e.target.value);
+                  }}
                   className="h-9 w-36 rounded-lg border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
                 />
               </div>
@@ -514,14 +529,29 @@ export default function HotelFlashReportPage() {
                 </label>
                 <select
                   value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  onChange={(e) => {
+                    setError("");
+                    setSelectedMonth(Number(e.target.value));
+                  }}
                   className="h-9 w-36 rounded-lg border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
                 >
                   {[
-                    "January","February","March","April","May","June",
-                    "July","August","September","October","November","December"
+                    "January",
+                    "February",
+                    "March",
+                    "April",
+                    "May",
+                    "June",
+                    "July",
+                    "August",
+                    "September",
+                    "October",
+                    "November",
+                    "December",
                   ].map((m, i) => (
-                    <option key={i + 1} value={i + 1}>{m}</option>
+                    <option key={i + 1} value={i + 1}>
+                      {m}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -532,21 +562,22 @@ export default function HotelFlashReportPage() {
                 </label>
                 <select
                   value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  onChange={(e) => {
+                    setError("");
+                    setSelectedYear(Number(e.target.value));
+                  }}
                   className="h-9 w-32 rounded-lg border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
                 >
                   {yearOptions.map((y) => (
-                    <option key={y} value={y}>{y}</option>
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <button
-                onClick={() => {
-                  fetchDateReport();
-                  fetchMonthReport();
-                  fetchYearReport();
-                }}
+                onClick={refreshAllReports}
                 disabled={loading}
                 className="h-9 rounded-lg bg-teal-700 px-4 text-xs font-semibold text-white hover:bg-teal-800 disabled:opacity-70"
               >
@@ -586,13 +617,13 @@ export default function HotelFlashReportPage() {
           </div>
         )}
 
-        {loading && (
+        {loading && !dateData && !monthData && !yearData && (
           <div style={{ padding: 30, textAlign: "center", color: "#555" }}>
-            Loading all reports…
+            Loading flash report…
           </div>
         )}
 
-        {!loading && !error && dateData && monthData && yearData && (
+        {!error && dateData && monthData && yearData && (
           <div
             style={{
               marginBottom: 28,
@@ -670,22 +701,6 @@ export default function HotelFlashReportPage() {
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
-
-        {!loading && !dateData && (
-          <div style={{ padding: 30, textAlign: "center", color: "#888" }}>
-            Loading Date report…
-          </div>
-        )}
-        {!loading && !monthData && (
-          <div style={{ padding: 30, textAlign: "center", color: "#888" }}>
-            Loading Month report…
-          </div>
-        )}
-        {!loading && !yearData && (
-          <div style={{ padding: 30, textAlign: "center", color: "#888" }}>
-            Loading Year report…
           </div>
         )}
       </div>
