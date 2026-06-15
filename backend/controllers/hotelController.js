@@ -8239,6 +8239,8 @@ export const getFOSalesSummary = async (req, res) => {
           return total + (pax > 2 ? pax - 2 : 0);
         }, 0) || 0;
 
+        console.log(roomDetails,"roomDetails")
+
       const roomSaleAmount = Number(roomDetails?.taxableAmount || 0);
 
       const totalTax =
