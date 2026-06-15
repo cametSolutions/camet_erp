@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { ROOM_STATUS_VALUES } from "./roomModal.js";
 
 const roomStatusHistorySchema = new mongoose.Schema(
   {
@@ -32,86 +33,28 @@ const roomStatusHistorySchema = new mongoose.Schema(
       index: true,
     },
 
-    oldStatus: {
+    status: {
       type: String,
       required: true,
       trim: true,
-      enum: [
-        "vacant",
-        "occupied",
-        "dirty",
-        "clean",
-        "maintenance",
-        "reserved",
-        "blocked",
-        "out_of_order",
-      ],
+      enum: ROOM_STATUS_VALUES,
     },
 
-    newStatus: {
-      type: String,
+    fromDate: {
+      type: Date,
       required: true,
-      trim: true,
-      enum: [
-        "vacant",
-        "occupied",
-        "dirty",
-        "clean",
-        "maintenance",
-        "reserved",
-        "blocked",
-        "out_of_order",
-      ],
-    },
-
-    reason: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-
-    source: {
-      type: String,
-      trim: true,
-      enum: [
-        "manual",
-        "checkin",
-        "checkout",
-        "housekeeping",
-        "maintenance",
-        "system",
-      ],
-      default: "manual",
-    },
-
-    referenceId: {
-      type: mongoose.Schema.Types.ObjectId,
-      default: null,
-    },
-
-    referenceModel: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-
-    changedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "primaryUser",
-      default: null,
       index: true,
     },
 
-    changedByName: {
-      type: String,
-      trim: true,
-      default: "",
+    toDate: {
+      type: Date,
+      default: null,
     },
 
-    notes: {
-      type: String,
-      trim: true,
-      default: "",
+    isCurrent: {
+      type: Boolean,
+      default: true,
+      index: true,
     },
   },
   {
@@ -123,6 +66,7 @@ const roomStatusHistorySchema = new mongoose.Schema(
 // Useful indexes
 roomStatusHistorySchema.index({ cmp_id: 1, roomId: 1, createdAt: -1 });
 roomStatusHistorySchema.index({ cmp_id: 1, roomNumber: 1, createdAt: -1 });
+roomStatusHistorySchema.index({ cmp_id: 1, roomId: 1, isCurrent: 1 });
 
 const RoomStatusHistory = mongoose.model(
   "RoomStatusHistory",

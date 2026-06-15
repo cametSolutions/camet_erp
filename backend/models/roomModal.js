@@ -1,5 +1,14 @@
 import mongoose from "mongoose";
 
+export const ROOM_STATUS_VALUES = [
+  "vacant",
+  "occupied",
+  "booked",
+  "dirty",
+  "blocked",
+  "household",
+];
+
 const roomSchema = new mongoose.Schema({
   primary_user_id: {
     type: mongoose.Schema.Types.ObjectId,
@@ -56,11 +65,11 @@ const roomSchema = new mongoose.Schema({
       },
     },
   ],
-    status: {
-  type: String,
-  enum: ["vacant", "occupied", "booked", "dirty", "blocked"],
-  default: "vacant",
-}
+  status: {
+    type: String,
+    enum: ROOM_STATUS_VALUES,
+    default: "vacant",
+  },
 
 });
 export default mongoose.model("Room", roomSchema);
