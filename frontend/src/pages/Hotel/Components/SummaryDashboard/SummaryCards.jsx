@@ -4,7 +4,6 @@ import {
   RevenueIllustration,
   DailyCollectionIllustration,
   MonthlyCollectionIllustration,
-  PropertySalesIllustration,
   RoomsIllustration,
 } from "./CardIllustrations";
 import RevenueBreakdownSheet from "./RevenueBreakdownSheet";
@@ -39,28 +38,12 @@ const SummaryCards = ({
   const [propertySalesSheetOpen, setPropertySalesSheetOpen] = useState(false);
   const [roomSheetOpen, setRoomSheetOpen] = useState(false);
 
-  const financialCards = [
-    // {
-    //   title: "Total Revenue",
-    //   value: totalRevenue,
-    //   subtitle: "All time earnings",
-    //   bgColor: "#1db974",
-    //   textColor: "#ffffff",
-    //   subtitleColor: "#0a3d26",
-    //   accentColor: "#17a060",
-    //   badgeColor: "#e6fff4",
-    //   illustration: RevenueIllustration,
-    //   onClick: () => setRevenueSheetOpen(true),
-    // },
-       {
+  const summaryCards = [
+    {
       title: "Total Revenue",
       value: totalPropertySales,
-        subtitle: "All time earnings",
+      subtitle: "All time earnings",
       bgColor: "#1db974",
-      textColor: "#ffffff",
-      subtitleColor: "#0a3d26",
-      accentColor: "#17a060",
-      badgeColor: "#e6fff4",
       illustration: RevenueIllustration,
       onClick: () => setPropertySalesSheetOpen(true),
       cashTotal: totalHotelSales,
@@ -98,27 +81,6 @@ const SummaryCards = ({
       cashTotal: monthlyCash,
       bankTotal: monthlyBank,
     },
-  ];
-
-  const roomCards = [
-    // {
-    //   title: "Property Sales",
-    //   value: totalPropertySales,
-    //   subtitle: "Hotel and restaurant sales",
-    //   bgColor: "#7a5af8",
-    //   textColor: "#ffffff",
-    //   subtitleColor: "#2d1767",
-    //   accentColor: "#5f43dc",
-    //   badgeColor: "#ece8ff",
-    //   illustration: PropertySalesIllustration,
-    //   onClick: () => setPropertySalesSheetOpen(true),
-    //   cashTotal: totalHotelSales,
-    //   bankTotal: totalRestaurantSales,
-    //   cashLabel: "Hotel",
-    //   bankLabel: "Restaurant",
-    //   cashIcon: "hotel",
-    //   bankIcon: "restaurant",
-    // },
     {
       title: "Total Property Rooms",
       value: totalRooms,
@@ -141,27 +103,15 @@ const SummaryCards = ({
 
   return (
     <>
-      <div className=" py-10 px-5 rounded-xl">
+      <div className="py-6 px-1 rounded-xl">
         <div className="mb-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
             Revenue Summary
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 w-full">
-          {financialCards.map((card) => (
-            <StatCard key={card.title} {...card} />
-          ))}
-        </div>
-
-        <div className="mt-6 mb-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
-            Property Summary
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full mt-5">
-          {roomCards.map((card) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full">
+          {summaryCards.map((card) => (
             <StatCard key={card.title} {...card} />
           ))}
         </div>

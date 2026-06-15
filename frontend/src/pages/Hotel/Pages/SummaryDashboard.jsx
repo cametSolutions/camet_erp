@@ -1,6 +1,7 @@
 import TitleDiv from "@/components/common/TitleDiv";
 import SummaryCards from "../Components/SummaryDashboard/SummaryCards";
 import SummaryCardsSkeleton from "../Components/SummaryDashboard/SummaryCardsSkeleton";
+import RevenueTable from "../Components/SummaryDashboard/RevenueTable";
 import { useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/api";
@@ -199,12 +200,14 @@ const SummaryDashboard = () => {
     isPropertySalesSummaryFetching;
 
   const refetch = () => {
-    refetchTotals();
-    refetchRevenueBreakdown();
-    refetchDailyCollectionBreakdown();
-    refetchMonthlyCollectionBreakdown();
-    refetchRoomCountSummary();
-    refetchPropertySalesSummary();
+    Promise.all([
+      refetchTotals(),
+      refetchRevenueBreakdown(),
+      refetchDailyCollectionBreakdown(),
+      refetchMonthlyCollectionBreakdown(),
+      refetchRoomCountSummary(),
+      refetchPropertySalesSummary(),
+    ]);
   };
 
   return (
@@ -213,18 +216,29 @@ const SummaryDashboard = () => {
         <TitleDiv title="Summary Dashboard" />
       </div>
 
-      <div className="px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6 max-w-6xl mx-auto">
+      <div className="px-3 py-4 sm:px-4 sm:py-5 md:px-5 md:py-6 max-w-7xl mx-auto">
 
         {/* Header row */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6 sm:mb-8 bg-slate-100 px-4 py-4 sm:px-6 sm:py-5 rounded-xl">
-          <div className="min-w-0"> 
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-5 sm:mb-6 bg-slate-100 px-4 py-4 sm:px-5 sm:py-5 rounded-xl">
+          <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-700 leading-tight truncate">
-              {company?.name}
+              Summary Dashboard
             </h1>
             <p className="text-sm text-gray-500 mt-1">{today}</p>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refetch}
+              disabled={isFetching}
+              className="flex items-center gap-2 rounded-xl border-gray-200 bg-white text-sm text-gray-700 hover:bg-gray-50"
+            >
+              <RefreshCw size={14} className={isFetching ? "animate-spin" : ""} />
+              {isFetching ? "Refreshing..." : "Refresh Dashboard"}
+            </Button>
+
             <button className="flex items-center gap-2 px-3 py-2 sm:px-4 rounded-xl border border-gray-200 bg-white text-sm text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5" />
@@ -258,7 +272,7 @@ const SummaryDashboard = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => refetch()}
+                onClick={refetch}
                 disabled={isFetching}
                 className="w-fit flex items-center gap-2"
               >
@@ -271,32 +285,38 @@ const SummaryDashboard = () => {
 
         {/* Success */}
         {!isLoading && !isError && data && (
-          <SummaryCards
-            totalRevenue={fmt(data.totalRevenue)}
-            revenueBreakdown={revenueBreakdownData?.companyWiseRevenue ?? []}
-            dailyCollection={fmt(data.dailyCollection)}
-            dailyCollectionBreakdown={
-              dailyCollectionBreakdownData?.companyWiseCollection ?? []
-            }
-            monthlyCollection={fmt(data.monthlyCollection)}
-            monthlyCollectionBreakdown={
-              monthlyCollectionBreakdownData?.companyWiseCollection ?? []
-            }
-            totalPropertySales={fmt(propertySalesSummaryData?.totalPropertySales)}
-            totalHotelSales={fmt(propertySalesSummaryData?.totalHotelSales)}
-            totalRestaurantSales={fmt(propertySalesSummaryData?.totalRestaurantSales)}
-            propertySalesBreakdown={
-              propertySalesSummaryData?.companyWisePropertySales ?? []
-            }
-            totalRooms={String(roomCountSummaryData?.totalRooms ?? 0)}
-            totalAvailableRooms={String(roomCountSummaryData?.totalAvailableRooms ?? 0)}
-            totalBlockedRooms={String(roomCountSummaryData?.totalBlockedRooms ?? 0)}
-            roomCountBreakdown={roomCountSummaryData?.companyWiseRoomCount ?? []}
-            dailyCash={fmt(data.cashCollection?.daily)}
-            dailyBank={fmt(data.bankCollection?.daily)}
-            monthlyCash={fmt(data.cashCollection?.monthly)}
-            monthlyBank={fmt(data.bankCollection?.monthly)}
-          />
+          <div className="space-y-6">
+            <SummaryCards
+              totalRevenue={fmt(data.totalRevenue)}
+              revenueBreakdown={revenueBreakdownData?.companyWiseRevenue ?? []}
+              dailyCollection={fmt(data.dailyCollection)}
+              dailyCollectionBreakdown={
+                dailyCollectionBreakdownData?.companyWiseCollection ?? []
+              }
+              monthlyCollection={fmt(data.monthlyCollection)}
+              monthlyCollectionBreakdown={
+                monthlyCollectionBreakdownData?.companyWiseCollection ?? []
+              }
+              totalPropertySales={fmt(propertySalesSummaryData?.totalPropertySales)}
+              totalHotelSales={fmt(propertySalesSummaryData?.totalHotelSales)}
+              totalRestaurantSales={fmt(propertySalesSummaryData?.totalRestaurantSales)}
+              propertySalesBreakdown={
+                propertySalesSummaryData?.companyWisePropertySales ?? []
+              }
+              totalRooms={String(roomCountSummaryData?.totalRooms ?? 0)}
+              totalAvailableRooms={String(roomCountSummaryData?.totalAvailableRooms ?? 0)}
+              totalBlockedRooms={String(roomCountSummaryData?.totalBlockedRooms ?? 0)}
+              roomCountBreakdown={roomCountSummaryData?.companyWiseRoomCount ?? []}
+              dailyCash={fmt(data.cashCollection?.daily)}
+              dailyBank={fmt(data.bankCollection?.daily)}
+              monthlyCash={fmt(data.cashCollection?.monthly)}
+              monthlyBank={fmt(data.bankCollection?.monthly)}
+            />
+
+            <RevenueTable
+              rows={revenueBreakdownData?.companyWiseRevenue ?? []}
+            />
+          </div>
         )}
       </div>
     </div>
