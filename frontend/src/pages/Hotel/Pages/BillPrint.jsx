@@ -600,7 +600,7 @@ console.log(merged);
     let roomTariffTotal = !doc?.addFoodPlanWithRate
       ? dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0)
       : dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0) -
-        (planAmount + Number(foodPlanAmountWithTax));
+        (planAmount );
 
     const additionalPaxAmount = (doc.selectedRooms || []).reduce(
       (total, room) => {
@@ -1087,7 +1087,7 @@ console.log(merged);
       Number(roomTariffTotal) +
       Number(additionalPaxAmount) +
       Number(planAmount) +
-      Number(foodPlanAmountWithTax) +
+      // Number(foodPlanAmountWithTax) +
       Number(sgstAmount) +
       Number(cgstAmount) +
       Number(restaurantTotal) +
@@ -1213,11 +1213,11 @@ console.log(merged);
         discount: discount,
         sgst:
           Number(foodPlanTax) > 0
-            ? Number(sgstAmount) + Number(foodPlanTax)
+            ? Number(sgstAmount) 
             : sgstAmount,
         cgst:
           Number(foodPlanTax) > 0
-            ? Number(cgstAmount) + Number(foodPlanTax)
+            ? Number(cgstAmount) 
             : cgstAmount,
         restaurant: dineInTotal, // ✅ Only dine-in restaurant amount
         roomService: roomServiceTotal, // ✅ Only room service amount
