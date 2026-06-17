@@ -1,4 +1,5 @@
 import roomModal from "../models/roomModal.js";
+import RoomStatusHistory from "../models/roomStatusHistory.js";
 import { Booking, CheckIn, CheckOut } from "../models/bookingModal.js";
 import mongoose from "mongoose";
 import receiptModel from "../models/receiptModel.js";
@@ -136,10 +137,7 @@ export const buildDatabaseFilterForBooking = (params) => {
 };
 
 // function used to fetch booking
-export const fetchBookingsFromDatabase = async (
-  filter = {},
-  params = {}
-) => {
+export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
   const { skip = 0, limit = 0 } = params;
 
   try {
@@ -174,8 +172,8 @@ export const fetchBookingsFromDatabase = async (
       params?.modal === "checkIn"
         ? bookings.map((b) => b.voucherNumber)
         : params?.modal === "checkOut"
-        ? bookings.map((b) => b.checkInId?.voucherNumber)
-        : [];
+          ? bookings.map((b) => b.checkInId?.voucherNumber)
+          : [];
 
     // Get all room posted sales
     const sales = await salesModel
@@ -188,7 +186,7 @@ export const fetchBookingsFromDatabase = async (
         },
       })
       .select(
-        "_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData"
+        "_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData",
       )
       .lean();
 
@@ -223,17 +221,12 @@ export const fetchBookingsFromDatabase = async (
 
       processedSaleIds.add(saleId);
 
-      const saleAmount = Number(
-        sale.finalAmount || 0
-      );
+      const saleAmount = Number(sale.finalAmount || 0);
 
-      const saleSplits =
-        sale.paymentSplittingData || [];
+      const saleSplits = sale.paymentSplittingData || [];
 
       const uniqueCheckIns = new Set(
-        (sale.convertedFrom || [])
-          .map((c) => c?.checkInNumber)
-          .filter(Boolean)
+        (sale.convertedFrom || []).map((c) => c?.checkInNumber).filter(Boolean),
       );
 
       for (const checkInNumber of uniqueCheckIns) {
@@ -244,31 +237,21 @@ export const fetchBookingsFromDatabase = async (
           };
         }
 
-        totalByCheckIn[
-          checkInNumber
-        ].totalAmount += saleAmount;
+        totalByCheckIn[checkInNumber].totalAmount += saleAmount;
 
         for (const split of saleSplits) {
-          const existing =
-            totalByCheckIn[
-              checkInNumber
-            ].paymentSplittingData.find(
-              (s) =>
-                s.source === split.source &&
-                s.type === split.type
-            );
+          const existing = totalByCheckIn[
+            checkInNumber
+          ].paymentSplittingData.find(
+            (s) => s.source === split.source && s.type === split.type,
+          );
 
           if (existing) {
             existing.amount = parseFloat(
-              (
-                existing.amount +
-                Number(split.amount || 0)
-              ).toFixed(2)
+              (existing.amount + Number(split.amount || 0)).toFixed(2),
             );
           } else {
-            totalByCheckIn[
-              checkInNumber
-            ].paymentSplittingData.push({
+            totalByCheckIn[checkInNumber].paymentSplittingData.push({
               ...split,
             });
           }
@@ -278,93 +261,63 @@ export const fetchBookingsFromDatabase = async (
 
     // Attach sales info to bookings
 
-    const bookingsWithSales =
-      await Promise.all(
-        bookings.map(async (b) => {
-          const voucherNumber =
-            params?.modal === "checkIn"
-              ? b.voucherNumber
-              : params?.modal ===
-                "checkOut"
+    const bookingsWithSales = await Promise.all(
+      bookings.map(async (b) => {
+        const voucherNumber =
+          params?.modal === "checkIn"
+            ? b.voucherNumber
+            : params?.modal === "checkOut"
               ? b.checkInId?.voucherNumber
               : "";
 
-          const checkInData =
-            totalByCheckIn[
-              voucherNumber
-            ] || {
-              totalAmount: 0,
-              paymentSplittingData: [],
-            };
+        const checkInData = totalByCheckIn[voucherNumber] || {
+          totalAmount: 0,
+          paymentSplittingData: [],
+        };
 
-          const specificSale =
-            params?.modal === "checkOut"
-              ? await salesModel
-                  .findOne({
-                    cmp_id: filter.cmp_id,
-                    salesNumber:
-                      b.voucherNumber,
-                  })
-                  .lean()
-              : null;
+        const specificSale =
+          params?.modal === "checkOut"
+            ? await salesModel
+                .findOne({
+                  cmp_id: filter.cmp_id,
+                  salesNumber: b.voucherNumber,
+                })
+                .lean()
+            : null;
 
-          return {
-            ...b.toObject(),
+        return {
+          ...b.toObject(),
 
-            displayTotal:
-              params?.modal ===
-                "checkOut" &&
-              specificSale?.paymentSplittingData
-                ?.length
-                ? specificSale.paymentSplittingData.reduce(
-                    (total, split) =>
-                      total +
-                      Number(
-                        split.amount || 0
-                      ),
-                    0
-                  ) +
-                  Number(
-                    checkInData.totalAmount ||
-                      0
-                  )
-                : 0,
+          displayTotal:
+            params?.modal === "checkOut" &&
+            specificSale?.paymentSplittingData?.length
+              ? specificSale.paymentSplittingData.reduce(
+                  (total, split) => total + Number(split.amount || 0),
+                  0,
+                ) + Number(checkInData.totalAmount || 0)
+              : 0,
 
-            restaurantSubTotal:
-              checkInData.totalAmount,
+          restaurantSubTotal: checkInData.totalAmount,
 
-            restaurantPaymentSplittingData:
-              [
-                ...(specificSale?.paymentSplittingData ||
-                  []),
+          restaurantPaymentSplittingData: [
+            ...(specificSale?.paymentSplittingData || []),
 
-                ...(
-                  checkInData.paymentSplittingData ||
-                  []
-                ),
-              ],
+            ...(checkInData.paymentSplittingData || []),
+          ],
 
-            createdDate:
-              saleObject[
-                b.voucherNumber
-              ],
-          };
-        })
-      );
+          createdDate: saleObject[b.voucherNumber],
+        };
+      }),
+    );
 
     return {
       bookings: bookingsWithSales,
       totalBookings,
     };
   } catch (error) {
-    console.error(
-      "❌ Error fetching bookings:",
-      error
-    );
+    console.error("❌ Error fetching bookings:", error);
 
-    throw new Error(
-      "Failed to fetch bookings."
-    );
+    throw new Error("Failed to fetch bookings.");
   }
 };
 // function used to send response for booking
@@ -418,9 +371,68 @@ export const extractRequestParamsForBookings = (req) => {
 
 export const updateStatus = async (roomData, status, session) => {
   const ids = roomData.map((room) => room.roomId);
+
+  if (ids.length === 0) {
+    return;
+  }
+
+  const rooms = await roomModal
+    .find({ _id: { $in: ids } })
+    .select("_id primary_user_id secondary_user_id cmp_id roomName status")
+    .session(session);
+
+  const roomsToUpdate = rooms.filter((room) => room.status !== status);
+
+  if (roomsToUpdate.length === 0) {
+    return;
+  }
+
+  const roomIds = roomsToUpdate.map((room) => room._id);
+  const now = new Date();
+
+  await RoomStatusHistory.updateMany(
+    { roomId: { $in: roomIds }, isCurrent: true },
+    { $set: { toDate: now, isCurrent: false } },
+    { session },
+  );
+
+  await RoomStatusHistory.insertMany(
+    roomsToUpdate.map((room) => ({
+      primary_user_id: room.primary_user_id,
+      secondary_user_id: room.secondary_user_id,
+      cmp_id: room.cmp_id,
+      roomId: room._id,
+      roomNumber: room.roomName,
+      status: status == "booking" ? "booked" : status == "checkIn" ? "occupied" : status,
+      fromDate: now,
+      toDate: null,
+      isCurrent: true,
+    })),
+    { session },
+  );
+
   await roomModal.updateMany(
-    { _id: { $in: ids } },
+    { _id: { $in: roomIds } },
     { $set: { status } },
+    { session },
+  );
+};
+
+export const createInitialRoomStatusHistory = async (room, session) => {
+  await RoomStatusHistory.create(
+    [
+      {
+        primary_user_id: room.primary_user_id,
+        secondary_user_id: room.secondary_user_id,
+        cmp_id: room.cmp_id,
+        roomId: room._id,
+        roomNumber: room.roomName,
+        status: room.status == "booking" ? "booked" : room.status,
+        fromDate: new Date(),
+        toDate: null,
+        isCurrent: true,
+      },
+    ],
     { session },
   );
 };
@@ -497,7 +509,6 @@ export const createReceiptForSales = async (
   restaurantBaseSaleData = [],
   session,
 ) => {
-
   const receipts = [];
 
   // Find voucher series for receipt
@@ -597,7 +608,7 @@ export const createReceiptForSales = async (
       );
       console.log("outstandings", outstandings);
       for (const item of outstandings) {
-        console.log(outstandings)
+        console.log(outstandings);
         const sale = allSales.find((s) => s.salesNumber === item.bill_no);
         console.log("ssssalesssssssss", sale);
         billData.push({
@@ -1070,126 +1081,6 @@ export const deleteSettlements = async (tallyId, session = null) => {
   }
 };
 
-// restaurantSideDiscountAdjustmentArray [
-//   {
-//     saleId: '6a0ee1ca9878dc1297ec712a',
-//     saleNumber: 'RES-931-2025',
-//     discountAmount: 5,
-//     discountType: 'percentage',
-//     _id: '69687e5566d1c404e145d17b',
-//     option: 'discount',
-//     value: '5',
-//     action: 'sub',
-//     taxPercentage: 0,
-//     taxAmt: 0,
-//     hsn: 'HSN1',
-//     finalValue: 5,
-//     advanceAmount: 95,
-//     netPayable: 0
-//   }
-// ]
-
-// export const handleAdvanceAndDiscountSettlementInRestaurant = async (
-//   settlementData,
-//   selectedCheckOut,
-//   cmp_id,
-//   session,
-// ) => {
-//   try {
-//     let checkInIds = selectedCheckOut.map((item) => item._id);
-//     const tallyData = await TallyData.find({
-//       billId: { $in: checkInIds },
-//     }).session(session);
-
-//     const totalOfDiscountAndAdvance = restaurantSideDiscountAdjustmentArray.reduce(
-//       (acc, item) => acc + item.finalValue + item.advanceAmount,0)
-
-//     if (restaurantSideDiscountAdjustmentArray?.length > 0) {
-//       restaurantSideDiscountAdjustmentArray.forEach(async (item) => {
-//       let totalAmountToDeduct = item.finalValue + item.advanceAmount;
-//         if (item.finalValue > 0) {
-//           let discountObject = {
-//             _id: item._id,
-//             option: "discount",
-//             value: item.value,
-//             action: "sub",
-//             taxPercentage: item.taxPercentage,
-//             taxAmt: item.taxAmt,
-//             hsn: item.hsn,
-//             finalValue: item.finalValue,
-//           };
-//           await salesModel.updateOne(
-//             { _id: item.saleId },
-//             {
-//               $inc: {
-//                 totalAdditionalCharges: +item.finalValue,
-//               },
-//               $push: {
-//                 additionalCharges: discountObject,
-//               },
-//             },
-//           );
-//         }
-  
-//         if (totalAmountToDeduct > 0) {
-//           // await salesModel.
-//           await TallyData.updateOne(
-//             { billId: item.saleId },
-//             {
-//               $inc: {
-//                 bill_amount: -totalAmountToDeduct,
-//                 bill_pending_amt: -totalAmountToDeduct,
-//               },
-//             },
-//           ).session(session);
-//         }
-//       });
-//     }
-
-//     if (tallyData.length > 0) {
-//       for(let i = 0; i < tallyData.length; i++) {
-//         let maximumAmountToDeduct = 0
-//         if(tallyData[i].bill_amount > totalOfDiscountAndAdvance) {
-//           maximumAmountToDeduct = totalOfDiscountAndAdvance 
-//         }else{
-//           maximumAmountToDeduct = tallyData[i].bill_amount
-//         }
-//         if (maximumAmountToDeduct > 0) {
-//           await TallyData.updateOne(
-//             { _id: tallyData[i]._id },
-//             {
-//               $set: {
-//                 bill_amount: maximumAmountToDeduct,
-//                 bill_pending_amt: maximumAmountToDeduct,
-//               },
-//             },
-//           ).session(session);
-
-//           await TallyData.updateOne(
-//             { "billData.billId":tallyData[i]._id },
-//             {
-//               $set: {
-//                 totalBillAmount: maximumAmountToDeduct,
-//                 enteredAmount: maximumAmountToDeduct,
-//                 "billData.settledAmount":maximumAmountToDeduct 
-//               },
-//             },
-//           ).session(session);
-//         }
-//         totalOfDiscountAndAdvance -= maximumAmountToDeduct
-//         if(totalOfDiscountAndAdvance == 0) break
-//       }
-//     }
-//   } catch (error) {
-//     console.error(
-//       "Error in handleAdvanceAndDiscountSettlementInRestaurant:",
-//       error.message,
-//     );
-//     throw error;
-//   }
-// };
-
-
 export const handleAdvanceAndDiscountSettlementInRestaurant = async (
   settlementData,
   selectedCheckOut,
@@ -1197,13 +1088,13 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
   session,
 ) => {
   try {
-
-    if (!Array.isArray(settlementData) || settlementData.length === 0) return true;
+    if (!Array.isArray(settlementData) || settlementData.length === 0)
+      return true;
     if (!Array.isArray(selectedCheckOut) || selectedCheckOut.length === 0) {
       throw new Error("selectedCheckOut is required");
     }
     if (!cmp_id) throw new Error("Missing cmp_id");
-   const checkInIds = selectedCheckOut.map((item) => item._id).filter(Boolean);
+    const checkInIds = selectedCheckOut.map((item) => item._id).filter(Boolean);
 
     const tallyData = await TallyData.find({
       billId: { $in: checkInIds },
@@ -1212,12 +1103,12 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
     // Make sure this array exists
     const restaurantSideDiscountAdjustmentArray = settlementData;
 
-   let totalOfDiscountAndAdvance =
-  restaurantSideDiscountAdjustmentArray.reduce(
-    (acc, item) =>
-      acc + Number(item.finalValue || 0) + Number(item.advanceAmount || 0),
-    0,
-  );
+    let totalOfDiscountAndAdvance =
+      restaurantSideDiscountAdjustmentArray.reduce(
+        (acc, item) =>
+          acc + Number(item.finalValue || 0) + Number(item.advanceAmount || 0),
+        0,
+      );
 
     // Handle discount + advance adjustments
     if (restaurantSideDiscountAdjustmentArray.length > 0) {
@@ -1324,49 +1215,250 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
     );
 
     throw error;
-// helper used convert room to available
+    // helper used convert room to available
   }
 };
 
-
-
-export const updateSwapDetails = async(existingRoom, updatedRoom, session) => {
-  console.log("=== UPDATE SWAP DETAILS STARTED ===",existingRoom);
-  console.log("=== UPDATE SWAP DETAILS STARTED ===",updatedRoom);
+export const updateSwapDetails = async (existingRoom, updatedRoom, session) => {
+  console.log("=== UPDATE SWAP DETAILS STARTED ===", existingRoom);
+  console.log("=== UPDATE SWAP DETAILS STARTED ===", updatedRoom);
   try {
     // ✅ Find rooms that are in existingRoom but NOT in updatedRoom, and isSwap is true
- const removedRooms = existingRoom.filter(
-  (room) =>
-    room.isSwapped === false &&
-    !updatedRoom.some(
-      (updated) => updated.roomId.toString() === room.roomId.toString()
-    )
-);
+    const removedRooms = existingRoom.filter(
+      (room) =>
+        room.isSwapped === false &&
+        !updatedRoom.some(
+          (updated) => updated.roomId.toString() === room.roomId.toString(),
+        ),
+    );
 
-console.log("Removed rooms:", removedRooms);
+    console.log("Removed rooms:", removedRooms);
 
     // ✅ Delete these rooms
-   if (removedRooms.length > 0) {
-  const result = await roomModal.updateMany(
-    {
-      _id: {
-        $in: removedRooms.map((room) => room.roomId),
-      },
-    },
-    {
-      $set: {
-        status: "dirty",
-      },
-    },
-    { session }
-  );
+    if (removedRooms.length > 0) {
+      const result = await roomModal.updateMany(
+        {
+          _id: {
+            $in: removedRooms.map((room) => room.roomId),
+          },
+        },
+        {
+          $set: {
+            status: "dirty",
+          },
+        },
+        { session },
+      );
 
-  console.log("reessE",result);
-}
+      console.log("reessE", result);
+    }
   } catch (error) {
     console.error(error);
   }
 };
 
+export const findBlockedRooms = async (
+  cmp_id,
+  reportDate,
+  reportMonth,
+  reportYear,
+) => {
+  try {
+    const errors = [];
+
+    const isValidObjectId = (id) =>
+      mongoose.Types.ObjectId.isValid(id) &&
+      String(new mongoose.Types.ObjectId(id)) === String(id);
+
+    const isValidDateObject = (date) =>
+      date instanceof Date && !Number.isNaN(date.valueOf());
+
+    const isValidYear = (year) => {
+      const y = Number(year);
+      return Number.isInteger(y) && y >= 2000 && y <= 3000;
+    };
+
+    const isValidMonth = (month) => {
+      const m = Number(month);
+      return Number.isInteger(m) && m >= 1 && m <= 12;
+    };
+
+    if (!cmp_id) errors.push("cmp_id is required");
+    else if (!isValidObjectId(cmp_id)) errors.push("cmp_id is invalid");
+
+    if (reportYear != null && reportYear !== "" && !isValidYear(reportYear)) {
+      errors.push("reportYear must be a valid year");
+    }
+
+    if (
+      reportMonth != null &&
+      reportMonth !== "" &&
+      !isValidMonth(reportMonth)
+    ) {
+      errors.push("reportMonth must be between 1 and 12");
+    }
+
+    if (reportDate != null && reportDate !== "") {
+      const parsedDate = new Date(reportDate);
+      if (!isValidDateObject(parsedDate)) {
+        errors.push("reportDate must be a valid date");
+      }
+    }
+
+    if (errors.length) {
+      return {
+        success: false,
+        message: "Validation failed",
+        errors,
+        data: null,
+      };
+    }
+
+    const cmpObjectId = new mongoose.Types.ObjectId(cmp_id);
+    const now = new Date();
+    const fallbackYear =
+      now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+
+    const selectedYear = reportYear ? Number(reportYear) : fallbackYear;
+
+    const fyStart = new Date(Date.UTC(selectedYear, 3, 1, 0, 0, 0, 0));
+    const fyEnd = new Date(Date.UTC(selectedYear + 1, 3, 1, 0, 0, 0, 0));
+
+    let monthStart = null;
+    let monthEnd = null;
+
+    if (reportMonth != null && reportMonth !== "") {
+      monthStart = new Date(
+        Date.UTC(selectedYear, Number(reportMonth) - 1, 1, 0, 0, 0, 0),
+      );
+      monthEnd = new Date(
+        Date.UTC(selectedYear, Number(reportMonth), 1, 0, 0, 0, 0),
+      );
+    }
+
+    let dayStart = null;
+    let dayEnd = null;
+
+    if (reportDate) {
+      const d = new Date(reportDate);
+      dayStart = new Date(
+        Date.UTC(
+          d.getUTCFullYear(),
+          d.getUTCMonth(),
+          d.getUTCDate(),
+          0,
+          0,
+          0,
+          0,
+        ),
+      );
+      dayEnd = new Date(dayStart);
+      dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+    }
+
+    const baseFilter = {
+      cmp_id: cmpObjectId,
+      status: "blocked",
+    };
+
+    const [yearlyRooms, monthlyRooms, dailyRooms] = await Promise.all([
+      RoomStatusHistory.countDocuments({
+        ...baseFilter,
+        fromDate: { $gte: fyStart, $lt: fyEnd },
+      }),
+      monthStart && monthEnd
+        ? RoomStatusHistory.countDocuments({
+            ...baseFilter,
+            fromDate: { $gte: monthStart, $lt: monthEnd },
+          })
+        : Promise.resolve(0),
+      dayStart && dayEnd
+        ? RoomStatusHistory.countDocuments({
+            ...baseFilter,
+            fromDate: { $lt: dayEnd },
+            $or: [
+              { toDate: { $gte: dayStart } },
+              { toDate: null },
+              { toDate: { $exists: false } },
+            ],
+          })
+        : Promise.resolve(0),
+    ]);
+
+    return {
+      success: true,
+      message: "Blocked room event counts fetched successfully",
+      errors: [],
+      data: {
+        yearlyRooms,
+        monthlyRooms,
+        dailyRooms,
+      },
+    };
+  } catch (error) {
+    console.error("findBlockedRooms error:", error);
+    return {
+      success: false,
+      message: "Failed to fetch blocked rooms",
+      errors: [error.message],
+      data: null,
+    };
+  }
+};
 
 
+export const getRoomMetricsForPeriod = async ({
+  reportType,
+  fromDate,
+  toDate,
+  totalPhysicalRooms,
+  blockedCounts,
+  cmp_id,
+}) => {
+  if (reportType === "day") {
+    const blockedRooms = blockedCounts?.data?.dailyRooms || 0;
+    const totalRooms = totalPhysicalRooms;
+    const saleableRooms = totalRooms - blockedRooms;
+
+    return {
+      totalRooms,
+      blockedRooms,
+      saleableRooms,
+      availableRoomNights: saleableRooms,
+    };
+  }
+
+  const start = new Date(fromDate);
+  const end = new Date(toDate);
+
+  let blockedRoomNights = 0;
+  let days = 0;
+
+  for (
+    let d = new Date(start);
+    d <= end;
+    d.setDate(d.getDate() + 1)
+  ) {
+    days++;
+
+    const dateStr = new Date(d).toISOString().split("T")[0];
+
+    const blockedForDayRes = await findBlockedRooms(cmp_id, dateStr, null, null);
+    const blockedForDay = blockedForDayRes?.data?.dailyRooms || 0;
+
+    blockedRoomNights += blockedForDay;
+  }
+
+  const totalRooms = totalPhysicalRooms;
+  const totalRoomNights = totalPhysicalRooms * days;
+  const saleableRoomNights = totalRoomNights - blockedRoomNights;
+
+  return {
+    totalRooms,
+    blockedRooms: blockedRoomNights,
+    saleableRooms: saleableRoomNights,
+    availableRoomNights: saleableRoomNights,
+    totalRoomNights,
+    periodDays: days,
+  };
+};
