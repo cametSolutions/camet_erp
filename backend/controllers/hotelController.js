@@ -27,7 +27,8 @@ import {
   saveSettlementDataHotel,
   handleAdvanceAndDiscountSettlementInRestaurant,
   updateSwapDetails,
-  findBlockedRooms
+  findBlockedRooms,
+  getRoomMetricsForPeriod,
 } from "../helpers/hotelHelper.js";
 import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
@@ -848,8 +849,7 @@ export const getRooms = async (req, res) => {
       const isOccupied = occupiedRoomId.has(roomId);
 
       // Exclude rooms that housekeeping/manual ops have taken out of sale.
-      const isCleanAndOpen =
-        !["dirty", "blocked"].includes(room.status);
+      const isCleanAndOpen = !["dirty", "blocked"].includes(room.status);
       //  &&
       // room.status !== "checkIn";
 
@@ -5825,8 +5825,6 @@ export const getOtherCharges = async (req, res) => {
   }
 };
 
-
-
 export const getTouristReport = async (req, res) => {
   try {
     let { fromDate, toDate } = req.query;
@@ -7707,7 +7705,6 @@ export const getFOSalesSummary = async (req, res) => {
     const startDate = new Date(`${fromDate}T00:00:00.000+05:30`);
     const endDate = new Date(`${toDate}T23:59:59.999+05:30`);
 
-
     const getSaleCheckInNumbers = (sale) => {
       if (!Array.isArray(sale?.convertedFrom)) return [];
       return sale.convertedFrom
@@ -7737,7 +7734,7 @@ export const getFOSalesSummary = async (req, res) => {
       }
     };
 
-    console.log("xxxxxxxxx",startDate,endDate)
+    console.log("xxxxxxxxx", startDate, endDate);
 
     const dateRangeSales = await salesModel
       .find({
@@ -7750,7 +7747,7 @@ export const getFOSalesSummary = async (req, res) => {
       })
       .lean();
 
-      console.log(dateRangeSales.length)
+    console.log(dateRangeSales.length);
 
     const checkInNumbers = [
       ...new Set(dateRangeSales.flatMap((sale) => getSaleCheckInNumbers(sale))),
@@ -7817,7 +7814,7 @@ export const getFOSalesSummary = async (req, res) => {
           return total + (pax > 2 ? pax - 2 : 0);
         }, 0) || 0;
 
-        console.log(roomDetails,"roomDetails")
+      console.log(roomDetails, "roomDetails");
 
       const roomSaleAmount = Number(roomDetails?.taxableAmount || 0);
 
@@ -7925,8 +7922,6 @@ export const getFOSalesSummary = async (req, res) => {
   }
 };
 
-
-
 export const getFlashReportForDate = async (req, res) => {
   try {
     const { cmp_id, reportDate, reportMonth, reportYear } = req.query;
@@ -7948,17 +7943,19 @@ export const getFlashReportForDate = async (req, res) => {
       )
       .lean();
 
+    const physicalRooms = allRooms.length;
+
     const totalRooms = allRooms.length;
     const blockedCounts = await findBlockedRooms(
-  cmp_id,
-  reportDate,
-  reportMonth,
-  reportYear,
-);
-// expected shape from previous answer:
-// blockedCounts.data = { yearlyRooms, monthlyRooms, dailyRooms }
+      cmp_id,
+      reportDate,
+      reportMonth,
+      reportYear,
+    );
+    // expected shape from previous answer:
+    // blockedCounts.data = { yearlyRooms, monthlyRooms, dailyRooms }
 
-    let blockedRooms =0
+    let blockedRooms = 0;
     const saleableRooms = totalRooms - blockedRooms;
 
     const getOccupiedCountForDate = async (date) => {
@@ -8105,8 +8102,8 @@ export const getFlashReportForDate = async (req, res) => {
       return pipeline;
     };
 
-    const processCheckins = (checkins, fromDate, toDate,roomMeta) => {
-       const { totalRooms, blockedRooms, saleableRooms } = roomMeta;
+    const processCheckins = (checkins, fromDate, toDate, roomMeta) => {
+      const { totalRooms, blockedRooms, saleableRooms } = roomMeta;
       const startDate = new Date(fromDate);
       const endDate = new Date(toDate);
 
@@ -8210,8 +8207,9 @@ export const getFlashReportForDate = async (req, res) => {
       const occupiedComp = 0;
       const totalOccupied = occupiedPaid;
 
+      const denominator = saleableRooms > 0 ? saleableRooms : 0;
       const occPercent =
-        saleableRooms > 0 ? (occupiedPaid / saleableRooms) * 100 : 0;
+        denominator > 0 ? (occupiedPaid / denominator) * 100 : 0;
 
       const roomTotal = roomApartment + roomExtraBed;
       const fbTotal = foodPlanTotal;
@@ -8265,16 +8263,25 @@ export const getFlashReportForDate = async (req, res) => {
     // SINGLE DATE REPORT - occupiedPaid = unique rooms (17)
     // ═══════════════════════════════════════════════════════════════
     if (reportDate) {
-       blockedRooms = blockedCounts?.data?.dailyRooms || 0;
-       const saleableRooms = totalRooms - blockedRooms;
+      const roomMeta = await getRoomMetricsForPeriod({
+        reportType: "day",
+        fromDate: reportDate,
+        toDate: reportDate,
+        totalPhysicalRooms: physicalRooms,
+        blockedCounts,
+        cmp_id,
+      });
+
+      blockedRooms = blockedCounts?.data?.dailyRooms || 0;
+      const saleableRooms = totalRooms - blockedRooms;
       const checkins = await CheckIn.aggregate(
         buildOccupancyPipeline(reportDate, reportDate),
       );
       const numbers = processCheckins(checkins, reportDate, reportDate, {
-  totalRooms,
-  blockedRooms,
-  saleableRooms,
-});
+        totalRooms,
+        blockedRooms,
+        saleableRooms,
+      });
 
       const occupiedToday = await getOccupiedCountForDate(reportDate);
 
@@ -8297,9 +8304,8 @@ export const getFlashReportForDate = async (req, res) => {
     // MONTH REPORT - occupiedPaid = room nights (75)
     // ═══════════════════════════════════════════════════════════════
     else if (reportMonth && reportYear) {
-
-        blockedRooms = blockedCounts?.data?.monthlyRooms || 0;
-  const saleableRooms = totalRooms - blockedRooms;
+      blockedRooms = blockedCounts?.data?.monthlyRooms || 0;
+      const saleableRooms = totalRooms - blockedRooms;
 
       const pad = (n) => String(n).padStart(2, "0");
       const monthStart = `${reportYear}-${pad(reportMonth)}-01`;
@@ -8313,11 +8319,20 @@ export const getFlashReportForDate = async (req, res) => {
       const checkins = await CheckIn.aggregate(
         buildOccupancyPipeline(monthStart, monthEnd),
       );
-      const numbers = processCheckins(checkins, monthStart, monthEnd , {
-  totalRooms,
-  blockedRooms,
-  saleableRooms,
-});
+
+      const roomMeta = await getRoomMetricsForPeriod({
+        reportType: "month",
+        fromDate: monthStart,
+        toDate: monthEnd,
+        totalPhysicalRooms: physicalRooms,
+        blockedCounts,
+        cmp_id,
+      });
+      const numbers = processCheckins(checkins, monthStart, monthEnd, {
+        totalRooms,
+        blockedRooms,
+        saleableRooms,
+      });
 
       // NEW: use room nights for month (17 rooms × multiple nights = 75)
       const occupiedMonthTotal = getOccupiedRoomNights(
@@ -8349,9 +8364,8 @@ export const getFlashReportForDate = async (req, res) => {
     // YEAR REPORT - occupiedPaid = room nights
     // ═══════════════════════════════════════════════════════════════
     else if (reportYear) {
-
-        blockedRooms = blockedCounts?.data?.yearlyRooms || 0;
-  const saleableRooms = totalRooms - blockedRooms;
+      blockedRooms = blockedCounts?.data?.yearlyRooms || 0;
+      const saleableRooms = totalRooms - blockedRooms;
       const year = parseInt(reportYear);
       const yearStart = `${year}-04-01`;
       const fiscalEnd = new Date(year + 1, 2, 31);
@@ -8364,11 +8378,21 @@ export const getFlashReportForDate = async (req, res) => {
       const checkins = await CheckIn.aggregate(
         buildOccupancyPipeline(yearStart, yearEnd),
       );
-      const numbers = processCheckins(checkins, yearStart, yearEnd , {
-  totalRooms,
-  blockedRooms,
-  saleableRooms,
-});
+      const roomMeta = await getRoomMetricsForPeriod({
+        reportType: "year",
+        fromDate: yearStart,
+        toDate: yearEnd,
+        totalPhysicalRooms: physicalRooms,
+        blockedCounts,
+        cmp_id,
+      });
+
+      console.log("srreee", roomMeta);
+      const numbers = processCheckins(checkins, yearStart, yearEnd, {
+        totalRooms,
+        blockedRooms,
+        saleableRooms,
+      });
 
       // NEW: use room nights for year
       const occupiedYearTotal = getOccupiedRoomNights(

@@ -403,7 +403,7 @@ export const updateStatus = async (roomData, status, session) => {
       cmp_id: room.cmp_id,
       roomId: room._id,
       roomNumber: room.roomName,
-      status: status == "booking" ? "booked" : status,
+      status: status == "booking" ? "booked" : status == "checkIn" ? "occupied" : status,
       fromDate: now,
       toDate: null,
       isCurrent: true,
@@ -1257,7 +1257,6 @@ export const updateSwapDetails = async (existingRoom, updatedRoom, session) => {
   }
 };
 
-
 export const findBlockedRooms = async (
   cmp_id,
   reportDate,
@@ -1291,7 +1290,11 @@ export const findBlockedRooms = async (
       errors.push("reportYear must be a valid year");
     }
 
-    if (reportMonth != null && reportMonth !== "" && !isValidMonth(reportMonth)) {
+    if (
+      reportMonth != null &&
+      reportMonth !== "" &&
+      !isValidMonth(reportMonth)
+    ) {
       errors.push("reportMonth must be between 1 and 12");
     }
 
@@ -1326,10 +1329,10 @@ export const findBlockedRooms = async (
 
     if (reportMonth != null && reportMonth !== "") {
       monthStart = new Date(
-        Date.UTC(selectedYear, Number(reportMonth) - 1, 1, 0, 0, 0, 0)
+        Date.UTC(selectedYear, Number(reportMonth) - 1, 1, 0, 0, 0, 0),
       );
       monthEnd = new Date(
-        Date.UTC(selectedYear, Number(reportMonth), 1, 0, 0, 0, 0)
+        Date.UTC(selectedYear, Number(reportMonth), 1, 0, 0, 0, 0),
       );
     }
 
@@ -1338,12 +1341,17 @@ export const findBlockedRooms = async (
 
     if (reportDate) {
       const d = new Date(reportDate);
-      dayStart = new Date(Date.UTC(
-        d.getUTCFullYear(),
-        d.getUTCMonth(),
-        d.getUTCDate(),
-        0, 0, 0, 0
-      ));
+      dayStart = new Date(
+        Date.UTC(
+          d.getUTCFullYear(),
+          d.getUTCMonth(),
+          d.getUTCDate(),
+          0,
+          0,
+          0,
+          0,
+        ),
+      );
       dayEnd = new Date(dayStart);
       dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
     }
@@ -1367,7 +1375,12 @@ export const findBlockedRooms = async (
       dayStart && dayEnd
         ? RoomStatusHistory.countDocuments({
             ...baseFilter,
-            fromDate: { $gte: dayStart, $lt: dayEnd },
+            fromDate: { $lt: dayEnd },
+            $or: [
+              { toDate: { $gte: dayStart } },
+              { toDate: null },
+              { toDate: { $exists: false } },
+            ],
           })
         : Promise.resolve(0),
     ]);
@@ -1391,4 +1404,61 @@ export const findBlockedRooms = async (
       data: null,
     };
   }
+};
+
+
+export const getRoomMetricsForPeriod = async ({
+  reportType,
+  fromDate,
+  toDate,
+  totalPhysicalRooms,
+  blockedCounts,
+  cmp_id,
+}) => {
+  if (reportType === "day") {
+    const blockedRooms = blockedCounts?.data?.dailyRooms || 0;
+    const totalRooms = totalPhysicalRooms;
+    const saleableRooms = totalRooms - blockedRooms;
+
+    return {
+      totalRooms,
+      blockedRooms,
+      saleableRooms,
+      availableRoomNights: saleableRooms,
+    };
+  }
+
+  const start = new Date(fromDate);
+  const end = new Date(toDate);
+
+  let blockedRoomNights = 0;
+  let days = 0;
+
+  for (
+    let d = new Date(start);
+    d <= end;
+    d.setDate(d.getDate() + 1)
+  ) {
+    days++;
+
+    const dateStr = new Date(d).toISOString().split("T")[0];
+
+    const blockedForDayRes = await findBlockedRooms(cmp_id, dateStr, null, null);
+    const blockedForDay = blockedForDayRes?.data?.dailyRooms || 0;
+
+    blockedRoomNights += blockedForDay;
+  }
+
+  const totalRooms = totalPhysicalRooms;
+  const totalRoomNights = totalPhysicalRooms * days;
+  const saleableRoomNights = totalRoomNights - blockedRoomNights;
+
+  return {
+    totalRooms,
+    blockedRooms: blockedRoomNights,
+    saleableRooms: saleableRoomNights,
+    availableRoomNights: saleableRoomNights,
+    totalRoomNights,
+    periodDays: days,
+  };
 };
