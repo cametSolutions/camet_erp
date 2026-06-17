@@ -4684,6 +4684,10 @@ export const getHotelSalesDetails = async (req, res) => {
       }
 
       // Get party name from either nested party object or partyDetails
+const roomNames =
+  sale.checkInData?.selectedRooms
+    ?.map((room) => room.roomName)
+    .filter(Boolean) || [];
 
       const finalAmount = Number(sale.finalAmount) || 0;
       const subTotal = Number(sale.subTotal) || finalAmount;
@@ -4730,10 +4734,10 @@ export const getHotelSalesDetails = async (req, res) => {
         businessClassification: sale.businessClassification,
         tableNumber: sale.tableNumber || "",
         waiterName: sale.waiterName || "",
-        roomNumber:
-          sale.checkInData?.selectedRooms?.[0]?.roomName ||
-          sale.roomNumber ||
-          "",
+          roomNumber: roomNames.length
+    ? roomNames.join(", ")
+    : sale.roomNumber || "",
+  roomNames,
         guestName: gusestName || "",
         itemCount: sale.items?.length || 0,
         isHotelSale: sale.isHotelSale || false,
@@ -5155,7 +5159,7 @@ export const cancelBooking = async (req, res) => {
 //     const checkoutData = [];
 //     checkouts.forEach((checkout) => {
 //       if (checkout.selectedRooms && checkout.selectedRooms.length > 0) {
-//         const roomNames = checkout.selectedRooms
+//         const Agent name= checkout.selectedRooms
 //           .map((room) => room.roomName)
 //           .join(",");
 //         const totalRoomamount = checkout.selectedRooms.reduce(
@@ -8370,6 +8374,258 @@ export const getFOSalesSummary = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: err.message,
+    });
+  }
+};
+
+
+export const getCancellationReport = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+    const { startDate, endDate, cancelType = "all", owner } = req.query;
+
+    if (!cmp_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Company ID (cmp_id) is required",
+      });
+    }
+
+    if (!owner) {
+      return res.status(400).json({
+        success: false,
+        message: "Owner ID is required",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(owner)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Owner ID format",
+      });
+    }
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Start date and end date are required",
+      });
+    }
+
+    const start = new Date(`${startDate}T00:00:00.000+05:30`);
+    const end = new Date(`${endDate}T23:59:59.999+05:30`);
+
+    if (start > end) {
+      return res.status(400).json({
+        success: false,
+        message: "Start date cannot be later than end date",
+      });
+    }
+
+    const cmpObjectId = new mongoose.Types.ObjectId(cmp_id);
+
+    const buildBaseQuery = () => ({
+      cmp_id: cmpObjectId,
+      status: "cancelled",
+    });
+
+    const typesToFetch =
+      cancelType === "all"
+        ? ["booking", "checkin", "checkout", "kot", "sale", "receipt"]
+        : [cancelType];
+
+    const results = [];
+    const summary = {
+      total: 0,
+      booking: 0,
+      checkin: 0,
+      checkout: 0,
+      kot: 0,
+      sale: 0,
+      receipt: 0,
+    };
+
+    if (typesToFetch.includes("booking")) {
+      const bookingCancels = await Booking.find({
+        ...buildBaseQuery(),
+        updatedAt: { $gte: start, $lte: end },
+      })
+        .populate("Secondary_user_id", "name")
+        .select(
+          "voucherNumber updatedAt Secondary_user_id cancelReason bookingDate status"
+        );
+
+      bookingCancels.forEach((b) => {
+        results.push({
+          cancelType: "booking",
+          voucherNumber: b.voucherNumber || "-",
+          cancelledAt: b.updatedAt || null,
+          cancelledBy: b.Secondary_user_id?._id || b.Secondary_user_id || "-",
+          cancelledByName: b.Secondary_user_id?.name || "-",
+          reason: b.cancelReason || "-",
+          referenceNumber: b.voucherNumber || "-",
+          bookingDate: b.bookingDate || "-",
+        });
+      });
+
+      summary.booking += bookingCancels.length;
+      summary.total += bookingCancels.length;
+    }
+
+    if (typesToFetch.includes("checkin")) {
+      const checkinCancels = await CheckIn.find({
+        ...buildBaseQuery(),
+        updatedAt: { $gte: start, $lte: end },
+      })
+        .populate("Secondary_user_id", "name")
+        .select(
+          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status"
+        );
+
+      checkinCancels.forEach((c) => {
+        results.push({
+          cancelType: "checkin",
+          voucherNumber: c.voucherNumber || "-",
+          cancelledAt: c.updatedAt || null,
+          cancelledBy: c.Secondary_user_id?._id || c.Secondary_user_id || "-",
+          cancelledByName: c.Secondary_user_id?.name || "-",
+          reason: c.cancelReason || "-",
+          referenceNumber: c.voucherNumber || "-",
+          guestName: c.guestName || "-",
+        });
+      });
+
+      summary.checkin += checkinCancels.length;
+      summary.total += checkinCancels.length;
+    }
+
+    if (typesToFetch.includes("checkout")) {
+      const checkoutCancels = await CheckOut.find({
+        ...buildBaseQuery(),
+        updatedAt: { $gte: start, $lte: end },
+      })
+        .populate("Secondary_user_id", "name")
+        .select(
+          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status"
+        );
+
+      checkoutCancels.forEach((c) => {
+        results.push({
+          cancelType: "checkout",
+          voucherNumber: c.voucherNumber || "-",
+          cancelledAt: c.updatedAt || null,
+          cancelledBy: c.Secondary_user_id?._id || c.Secondary_user_id || "-",
+          cancelledByName: c.Secondary_user_id?.name || "-",
+          reason: c.cancelReason || "-",
+          referenceNumber: c.voucherNumber || "-",
+          guestName: c.guestName || "-",
+        });
+      });
+
+      summary.checkout += checkoutCancels.length;
+      summary.total += checkoutCancels.length;
+    }
+
+    if (typesToFetch.includes("kot")) {
+      const kotCancels = await Kot.find({
+        ...buildBaseQuery(),
+        cancelledAt: { $gte: start, $lte: end },
+      }).select("voucherNumber cancelledAt cancelledBy cancelReason tableNumber");
+
+      kotCancels.forEach((k) => {
+        results.push({
+          cancelType: "kot",
+          voucherNumber: k.voucherNumber || "-",
+          cancelledAt: k.cancelledAt || null,
+          cancelledBy: k.cancelledBy || "-",
+          cancelledByName: "-",
+          reason: k.cancelReason || "-",
+          referenceNumber: k.voucherNumber || "-",
+          tableNumber: k.tableNumber || "-",
+        });
+      });
+
+      summary.kot += kotCancels.length;
+      summary.total += kotCancels.length;
+    }
+
+    if (typesToFetch.includes("receipt")) {
+      const receiptCancels = await ReceiptModel.find({
+    cmp_id: cmpObjectId,
+    isCancelled: true,
+    updatedAt: { $gte: start, $lte: end },
+  }).lean();
+
+      receiptCancels.forEach((r) => {
+        results.push({
+          cancelType: "receipt",
+          voucherNumber: r.receiptNumber || "-",
+          cancelledAt: r.updatedAt || null,
+           cancelledBy: r.Secondary_user_id?._id || r.Secondary_user_id || "-",
+          cancelledByName: r.Secondary_user_id?.name || "-",
+          reason: r.cancelReason || "-",
+          referenceNumber: r.voucherNumber || "-",
+          tableNumber: r.tableNumber || "-",
+        });
+      });
+
+      summary.receipt += receiptCancels.length;
+      summary.total += receiptCancels.length;
+    }
+
+   if (typesToFetch.includes("sale")) {
+  const saleCancels = await salesModel.find({
+    cmp_id: cmpObjectId,
+    isCancelled: true,
+    updatedAt: { $gte: start, $lte: end },
+  }).select(
+    "salesNumber updatedAt cancelledBy cancelReason partyName"
+  );
+
+  saleCancels.forEach((s) => {
+    results.push({
+      cancelType: "sale",
+      voucherNumber: s.salesNumber || "-",
+      cancelledAt: s.updatedAt || null,
+      cancelledBy: s.cancelledBy || "-",
+      cancelledByName: "-",
+      reason: s.cancelReason || "-",
+      referenceNumber: s.salesNumber || "-",
+      partyName: s.partyName || "-",
+    });
+  });
+
+  summary.sale += saleCancels.length;
+  summary.total += saleCancels.length;
+}
+
+    results.sort(
+      (a, b) =>
+        new Date(a.cancelledAt || 0).getTime() -
+        new Date(b.cancelledAt || 0).getTime()
+    );
+
+    return res.json({
+      success: true,
+      data: results,
+      summary,
+      companyId: cmp_id,
+      owner,
+      dateRange: {
+        startDate: start.toISOString().split("T")[0],
+        endDate: end.toISOString().split("T")[0],
+      },
+      message: `Found ${results.length} cancellation records`,
+    });
+  } catch (error) {
+    console.error("Error fetching cancellation report:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Something went wrong",
     });
   }
 };
