@@ -52,6 +52,11 @@ import { transactions } from "./commonController.js";
 import settlementModel from "../models/settlementModel.js";
 import { statesData } from "../../frontend/constants/states.js";
 import { getFullRoomDetails } from "../helpers/saleCalculationHelper.js";
+import {
+  ensureHotelDateIsEditable,
+  ensureHotelTariffDateIsEditable,
+  ensureSecondaryUserCompanyAccess,
+} from "../helpers/nightAuditHelper.js";
 // function used to save additional pax details
 export const saveAdditionalPax = async (req, res) => {
   try {
@@ -1157,7 +1162,7 @@ export const roomBooking = async (req, res) => {
         // 🔹 Save Advance Object
         const advanceObject = new TallyData({
           Primary_user_id: req.pUserId || req.owner,
-          cmp_id: orgId,
+          cmp_id: effectiveCmpId,
           party_id: bookingData?.customerId,
           party_name: bookingData?.customerName,
           mobile_no: bookingData?.mobileNumber,
@@ -1721,6 +1726,35 @@ export const updateBooking = async (req, res) => {
       .findOne({ _id: bookingId })
       .session(session);
 
+    if (!findOne) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    const effectiveCmpId = findOne?.cmp_id?.toString();
+
+    await ensureSecondaryUserCompanyAccess({
+      cmp_id: effectiveCmpId,
+      secondaryUserId: req.sUserId,
+    });
+
+    if (modal === "checkIn") {
+      if (isTariffRateChange) {
+        await ensureHotelTariffDateIsEditable({
+          cmp_id: findOne.cmp_id,
+          arrivalDate: findOne.arrivalDate,
+          checkOutDate: findOne.checkOutDate,
+          requestedTariffDate: bookingData.currentDate,
+          session,
+        });
+      } else {
+        await ensureHotelDateIsEditable({
+          cmp_id: findOne.cmp_id,
+          recordDate: findOne.arrivalDate,
+          session,
+        });
+      }
+    }
+
     await updateSwapDetails(
       findOne?.selectedRooms,
       bookingData.selectedRooms,
@@ -1798,7 +1832,7 @@ export const updateBooking = async (req, res) => {
     // ADVANCE / RECEIPT CONTEXT
     // -----------------------------
     const voucher = await VoucherSeriesModel.findOne({
-      cmp_id: orgId,
+      cmp_id: effectiveCmpId,
       voucherType: "receipt",
     }).session(session);
 
@@ -1919,7 +1953,7 @@ export const updateBooking = async (req, res) => {
           const selectedBankOrCashParty = singlePaymentDetails?.accountId;
 
           const receiptVoucher = await generateVoucherNumber(
-            orgId,
+            effectiveCmpId,
             "receipt",
             series_idReceipt,
             session,
@@ -1950,7 +1984,7 @@ export const updateBooking = async (req, res) => {
             bookingData.advanceAmount,
             method === "cash" ? "Cash" : "Online",
             billData,
-            orgId,
+            effectiveCmpId,
             series_idReceipt,
             selectedParty,
             bookingData,
@@ -1961,7 +1995,7 @@ export const updateBooking = async (req, res) => {
           // Settlement
           await saveSettlementDataHotel(
             rawParty,
-            orgId,
+            effectiveCmpId,
             method === "cash" ? "cash" : "bank",
             selectedModal.modelName,
             findOne?.voucherNumber || bookingData.voucherNumber,
@@ -1978,7 +2012,7 @@ export const updateBooking = async (req, res) => {
           // multiple payments
           for (const payment of paymentData?.payments || []) {
             const receiptVoucher = await generateVoucherNumber(
-              orgId,
+              effectiveCmpId,
               "receipt",
               series_idReceipt,
               session,
@@ -1994,7 +2028,7 @@ export const updateBooking = async (req, res) => {
 
             await saveSettlementDataHotel(
               rawParty,
-              orgId,
+              effectiveCmpId,
               payment.method === "cash" ? "cash" : "bank",
               selectedModal.modelName,
               findOne?.voucherNumber || bookingData.voucherNumber,
@@ -2026,7 +2060,7 @@ export const updateBooking = async (req, res) => {
               payment.amount,
               payment.method === "cash" ? "Cash" : "Online",
               billData,
-              orgId,
+              effectiveCmpId,
               series_idReceipt,
               selectedParty,
               bookingData,
@@ -2104,9 +2138,12 @@ export const updateBooking = async (req, res) => {
       error: error.message,
       bookingId: req.params.id,
     });
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
-      message: "Server error: " + error.message,
+      message:
+        error.status && error.status !== 500
+          ? error.message
+          : "Server error: " + error.message,
       error: error.message,
     });
   } finally {
