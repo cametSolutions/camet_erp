@@ -88,6 +88,11 @@ import {
 
 import { convertCheckOutToSale } from '../controllers/hotelController2CheckOut.js';
 import {
+    completeNightAudit,
+    getNightAuditStatus,
+    reopenNightAudit
+} from '../controllers/nightAuditController.js';
+import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot,getKotDash, updateKotStatus, editKot,
     getRoomDataForRestaurant, updateKotPayment, getPaymentType, saveTableNumber, getSalePrintData, updateTable, getTables, deleteTable,
     updateTableStatus, getKotDataByTable, updateConfigurationForKotApproval, getSummaryDashboard, cancelKot, directSale, searchItems,getComplementaryCashOrBank
@@ -400,6 +405,9 @@ router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,g
 router.put('/updateTableStatus/:cmp_id/:tableNumber',authSecondary,updateTableStatus )
 router.get('/getKotDataByTable/:cmp_id',authSecondary,getKotDataByTable )
 router.get('/getDateBasedRoomsWithStatus/:cmp_id',authSecondary,getDateBasedRoomsWithStatus)
+router.get('/nightAudit/:cmp_id/status', authSecondary, secondaryIsBlocked, companyAuthentication, getNightAuditStatus)
+router.post('/nightAudit/:cmp_id/complete', authSecondary, secondaryIsBlocked, companyAuthentication, completeNightAudit)
+router.post('/nightAudit/:cmp_id/reopen', authSecondary, secondaryIsBlocked, companyAuthentication, reopenNightAudit)
 router.put('/checkOutWithArray/:cmp_id',authSecondary,checkoutWithArrayOfData)
 router.post('/fetchOutStandingAndFoodData/:cmp_id',authSecondary,fetchOutStandingAndFoodData)
 router.post('/convertCheckOutToSale/:cmp_id',authSecondary,convertCheckOutToSale)
