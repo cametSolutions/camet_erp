@@ -5108,6 +5108,8 @@ export const cancelBooking = async (req, res) => {
     // Update the booking status to cancelled
     booking.status = "cancelled";
     booking.cancelledAt = new Date();
+     booking.cancelledBy = req.sUserId;
+    booking.cancelledByName = req.suser?.name || "";
     await booking.save();
 
     // Optional: If rooms were allocated, release them

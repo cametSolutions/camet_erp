@@ -414,7 +414,7 @@ router.get("/receiptReport/:cmp_id",getReceiptsByVoucherSeries)
 // router.get("/unreconciled/:cmp_id", getUnreconciledSales);
 router.put("/cancel/:id",authSecondary, cancelKot);
 router.get('/getRoomCheckInDetails/:cmp_id/:roomId',getRoomCheckInDetails);
-router.put('/cancelBooking/:id', cancelBooking);
+router.put('/cancelBooking/:id', authSecondary,cancelBooking);
 router.get('/statement', getCheckoutStatementByDate);
 router.post("/convertToAvailable/:cmp_id",convertToAvailable);
 router.post("/controlTaggedCheckIn/:cmp_id", authSecondary,controlTaggedCheckIn);
