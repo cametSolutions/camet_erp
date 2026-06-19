@@ -83,7 +83,7 @@ import {
     updateCheckout,
     getSalesByCheckInNumber,
     updateRestaurantSalePayments,
-    getRestaurantSales,getTravelAgentSalesReport,getAgentList,getFOSalesSummary
+    getRestaurantSales,getTravelAgentSalesReport,getAgentList,getFOSalesSummary,getCancellationReport
 } from '../controllers/hotelController.js'
 
 import { convertCheckOutToSale } from '../controllers/hotelController2CheckOut.js';
@@ -420,9 +420,9 @@ router.get('/summary', getSummaryDashboard);
 router.get('/hotel-sales/:cmp_id/:type', getHotelSalesDetails);
 router.get("/receiptReport/:cmp_id",getReceiptsByVoucherSeries)
 // router.get("/unreconciled/:cmp_id", getUnreconciledSales);
-router.put("/cancel/:id", cancelKot);
+router.put("/cancel/:id",authSecondary, cancelKot);
 router.get('/getRoomCheckInDetails/:cmp_id/:roomId',getRoomCheckInDetails);
-router.put('/cancelBooking/:id', cancelBooking);
+router.put('/cancelBooking/:id', authSecondary,cancelBooking);
 router.get('/statement', getCheckoutStatementByDate);
 router.post("/convertToAvailable/:cmp_id",convertToAvailable);
 router.post("/controlTaggedCheckIn/:cmp_id", authSecondary,controlTaggedCheckIn);
@@ -458,7 +458,7 @@ router.get("/fetchDashboardCompanyDailyCollectionBreakdown/:cmp_id/:primaryUserI
 router.get("/fetchDashboardCompanyMonthlyCollectionBreakdown/:cmp_id/:primaryUserId", fetchDashboardCompanyMonthlyCollectionBreakdown);
 router.get("/fetchDashboardPropertySalesSummary/:cmp_id/:primaryUserId", fetchDashboardPropertySalesSummary);
 router.get("/fetchDashboardRoomCountSummary/:cmp_id/:primaryUserId", fetchDashboardRoomCountSummary);
-
+router.get("/cancellation-report/:cmp_id", getCancellationReport);
 router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
 // Route to get detailed booking information for a specific room and date
 

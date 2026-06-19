@@ -87,6 +87,15 @@ const reports = [
     iconColor: "text-blue-700",
     path: "/sUsers/FOSalesSummaryReport",
   },
+   {
+    label: "Cancellation Report",
+    desc: "Cancellation  report",
+    icon: Zap,
+    iconBg: "bg-blue-50",
+    iconColor: "text-blue-700",
+    path: "/sUsers/CancellationReport",
+  },
+  
           
 ];
 
