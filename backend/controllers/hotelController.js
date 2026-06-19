@@ -8846,6 +8846,7 @@ export const getCancellationReport = async (req, res) => {
           guestName: c.guestName || "-",
         });
       });
+      
 
       summary.checkin += checkinCancels.length;
       summary.total += checkinCancels.length;
