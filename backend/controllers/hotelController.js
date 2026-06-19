@@ -5070,55 +5070,83 @@ export const getRoomCheckInDetails = async (req, res) => {
   }
 };
 export const cancelBooking = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
     const { id } = req.params;
 
-    let record = await Booking.findById(id);
-    let recordType = "booking";
+    let responseData = null;
+    let responseMessage = "";
 
-    if (!record) {
-      record = await CheckIn.findById(id);
-      recordType = "checkin";
-    }
+    await session.withTransaction(async () => {
+      let record = await Booking.findById(id).session(session);
+      let recordType = "booking";
 
-    if (!record) {
-      return res.status(404).json({
-        success: false,
-        message: "Booking not found",
-      });
-    }
+      if (!record) {
+        record = await CheckIn.findById(id).session(session);
+        recordType = "checkin";
+      }
 
-    if (record.status === "cancelled") {
-      return res.status(400).json({
-        success: false,
-        message: "This booking is already cancelled",
-      });
-    }
+      if (!record) {
+        throw new Error("Booking not found");
+      }
 
-    record.status = "cancelled";
-    record.cancelledAt = new Date();
-    record.cancelledBy = req.sUserId;
-    record.cancelledByName = req.suser?.name || "";
+      if (record.status === "cancelled") {
+        throw new Error("This booking is already cancelled");
+      }
 
-    await record.save();
+      record.status = "cancelled";
+      record.cancelledAt = new Date();
+      record.cancelledBy = req.sUserId;
+      record.cancelledByName = req.suser?.name || "";
+
+      await record.save({ session });
+
+      if (record.selectedRoomId) {
+        await Room.findByIdAndUpdate(
+          record.selectedRoomId,
+          { $set: { status: "dirty" } },
+          { new: true, session }
+        );
+      }
+
+      responseData = record;
+      responseMessage = `${
+        recordType === "checkin" ? "Check-in" : "Booking"
+      } ${record.voucherNumber} has been cancelled successfully and room marked as dirty`;
+    });
 
     return res.status(200).json({
       success: true,
-      message: `${
-        recordType === "checkin" ? "Check-in" : "Booking"
-      } ${record.voucherNumber} has been cancelled successfully`,
-      data: record,
+      message: responseMessage,
+      data: responseData,
     });
   } catch (error) {
     console.error("Error cancelling booking:", error);
+
+    if (error.message === "Booking not found") {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    if (error.message === "This booking is already cancelled") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: "Failed to cancel booking",
       error: error.message,
     });
+  } finally {
+    await session.endSession();
   }
 };
-
 // report controller for FO summary
 // export const getCheckoutStatementByDate = async (req, res) => {
 //   try {
