@@ -2247,7 +2247,7 @@ export const getallnoncheckoutCheckins = async (req, res) => {
   try {
     const allnocheckoutcheckins = await CheckIn.find({
       cmp_id,
-      status: { $ne: "checkOut" },
+      status: { $nin: ["checkOut", "cancelled"] }
     });
     if (allnocheckoutcheckins && allnocheckoutcheckins.length) {
       return res.json({ success: true, data: allnocheckoutcheckins });
