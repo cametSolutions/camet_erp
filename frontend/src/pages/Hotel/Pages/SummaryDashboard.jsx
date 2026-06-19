@@ -3,33 +3,51 @@ import SummaryCards from "../Components/SummaryDashboard/SummaryCards";
 import SummaryCardsSkeleton from "../Components/SummaryDashboard/SummaryCardsSkeleton";
 import RevenueTable from "../Components/SummaryDashboard/RevenueTable";
 import { useSelector } from "react-redux";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/api/api";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, CalendarIcon, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 const fmt = (n) => "₹" + Number(n ?? 0).toLocaleString("en-IN");
 
 const SummaryDashboard = () => {
-  const today = new Date().toLocaleDateString("en-IN", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const company = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  const cmp_id = company._id;
-  const primaryUserId = company.owner;
+  const cmp_id = company?._id;
+  const primaryUserId = company?.owner;
+  const selectedDateParam = useMemo(
+    () => format(selectedDate, "yyyy-MM-dd"),
+    [selectedDate],
+  );
+  const selectedDateLabel = useMemo(
+    () => format(selectedDate, "dd MMM yyyy"),
+    [selectedDate],
+  );
+  const selectedDateLongLabel = useMemo(
+    () => format(selectedDate, "EEEE, dd MMMM yyyy"),
+    [selectedDate],
+  );
+  const dashboardRequestConfig = useMemo(
+    () => ({
+      withCredentials: true,
+      params: { date: selectedDateParam },
+    }),
+    [selectedDateParam],
+  );
 
   const fetchDashboardConsolidatedTotals = async () => {
     const response = await api.get(
       `/api/sUsers/fetchDashboardConsolidatedTotals/${cmp_id}/${primaryUserId}`,
-      { withCredentials: true }
+      dashboardRequestConfig,
     );
     return response.data;
   };
@@ -37,7 +55,7 @@ const SummaryDashboard = () => {
   const fetchDashboardCompanyRevenueBreakdown = async () => {
     const response = await api.get(
       `/api/sUsers/fetchDashboardCompanyRevenueBreakdown/${cmp_id}/${primaryUserId}`,
-      { withCredentials: true }
+      dashboardRequestConfig,
     );
     return response.data;
   };
@@ -45,7 +63,7 @@ const SummaryDashboard = () => {
   const fetchDashboardCompanyDailyCollectionBreakdown = async () => {
     const response = await api.get(
       `/api/sUsers/fetchDashboardCompanyDailyCollectionBreakdown/${cmp_id}/${primaryUserId}`,
-      { withCredentials: true }
+      dashboardRequestConfig,
     );
     return response.data;
   };
@@ -53,7 +71,7 @@ const SummaryDashboard = () => {
   const fetchDashboardCompanyMonthlyCollectionBreakdown = async () => {
     const response = await api.get(
       `/api/sUsers/fetchDashboardCompanyMonthlyCollectionBreakdown/${cmp_id}/${primaryUserId}`,
-      { withCredentials: true }
+      dashboardRequestConfig,
     );
     return response.data;
   };
@@ -61,7 +79,7 @@ const SummaryDashboard = () => {
   const fetchDashboardRoomCountSummary = async () => {
     const response = await api.get(
       `/api/sUsers/fetchDashboardRoomCountSummary/${cmp_id}/${primaryUserId}`,
-      { withCredentials: true }
+      dashboardRequestConfig,
     );
     return response.data;
   };
@@ -69,7 +87,7 @@ const SummaryDashboard = () => {
   const fetchDashboardPropertySalesSummary = async () => {
     const response = await api.get(
       `/api/sUsers/fetchDashboardPropertySalesSummary/${cmp_id}/${primaryUserId}`,
-      { withCredentials: true }
+      dashboardRequestConfig,
     );
     return response.data;
   };
@@ -82,7 +100,7 @@ const SummaryDashboard = () => {
     refetch: refetchTotals,
     isFetching: isTotalsFetching,
   } = useQuery({
-    queryKey: ["dashboardSummary", "consolidatedTotals", cmp_id],
+    queryKey: ["dashboardSummary", "consolidatedTotals", cmp_id, selectedDateParam],
     queryFn: fetchDashboardConsolidatedTotals,
     enabled: !!cmp_id && !!primaryUserId,
     staleTime: 30 * 60 * 1000, // 30 minutes
@@ -98,7 +116,7 @@ const SummaryDashboard = () => {
     refetch: refetchRevenueBreakdown,
     isFetching: isRevenueBreakdownFetching,
   } = useQuery({
-    queryKey: ["dashboardSummary", "companyRevenueBreakdown", primaryUserId],
+    queryKey: ["dashboardSummary", "companyRevenueBreakdown", primaryUserId, selectedDateParam],
     queryFn: fetchDashboardCompanyRevenueBreakdown,
     enabled: !!cmp_id && !!primaryUserId,
     staleTime: 30 * 60 * 1000, // 30 minutes
@@ -114,7 +132,7 @@ const SummaryDashboard = () => {
     refetch: refetchDailyCollectionBreakdown,
     isFetching: isDailyCollectionBreakdownFetching,
   } = useQuery({
-    queryKey: ["dashboardSummary", "dailyCollectionBreakdown", primaryUserId],
+    queryKey: ["dashboardSummary", "dailyCollectionBreakdown", primaryUserId, selectedDateParam],
     queryFn: fetchDashboardCompanyDailyCollectionBreakdown,
     enabled: !!cmp_id && !!primaryUserId,
     staleTime: 30 * 60 * 1000,
@@ -130,7 +148,7 @@ const SummaryDashboard = () => {
     refetch: refetchMonthlyCollectionBreakdown,
     isFetching: isMonthlyCollectionBreakdownFetching,
   } = useQuery({
-    queryKey: ["dashboardSummary", "monthlyCollectionBreakdown", primaryUserId],
+    queryKey: ["dashboardSummary", "monthlyCollectionBreakdown", primaryUserId, selectedDateParam],
     queryFn: fetchDashboardCompanyMonthlyCollectionBreakdown,
     enabled: !!cmp_id && !!primaryUserId,
     staleTime: 30 * 60 * 1000,
@@ -146,7 +164,7 @@ const SummaryDashboard = () => {
     refetch: refetchRoomCountSummary,
     isFetching: isRoomCountSummaryFetching,
   } = useQuery({
-    queryKey: ["dashboardSummary", "roomCountSummary", primaryUserId],
+    queryKey: ["dashboardSummary", "roomCountSummary", primaryUserId, selectedDateParam],
     queryFn: fetchDashboardRoomCountSummary,
     enabled: !!cmp_id && !!primaryUserId,
     staleTime: 30 * 60 * 1000,
@@ -162,7 +180,7 @@ const SummaryDashboard = () => {
     refetch: refetchPropertySalesSummary,
     isFetching: isPropertySalesSummaryFetching,
   } = useQuery({
-    queryKey: ["dashboardSummary", "propertySalesSummary", primaryUserId],
+    queryKey: ["dashboardSummary", "propertySalesSummary", primaryUserId, selectedDateParam],
     queryFn: fetchDashboardPropertySalesSummary,
     enabled: !!cmp_id && !!primaryUserId,
     staleTime: 30 * 60 * 1000,
@@ -224,7 +242,9 @@ const SummaryDashboard = () => {
             <h1 className="text-xl sm:text-2xl font-bold text-gray-700 leading-tight truncate">
               Summary Dashboard
             </h1>
-            <p className="text-sm text-gray-500 mt-1">{today}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Selected date: {selectedDateLongLabel}
+            </p>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 flex-wrap">
@@ -239,13 +259,26 @@ const SummaryDashboard = () => {
               {isFetching ? "Refreshing..." : "Refresh Dashboard"}
             </Button>
 
-            <button className="flex items-center gap-2 px-3 py-2 sm:px-4 rounded-xl border border-gray-200 bg-white text-sm text-gray-600 hover:bg-gray-50 active:bg-gray-100 transition">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M10.5 10.5L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <span className="hidden sm:inline">Search</span>
-            </button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 rounded-xl border-gray-200 bg-white text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <CalendarIcon size={14} />
+                  <span>{selectedDateLabel}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
 
             <button className="flex items-center gap-2 px-3 py-2 sm:px-4 rounded-xl bg-[#0f172a] text-sm text-white font-medium hover:bg-[#1e293b] active:bg-[#0a101e] transition">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -311,10 +344,12 @@ const SummaryDashboard = () => {
               dailyBank={fmt(data.bankCollection?.daily)}
               monthlyCash={fmt(data.cashCollection?.monthly)}
               monthlyBank={fmt(data.bankCollection?.monthly)}
+              selectedDateLabel={selectedDateLabel}
             />
 
             <RevenueTable
               rows={revenueBreakdownData?.companyWiseRevenue ?? []}
+              selectedDateLabel={selectedDateLabel}
             />
           </div>
         )}

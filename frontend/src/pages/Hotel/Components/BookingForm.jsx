@@ -22,6 +22,13 @@ import {useRef} from "react";
 
 import { MdCloudUpload, MdImage, MdDelete } from "react-icons/md"
 import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
+
+const nextIsoDate = (value) => {
+  const date = new Date(value);
+  date.setDate(date.getDate() + 1);
+  return date.toISOString().split("T")[0];
+};
+
 function BookingForm({
   isLoading = false,
   setIsLoading = false,
@@ -35,6 +42,10 @@ function BookingForm({
   isTariffRateChange,
   submitLoader,
   isShowGrc = false,
+  isEditLockLoading = false,
+  isEditLocked = false,
+  editLockMessage = "",
+  lockedThroughDate = "",
 }) {
   const [voucherNumber, setVoucherNumber] = useState("");
   const [selectedParty, setSelectedParty] = useState("");
@@ -75,6 +86,20 @@ const [idProof, setIdProof] = useState({
   let addFoodPlanWithRate = configurations?.[0]?.foodPlaWithRoomRate;
   let discountBasedOnGrossAmount =
     configurations?.[0]?.discountBasedOnGrossAmountInHotel;
+  const tariffMinAllowedDate =
+    isTariffRateChange && lockedThroughDate
+      ? nextIsoDate(lockedThroughDate)
+      : editData?.arrivalDate || "";
+  const hasTariffEditableWindow =
+    !isTariffRateChange ||
+    !lockedThroughDate ||
+    !editData?.checkOutDate ||
+    tariffMinAllowedDate <= editData.checkOutDate;
+  const isFormReadOnly =
+    Boolean(editData) &&
+    (isEditLockLoading ||
+      isEditLocked ||
+      (isTariffRateChange && !hasTariffEditableWindow));
 
   const [includeFoodRateWithRoom, setIncludeFoodRateWithRoom] = useState(
     addFoodPlanWithRate ?? false,
@@ -251,6 +276,35 @@ useEffect(() => {
     }
   }
 }, [editData]);
+
+  useEffect(() => {
+    if (!isTariffRateChange || !editData?.checkOutDate) return;
+
+    setFormData((prev) => {
+      const minimumAllowedDate = lockedThroughDate
+        ? nextIsoDate(lockedThroughDate)
+        : prev.arrivalDate || editData.arrivalDate || currentDateDefault;
+
+      if (
+        minimumAllowedDate &&
+        minimumAllowedDate <= editData.checkOutDate &&
+        (!prev.currentDate || prev.currentDate < minimumAllowedDate)
+      ) {
+        return {
+          ...prev,
+          currentDate: minimumAllowedDate,
+        };
+      }
+
+      return prev;
+    });
+  }, [
+    currentDateDefault,
+    editData?.arrivalDate,
+    editData?.checkOutDate,
+    isTariffRateChange,
+    lockedThroughDate,
+  ]);
   
 
   // setting room id for selected room
@@ -346,16 +400,19 @@ console.log(name, value)
 
     if (name === "currentDate") {
       const current = new Date(value);
-      const arrival = new Date(formData.arrivalDate);
+      const minimumTariffDate =
+        isTariffRateChange && lockedThroughDate
+          ? nextIsoDate(lockedThroughDate)
+          : formData.arrivalDate;
+      const arrival = new Date(minimumTariffDate);
       const checkout = new Date(formData.checkOutDate);
 
       // Check if currentDate is within the range
       if (current >= arrival && current <= checkout) {
         setFormData((prev) => ({ ...prev, [name]: value }));
       } else {
-        // Optional: alert or toast if not valid
         toast.error(
-          "Tariff applicable date must be between Arrival Date and Check-Out Date",
+          `Tariff applicable date must be between ${minimumTariffDate} and ${formData.checkOutDate}`,
         );
       }
       return;
@@ -1011,6 +1068,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
 
 
   const submitHandler = async () => {
+    if (isFormReadOnly) return;
     if (!formData.customerName || formData.customerName.trim() === "") {
       toast.error("Please enter a customer name");
       return;
@@ -1485,6 +1543,17 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
               }
             />
           )}
+
+          {editLockMessage && (
+            <div className="mx-4 lg:mx-10 mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {editLockMessage}
+            </div>
+          )}
+
+          <fieldset
+            disabled={isFormReadOnly}
+            className="border-0 p-0 m-0 min-w-0"
+          >
 
           {!tariffMode ? (
             <>
@@ -2335,9 +2404,10 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                   {/* Save Button */}
                   <div className="flex justify-end">
                     <button
-                      className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105"
+                      className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105 disabled:cursor-not-allowed disabled:bg-pink-300 disabled:hover:scale-100"
                       type="button"
                       onClick={submitHandler}
+                      disabled={isFormReadOnly}
                     >
                       {editData ? "Update" : "Save"}
                     </button>
@@ -2360,6 +2430,12 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                     label="Tariff Applicable Date"
                     value={formData.currentDate}
                     onChange={handleChange}
+                    min={
+                      isTariffRateChange && lockedThroughDate
+                        ? nextIsoDate(lockedThroughDate)
+                        : formData.arrivalDate
+                    }
+                    max={formData.checkOutDate}
                   />
                   <div>
                     <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
@@ -2445,15 +2521,17 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                   </button>
                 )} */}
                 <button
-                  className="bg-pink-500 mt-4 ml-4 w-24 text-white font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md"
+                  className="bg-pink-500 mt-4 ml-4 w-24 text-white font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md disabled:cursor-not-allowed disabled:bg-pink-300"
                   type="button"
                   onClick={submitHandler}
+                  disabled={isFormReadOnly}
                 >
                   Update
                 </button>
               </div>
             </div>
           )}
+          </fieldset>
 
           <Suspense fallback={<SuspenseLoader />}>
             {otherChargeModalOpen && (
@@ -2667,7 +2745,7 @@ function Field({ label, value, onChange, name, readOnly = false }) {
   );
 }
 
-function FieldDate({ label, value, onChange, name }) {
+function FieldDate({ label, value, onChange, name, min, max }) {
   return (
     <div>
       <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
@@ -2678,6 +2756,8 @@ function FieldDate({ label, value, onChange, name }) {
         name={name}
         value={value || ""}
         onChange={onChange}
+        min={min}
+        max={max}
         className="w-full border border-gray-300 px-3 py-2 rounded text-sm bg-white"
       />
     </div>
