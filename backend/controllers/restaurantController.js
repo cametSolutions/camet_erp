@@ -790,13 +790,17 @@ export const cancelKot = async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-
+console.log("req.sUserId =>", req.sUserId);
+console.log("req.suser =>", req.suser);
     const kot = await kotModal.findByIdAndUpdate(
       id,
       {
         status: "cancelled",
         cancelReason: reason,
         cancelledAt: new Date(),
+        cancelledBy: req.sUserId,
+        cancelledByName: req.suser?.name || "",
+
       },
       { new: true },
     );

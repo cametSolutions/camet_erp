@@ -38,7 +38,7 @@ const receiptSchema = new mongoose.Schema(
       required: true,
     },
     cmp_id: { type: Schema.Types.ObjectId, ref: "Company", required: true },
-    Secondary_user_id: { type: Schema.Types.ObjectId, ref: "User" },
+    Secondary_user_id: { type: Schema.Types.ObjectId, ref: "SecondaryUser" },
 
     // Party reference and embedded data
     party: {
@@ -138,6 +138,18 @@ const receiptSchema = new mongoose.Schema(
     note: { type: String },
 
     isCancelled: { type: Boolean, default: false },
+      cancelledAt: {
+      type: Date,
+    },
+    cancelledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SecondaryUser",
+    },
+    cancelledByName: {
+      type: String,
+      default: "",
+    },
+    
     uniqueReceiptNumber: {type: Number,default: null,},
   },
   {
