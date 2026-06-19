@@ -1138,7 +1138,7 @@ console.log(filteredSalesData);
                     Card
                   </th>
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
-                    Mode
+                   Credit
                   </th>
                   {businessType !== "hotel" && (
                     <>
@@ -1151,7 +1151,7 @@ console.log(filteredSalesData);
                     </>
                   )}
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
-                    Credit
+                    Mode
                   </th>
                 
                 </tr>
