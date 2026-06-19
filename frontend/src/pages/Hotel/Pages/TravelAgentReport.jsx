@@ -437,6 +437,7 @@ export default function TravelAgentSalesReport() {
                   <td style={{ padding: "13px 10px", textAlign: "right", fontWeight: 700 }}>{fmt(grand.PlAmt)}</td>
                   <td style={{ padding: "13px 10px", textAlign: "right", fontWeight: 700 }}>{fmt(grand.TOTAL)}</td>
                   <td style={{ padding: "13px 10px", textAlign: "right", fontWeight: 700 }}>{fmt(grand.CGST)}</td>
+         
                   <td style={{ padding: "13px 10px", textAlign: "right", fontWeight: 700 }}>{fmt(grand.SGST)}</td>
                   <td style={{ padding: "13px 10px", textAlign: "right", fontWeight: 800, fontSize: 14 }}>{fmt(grand.NetAmt)}</td>
                 </tr>

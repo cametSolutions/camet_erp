@@ -238,6 +238,10 @@ export const cancelReceipt = async (req, res) => {
 
     // Mark the receipt as cancelled
     receipt.isCancelled = true;
+    receipt.cancelledAt = new Date();
+    receipt.cancelledBy = req.sUserId;
+    receipt.cancelledByName = req.suser?.name || "";
+
     await receipt.save({ session });
 
     // Commit the transaction

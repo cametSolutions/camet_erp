@@ -284,6 +284,7 @@ const HotelDashboard = () => {
     occupied: "from-orange-500 to-red-600", // orange/red gradient
     dirty: "from-yellow-500 to-orange-600",
     blocked: "from-gray-500 to-slate-800",
+    household:'from-stone-400 to-stone-700',
   };
 
   const handleRoomAction = async (action) => {
@@ -459,6 +460,7 @@ const handleRoomSwapConfirm = async () => {
       booked: 0,
       dirty: 0,
       blocked: 0,
+      household:0,
     };
     filteredRooms.forEach((room) => {
         const status = room.status === "available" ? "vacant" : room.status;
@@ -889,6 +891,11 @@ console.log(baseStatus);
                   label: "Blocked",
                   color: "from-gray-500 to-slate-800",
                   count: statusCounts.blocked,
+                },
+                 {
+                  label: "household",
+                  color: "from-red-400 to-red-800",
+                  count: statusCounts.household,
                 },
               ].map((status, i) => (
                 <div key={i} className="flex items-center gap-2">

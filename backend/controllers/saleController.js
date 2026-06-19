@@ -20,6 +20,7 @@ import {
 } from "../helpers/voucherHelper.js";
 import settlementModel from "../models/settlementModel.js";
 import { createAdvanceReceiptsFromAppliedReceipts } from "../helpers/receiptHelper.js";
+import { CheckOut } from "../models/bookingModal.js";
 
 /**
  * @desc To createSale
@@ -401,7 +402,7 @@ export const cancelSale = async (req, res) => {
     }
 
     // Revert stock updates
-    await revertSaleStockUpdates(sale.items, session); // Ensure stock updates use session
+   !sale.checkOutId  &&  await revertSaleStockUpdates(sale.items, session); // Ensure stock updates use session
 
     /// delete  all the settlements
     await settlementModel.deleteMany({ voucherId: saleId }, { session });
@@ -433,8 +434,24 @@ export const cancelSale = async (req, res) => {
       await outstandingRecord.save({ session });
     }
 
+
+     if (sale.checkOutId) {
+      const checkout = await CheckOut.findById(sale.checkOutId).session(session);
+
+      if (checkout && !checkout.isCancelled) {
+        checkout.isCancelled = true;
+        checkout.cancelledAt = new Date();
+        checkout.cancelledBy = req.sUserId;
+        checkout.cancelledByName = req.suser?.name || "";
+        await checkout.save({ session });
+      }
+    }
     // Update sale status
     sale.isCancelled = true;
+      sale.cancelledAt = new Date();
+    sale.cancelledBy = req.sUserId;
+    sale.cancelledByName = req.suser?.name || "";
+
     await (vanSaleQuery === "true"
       ? vanSaleModel
       : salesModel
