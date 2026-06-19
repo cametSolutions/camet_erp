@@ -4,14 +4,22 @@ import { CiSearch } from "react-icons/ci";
 import { IoIosCloseCircleOutline } from "react-icons/io";
 import { MdOutlineCalendarToday } from "react-icons/md";
 
-function SearchBar({ onType, toggle, from, onDateChange }) {
+function SearchBar({
+  onType,
+  toggle,
+  from,
+  onDateChange,
+  extraActions,
+}) {
   const [search, setSearch] = useState("");
   const [checked, setChecked] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
-   const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(new Date().getDate() - 30)
-  const [fromDate, setFromDate] = useState(thirtyDaysAgo.toISOString().split("T")[0]);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(new Date().getDate() - 30);
+  const [fromDate, setFromDate] = useState(
+    thirtyDaysAgo.toISOString().split("T")[0]
+  );
   const [toDate, setToDate] = useState(today);
 
   const handleCheckboxChange = () => {
@@ -55,8 +63,6 @@ function SearchBar({ onType, toggle, from, onDateChange }) {
 
   return (
     <div className="flex items-center gap-2 flex-wrap w-full">
-
-      {/* Search Box */}
       <div className="flex items-center space-x-3 bg-white shadow-lg px-4 py-2.5 rounded-md border border-gray-300 flex-1 min-w-[200px]">
         <CiSearch size={20} className="text-gray-500 shrink-0" />
 
@@ -122,11 +128,9 @@ function SearchBar({ onType, toggle, from, onDateChange }) {
         )}
       </div>
 
-      {/* ✅ From & To Date Picker */}
       <div className="flex items-center gap-2 bg-white shadow-lg px-3 py-2.5 rounded-md border border-gray-300 shrink-0">
         <MdOutlineCalendarToday size={16} className="text-gray-500 shrink-0" />
 
-        {/* From Date */}
         <div className="flex items-center gap-1">
           <span className="text-xs text-gray-400 font-medium">From</span>
           <input
@@ -139,7 +143,6 @@ function SearchBar({ onType, toggle, from, onDateChange }) {
 
         <span className="text-gray-300 text-sm select-none">|</span>
 
-        {/* To Date */}
         <div className="flex items-center gap-1">
           <span className="text-xs text-gray-400 font-medium">To</span>
           <input
@@ -151,7 +154,6 @@ function SearchBar({ onType, toggle, from, onDateChange }) {
           />
         </div>
 
-        {/* Reset to Today */}
         {!isToday && (
           <button
             onClick={handleResetDates}
@@ -163,6 +165,11 @@ function SearchBar({ onType, toggle, from, onDateChange }) {
         )}
       </div>
 
+      {extraActions && (
+        <div className="flex items-center gap-2 shrink-0">
+          {extraActions}
+        </div>
+      )}
     </div>
   );
 }

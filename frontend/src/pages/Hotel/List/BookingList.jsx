@@ -2765,21 +2765,54 @@ function BookingList() {
             ]}
           />
 
-          <SearchBar
-            onType={searchData}
-            toggle={true}
-            from={location.pathname}
-            onDateChange={({ from, to }) => {
-              setFromDate(from);
-              setToDate(to);
-              setPage(1);
-              pageRef.current = 1;
-              setBookings([]);
-              setHasMore(true);
-            }}
-          />
+         <SearchBar
+  onType={searchData}
+  toggle={location.pathname === "/sUsers/bookingList"}
+  from={location.pathname}
+  onDateChange={({ from, to }) => {
+    setFromDate(from);
+    setToDate(to);
+  }}
+  extraActions={
+    location.pathname === "/sUsers/checkInList" && (
+      <div className="flex flex-wrap items-center gap-2">
+        {isNightAuditLocked && (
+          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+            Locked Through {lockedThroughDate}
+          </span>
+        )}
 
-          {location.pathname === "/sUsers/checkInList" && (
+        {secondaryUserRole === "admin" &&
+          nightAuditStatus?.status === "completed" && (
+            <button
+              type="button"
+              onClick={handleReopenNightAudit}
+              disabled={nightAuditActionLoading || nightAuditLoading}
+              className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Reopen Audit
+            </button>
+          )}
+
+        <button
+          type="button"
+          onClick={handleCompleteNightAudit}
+          disabled={
+            !isSingleAuditDateSelected ||
+            isNightAuditLocked ||
+            nightAuditLoading ||
+            nightAuditActionLoading
+          }
+          className="rounded-md bg-[#0f766e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#115e59] disabled:cursor-not-allowed disabled:bg-slate-300"
+        >
+          {nightAuditActionLoading ? "Processing..." : "Night Audit"}
+        </button>
+      </div>
+    )
+  }
+/>
+
+          {/* {location.pathname === "/sUsers/checkInList" && (
             <div className="bg-white border-b border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-col gap-1">
                 <span className="text-sm font-semibold text-slate-800">
@@ -2841,7 +2874,7 @@ function BookingList() {
                 </button>
               </div>
             </div>
-          )}
+          )} */}
         </div>
 
         {!loader && !isLoading && bookings?.length === 0 && (
