@@ -2186,20 +2186,21 @@ function BookingList() {
                 </div>
               ) : null}
 
-           {(location.pathname === "/sUsers/bookingList" ||
-  location.pathname === "/sUsers/checkInList") &&
-  el?.status !== "cancelled" && (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        handleCancelBooking(el._id, el.voucherNumber);
-      }}
-      className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
-      title="Cancel booking"
-    >
-      <MdCancel />
-    </button>
-  )}
+              {location.pathname === "/sUsers/bookingList" &&
+                el?.status !== "checkIn" &&
+                el?.status !== "cancelled" && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancelBooking(el._id, el.voucherNumber);
+                    }}
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                    title="Cancel booking"
+                  >
+                    <MdCancel />
+                  </button>
+                )}
+
               {el?.status === "cancelled" && (
                 <span className="bg-red-100 text-red-700 font-semibold py-1 px-2 rounded text-xs">
                   Cancelled
@@ -2318,7 +2319,8 @@ function BookingList() {
                   CheckIn
                 </button>
               )}
-              {location.pathname === "/sUsers/checkInList" && (
+              {location.pathname === "/sUsers/checkInList" && ( 
+                <>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -2334,6 +2336,32 @@ function BookingList() {
                 >
                   Print
                 </button>
+                   <button
+                     onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCustomer(el.customerId?._id);
+                    setSelectedCheckOut([el]);
+                    const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+                    console.log(hasPrint1);
+
+                    navigate(
+                      hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
+                      {
+                        state: {
+                          selectedCheckOut: bookings?.filter(
+                            (item) => item.voucherNumber === el.voucherNumber,
+                          ),
+                          customerId: el.customerId?._id,
+                          isForPreview: false,
+                        },
+                      },
+                    );
+                  }}
+                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                >
+                  Preview
+                </button>
+                </>
               )}
               {el?.status === "checkIn" &&
                 location.pathname === "/sUsers/bookingList" && (
@@ -2438,21 +2466,20 @@ function BookingList() {
                   />
                 </div>
               ) : null}
-            
-           {(location.pathname === "/sUsers/bookingList" ||
-  location.pathname === "/sUsers/checkInList") &&
-  el?.status !== "cancelled" && (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        handleCancelBooking(el._id, el.voucherNumber);
-      }}
-      className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
-      title="Cancel booking"
-    >
-      <MdCancel />
-    </button>
-  )}{" "}
+              {location.pathname === "/sUsers/bookingList" &&
+                el?.status !== "checkIn" &&
+                el?.status !== "cancelled" && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancelBooking(el._id, el.voucherNumber);
+                    }}
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                    title="Cancel booking"
+                  >
+                    <MdCancel />
+                  </button>
+                )}{" "}
               {el?.status === "cancelled" && (
                 <span className="bg-red-100 text-red-700 font-semibold py-1 px-3 rounded text-xs">
                   Cancelled
