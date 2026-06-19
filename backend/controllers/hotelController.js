@@ -8244,7 +8244,7 @@ export const getFlashReportForDate = async (req, res) => {
       );
 
       const occupiedRoomNames = new Set();
-
+console.log("checkins",checkins)
       checkins.forEach((doc) => {
         (doc?.selectedRooms || []).forEach((room) => {
           if (room?.isSwapped) return;
@@ -8417,12 +8417,12 @@ export const getFlashReportForDate = async (req, res) => {
           roomExtraBed += extraBed;
         });
 
-        if (checkoutInRange) {
-          foodPlanTotal += (checkoutDoc?.foodPlanTotal || []).reduce(
-            (acc, item) => acc + Number(item?.amount || 0),
+       foodPlanTotal += (doc?.foodPlan || []).reduce(
+            (acc, item) => acc + Number(item?.rate || 0),
             0
           );
 
+        if (checkoutInRange) {
           modRevenues += Number(
             checkoutDoc?.otherCharges || checkoutDoc?.otherAmount || 0
           );
