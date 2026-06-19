@@ -77,6 +77,7 @@ export const buildDatabaseFilterForBooking = (params) => {
   let filter = {
     cmp_id: params.cmp_id,
     Primary_user_id: params.Primary_user_id,
+    status: { $ne: "cancelled" }
   };
 
   if (params.modal === "checkIn") {
@@ -137,10 +138,7 @@ export const buildDatabaseFilterForBooking = (params) => {
 };
 
 // function used to fetch booking
-export const fetchBookingsFromDatabase = async (
-  filter = {},
-  params = {}
-) => {
+export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
   const { skip = 0, limit = 0 } = params;
 
   try {
@@ -175,8 +173,8 @@ export const fetchBookingsFromDatabase = async (
       params?.modal === "checkIn"
         ? bookings.map((b) => b.voucherNumber)
         : params?.modal === "checkOut"
-        ? bookings.map((b) => b.checkInId?.voucherNumber)
-        : [];
+          ? bookings.map((b) => b.checkInId?.voucherNumber)
+          : [];
 
     // Get all room posted sales
     const sales = await salesModel
@@ -189,7 +187,7 @@ export const fetchBookingsFromDatabase = async (
         },
       })
       .select(
-        "_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData"
+        "_id finalAmount isPostToRoom convertedFrom.checkInNumber paymentSplittingData",
       )
       .lean();
 
@@ -224,17 +222,12 @@ export const fetchBookingsFromDatabase = async (
 
       processedSaleIds.add(saleId);
 
-      const saleAmount = Number(
-        sale.finalAmount || 0
-      );
+      const saleAmount = Number(sale.finalAmount || 0);
 
-      const saleSplits =
-        sale.paymentSplittingData || [];
+      const saleSplits = sale.paymentSplittingData || [];
 
       const uniqueCheckIns = new Set(
-        (sale.convertedFrom || [])
-          .map((c) => c?.checkInNumber)
-          .filter(Boolean)
+        (sale.convertedFrom || []).map((c) => c?.checkInNumber).filter(Boolean),
       );
 
       for (const checkInNumber of uniqueCheckIns) {
@@ -245,31 +238,21 @@ export const fetchBookingsFromDatabase = async (
           };
         }
 
-        totalByCheckIn[
-          checkInNumber
-        ].totalAmount += saleAmount;
+        totalByCheckIn[checkInNumber].totalAmount += saleAmount;
 
         for (const split of saleSplits) {
-          const existing =
-            totalByCheckIn[
-              checkInNumber
-            ].paymentSplittingData.find(
-              (s) =>
-                s.source === split.source &&
-                s.type === split.type
-            );
+          const existing = totalByCheckIn[
+            checkInNumber
+          ].paymentSplittingData.find(
+            (s) => s.source === split.source && s.type === split.type,
+          );
 
           if (existing) {
             existing.amount = parseFloat(
-              (
-                existing.amount +
-                Number(split.amount || 0)
-              ).toFixed(2)
+              (existing.amount + Number(split.amount || 0)).toFixed(2),
             );
           } else {
-            totalByCheckIn[
-              checkInNumber
-            ].paymentSplittingData.push({
+            totalByCheckIn[checkInNumber].paymentSplittingData.push({
               ...split,
             });
           }
@@ -279,93 +262,63 @@ export const fetchBookingsFromDatabase = async (
 
     // Attach sales info to bookings
 
-    const bookingsWithSales =
-      await Promise.all(
-        bookings.map(async (b) => {
-          const voucherNumber =
-            params?.modal === "checkIn"
-              ? b.voucherNumber
-              : params?.modal ===
-                "checkOut"
+    const bookingsWithSales = await Promise.all(
+      bookings.map(async (b) => {
+        const voucherNumber =
+          params?.modal === "checkIn"
+            ? b.voucherNumber
+            : params?.modal === "checkOut"
               ? b.checkInId?.voucherNumber
               : "";
 
-          const checkInData =
-            totalByCheckIn[
-              voucherNumber
-            ] || {
-              totalAmount: 0,
-              paymentSplittingData: [],
-            };
+        const checkInData = totalByCheckIn[voucherNumber] || {
+          totalAmount: 0,
+          paymentSplittingData: [],
+        };
 
-          const specificSale =
-            params?.modal === "checkOut"
-              ? await salesModel
-                  .findOne({
-                    cmp_id: filter.cmp_id,
-                    salesNumber:
-                      b.voucherNumber,
-                  })
-                  .lean()
-              : null;
+        const specificSale =
+          params?.modal === "checkOut"
+            ? await salesModel
+                .findOne({
+                  cmp_id: filter.cmp_id,
+                  salesNumber: b.voucherNumber,
+                })
+                .lean()
+            : null;
 
-          return {
-            ...b.toObject(),
+        return {
+          ...b.toObject(),
 
-            displayTotal:
-              params?.modal ===
-                "checkOut" &&
-              specificSale?.paymentSplittingData
-                ?.length
-                ? specificSale.paymentSplittingData.reduce(
-                    (total, split) =>
-                      total +
-                      Number(
-                        split.amount || 0
-                      ),
-                    0
-                  ) +
-                  Number(
-                    checkInData.totalAmount ||
-                      0
-                  )
-                : 0,
+          displayTotal:
+            params?.modal === "checkOut" &&
+            specificSale?.paymentSplittingData?.length
+              ? specificSale.paymentSplittingData.reduce(
+                  (total, split) => total + Number(split.amount || 0),
+                  0,
+                ) + Number(checkInData.totalAmount || 0)
+              : 0,
 
-            restaurantSubTotal:
-              checkInData.totalAmount,
+          restaurantSubTotal: checkInData.totalAmount,
 
-            restaurantPaymentSplittingData:
-              [
-                ...(specificSale?.paymentSplittingData ||
-                  []),
+          restaurantPaymentSplittingData: [
+            ...(specificSale?.paymentSplittingData || []),
 
-                ...(
-                  checkInData.paymentSplittingData ||
-                  []
-                ),
-              ],
+            ...(checkInData.paymentSplittingData || []),
+          ],
 
-            createdDate:
-              saleObject[
-                b.voucherNumber
-              ],
-          };
-        })
-      );
+          createdDate: saleObject[b.voucherNumber],
+        };
+      }),
+    );
 
     return {
       bookings: bookingsWithSales,
       totalBookings,
     };
   } catch (error) {
-    console.error(
-      "❌ Error fetching bookings:",
-      error
-    );
+    console.error("❌ Error fetching bookings:", error);
 
-    throw new Error(
-      "Failed to fetch bookings."
-    );
+    throw new Error("Failed to fetch bookings.");
   }
 };
 // function used to send response for booking
@@ -451,7 +404,7 @@ export const updateStatus = async (roomData, status, session) => {
       cmp_id: room.cmp_id,
       roomId: room._id,
       roomNumber: room.roomName,
-      status,
+      status: status == "booking" ? "booked" : status == "checkIn" ? "occupied" : status,
       fromDate: now,
       toDate: null,
       isCurrent: true,
@@ -475,7 +428,7 @@ export const createInitialRoomStatusHistory = async (room, session) => {
         cmp_id: room.cmp_id,
         roomId: room._id,
         roomNumber: room.roomName,
-        status: room.status,
+        status: room.status == "booking" ? "booked" : room.status,
         fromDate: new Date(),
         toDate: null,
         isCurrent: true,
@@ -557,7 +510,6 @@ export const createReceiptForSales = async (
   restaurantBaseSaleData = [],
   session,
 ) => {
-
   const receipts = [];
 
   // Find voucher series for receipt
@@ -657,7 +609,7 @@ export const createReceiptForSales = async (
       );
       console.log("outstandings", outstandings);
       for (const item of outstandings) {
-        console.log(outstandings)
+        console.log(outstandings);
         const sale = allSales.find((s) => s.salesNumber === item.bill_no);
         console.log("ssssalesssssssss", sale);
         billData.push({
@@ -1130,126 +1082,6 @@ export const deleteSettlements = async (tallyId, session = null) => {
   }
 };
 
-// restaurantSideDiscountAdjustmentArray [
-//   {
-//     saleId: '6a0ee1ca9878dc1297ec712a',
-//     saleNumber: 'RES-931-2025',
-//     discountAmount: 5,
-//     discountType: 'percentage',
-//     _id: '69687e5566d1c404e145d17b',
-//     option: 'discount',
-//     value: '5',
-//     action: 'sub',
-//     taxPercentage: 0,
-//     taxAmt: 0,
-//     hsn: 'HSN1',
-//     finalValue: 5,
-//     advanceAmount: 95,
-//     netPayable: 0
-//   }
-// ]
-
-// export const handleAdvanceAndDiscountSettlementInRestaurant = async (
-//   settlementData,
-//   selectedCheckOut,
-//   cmp_id,
-//   session,
-// ) => {
-//   try {
-//     let checkInIds = selectedCheckOut.map((item) => item._id);
-//     const tallyData = await TallyData.find({
-//       billId: { $in: checkInIds },
-//     }).session(session);
-
-//     const totalOfDiscountAndAdvance = restaurantSideDiscountAdjustmentArray.reduce(
-//       (acc, item) => acc + item.finalValue + item.advanceAmount,0)
-
-//     if (restaurantSideDiscountAdjustmentArray?.length > 0) {
-//       restaurantSideDiscountAdjustmentArray.forEach(async (item) => {
-//       let totalAmountToDeduct = item.finalValue + item.advanceAmount;
-//         if (item.finalValue > 0) {
-//           let discountObject = {
-//             _id: item._id,
-//             option: "discount",
-//             value: item.value,
-//             action: "sub",
-//             taxPercentage: item.taxPercentage,
-//             taxAmt: item.taxAmt,
-//             hsn: item.hsn,
-//             finalValue: item.finalValue,
-//           };
-//           await salesModel.updateOne(
-//             { _id: item.saleId },
-//             {
-//               $inc: {
-//                 totalAdditionalCharges: +item.finalValue,
-//               },
-//               $push: {
-//                 additionalCharges: discountObject,
-//               },
-//             },
-//           );
-//         }
-  
-//         if (totalAmountToDeduct > 0) {
-//           // await salesModel.
-//           await TallyData.updateOne(
-//             { billId: item.saleId },
-//             {
-//               $inc: {
-//                 bill_amount: -totalAmountToDeduct,
-//                 bill_pending_amt: -totalAmountToDeduct,
-//               },
-//             },
-//           ).session(session);
-//         }
-//       });
-//     }
-
-//     if (tallyData.length > 0) {
-//       for(let i = 0; i < tallyData.length; i++) {
-//         let maximumAmountToDeduct = 0
-//         if(tallyData[i].bill_amount > totalOfDiscountAndAdvance) {
-//           maximumAmountToDeduct = totalOfDiscountAndAdvance 
-//         }else{
-//           maximumAmountToDeduct = tallyData[i].bill_amount
-//         }
-//         if (maximumAmountToDeduct > 0) {
-//           await TallyData.updateOne(
-//             { _id: tallyData[i]._id },
-//             {
-//               $set: {
-//                 bill_amount: maximumAmountToDeduct,
-//                 bill_pending_amt: maximumAmountToDeduct,
-//               },
-//             },
-//           ).session(session);
-
-//           await TallyData.updateOne(
-//             { "billData.billId":tallyData[i]._id },
-//             {
-//               $set: {
-//                 totalBillAmount: maximumAmountToDeduct,
-//                 enteredAmount: maximumAmountToDeduct,
-//                 "billData.settledAmount":maximumAmountToDeduct 
-//               },
-//             },
-//           ).session(session);
-//         }
-//         totalOfDiscountAndAdvance -= maximumAmountToDeduct
-//         if(totalOfDiscountAndAdvance == 0) break
-//       }
-//     }
-//   } catch (error) {
-//     console.error(
-//       "Error in handleAdvanceAndDiscountSettlementInRestaurant:",
-//       error.message,
-//     );
-//     throw error;
-//   }
-// };
-
-
 export const handleAdvanceAndDiscountSettlementInRestaurant = async (
   settlementData,
   selectedCheckOut,
@@ -1257,13 +1089,13 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
   session,
 ) => {
   try {
-
-    if (!Array.isArray(settlementData) || settlementData.length === 0) return true;
+    if (!Array.isArray(settlementData) || settlementData.length === 0)
+      return true;
     if (!Array.isArray(selectedCheckOut) || selectedCheckOut.length === 0) {
       throw new Error("selectedCheckOut is required");
     }
     if (!cmp_id) throw new Error("Missing cmp_id");
-   const checkInIds = selectedCheckOut.map((item) => item._id).filter(Boolean);
+    const checkInIds = selectedCheckOut.map((item) => item._id).filter(Boolean);
 
     const tallyData = await TallyData.find({
       billId: { $in: checkInIds },
@@ -1272,12 +1104,12 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
     // Make sure this array exists
     const restaurantSideDiscountAdjustmentArray = settlementData;
 
-   let totalOfDiscountAndAdvance =
-  restaurantSideDiscountAdjustmentArray.reduce(
-    (acc, item) =>
-      acc + Number(item.finalValue || 0) + Number(item.advanceAmount || 0),
-    0,
-  );
+    let totalOfDiscountAndAdvance =
+      restaurantSideDiscountAdjustmentArray.reduce(
+        (acc, item) =>
+          acc + Number(item.finalValue || 0) + Number(item.advanceAmount || 0),
+        0,
+      );
 
     // Handle discount + advance adjustments
     if (restaurantSideDiscountAdjustmentArray.length > 0) {
@@ -1384,48 +1216,364 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
     );
 
     throw error;
-// helper used convert room to available
+    // helper used convert room to available
   }
 };
 
-
-
-export const updateSwapDetails = async(existingRoom, updatedRoom, session) => {
-  console.log("=== UPDATE SWAP DETAILS STARTED ===",existingRoom);
-  console.log("=== UPDATE SWAP DETAILS STARTED ===",updatedRoom);
+export const updateSwapDetails = async (existingRoom, updatedRoom, session) => {
+  console.log("=== UPDATE SWAP DETAILS STARTED ===", existingRoom);
+  console.log("=== UPDATE SWAP DETAILS STARTED ===", updatedRoom);
   try {
     // ✅ Find rooms that are in existingRoom but NOT in updatedRoom, and isSwap is true
- const removedRooms = existingRoom.filter(
-  (room) =>
-    room.isSwapped === false &&
-    !updatedRoom.some(
-      (updated) => updated.roomId.toString() === room.roomId.toString()
-    )
-);
+    const removedRooms = existingRoom.filter(
+      (room) =>
+        room.isSwapped === false &&
+        !updatedRoom.some(
+          (updated) => updated.roomId.toString() === room.roomId.toString(),
+        ),
+    );
 
-console.log("Removed rooms:", removedRooms);
+    console.log("Removed rooms:", removedRooms);
 
     // ✅ Delete these rooms
-   if (removedRooms.length > 0) {
-  const result = await roomModal.updateMany(
-    {
-      _id: {
-        $in: removedRooms.map((room) => room.roomId),
-      },
-    },
-    {
-      $set: {
-        status: "dirty",
-      },
-    },
-    { session }
-  );
+    if (removedRooms.length > 0) {
+      const result = await roomModal.updateMany(
+        {
+          _id: {
+            $in: removedRooms.map((room) => room.roomId),
+          },
+        },
+        {
+          $set: {
+            status: "dirty",
+          },
+        },
+        { session },
+      );
 
-  console.log("reessE",result);
-}
+      console.log("reessE", result);
+    }
   } catch (error) {
     console.error(error);
   }
 };
 
 
+export const findBlockedRooms = async (
+  cmp_id,
+  reportDate,
+  reportMonth,
+  reportYear,
+) => {
+  try {
+    const errors = [];
+
+    const isValidObjectId = (id) =>
+      mongoose.Types.ObjectId.isValid(id) &&
+      String(new mongoose.Types.ObjectId(id)) === String(id);
+
+    const isValidDateObject = (date) =>
+      date instanceof Date && !Number.isNaN(date.valueOf());
+
+    const isValidYear = (year) => {
+      const y = Number(year);
+      return Number.isInteger(y) && y >= 2000 && y <= 3000;
+    };
+
+    const isValidMonth = (month) => {
+      const m = Number(month);
+      return Number.isInteger(m) && m >= 1 && m <= 12;
+    };
+
+    if (!cmp_id) errors.push("cmp_id is required");
+    else if (!isValidObjectId(cmp_id)) errors.push("cmp_id is invalid");
+
+    if (reportYear != null && reportYear !== "" && !isValidYear(reportYear)) {
+      errors.push("reportYear must be a valid year");
+    }
+
+    if (reportMonth != null && reportMonth !== "" && !isValidMonth(reportMonth)) {
+      errors.push("reportMonth must be between 1 and 12");
+    }
+
+    if (reportDate != null && reportDate !== "") {
+      const parsedDate = new Date(reportDate);
+      if (!isValidDateObject(parsedDate)) {
+        errors.push("reportDate must be a valid date");
+      }
+    }
+
+    if (errors.length) {
+      return {
+        success: false,
+        message: "Validation failed",
+        errors,
+        data: null,
+      };
+    }
+
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    const cmpObjectId = new mongoose.Types.ObjectId(cmp_id);
+
+    const toDay = (d) =>
+      new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+
+    const addDays = (date, days) => {
+      const d = new Date(date);
+      d.setUTCDate(d.getUTCDate() + days);
+      return d;
+    };
+
+    const todayDay = toDay(new Date());
+    const tomorrowDay = addDays(todayDay, 1);
+
+    // ─── Financial year window ───────────────────────────────────────
+    const now = new Date();
+    const fallbackYear =
+      now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+
+    const selectedYear = reportYear ? Number(reportYear) : fallbackYear;
+
+    const fyStart = new Date(Date.UTC(selectedYear, 3, 1));
+    const fyEndCap = new Date(Date.UTC(selectedYear + 1, 3, 1));
+
+    // If reportDate exists, year should usually be MTD within FY up to report date/today
+    let fyEnd = fyEndCap;
+    if (reportDate) {
+      const rd = toDay(new Date(reportDate));
+      fyEnd = addDays(rd, 1) < fyEndCap ? addDays(rd, 1) : fyEndCap;
+    } else if (todayDay < fyEndCap) {
+      fyEnd = tomorrowDay;
+    }
+
+    // ─── Month window ────────────────────────────────────────────────
+    let monthStart = null;
+    let monthEnd = null;
+
+    if (reportMonth != null && reportMonth !== "") {
+      monthStart = new Date(Date.UTC(selectedYear, Number(reportMonth) - 1, 1));
+
+      const nextMonthStart = new Date(
+        Date.UTC(selectedYear, Number(reportMonth), 1),
+      );
+
+      if (reportDate) {
+        const rd = toDay(new Date(reportDate));
+        monthEnd = addDays(rd, 1) < nextMonthStart ? addDays(rd, 1) : nextMonthStart;
+      } else if (todayDay >= monthStart && todayDay < nextMonthStart) {
+        monthEnd = tomorrowDay;
+      } else {
+        monthEnd = nextMonthStart;
+      }
+    } else if (reportDate) {
+      // Fix: derive month window from reportDate for day reports
+      const rd = new Date(reportDate);
+      const y = rd.getUTCFullYear();
+      const m = rd.getUTCMonth();
+      const dayOnly = toDay(rd);
+
+      monthStart = new Date(Date.UTC(y, m, 1));
+      const nextMonthStart = new Date(Date.UTC(y, m + 1, 1));
+      monthEnd = addDays(dayOnly, 1) < nextMonthStart ? addDays(dayOnly, 1) : nextMonthStart;
+    }
+
+    // ─── Target day ──────────────────────────────────────────────────
+    let targetDay = null;
+    if (reportDate) {
+      targetDay = toDay(new Date(reportDate));
+    }
+
+    // ─── Fetch blocked + household ───────────────────────────────────
+    const allRecords = await RoomStatusHistory.find(
+      {
+        cmp_id: cmpObjectId,
+        status: { $in: ["blocked", "household"] },
+      },
+      {
+        roomId: 1,
+        roomNumber: 1,
+        status: 1,
+        fromDate: 1,
+        toDate: 1,
+        isCurrent: 1,
+      },
+    ).lean();
+
+    // ─── Filter invalid zero-night rows ──────────────────────────────
+    const validRecords = allRecords.filter((r) => {
+      if (!r?.fromDate) return false;
+      if (r.toDate == null) return true;
+
+      const fromDay = toDay(new Date(r.fromDate));
+      const toDateDay = toDay(new Date(r.toDate));
+
+      // same-day start/end contributes 0 nights and shouldn't affect monthly/yearly
+      if (fromDay.getTime() === toDateDay.getTime()) return false;
+
+      return true;
+    });
+
+    const blockedRecords = validRecords.filter((r) => r.status === "blocked");
+    const householdRecords = validRecords.filter((r) => r.status === "household");
+
+    // ─── Helpers ─────────────────────────────────────────────────────
+    const isActiveOnDay = (record, day) => {
+      const fromDay = toDay(new Date(record.fromDate));
+      if (fromDay.getTime() > day.getTime()) return false;
+
+      if (record.toDate == null) return true;
+
+      const toDateDay = toDay(new Date(record.toDate));
+
+      // exclusive end-day logic
+      return day.getTime() < toDateDay.getTime();
+    };
+
+    const getDailyCount = (records) => {
+      if (!targetDay) return 0;
+      return records.filter((r) => isActiveOnDay(r, targetDay)).length;
+    };
+
+    const getRoomNightCount = (records, windowStart, windowEnd) => {
+      if (!windowStart || !windowEnd) return 0;
+
+      let totalNights = 0;
+
+      for (const record of records) {
+        const fromDay = toDay(new Date(record.fromDate));
+        const endDay =
+          record.toDate == null
+            ? windowEnd < tomorrowDay ? windowEnd : tomorrowDay
+            : toDay(new Date(record.toDate));
+
+        const effectiveStart =
+          fromDay > windowStart ? fromDay : windowStart;
+        const effectiveEnd =
+          endDay < windowEnd ? endDay : windowEnd;
+
+        const nights = Math.round(
+          (effectiveEnd.getTime() - effectiveStart.getTime()) / MS_PER_DAY,
+        );
+
+        if (nights > 0) totalNights += nights;
+      }
+
+      return totalNights;
+    };
+
+    // ─── Counts: blocked ─────────────────────────────────────────────
+    const blockedDaily = getDailyCount(blockedRecords);
+    const blockedMonthly =
+      monthStart && monthEnd
+        ? getRoomNightCount(blockedRecords, monthStart, monthEnd)
+        : 0;
+    const blockedYearly = getRoomNightCount(blockedRecords, fyStart, fyEnd);
+
+    // ─── Counts: household ───────────────────────────────────────────
+    const householdDaily = getDailyCount(householdRecords);
+    const householdMonthly =
+      monthStart && monthEnd
+        ? getRoomNightCount(householdRecords, monthStart, monthEnd)
+        : 0;
+    const householdYearly = getRoomNightCount(householdRecords, fyStart, fyEnd);
+
+    return {
+      success: true,
+      message: "Blocked room event counts fetched successfully",
+      errors: [],
+      data: {
+        // blocked only
+        yearlyRooms: blockedYearly,
+        monthlyRooms: blockedMonthly,
+        dailyRooms: blockedDaily,
+
+        // household only
+        householdYearly,
+        householdMonthly,
+        householdDaily,
+
+        // combined
+        combinedYearly: blockedYearly + householdYearly,
+        combinedMonthly: blockedMonthly + householdMonthly,
+        combinedDaily: blockedDaily + householdDaily,
+      },
+    };
+  } catch (error) {
+    console.error("findBlockedRooms error:", error);
+    return {
+      success: false,
+      message: "Failed to fetch blocked rooms",
+      errors: [error.message],
+      data: null,
+    };
+  }
+};
+
+export const getRoomMetricsForPeriod = ({
+  reportType,
+  fromDate,
+  toDate,
+  totalPhysicalRooms,
+  blockedCounts,
+}) => {
+  const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+  const toUTCDay = (str) => {
+    if (!str) return null;
+    if (str instanceof Date) {
+      return new Date(Date.UTC(str.getFullYear(), str.getMonth(), str.getDate()));
+    }
+    const [y, m, d] = str.split("T")[0].split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, d));
+  };
+
+  // ─── DAY ────────────────────────────────────────────────────────────
+  if (reportType === "day") {
+    const blockedRooms  = blockedCounts?.data?.dailyRooms  || 0;
+    const totalRooms    = totalPhysicalRooms;
+    const saleableRooms = totalRooms - blockedRooms;
+
+    return {
+      reportType,
+      totalRooms,
+      blockedRooms,
+      saleableRooms,
+      availableRoomNights:  saleableRooms,
+      totalRoomNights:      totalRooms,
+      saleableRoomNights:   saleableRooms,
+      blockedRoomNights:    blockedRooms,
+      periodDays: 1,
+    };
+  }
+
+  // ─── MONTH / YEAR ────────────────────────────────────────────────────
+  const start = toUTCDay(fromDate);
+  const end   = toUTCDay(toDate);
+
+  // periodDays is inclusive: Jun1→Jun18 = 18 days
+  const periodDays = Math.round((end - start) / MS_PER_DAY) + 1;
+
+  const totalRooms      = totalPhysicalRooms;
+  const totalRoomNights = totalRooms * periodDays;
+
+  // Use pre-fetched blockedCounts — NO day loop, NO extra DB calls
+  const blockedRoomNights =
+    reportType === "month"
+      ? blockedCounts?.data?.monthlyRooms || 0
+      : blockedCounts?.data?.yearlyRooms  || 0;
+
+  const saleableRoomNights = Math.max(0, totalRoomNights - blockedRoomNights);
+
+  return {
+    reportType,
+    totalRooms,
+    periodDays,
+    totalRoomNights,
+    blockedRoomNights,
+    saleableRoomNights,
+    availableRoomNights: saleableRoomNights,
+    // aliases for backward compat used in processCheckins
+    blockedRooms:  blockedRoomNights,
+    saleableRooms: saleableRoomNights,
+  };
+};
