@@ -1577,3 +1577,111 @@ export const getRoomMetricsForPeriod = ({
     saleableRooms: saleableRoomNights,
   };
 };
+
+export const fetchRestaurantDetails = async (cmp_id, fromDate, toDate) => {
+  try {
+    const startDate = new Date(fromDate);
+    const endDate = new Date(toDate);
+    endDate.setDate(endDate.getDate() + 1);
+
+    const result = await salesModel.aggregate([
+      {
+        $match: {
+          cmp_id: new mongoose.Types.ObjectId(cmp_id),
+          voucherType: "sales",
+          isCancelled: { $ne: true },
+          date: {
+            $gte: startDate,
+            $lt: endDate,
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "voucherseries",
+          localField: "series_id",
+          foreignField: "series._id",
+          as: "seriesMaster",
+        },
+      },
+      {
+        $addFields: {
+          matchedSeriesDoc: { $first: "$seriesMaster" },
+        },
+      },
+      {
+        $addFields: {
+          matchedSeries: {
+            $first: {
+              $filter: {
+                input: { $ifNull: ["$matchedSeriesDoc.series", []] },
+                as: "sr",
+                cond: {
+                  $eq: ["$$sr._id", "$series_id"],
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          "matchedSeries.under": "restaurant",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          restaurantServiceTotal: {
+            $sum: {
+              $cond: [
+                { $eq: ["$isPostToRoom", true] },
+                { $ifNull: ["$finalAmount", 0] },
+                0,
+              ],
+            },
+          },
+          restaurantTotal: {
+            $sum: {
+              $cond: [
+                { $eq: ["$isPostToRoom", false] },
+                { $ifNull: ["$finalAmount", 0] },
+                0,
+              ],
+            },
+          },
+          totalRestaurantSales: {
+            $sum: { $ifNull: ["$finalAmount", 0] },
+          },
+          salesCount: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          restaurantServiceTotal: 1,
+          restaurantTotal: 1,
+          totalRestaurantSales: 1,
+          salesCount: 1,
+        },
+      },
+    ]);
+
+    return (
+      result[0] || {
+        restaurantServiceTotal: 0,
+        restaurantTotal: 0,
+        totalRestaurantSales: 0,
+        salesCount: 0,
+      }
+    );
+  } catch (error) {
+    console.error("fetchRestaurantDetails error:", error);
+    return {
+      restaurantServiceTotal: 0,
+      restaurantTotal: 0,
+      totalRestaurantSales: 0,
+      salesCount: 0,
+    };
+  }
+};
