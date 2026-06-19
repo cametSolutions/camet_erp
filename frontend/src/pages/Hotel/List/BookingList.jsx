@@ -13,6 +13,7 @@ import EnhancedCheckoutModal from "../Components/EnhancedCheckoutModal";
 import HoldModal from "../Components/HoldModal";
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
 const PaymentAllocation = lazy(() => import("../Components/PaymentAllocation"));
+import { Printer, Eye } from "lucide-react";
 import {
   setPaymentDetails,
   setSelectedParty,
@@ -2331,10 +2332,10 @@ function BookingList() {
                       },
                     });
                   }}
-                  className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                  className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300"
                   title="Print Registration Card"
                 >
-                  Print
+                <Printer size={14} strokeWidth={2.2} />
                 </button>
                    <button
                      onClick={(e) => {
@@ -2357,9 +2358,9 @@ function BookingList() {
                       },
                     );
                   }}
-                  className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                   className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300 flex items-center justify-center"
                 >
-                  Preview
+                <Eye size={14} strokeWidth={2.2} />
                 </button>
                 </>
               )}
@@ -2424,8 +2425,10 @@ function BookingList() {
                 location.pathname == "/sUsers/bookingList") ||
               (el?.status != "checkOut" &&
                 location.pathname == "/sUsers/checkInList") ? (
-                <div className="flex items-center gap-1">
-                  {location.pathname === "/sUsers/checkInList" &&
+                <div className="flex items-center gap-1 ">
+                  <div
+                        className="bg-blue-500 hover:blue-red-600 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300" >
+                                   {location.pathname === "/sUsers/checkInList" &&
                   isNightAuditLocked &&
                   isDateLockedByAudit(el?.arrivalDate, lockedThroughDate) ? (
                     <FaEdit
@@ -2436,7 +2439,7 @@ function BookingList() {
                   ) : (
                     <FaEdit
                       title="Edit booking details"
-                      className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
+                      className="text-black-500 cursor-pointer hover:text-black-700 text-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (location.pathname === "/sUsers/bookingList") {
@@ -2455,6 +2458,9 @@ function BookingList() {
                       }}
                     />
                   )}
+                  </div>   
+                    <div
+                     className="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300" >
 
                   <MdDelete
                     title="Delete booking details"
@@ -2462,8 +2468,9 @@ function BookingList() {
                       e.stopPropagation();
                       handleDelete(el._id);
                     }}
-                    className="text-red-500 cursor-pointer hover:text-red-700 text-sm"
+                    className="text-black-500 cursor-pointer hover:text-black-700 text-sm"
                   />
+                  </div>
                 </div>
               ) : null}
               {location.pathname === "/sUsers/bookingList" &&
