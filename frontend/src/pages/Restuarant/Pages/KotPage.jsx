@@ -561,8 +561,10 @@ const complementaryWithTax =
       if (!selectedOrderForCancel) return;
 
       const response = await api.put(
-        `/api/kot/cancel/${selectedOrderForCancel._id}`,
+        `/api/sUsers/cancel/${selectedOrderForCancel._id}`,
         { reason: cancelReason },
+          { withCredentials: true }
+
       );
 
       if (response.data.success) {

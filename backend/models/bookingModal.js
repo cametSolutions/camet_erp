@@ -230,6 +230,17 @@ const bookingSchema = new mongoose.Schema(
     arrayCheckIn: [{ type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" }],
     arrayBookIn: [{ type: mongoose.Schema.Types.ObjectId, ref: "Booking" }],
     status: String,
+    cancelledAt: {
+  type: Date,
+},
+cancelledBy: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "SecondaryUser",
+},
+cancelledByName: {
+  type: String,
+  default: "",
+},
     originalCheckInId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CheckIn",

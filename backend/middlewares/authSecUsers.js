@@ -16,7 +16,7 @@ export const  authSecondary = async (req, res, next) => {
       token,
       process.env.JWT_SECRET_KEY_SECONDARY
     );
-    // console.log(decodedToken);
+    console.log("decodedToken?.userId;",decodedToken?.userId);
 
     // console.log("decodedToken",decodedToken.userId);
     req.sUserId = decodedToken?.userId;
