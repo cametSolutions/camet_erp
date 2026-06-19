@@ -98,7 +98,7 @@ const salesSchema = new Schema(
       required: true,
     },
     cmp_id: { type: Schema.Types.ObjectId, ref: "Company", required: true },
-    Secondary_user_id: { type: Schema.Types.ObjectId, ref: "User" },
+    Secondary_user_id: { type: Schema.Types.ObjectId, ref: "SecondaryUser" },
     selectedGodownDetails: {
       godownName: { type: String, default: null },
       godownId: { type: Schema.Types.ObjectId, ref: "Godown", default: null },
@@ -342,6 +342,17 @@ const salesSchema = new Schema(
     },
 
     isCancelled: { type: Boolean, default: false },
+      cancelledAt: {
+      type: Date,
+    },
+    cancelledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SecondaryUser",
+    },
+    cancelledByName: {
+      type: String,
+      default: "",
+    },
     checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
     checkOutId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckOut" },
   },

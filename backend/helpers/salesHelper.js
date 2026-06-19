@@ -599,6 +599,9 @@ export const updateTallyData = async (
   }
 };
 
+
+
+
 export const revertSaleStockUpdates = async (items, session) => {
   try {
     for (const item of items) {

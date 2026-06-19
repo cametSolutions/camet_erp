@@ -3,6 +3,8 @@ import api from "@/api/api";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import TitleDiv from "@/components/common/TitleDiv";
+import RoomName from "@/pages/Hotel/Components/RoomName";
+
 
 /* ===================== Helpers ===================== */
 
@@ -459,6 +461,7 @@ const exportToExcel = (
       "Bill No",
       "Date",
       "Guest Name",
+         "Agent name",
       "Gross Amount",
       "CGST",
       "SGST",
@@ -473,7 +476,7 @@ const exportToExcel = (
       "Payment Mode",
       ...(businessType !== "hotel" ? ["Meal Period", "KOT Type"] : []),
       "Credit",
-      "Credit Description",
+   
     ],
     ...salesData.map((row) => {
       const isCreditSale =
@@ -1096,6 +1099,9 @@ console.log(filteredSalesData);
                     Guest Name
                   </th>
                     <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
+                    Agent name
+                  </th>
+                    <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Room Name
                   </th>
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
@@ -1147,9 +1153,7 @@ console.log(filteredSalesData);
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Credit
                   </th>
-                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
-                    Credit Description
-                  </th>
+                
                 </tr>
               </thead>
               <tbody>
@@ -1194,8 +1198,13 @@ console.log(filteredSalesData);
                         <td className="border border-gray-200 px-2 py-1 text-left">
                           {row.guestName || row.partyName}
                         </td>
+                           <td className="border border-gray-200 px-2 py-1 text-left">
+                          {isCreditSale
+                            ? row.creditDescription || row.partyName || "-"
+                            : "-"}
+                        </td>
 <td className="border border-gray-200 px-2 py-1 text-center">
-  {row.roomNumber || "-"}
+  <RoomName rooms={row.roomNumber} />
 </td>
                         <td className="border border-gray-200 px-2 py-1 text-right">
                           {Math.round(gross)}
@@ -1258,11 +1267,7 @@ console.log(filteredSalesData);
                             ? Math.round(row.totalWithTax || 0)
                             : "-"}
                         </td>
-                        <td className="border border-gray-200 px-2 py-1 text-left">
-                          {isCreditSale
-                            ? row.creditDescription || row.partyName || "-"
-                            : "-"}
-                        </td>
+                     
                       </tr>
                     );
                   })

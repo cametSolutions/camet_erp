@@ -125,6 +125,15 @@ const kotSchema = new mongoose.Schema(
     cancelledAt: {
       type: Date,
     },
+
+    cancelledBy: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "SecondaryUser",
+},
+
+cancelledByName: {
+  type: String,
+},
     paymentMethod: {
       type: String,
     },
