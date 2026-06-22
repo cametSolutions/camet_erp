@@ -23,6 +23,7 @@ import {
   setOnlineType,
   setPrintDetails,
   setRestaurantTag,
+  setSelectedSaleDateForRedux,
   removeAll,
 } from "../../../../slices/hotelSlices/paymentSlice.js";
 import { VariableSizeList as List } from "react-window";
@@ -105,7 +106,7 @@ function BookingList() {
   const [selectedCreditor, setSelectedCreditor] = useState("");
   const [dateandstaysdata, setdateandstaysdata] = useState([]);
   const [finalPrintData, setFinalPrintData] = useState([]);
-  const [splitDetailsAfterSave,setSplitDetailsAfterSave] = useState([])
+  const [splitDetailsAfterSave, setSplitDetailsAfterSave] = useState([]);
   const [additionalChargeData, setAdditionalChargeData] = useState([]);
   const [selectedAdditionalCharge, setSelectedAdditionalCharge] = useState([]);
   const [discountType, setDiscountType] = useState("amount");
@@ -160,6 +161,10 @@ function BookingList() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEditBooking, setSelectedEditBooking] = useState(null);
 
+  const [selectedSaleDate, setSelectedSaleDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
+
   console.log(selectedEditBooking?.checkInId?.voucherNumber);
 
   const [
@@ -187,6 +192,8 @@ function BookingList() {
   const { roomId, roomName, filterByRoom } = location.state || {};
 
   const paymentDetails = useSelector((state) => state.paymentSlice);
+
+  console.log(paymentDetails)
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
@@ -468,8 +475,8 @@ function BookingList() {
       location?.state?.selectedCheckOut &&
       paymentDetails?.printData?.selectedCheckOut?.length > 0
     ) {
-      console.log(location?.state?.selectedCheckOut);
-      console.log(paymentDetails);
+      console.log(paymentDetails?.selectedSaleDate );
+      setSelectedSaleDate(paymentDetails?.selectedSaleDate || new Date());
       setSelectedAdditionalCharge(
         paymentDetails?.paymentDetails?.additionalChargeArray[0]?._id,
       );
@@ -785,10 +792,13 @@ function BookingList() {
       setNightAuditLoading(true);
 
       try {
-        const response = await api.get(`/api/sUsers/nightAudit/${cmp_id}/status`, {
-          params: { auditDate: selectedAuditDate },
-          withCredentials: true,
-        });
+        const response = await api.get(
+          `/api/sUsers/nightAudit/${cmp_id}/status`,
+          {
+            params: { auditDate: selectedAuditDate },
+            withCredentials: true,
+          },
+        );
 
         if (!isMounted) return;
 
@@ -798,7 +808,8 @@ function BookingList() {
 
         setNightAuditStatus(null);
         toast.error(
-          error?.response?.data?.message || "Failed to fetch night audit status",
+          error?.response?.data?.message ||
+            "Failed to fetch night audit status",
         );
       } finally {
         if (isMounted) {
@@ -842,7 +853,9 @@ function BookingList() {
       );
 
       setNightAuditStatus(response?.data || null);
-      toast.success(response?.data?.message || "Night audit completed successfully");
+      toast.success(
+        response?.data?.message || "Night audit completed successfully",
+      );
     } catch (error) {
       toast.error(
         error?.response?.data?.message || "Failed to complete night audit",
@@ -892,7 +905,9 @@ function BookingList() {
       );
 
       setNightAuditStatus(response?.data || null);
-      toast.success(response?.data?.message || "Night audit reopened successfully");
+      toast.success(
+        response?.data?.message || "Night audit reopened successfully",
+      );
     } catch (error) {
       toast.error(
         error?.response?.data?.message || "Failed to reopen night audit",
@@ -1450,6 +1465,7 @@ function BookingList() {
           restaurantSideDiscountAdjustmentArray);
 
       dispatch(setPaymentDetails(paymentDetails));
+      dispatch(setSelectedSaleDateForRedux(selectedSaleDate));
       dispatch(setSelectedParty(selectedCustomer));
       dispatch(setSelectedPaymentMode(paymentMode));
       dispatch(setSelectedSplitPayment(splitPaymentRows));
@@ -1464,6 +1480,7 @@ function BookingList() {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
           {
+            selectedSaleDate:selectedSaleDate,
             paymentMethod: paymentMethod,
             paymentDetails: paymentDetails,
             selectedCheckOut: selectedCheckOut,
@@ -1487,7 +1504,6 @@ function BookingList() {
 
           setSplitDetailsAfterSave(splitDetails);
           setFinalPrintData(response?.data.data.checkOutAfterSave);
-
 
           handleCloseBasedOnDate();
         }
@@ -2320,48 +2336,50 @@ function BookingList() {
                   CheckIn
                 </button>
               )}
-              {location.pathname === "/sUsers/checkInList" && ( 
+              {location.pathname === "/sUsers/checkInList" && (
                 <>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate("/sUsers/CheckInPrint", {
-                      state: {
-                        selectedCheckOut: [el],
-                        customerId: el.customerId._id,
-                      },
-                    });
-                  }}
-                  className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300"
-                  title="Print Registration Card"
-                >
-                <Printer size={14} strokeWidth={2.2} />
-                </button>
-                   <button
-                     onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedCustomer(el.customerId?._id);
-                    setSelectedCheckOut([el]);
-                    const hasPrint1 = configurations[0]?.defaultPrint?.print1;
-                    console.log(hasPrint1);
-
-                    navigate(
-                      hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint",
-                      {
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate("/sUsers/CheckInPrint", {
                         state: {
-                          selectedCheckOut: bookings?.filter(
-                            (item) => item.voucherNumber === el.voucherNumber,
-                          ),
-                          customerId: el.customerId?._id,
-                          isForPreview: false,
+                          selectedCheckOut: [el],
+                          customerId: el.customerId._id,
                         },
-                      },
-                    );
-                  }}
-                   className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300 flex items-center justify-center"
-                >
-                <Eye size={14} strokeWidth={2.2} />
-                </button>
+                      });
+                    }}
+                    className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300"
+                    title="Print Registration Card"
+                  >
+                    <Printer size={14} strokeWidth={2.2} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedCustomer(el.customerId?._id);
+                      setSelectedCheckOut([el]);
+                      const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+                      console.log(hasPrint1);
+
+                      navigate(
+                        hasPrint1
+                          ? "/sUsers/CheckOutPrint"
+                          : "/sUsers/BillPrint",
+                        {
+                          state: {
+                            selectedCheckOut: bookings?.filter(
+                              (item) => item.voucherNumber === el.voucherNumber,
+                            ),
+                            customerId: el.customerId?._id,
+                            isForPreview: false,
+                          },
+                        },
+                      );
+                    }}
+                    className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300 flex items-center justify-center"
+                  >
+                    <Eye size={14} strokeWidth={2.2} />
+                  </button>
                 </>
               )}
               {el?.status === "checkIn" &&
@@ -2426,50 +2444,49 @@ function BookingList() {
               (el?.status != "checkOut" &&
                 location.pathname == "/sUsers/checkInList") ? (
                 <div className="flex items-center gap-1 ">
-                  <div
-                        className="bg-blue-500 hover:blue-red-600 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300" >
-                                   {location.pathname === "/sUsers/checkInList" &&
-                  isNightAuditLocked &&
-                  isDateLockedByAudit(el?.arrivalDate, lockedThroughDate) ? (
-                    <FaEdit
-                      title={`Editing is disabled because check-ins up to ${lockedThroughDate} have been night audited.`}
-                      className="text-gray-400 cursor-not-allowed text-sm"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <FaEdit
-                      title="Edit booking details"
-                      className="text-black-500 cursor-pointer hover:text-black-700 text-sm"
+                  <div className="bg-blue-500 hover:blue-red-600 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300">
+                    {location.pathname === "/sUsers/checkInList" &&
+                    isNightAuditLocked &&
+                    isDateLockedByAudit(el?.arrivalDate, lockedThroughDate) ? (
+                      <FaEdit
+                        title={`Editing is disabled because check-ins up to ${lockedThroughDate} have been night audited.`}
+                        className="text-gray-400 cursor-not-allowed text-sm"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <FaEdit
+                        title="Edit booking details"
+                        className="text-black-500 cursor-pointer hover:text-black-700 text-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (location.pathname === "/sUsers/bookingList") {
+                            navigate("/sUsers/editBooking", {
+                              state: el,
+                            });
+                          } else if (
+                            location.pathname === "/sUsers/checkInList"
+                          ) {
+                            navigate("/sUsers/editChecking", {
+                              state: el,
+                            });
+                          } else {
+                            navigate("/sUsers/editChecking", {
+                              state: el,
+                            });
+                          }
+                        }}
+                      />
+                    )}
+                  </div>
+                  <div className="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300">
+                    <MdDelete
+                      title="Delete booking details"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (location.pathname === "/sUsers/bookingList") {
-                          navigate("/sUsers/editBooking", {
-                            state: el,
-                          });
-                        } else if (location.pathname === "/sUsers/checkInList") {
-                          navigate("/sUsers/editChecking", {
-                            state: el,
-                          });
-                        } else {
-                          navigate("/sUsers/editChecking", {
-                            state: el,
-                          });
-                        }
+                        handleDelete(el._id);
                       }}
+                      className="text-black-500 cursor-pointer hover:text-black-700 text-sm"
                     />
-                  )}
-                  </div>   
-                    <div
-                     className="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300" >
-
-                  <MdDelete
-                    title="Delete booking details"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(el._id);
-                    }}
-                    className="text-black-500 cursor-pointer hover:text-black-700 text-sm"
-                  />
                   </div>
                 </div>
               ) : null}
@@ -2633,7 +2650,7 @@ function BookingList() {
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
         selectedCheckOut: finalPrintData,
-        splitDetailsAfterSave:splitDetailsAfterSave,
+        splitDetailsAfterSave: splitDetailsAfterSave,
         customerId: selectedCustomer,
         isForPreview: false,
       },
@@ -2772,52 +2789,52 @@ function BookingList() {
             ]}
           />
 
-         <SearchBar
-  onType={searchData}
-  toggle={location.pathname === "/sUsers/bookingList"}
-  from={location.pathname}
-  onDateChange={({ from, to }) => {
-    setFromDate(from);
-    setToDate(to);
-  }}
-  extraActions={
-    location.pathname === "/sUsers/checkInList" && (
-      <div className="flex flex-wrap items-center gap-2">
-        {isNightAuditLocked && (
-          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-            Locked Through {lockedThroughDate}
-          </span>
-        )}
+          <SearchBar
+            onType={searchData}
+            toggle={location.pathname === "/sUsers/bookingList"}
+            from={location.pathname}
+            onDateChange={({ from, to }) => {
+              setFromDate(from);
+              setToDate(to);
+            }}
+            extraActions={
+              location.pathname === "/sUsers/checkInList" && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {isNightAuditLocked && (
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      Locked Through {lockedThroughDate}
+                    </span>
+                  )}
 
-        {secondaryUserRole === "admin" &&
-          nightAuditStatus?.status === "completed" && (
-            <button
-              type="button"
-              onClick={handleReopenNightAudit}
-              disabled={nightAuditActionLoading || nightAuditLoading}
-              className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Reopen Audit
-            </button>
-          )}
+                  {secondaryUserRole === "admin" &&
+                    nightAuditStatus?.status === "completed" && (
+                      <button
+                        type="button"
+                        onClick={handleReopenNightAudit}
+                        disabled={nightAuditActionLoading || nightAuditLoading}
+                        className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Reopen Audit
+                      </button>
+                    )}
 
-        <button
-          type="button"
-          onClick={handleCompleteNightAudit}
-          disabled={
-            !isSingleAuditDateSelected ||
-            isNightAuditLocked ||
-            nightAuditLoading ||
-            nightAuditActionLoading
-          }
-          className="rounded-md bg-[#0f766e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#115e59] disabled:cursor-not-allowed disabled:bg-slate-300"
-        >
-          {nightAuditActionLoading ? "Processing..." : "Night Audit"}
-        </button>
-      </div>
-    )
-  }
-/>
+                  <button
+                    type="button"
+                    onClick={handleCompleteNightAudit}
+                    disabled={
+                      !isSingleAuditDateSelected ||
+                      isNightAuditLocked ||
+                      nightAuditLoading ||
+                      nightAuditActionLoading
+                    }
+                    className="rounded-md bg-[#0f766e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#115e59] disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    {nightAuditActionLoading ? "Processing..." : "Night Audit"}
+                  </button>
+                </div>
+              )
+            }
+          />
 
           {/* {location.pathname === "/sUsers/checkInList" && (
             <div className="bg-white border-b border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
@@ -3003,25 +3020,39 @@ function BookingList() {
                     Payment Processing
                   </h2>
                 </div>
-                <button
-                  onClick={() => {
-                    setShowPaymentModal(false);
-                    setPaymentMode("single");
-                    setCashAmount(0);
-                    setOnlineAmount(0);
-                    setPaymentError("");
-                    setSelectedCash("");
-                    setSelectedBank("");
-                    setSelectedCreditor("");
-                    setSplitPaymentRows([
-                      { customer: "", source: "", sourceType: "", amount: "" },
-                    ]);
-                    window.location.reload();
-                  }}
-                  className="w-7 h-7 rounded-lg border border-gray-200 dark:border-neutral-700 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                {/* Right side */}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="date"
+                    className="px-2 py-1 text-sm border border-gray-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 text-gray-700 dark:text-white"
+                    value={selectedSaleDate}
+                    onChange={(e) => setSelectedSaleDate(e.target.value)}
+                  />
+                  <button
+                    onClick={() => {
+                      setShowPaymentModal(false);
+                      setPaymentMode("single");
+                      setCashAmount(0);
+                      setOnlineAmount(0);
+                      setPaymentError("");
+                      setSelectedCash("");
+                      setSelectedBank("");
+                      setSelectedCreditor("");
+                      setSplitPaymentRows([
+                        {
+                          customer: "",
+                          source: "",
+                          sourceType: "",
+                          amount: "",
+                        },
+                      ]);
+                      window.location.reload();
+                    }}
+                    className="w-7 h-7 rounded-lg border border-gray-200 dark:border-neutral-700 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
               <div className="px-5 py-4 flex flex-col gap-4">

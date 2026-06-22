@@ -791,7 +791,7 @@ export const getRooms = async (req, res) => {
     // console.log("overlappingbookings", overlappingBookings)
     const AllCheckIns = await CheckIn.find({
       cmp_id: req.params.cmp_id,
-      status: { $ne: "checkOut" },
+      status: { $nin: ["checkOut", "cancelled"] },
       isHold: false,
       arrivalDate: { $lte: checkOutDate },
       checkOutDate: { $gte: arrivalDate },
@@ -4080,7 +4080,7 @@ export const checkedInGuest = async (req, res) => {
 
     const activeCheckIns = await CheckIn.find({
       cmp_id: new mongoose.Types.ObjectId(cmp_id),
-      status: { $ne: "checkOut" },
+      status: { $nin: ["checkOut", "cancelled"] },
     })
       .populate("customerId", "customerName mobileNumber email") // if referenced
       .populate("selectedRooms.roomId", "roomName roomType roomFloor bedType")
@@ -5062,7 +5062,7 @@ export const getRoomCheckInDetails = async (req, res) => {
     // Find active check-in for this specific room
     const checkIn = await CheckIn.findOne({
       "selectedRooms.roomId": new mongoose.Types.ObjectId(roomId),
-      status: { $ne: "checkOut" }, // Only active check-ins
+      status: { $nin: ["checkOut", "cancelled"] }, // Only active check-ins
     })
       .populate("customerId")
       .populate("agentId")
@@ -6264,7 +6264,7 @@ export const getOccupancyCheckoutReport = async (req, res) => {
             },
 
             {
-              status: { $ne: "checkOut" },
+              status: { $nin: ["checkOut", "cancelled"] },
               arrivalDateObj: {
                 // $gte: startDate,
                 $lte: endDate,
@@ -8246,7 +8246,7 @@ export const getFlashReportForDate = async (req, res) => {
                 },
               },
               {
-                status: { $ne: "checkOut" },
+                status: { $nin: ["checkOut", "cancelled"] },
                 arrivalDateObj: {
                   $lte: endDate,
                 },

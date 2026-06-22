@@ -893,7 +893,7 @@ export const getRoomDataForRestaurant = async (req, res) => {
     // Get all records for cmp_id
     const allData = await CheckIn.find({
       cmp_id: req.params.cmp_id,
-      status: { $ne: "checkOut" },
+     status: { $nin: ["checkOut", "cancelled"] }
     });
 
     // Filter only those where today's date falls between arrivalDate & checkOutDate
@@ -2017,6 +2017,7 @@ async function createSalesVoucher(
   const additionalCharges = additionalChargesArray?.length > 0 ? additionalChargesArray : [];
   const isComplimentary = req.body.isComplimentary || false;
   const isPostToRoom = req.body.isPostToRoom || false;
+  const saleDate = req.body?.selectedSaleDate || new Date()
 
   console.log("kotData", paymentSplittingArray);
   // ✅ Calculate totals
@@ -2068,7 +2069,7 @@ async function createSalesVoucher(
   return await salesModel.create(
     [
       {
-        date: new Date(),
+        date: saleDate || new Date(),
         selectedDate: new Date().toLocaleDateString(),
         voucherType: "sales",
         serialNumber: saleNumber.usedSeriesNumber,
@@ -4441,7 +4442,7 @@ export const getAllChecking = async (req, res) => {
 
     const checkInData = await CheckIn.find({
       cmp_id,
-      status: { $ne: "checkOut" },
+      status: { $nin: ["checkOut", "cancelled"] },
     }).lean();
 
     return res.status(200).json({
