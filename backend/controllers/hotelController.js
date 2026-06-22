@@ -8987,3 +8987,34 @@ export const getCancellationReport = async (req, res) => {
     });
   }
 };
+
+
+export const additionalPaxDefaultSetting = async (req, res) => {
+  try {
+    const {cmp_id , id } = req.params;
+
+    await AdditionalPax.updateMany(
+      { cmp_id },
+      { $set: { isDefault: false } }
+    );
+
+    const updateAdditionalPax = await AdditionalPax.findByIdAndUpdate(
+      id,
+      { $set: { isDefault: true } },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Default Additional Pax updated successfully",
+      data: updateAdditionalPax,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};

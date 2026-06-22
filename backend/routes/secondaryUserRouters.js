@@ -83,7 +83,7 @@ import {
     updateCheckout,
     getSalesByCheckInNumber,
     updateRestaurantSalePayments,
-    getRestaurantSales,getTravelAgentSalesReport,getAgentList,getFOSalesSummary,getCancellationReport
+    getRestaurantSales,getTravelAgentSalesReport,getAgentList,getFOSalesSummary,getCancellationReport,additionalPaxDefaultSetting
 } from '../controllers/hotelController.js'
 
 import { convertCheckOutToSale } from '../controllers/hotelController2CheckOut.js';
@@ -460,6 +460,7 @@ router.get("/fetchDashboardPropertySalesSummary/:cmp_id/:primaryUserId", fetchDa
 router.get("/fetchDashboardRoomCountSummary/:cmp_id/:primaryUserId", fetchDashboardRoomCountSummary);
 router.get("/cancellation-report/:cmp_id", getCancellationReport);
 router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
+router.put("/additionalPaxDefaultSetting/:cmp_id/:id", authSecondary, additionalPaxDefaultSetting);
 // Route to get detailed booking information for a specific room and date
 
 export default router
