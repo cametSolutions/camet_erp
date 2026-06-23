@@ -1051,6 +1051,20 @@ export const roomBooking = async (req, res) => {
 
   try {
     const bookingData = req.body?.data;
+    bookingData.idProof = {
+  idType: bookingData?.idProof?.idType || "",
+  idNumber: bookingData?.idProof?.idNumber || "",
+  documents: Array.isArray(bookingData?.idProof?.documents)
+    ? bookingData.idProof.documents
+        .map((doc) => ({
+          url: doc?.url || "",
+          publicId: doc?.publicId || "",
+          originalName: doc?.originalName || "",
+          mimeType: doc?.mimeType || "",
+        }))
+        .filter((doc) => doc.url)
+    : [],
+};
     // console.log("bookingdata",bookingData)
     const isFor = req.body?.modal;
     // console.log("isfor",isFor)
@@ -1162,7 +1176,7 @@ export const roomBooking = async (req, res) => {
         const series_idReceipt = voucher?.series
           ?.find((s) => s.under === "hotel")
           ?._id.toString();
-
+ 
         // 🔹 Save Advance Object
         const advanceObject = new TallyData({
           Primary_user_id: req.pUserId || req.owner,
