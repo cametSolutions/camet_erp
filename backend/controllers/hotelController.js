@@ -1166,7 +1166,7 @@ export const roomBooking = async (req, res) => {
         // 🔹 Save Advance Object
         const advanceObject = new TallyData({
           Primary_user_id: req.pUserId || req.owner,
-          cmp_id: effectiveCmpId,
+          cmp_id: orgId,
           party_id: bookingData?.customerId,
           party_name: bookingData?.customerName,
           mobile_no: bookingData?.mobileNumber,
