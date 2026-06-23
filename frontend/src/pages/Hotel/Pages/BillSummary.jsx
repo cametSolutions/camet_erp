@@ -1138,7 +1138,7 @@ console.log(filteredSalesData);
                     Card
                   </th>
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
-                    Mode
+                   Credit
                   </th>
                   {businessType !== "hotel" && (
                     <>
@@ -1151,7 +1151,7 @@ console.log(filteredSalesData);
                     </>
                   )}
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
-                    Credit
+                    Mode
                   </th>
                 
                 </tr>
@@ -1245,6 +1245,11 @@ console.log(filteredSalesData);
                             ? Math.round(Number(row.card))
                             : "-"}
                         </td>
+                         <td className="border border-gray-200 px-2 py-1 text-right">
+                          {isCreditSale
+                            ? Math.round(row.credit || 0)
+                            : "-"}
+                        </td>
                         <td className="border border-gray-200 px-2 py-1 text-center overflow-hidden">
                           {row.PaymentModeArray &&
                           row.PaymentModeArray.length > 0
@@ -1262,11 +1267,7 @@ console.log(filteredSalesData);
                             </td>
                           </>
                         )}
-                        <td className="border border-gray-200 px-2 py-1 text-right">
-                          {isCreditSale
-                            ? Math.round(row.totalWithTax || 0)
-                            : "-"}
-                        </td>
+                       
                      
                       </tr>
                     );
@@ -1282,6 +1283,12 @@ console.log(filteredSalesData);
                       -
                     </td>
                     <td className="border border-gray-800 px-2 py-2 text-center">
+                      -
+                    </td>
+                        <td className="border border-gray-800 px-2 py-2 text-center">
+                      -
+                    </td>
+                        <td className="border border-gray-800 px-2 py-2 text-center">
                       -
                     </td>
                     <td className="border border-gray-800 px-2 py-2 text-right">
@@ -1317,6 +1324,9 @@ console.log(filteredSalesData);
                     <td className="border border-gray-800 px-2 py-2 text-right">
                       {Math.round(totals.card || 0)}
                     </td>
+                     <td className="border border-gray-800 px-2 py-2 text-right">
+                      {Math.round(totals.credit)}
+                    </td>
                     <td className="border border-gray-800 px-2 py-2 text-center">
                       -
                     </td>
@@ -1330,12 +1340,10 @@ console.log(filteredSalesData);
                         </td>
                       </>
                     )}
-                    <td className="border border-gray-800 px-2 py-2 text-right">
-                      {Math.round(totals.credit)}
-                    </td>
-                    <td className="border border-gray-800 px-2 py-2 text-center">
+               
+                    {/* <td className="border border-gray-800 px-2 py-2 text-center">
                       -
-                    </td>
+                    </td> */}
                   </tr>
                 )}
               </tbody>

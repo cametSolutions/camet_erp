@@ -39,6 +39,12 @@ console.log(checkouts);
                   className="border rounded px-2 py-1 w-full"
                 />
               </td>
+               {/* <td className="p-2 min-w-[180px]">
+                <TimeSelector
+                  initialTime={c.checkOutTime}
+                  onTimeChange={(time) => onTimeChange(c._id, time)}
+                />
+              </td> */}
               <td className="p-2">
                 <input
                   type="number"

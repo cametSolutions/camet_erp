@@ -1318,7 +1318,7 @@ async function createSalesVoucher(
   return await salesModel.create(
     [
       {
-        date: new Date(),
+        date: new Date(req.body?.selectedSaleDate) || new Date(),
         selectedDate: new Date().toLocaleDateString(),
         voucherType: "sales",
         serialNumber: saleNumber.usedSeriesNumber,

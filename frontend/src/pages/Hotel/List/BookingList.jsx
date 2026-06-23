@@ -13,6 +13,7 @@ import EnhancedCheckoutModal from "../Components/EnhancedCheckoutModal";
 import HoldModal from "../Components/HoldModal";
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
 const PaymentAllocation = lazy(() => import("../Components/PaymentAllocation"));
+import { Printer, Eye } from "lucide-react";
 import {
   setPaymentDetails,
   setSelectedParty,
@@ -22,6 +23,7 @@ import {
   setOnlineType,
   setPrintDetails,
   setRestaurantTag,
+  setSelectedSaleDateForRedux,
   removeAll,
 } from "../../../../slices/hotelSlices/paymentSlice.js";
 import { VariableSizeList as List } from "react-window";
@@ -45,6 +47,20 @@ import useFetch from "@/customHook/useFetch";
 import PrintModal from "../Components/PrintModal";
 import { calculateDiscountValues } from "../Helper/hotelHelper.js";
 import BookingListEditModal from "./BookingListEditModal";
+
+const normalizeAuditDate = (value) => {
+  if (!value || typeof value !== "string") return "";
+  return value.includes("T") ? value.split("T")[0] : value;
+};
+
+const isDateLockedByAudit = (date, lockedThroughDate) => {
+  const normalizedDate = normalizeAuditDate(date);
+  const normalizedLockedDate = normalizeAuditDate(lockedThroughDate);
+
+  if (!normalizedDate || !normalizedLockedDate) return false;
+
+  return normalizedDate <= normalizedLockedDate;
+};
 
 function BookingList() {
   const location = useLocation();
@@ -90,7 +106,7 @@ function BookingList() {
   const [selectedCreditor, setSelectedCreditor] = useState("");
   const [dateandstaysdata, setdateandstaysdata] = useState([]);
   const [finalPrintData, setFinalPrintData] = useState([]);
-  const [splitDetailsAfterSave,setSplitDetailsAfterSave] = useState([])
+  const [splitDetailsAfterSave, setSplitDetailsAfterSave] = useState([]);
   const [additionalChargeData, setAdditionalChargeData] = useState([]);
   const [selectedAdditionalCharge, setSelectedAdditionalCharge] = useState([]);
   const [discountType, setDiscountType] = useState("amount");
@@ -131,6 +147,9 @@ function BookingList() {
     useState(false);
 
   const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
+  const [nightAuditStatus, setNightAuditStatus] = useState(null);
+  const [nightAuditLoading, setNightAuditLoading] = useState(false);
+  const [nightAuditActionLoading, setNightAuditActionLoading] = useState(false);
   const ROOM_COLORS = [
     { bg: "#EEEDFE", border: "#AFA9EC", icon: "#534AB7", text: "#3C3489" },
     { bg: "#E1F5EE", border: "#5DCAA5", icon: "#0F6E56", text: "#085041" },
@@ -141,6 +160,10 @@ function BookingList() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEditBooking, setSelectedEditBooking] = useState(null);
+
+  const [selectedSaleDate, setSelectedSaleDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
 
   console.log(selectedEditBooking?.checkInId?.voucherNumber);
 
@@ -169,9 +192,17 @@ function BookingList() {
   const { roomId, roomName, filterByRoom } = location.state || {};
 
   const paymentDetails = useSelector((state) => state.paymentSlice);
+
+  console.log(paymentDetails)
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
+  const secondaryUserRole =
+    JSON.parse(localStorage.getItem("sUserData"))?.role || "user";
+  const isSingleAuditDateSelected = fromDate === toDate;
+  const selectedAuditDate = isSingleAuditDateSelected ? fromDate : "";
+  const isNightAuditLocked = Boolean(nightAuditStatus?.isLocked);
+  const lockedThroughDate = nightAuditStatus?.lockedThroughDate || null;
 
   const [expandedRows, setExpandedRows] = useState({});
 
@@ -444,8 +475,8 @@ function BookingList() {
       location?.state?.selectedCheckOut &&
       paymentDetails?.printData?.selectedCheckOut?.length > 0
     ) {
-      console.log(location?.state?.selectedCheckOut);
-      console.log(paymentDetails);
+      console.log(paymentDetails?.selectedSaleDate );
+      setSelectedSaleDate(paymentDetails?.selectedSaleDate || new Date());
       setSelectedAdditionalCharge(
         paymentDetails?.paymentDetails?.additionalChargeArray[0]?._id,
       );
@@ -741,6 +772,150 @@ function BookingList() {
   useEffect(() => {
     fetchBookings(1, searchTerm);
   }, [fetchBookings, searchTerm]);
+
+  useEffect(() => {
+    if (location.pathname !== "/sUsers/checkInList") {
+      setNightAuditStatus(null);
+      setNightAuditLoading(false);
+      return;
+    }
+
+    if (!selectedAuditDate || !cmp_id) {
+      setNightAuditStatus(null);
+      setNightAuditLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchNightAuditStatus = async () => {
+      setNightAuditLoading(true);
+
+      try {
+        const response = await api.get(
+          `/api/sUsers/nightAudit/${cmp_id}/status`,
+          {
+            params: { auditDate: selectedAuditDate },
+            withCredentials: true,
+          },
+        );
+
+        if (!isMounted) return;
+
+        setNightAuditStatus(response?.data || null);
+      } catch (error) {
+        if (!isMounted) return;
+
+        setNightAuditStatus(null);
+        toast.error(
+          error?.response?.data?.message ||
+            "Failed to fetch night audit status",
+        );
+      } finally {
+        if (isMounted) {
+          setNightAuditLoading(false);
+        }
+      }
+    };
+
+    fetchNightAuditStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [cmp_id, location.pathname, selectedAuditDate]);
+
+  const handleCompleteNightAudit = async () => {
+    if (!selectedAuditDate) {
+      toast.error("Select a single From and To date to complete night audit");
+      return;
+    }
+
+    const confirmation = await Swal.fire({
+      title: "Complete Night Audit?",
+      text: `Are you sure you want to complete the night audit for ${selectedAuditDate}? After auditing, check-in records under this date cannot be edited unless the audit is reopened.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Complete Audit",
+      confirmButtonColor: "#0f766e",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!confirmation.isConfirmed) return;
+
+    setNightAuditActionLoading(true);
+
+    try {
+      const response = await api.post(
+        `/api/sUsers/nightAudit/${cmp_id}/complete`,
+        { auditDate: selectedAuditDate },
+        { withCredentials: true },
+      );
+
+      setNightAuditStatus(response?.data || null);
+      toast.success(
+        response?.data?.message || "Night audit completed successfully",
+      );
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Failed to complete night audit",
+      );
+    } finally {
+      setNightAuditActionLoading(false);
+    }
+  };
+
+  const handleReopenNightAudit = async () => {
+    if (!selectedAuditDate) {
+      toast.error("Select a single From and To date to reopen night audit");
+      return;
+    }
+
+    const { value: reopenReason } = await Swal.fire({
+      title: "Reopen Night Audit",
+      input: "text",
+      inputLabel: "Reason for reopening",
+      inputPlaceholder: "Enter reopen reason",
+      inputAttributes: {
+        autocapitalize: "off",
+      },
+      showCancelButton: true,
+      confirmButtonText: "Reopen Audit",
+      confirmButtonColor: "#1d4ed8",
+      inputValidator: (value) => {
+        if (!value || !value.trim()) {
+          return "Reopen reason is required";
+        }
+        return undefined;
+      },
+    });
+
+    if (!reopenReason) return;
+
+    setNightAuditActionLoading(true);
+
+    try {
+      const response = await api.post(
+        `/api/sUsers/nightAudit/${cmp_id}/reopen`,
+        {
+          auditDate: selectedAuditDate,
+          reopenReason: reopenReason.trim(),
+        },
+        { withCredentials: true },
+      );
+
+      setNightAuditStatus(response?.data || null);
+      toast.success(
+        response?.data?.message || "Night audit reopened successfully",
+      );
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Failed to reopen night audit",
+      );
+    } finally {
+      setNightAuditActionLoading(false);
+    }
+  };
 
   console.log(selectedDataForPayment);
   const handleSingleCheckoutformultiplechekin = (selectcustomer) => {
@@ -1290,6 +1465,7 @@ function BookingList() {
           restaurantSideDiscountAdjustmentArray);
 
       dispatch(setPaymentDetails(paymentDetails));
+      dispatch(setSelectedSaleDateForRedux(selectedSaleDate));
       dispatch(setSelectedParty(selectedCustomer));
       dispatch(setSelectedPaymentMode(paymentMode));
       dispatch(setSelectedSplitPayment(splitPaymentRows));
@@ -1304,6 +1480,7 @@ function BookingList() {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
           {
+            selectedSaleDate:selectedSaleDate,
             paymentMethod: paymentMethod,
             paymentDetails: paymentDetails,
             selectedCheckOut: selectedCheckOut,
@@ -1327,7 +1504,6 @@ function BookingList() {
 
           setSplitDetailsAfterSave(splitDetails);
           setFinalPrintData(response?.data.data.checkOutAfterSave);
-
 
           handleCloseBasedOnDate();
         }
@@ -1754,7 +1930,9 @@ function BookingList() {
         <div className="w-32 text-center">
           {location.pathname == "/sUsers/checkOutList"
             ? "CHECKOUT DATE"
-            : "BOOKING DATE"}
+            : location.pathname == "/sUsers/checkInList"
+              ? "ARRIVAL DATE"
+              : "BOOKING DATE"}
         </div>
         <div className="w-32 text-center">
           {location.pathname == "/sUsers/checkOutList"
@@ -1898,7 +2076,9 @@ function BookingList() {
             <div className="w-32 text-center text-gray-600 text-xs">
               {location.pathname.includes("checkOutList")
                 ? formatDate(el?.checkOutDate)
-                : formatDate(el?.bookingDate)}
+                : location.pathname === "/sUsers/checkInList"
+                  ? formatDate(el?.arrivalDate)
+                  : formatDate(el?.bookingDate)}
             </div>
 
             {/* Voucher No */}
@@ -1990,18 +2170,28 @@ function BookingList() {
               (el?.status != "checkOut" &&
                 location.pathname == "/sUsers/checkInList") ? (
                 <div className="flex items-center gap-1">
-                  <FaEdit
-                    title="Edit"
-                    className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (location.pathname === "/sUsers/bookingList") {
-                        navigate("/sUsers/editBooking", { state: el });
-                      } else {
-                        navigate("/sUsers/editChecking", { state: el });
-                      }
-                    }}
-                  />
+                  {location.pathname === "/sUsers/checkInList" &&
+                  isNightAuditLocked &&
+                  isDateLockedByAudit(el?.arrivalDate, lockedThroughDate) ? (
+                    <FaEdit
+                      title={`Editing is disabled because check-ins up to ${lockedThroughDate} have been night audited.`}
+                      className="text-gray-400 cursor-not-allowed text-sm"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <FaEdit
+                      title="Edit"
+                      className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (location.pathname === "/sUsers/bookingList") {
+                          navigate("/sUsers/editBooking", { state: el });
+                        } else {
+                          navigate("/sUsers/editChecking", { state: el });
+                        }
+                      }}
+                    />
+                  )}
                   <MdDelete
                     title="Delete"
                     onClick={(e) => {
@@ -2013,20 +2203,21 @@ function BookingList() {
                 </div>
               ) : null}
 
-           {(location.pathname === "/sUsers/bookingList" ||
-  location.pathname === "/sUsers/checkInList") &&
-  el?.status !== "cancelled" && (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        handleCancelBooking(el._id, el.voucherNumber);
-      }}
-      className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
-      title="Cancel booking"
-    >
-      <MdCancel />
-    </button>
-  )}
+              {location.pathname === "/sUsers/bookingList" &&
+                el?.status !== "checkIn" &&
+                el?.status !== "cancelled" && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancelBooking(el._id, el.voucherNumber);
+                    }}
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                    title="Cancel booking"
+                  >
+                    <MdCancel />
+                  </button>
+                )}
+
               {el?.status === "cancelled" && (
                 <span className="bg-red-100 text-red-700 font-semibold py-1 px-2 rounded text-xs">
                   Cancelled
@@ -2043,7 +2234,9 @@ function BookingList() {
             <div className="w-28 text-center text-gray-600 text-xs">
               {location.pathname == "/sUsers/checkOutList"
                 ? formatDate(el?.checkOutDate)
-                : formatDate(el?.bookingDate)}
+                : location.pathname === "/sUsers/checkInList"
+                  ? formatDate(el?.arrivalDate)
+                  : formatDate(el?.bookingDate)}
             </div>
 
             <div className="w-32 text-center text-gray-700 font-semibold text-xs">
@@ -2144,21 +2337,50 @@ function BookingList() {
                 </button>
               )}
               {location.pathname === "/sUsers/checkInList" && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate("/sUsers/CheckInPrint", {
-                      state: {
-                        selectedCheckOut: [el],
-                        customerId: el.customerId._id,
-                      },
-                    });
-                  }}
-                  className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-                  title="Print Registration Card"
-                >
-                  Print
-                </button>
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate("/sUsers/CheckInPrint", {
+                        state: {
+                          selectedCheckOut: [el],
+                          customerId: el.customerId._id,
+                        },
+                      });
+                    }}
+                    className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300"
+                    title="Print Registration Card"
+                  >
+                    <Printer size={14} strokeWidth={2.2} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedCustomer(el.customerId?._id);
+                      setSelectedCheckOut([el]);
+                      const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+                      console.log(hasPrint1);
+
+                      navigate(
+                        hasPrint1
+                          ? "/sUsers/CheckOutPrint"
+                          : "/sUsers/BillPrint",
+                        {
+                          state: {
+                            selectedCheckOut: bookings?.filter(
+                              (item) => item.voucherNumber === el.voucherNumber,
+                            ),
+                            customerId: el.customerId?._id,
+                            isForPreview: false,
+                          },
+                        },
+                      );
+                    }}
+                    className="bg-green-600 hover:bg-green-500 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300 flex items-center justify-center"
+                  >
+                    <Eye size={14} strokeWidth={2.2} />
+                  </button>
+                </>
               )}
               {el?.status === "checkIn" &&
                 location.pathname === "/sUsers/bookingList" && (
@@ -2221,53 +2443,67 @@ function BookingList() {
                 location.pathname == "/sUsers/bookingList") ||
               (el?.status != "checkOut" &&
                 location.pathname == "/sUsers/checkInList") ? (
-                <div className="flex items-center gap-1">
-                  <FaEdit
-                    title="Edit booking details"
-                    className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (location.pathname === "/sUsers/bookingList") {
-                        navigate("/sUsers/editBooking", {
-                          state: el,
-                        });
-                      } else if (location.pathname === "/sUsers/checkInList") {
-                        navigate("/sUsers/editChecking", {
-                          state: el,
-                        });
-                      } else {
-                        navigate("/sUsers/editChecking", {
-                          state: el,
-                        });
-                      }
-                    }}
-                  />
-
-                  <MdDelete
-                    title="Delete booking details"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(el._id);
-                    }}
-                    className="text-red-500 cursor-pointer hover:text-red-700 text-sm"
-                  />
+                <div className="flex items-center gap-1 ">
+                  <div className="bg-blue-500 hover:blue-red-600 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300">
+                    {location.pathname === "/sUsers/checkInList" &&
+                    isNightAuditLocked &&
+                    isDateLockedByAudit(el?.arrivalDate, lockedThroughDate) ? (
+                      <FaEdit
+                        title={`Editing is disabled because check-ins up to ${lockedThroughDate} have been night audited.`}
+                        className="text-gray-400 cursor-not-allowed text-sm"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <FaEdit
+                        title="Edit booking details"
+                        className="text-black-500 cursor-pointer hover:text-black-700 text-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (location.pathname === "/sUsers/bookingList") {
+                            navigate("/sUsers/editBooking", {
+                              state: el,
+                            });
+                          } else if (
+                            location.pathname === "/sUsers/checkInList"
+                          ) {
+                            navigate("/sUsers/editChecking", {
+                              state: el,
+                            });
+                          } else {
+                            navigate("/sUsers/editChecking", {
+                              state: el,
+                            });
+                          }
+                        }}
+                      />
+                    )}
+                  </div>
+                  <div className="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300">
+                    <MdDelete
+                      title="Delete booking details"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(el._id);
+                      }}
+                      className="text-black-500 cursor-pointer hover:text-black-700 text-sm"
+                    />
+                  </div>
                 </div>
               ) : null}
-            
-           {(location.pathname === "/sUsers/bookingList" ||
-  location.pathname === "/sUsers/checkInList") &&
-  el?.status !== "cancelled" && (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        handleCancelBooking(el._id, el.voucherNumber);
-      }}
-      className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
-      title="Cancel booking"
-    >
-      <MdCancel />
-    </button>
-  )}{" "}
+              {location.pathname === "/sUsers/bookingList" &&
+                el?.status !== "checkIn" &&
+                el?.status !== "cancelled" && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancelBooking(el._id, el.voucherNumber);
+                    }}
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-semibold py-1 px-2 rounded text-xs transition duration-300"
+                    title="Cancel booking"
+                  >
+                    <MdCancel />
+                  </button>
+                )}{" "}
               {el?.status === "cancelled" && (
                 <span className="bg-red-100 text-red-700 font-semibold py-1 px-3 rounded text-xs">
                   Cancelled
@@ -2414,7 +2650,7 @@ function BookingList() {
     navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
       state: {
         selectedCheckOut: finalPrintData,
-        splitDetailsAfterSave:splitDetailsAfterSave,
+        splitDetailsAfterSave: splitDetailsAfterSave,
         customerId: selectedCustomer,
         isForPreview: false,
       },
@@ -2555,17 +2791,114 @@ function BookingList() {
 
           <SearchBar
             onType={searchData}
-            toggle={true}
+            toggle={location.pathname === "/sUsers/bookingList"}
             from={location.pathname}
             onDateChange={({ from, to }) => {
               setFromDate(from);
               setToDate(to);
-              setPage(1);
-              pageRef.current = 1;
-              setBookings([]);
-              setHasMore(true);
             }}
+            extraActions={
+              location.pathname === "/sUsers/checkInList" && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {isNightAuditLocked && (
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      Locked Through {lockedThroughDate}
+                    </span>
+                  )}
+
+                  {secondaryUserRole === "admin" &&
+                    nightAuditStatus?.status === "completed" && (
+                      <button
+                        type="button"
+                        onClick={handleReopenNightAudit}
+                        disabled={nightAuditActionLoading || nightAuditLoading}
+                        className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Reopen Audit
+                      </button>
+                    )}
+
+                  <button
+                    type="button"
+                    onClick={handleCompleteNightAudit}
+                    disabled={
+                      !isSingleAuditDateSelected ||
+                      isNightAuditLocked ||
+                      nightAuditLoading ||
+                      nightAuditActionLoading
+                    }
+                    className="rounded-md bg-[#0f766e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#115e59] disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    {nightAuditActionLoading ? "Processing..." : "Night Audit"}
+                  </button>
+                </div>
+              )
+            }
           />
+
+          {/* {location.pathname === "/sUsers/checkInList" && (
+            <div className="bg-white border-b border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-semibold text-slate-800">
+                  Night Audit
+                </span>
+                {!isSingleAuditDateSelected ? (
+                  <span className="text-xs text-amber-700">
+                    Select the same From and To date to audit one exact check-in date.
+                  </span>
+                ) : nightAuditLoading ? (
+                  <span className="text-xs text-slate-500">
+                    Checking audit status for {selectedAuditDate}...
+                  </span>
+                ) : isNightAuditLocked ? (
+                  <span className="text-xs text-emerald-700">
+                    Check-ins up to {lockedThroughDate} are night audited. Edit is locked through that date.
+                  </span>
+                ) : nightAuditStatus?.status === "reopened" ? (
+                  <span className="text-xs text-blue-700">
+                    {selectedAuditDate} was reopened. Editing is enabled again.
+                  </span>
+                ) : (
+                  <span className="text-xs text-slate-500">
+                    No completed night audit for {selectedAuditDate}.
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {isNightAuditLocked && (
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                    Locked Through {lockedThroughDate}
+                  </span>
+                )}
+
+                {secondaryUserRole === "admin" && nightAuditStatus?.status === "completed" && (
+                  <button
+                    type="button"
+                    onClick={handleReopenNightAudit}
+                    disabled={nightAuditActionLoading || nightAuditLoading}
+                    className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Reopen Audit
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleCompleteNightAudit}
+                  disabled={
+                    !isSingleAuditDateSelected ||
+                    isNightAuditLocked ||
+                    nightAuditLoading ||
+                    nightAuditActionLoading
+                  }
+                  className="rounded-md bg-[#0f766e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#115e59] disabled:cursor-not-allowed disabled:bg-slate-300"
+                >
+                  {nightAuditActionLoading ? "Processing..." : "Night Audit"}
+                </button>
+              </div>
+            </div>
+          )} */}
         </div>
 
         {!loader && !isLoading && bookings?.length === 0 && (
@@ -2687,25 +3020,39 @@ function BookingList() {
                     Payment Processing
                   </h2>
                 </div>
-                <button
-                  onClick={() => {
-                    setShowPaymentModal(false);
-                    setPaymentMode("single");
-                    setCashAmount(0);
-                    setOnlineAmount(0);
-                    setPaymentError("");
-                    setSelectedCash("");
-                    setSelectedBank("");
-                    setSelectedCreditor("");
-                    setSplitPaymentRows([
-                      { customer: "", source: "", sourceType: "", amount: "" },
-                    ]);
-                    window.location.reload();
-                  }}
-                  className="w-7 h-7 rounded-lg border border-gray-200 dark:border-neutral-700 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                {/* Right side */}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="date"
+                    className="px-2 py-1 text-sm border border-gray-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 text-gray-700 dark:text-white"
+                    value={selectedSaleDate}
+                    onChange={(e) => setSelectedSaleDate(e.target.value)}
+                  />
+                  <button
+                    onClick={() => {
+                      setShowPaymentModal(false);
+                      setPaymentMode("single");
+                      setCashAmount(0);
+                      setOnlineAmount(0);
+                      setPaymentError("");
+                      setSelectedCash("");
+                      setSelectedBank("");
+                      setSelectedCreditor("");
+                      setSplitPaymentRows([
+                        {
+                          customer: "",
+                          source: "",
+                          sourceType: "",
+                          amount: "",
+                        },
+                      ]);
+                      window.location.reload();
+                    }}
+                    className="w-7 h-7 rounded-lg border border-gray-200 dark:border-neutral-700 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
               <div className="px-5 py-4 flex flex-col gap-4">

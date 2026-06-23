@@ -12,6 +12,98 @@ import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 import receiptModel from "../models/receiptModel.js";
 import mongoose from "mongoose";
 
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+const getSelectedISTDateParts = (selectedDateInput) => {
+  if (selectedDateInput) {
+    const match = String(selectedDateInput).match(
+      /^(\d{4})-(\d{2})-(\d{2})$/,
+    );
+
+    if (!match) {
+      throw new Error("Invalid date format. Expected YYYY-MM-DD");
+    }
+
+    return {
+      year: Number(match[1]),
+      monthIndex: Number(match[2]) - 1,
+      day: Number(match[3]),
+    };
+  }
+
+  const nowIST = new Date(Date.now() + IST_OFFSET_MS);
+
+  return {
+    year: nowIST.getUTCFullYear(),
+    monthIndex: nowIST.getUTCMonth(),
+    day: nowIST.getUTCDate(),
+  };
+};
+
+const getISTBoundaryDate = ({
+  year,
+  monthIndex,
+  day,
+  hours = 0,
+  minutes = 0,
+  seconds = 0,
+  milliseconds = 0,
+}) =>
+  new Date(
+    Date.UTC(
+      year,
+      monthIndex,
+      day,
+      hours,
+      minutes,
+      seconds,
+      milliseconds,
+    ) - IST_OFFSET_MS,
+  );
+
+const getISTDateRanges = (selectedDateInput) => {
+  const { year, monthIndex, day } = getSelectedISTDateParts(selectedDateInput);
+
+  const selectedStartIST = getISTBoundaryDate({
+    year,
+    monthIndex,
+    day,
+  });
+
+  const selectedEndIST = getISTBoundaryDate({
+    year,
+    monthIndex,
+    day,
+    hours: 23,
+    minutes: 59,
+    seconds: 59,
+    milliseconds: 999,
+  });
+
+  const monthStartIST = getISTBoundaryDate({
+    year,
+    monthIndex,
+    day: 1,
+  });
+
+  const monthEndIST = getISTBoundaryDate({
+    year,
+    monthIndex: monthIndex + 1,
+    day: 0,
+    hours: 23,
+    minutes: 59,
+    seconds: 59,
+    milliseconds: 999,
+  });
+
+  return {
+    selectedStartIST,
+    selectedEndIST,
+    monthStartIST,
+    monthEndIST,
+  };
+};
+
 
 export const getSummary = async (req, res) => {
   const {
@@ -539,46 +631,9 @@ export const getSummaryReport = async (req, res) => {
 export const fetchDashboardConsolidatedTotals = async (req, res) => {
   try {
     const { primaryUserId } = req.params;
-
-    // ── IST boundaries ──────────────────────────────────────────
-    const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
-
-    const nowIST = new Date(Date.now() + IST_OFFSET_MS);
-
-    // Today: 00:00:00 IST → 23:59:59 IST (stored as UTC in Mongo)
-    const todayStartIST = new Date(
-      Date.UTC(
-        nowIST.getUTCFullYear(),
-        nowIST.getUTCMonth(),
-        nowIST.getUTCDate(),
-        0, 0, 0, 0
-      ) - IST_OFFSET_MS
-    );
-    const todayEndIST = new Date(
-      Date.UTC(
-        nowIST.getUTCFullYear(),
-        nowIST.getUTCMonth(),
-        nowIST.getUTCDate(),
-        23, 59, 59, 999
-      ) - IST_OFFSET_MS
-    );
-
-    // This month: 1st 00:00:00 IST → last day 23:59:59 IST
-    const monthStartIST = new Date(
-      Date.UTC(
-        nowIST.getUTCFullYear(),
-        nowIST.getUTCMonth(),
-        1, 0, 0, 0, 0
-      ) - IST_OFFSET_MS
-    );
-    const monthEndIST = new Date(
-      Date.UTC(
-        nowIST.getUTCFullYear(),
-        nowIST.getUTCMonth() + 1,
-        0, 23, 59, 59, 999
-      ) - IST_OFFSET_MS
-    );
-    // ─────────────────────────────────────────────────────────────
+    const { date } = req.query;
+    const { selectedStartIST, selectedEndIST, monthStartIST } =
+      getISTDateRanges(date);
 
     const primaryUserObjectId = new mongoose.Types.ObjectId(primaryUserId);
 
@@ -588,6 +643,7 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
           $match: {
             Primary_user_id: primaryUserObjectId,
             isComplimentary: { $ne: true },
+            date: { $lte: selectedEndIST },
           },
         },
         {
@@ -616,7 +672,7 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
             monthlyTotal: [
               {
                 $match: {
-                  date: { $gte: monthStartIST, $lte: monthEndIST },
+                  date: { $gte: monthStartIST, $lte: selectedEndIST },
                 },
               },
               {
@@ -629,7 +685,7 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
             dailyTotal: [
               {
                 $match: {
-                  date: { $gte: todayStartIST, $lte: todayEndIST },
+                  date: { $gte: selectedStartIST, $lte: selectedEndIST },
                 },
               },
               {
@@ -642,7 +698,7 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
             cashBankDaily: [
               {
                 $match: {
-                  date: { $gte: todayStartIST, $lte: todayEndIST },
+                  date: { $gte: selectedStartIST, $lte: selectedEndIST },
                   enteredAmount: { $gt: 0 },
                   normalizedPaymentMethod: { $ne: "credit" },
                 },
@@ -663,7 +719,7 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
             cashBankMonthly: [
               {
                 $match: {
-                  date: { $gte: monthStartIST, $lte: monthEndIST },
+                  date: { $gte: monthStartIST, $lte: selectedEndIST },
                   enteredAmount: { $gt: 0 },
                   normalizedPaymentMethod: { $ne: "credit" },
                 },
@@ -684,6 +740,7 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
             cashBankAllTime: [
               {
                 $match: {
+                  date: { $lte: selectedEndIST },
                   enteredAmount: { $gt: 0 },
                   normalizedPaymentMethod: { $ne: "credit" },
                 },
@@ -706,10 +763,9 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
       ]),
       getRestaurantDirectCollectionSummary({
         primaryUserObjectId,
-        todayStartIST,
-        todayEndIST,
+        selectedStartIST,
+        selectedEndIST,
         monthStartIST,
-        monthEndIST,
       }),
     ]);
 
@@ -756,6 +812,8 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
 export const fetchDashboardCompanyRevenueBreakdown = async (req, res) => {
   try {
     const { primaryUserId } = req.params;
+    const { date } = req.query;
+    const { selectedEndIST } = getISTDateRanges(date);
     const primaryUserObjectId = new mongoose.Types.ObjectId(primaryUserId);
 
     const companyWiseRevenue = await OrganizationModel.aggregate([
@@ -776,6 +834,7 @@ export const fetchDashboardCompanyRevenueBreakdown = async (req, res) => {
                     { $eq: ["$cmp_id", "$$companyId"] },
                     { $eq: ["$Primary_user_id", primaryUserObjectId] },
                     { $ne: ["$isComplimentary", true] },
+                    { $lte: ["$date", selectedEndIST] },
                   ],
                 },
               },
@@ -821,50 +880,10 @@ export const fetchDashboardCompanyRevenueBreakdown = async (req, res) => {
   }
 };
 
-const getISTDateRanges = () => {
-  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
-  const nowIST = new Date(Date.now() + IST_OFFSET_MS);
-
-  const todayStartIST = new Date(
-    Date.UTC(
-      nowIST.getUTCFullYear(),
-      nowIST.getUTCMonth(),
-      nowIST.getUTCDate(),
-      0, 0, 0, 0
-    ) - IST_OFFSET_MS
-  );
-
-  const todayEndIST = new Date(
-    Date.UTC(
-      nowIST.getUTCFullYear(),
-      nowIST.getUTCMonth(),
-      nowIST.getUTCDate(),
-      23, 59, 59, 999
-    ) - IST_OFFSET_MS
-  );
-
-  const monthStartIST = new Date(
-    Date.UTC(
-      nowIST.getUTCFullYear(),
-      nowIST.getUTCMonth(),
-      1, 0, 0, 0, 0
-    ) - IST_OFFSET_MS
-  );
-
-  const monthEndIST = new Date(
-    Date.UTC(
-      nowIST.getUTCFullYear(),
-      nowIST.getUTCMonth() + 1,
-      0, 23, 59, 59, 999
-    ) - IST_OFFSET_MS
-  );
-
-  return { todayStartIST, todayEndIST, monthStartIST, monthEndIST };
-};
-
 const buildRestaurantDirectSalesPipeline = ({
   primaryUserObjectId,
   dateMatch = null,
+  endDate = null,
   companyExpr = { $eq: ["$Primary_user_id", primaryUserObjectId] },
   groupByCompany = false,
 }) => {
@@ -874,6 +893,7 @@ const buildRestaurantDirectSalesPipeline = ({
         Primary_user_id: primaryUserObjectId,
         isComplimentary: { $ne: true },
         isCancelled: { $ne: true },
+        ...(endDate ? { date: { $lte: endDate } } : {}),
       },
     },
     {
@@ -994,24 +1014,24 @@ const buildRestaurantDirectSalesPipeline = ({
 
 const getRestaurantDirectCollectionSummary = async ({
   primaryUserObjectId,
-  todayStartIST,
-  todayEndIST,
+  selectedStartIST,
+  selectedEndIST,
   monthStartIST,
-  monthEndIST,
 }) => {
   const [summary] = await salesModel.aggregate([
     {
       $facet: {
         daily: buildRestaurantDirectSalesPipeline({
           primaryUserObjectId,
-          dateMatch: { $gte: todayStartIST, $lte: todayEndIST },
+          dateMatch: { $gte: selectedStartIST, $lte: selectedEndIST },
         }),
         monthly: buildRestaurantDirectSalesPipeline({
           primaryUserObjectId,
-          dateMatch: { $gte: monthStartIST, $lte: monthEndIST },
+          dateMatch: { $gte: monthStartIST, $lte: selectedEndIST },
         }),
         allTime: buildRestaurantDirectSalesPipeline({
           primaryUserObjectId,
+          endDate: selectedEndIST,
         }),
       },
     },
@@ -1220,11 +1240,12 @@ const getCompanyWiseCollectionBreakdown = async ({ primaryUserId, dateMatch }) =
 export const fetchDashboardCompanyDailyCollectionBreakdown = async (req, res) => {
   try {
     const { primaryUserId } = req.params;
-    const { todayStartIST, todayEndIST } = getISTDateRanges();
+    const { date } = req.query;
+    const { selectedStartIST, selectedEndIST } = getISTDateRanges(date);
 
     const companyWiseCollection = await getCompanyWiseCollectionBreakdown({
       primaryUserId,
-      dateMatch: { $gte: todayStartIST, $lte: todayEndIST },
+      dateMatch: { $gte: selectedStartIST, $lte: selectedEndIST },
     });
 
     return res.status(200).json({
@@ -1240,11 +1261,12 @@ export const fetchDashboardCompanyDailyCollectionBreakdown = async (req, res) =>
 export const fetchDashboardCompanyMonthlyCollectionBreakdown = async (req, res) => {
   try {
     const { primaryUserId } = req.params;
-    const { monthStartIST, monthEndIST } = getISTDateRanges();
+    const { date } = req.query;
+    const { monthStartIST, selectedEndIST } = getISTDateRanges(date);
 
     const companyWiseCollection = await getCompanyWiseCollectionBreakdown({
       primaryUserId,
-      dateMatch: { $gte: monthStartIST, $lte: monthEndIST },
+      dateMatch: { $gte: monthStartIST, $lte: selectedEndIST },
     });
 
     return res.status(200).json({
@@ -1400,6 +1422,8 @@ export const fetchDashboardRoomCountSummary = async (req, res) => {
 export const fetchDashboardPropertySalesSummary = async (req, res) => {
   try {
     const { primaryUserId } = req.params;
+    const { date } = req.query;
+    const { selectedEndIST } = getISTDateRanges(date);
     const primaryUserObjectId = new mongoose.Types.ObjectId(primaryUserId);
 
     const companyWisePropertySales = await OrganizationModel.aggregate([
@@ -1420,6 +1444,7 @@ export const fetchDashboardPropertySalesSummary = async (req, res) => {
                     { $eq: ["$cmp_id", "$$companyId"] },
                     { $eq: ["$Primary_user_id", primaryUserObjectId] },
                     { $ne: ["$isComplimentary", true] },
+                    { $lte: ["$date", selectedEndIST] },
                   ],
                 },
               },

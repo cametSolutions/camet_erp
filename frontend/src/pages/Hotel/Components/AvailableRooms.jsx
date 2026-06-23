@@ -799,18 +799,20 @@ function AvailableRooms({
                     <th className="w-12 px-1 py-2 text-center text-xs font-bold text-white uppercase">
                       Pax
                     </th>
-                    <th className="w-20 px-1 py-2 text-center text-xs font-bold text-white uppercase">
-                      Total
+                      <th className="w-10 px-1 py-2 text-center text-xs font-bold text-white uppercase">
+                      EX.Pax
                     </th>
-                    <th className="w-12 px-1 py-2 text-center text-xs font-bold text-white uppercase">
+                       <th className="w-12 px-1 py-2 text-center text-xs font-bold text-white uppercase">
                       Tax
                     </th>
                     <th className="w-20 px-1 py-2 text-center text-xs font-bold text-white uppercase">
-                      W/Tax
+                      Total
                     </th>
-                    <th className="w-10 px-1 py-2 text-center text-xs font-bold text-white uppercase">
-                      P+
+                 
+                    <th className="w-20 px-1 py-2 text-center text-xs font-bold text-white uppercase">
+                      Net Amt
                     </th>
+                  
                     <th className="w-16 px-1 py-2 text-center text-xs font-bold text-white uppercase">
                       Food
                     </th>
@@ -951,7 +953,20 @@ function AvailableRooms({
                             className=" disabled w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
                           />
                         </td>
-
+                        
+                        <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
+                         <input
+                            type="number "
+                            value={booking.pax || 2}
+                            onChange={(e) => handlePaxChange(e, booking.roomId)}
+                            disabled={isTariffRateChange ? true : false}
+                            min="1"
+                            className=" disabled w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          />
+                        </td>
+<td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
+                          {Number(booking.taxPercentage || 0).toFixed(1)}%
+                        </td>
                         <td className="px-1 py-1">
                           <div className="text-center">
                             <span className="block font-bold text-emerald-600 text-xs leading-tight">
@@ -969,9 +984,7 @@ function AvailableRooms({
                           </div>
                         </td>
 
-                        <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
-                          {Number(booking.taxPercentage || 0).toFixed(1)}%
-                        </td>
+                        
 
                         <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
                           ₹
@@ -980,17 +993,6 @@ function AvailableRooms({
                           )}
                         </td>
 
-                        <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
-                          {formData?.additionalPaxDetails?.reduce(
-                            (acc, item) => {
-                              if (item.roomId == booking.roomId) {
-                                return acc + 1;
-                              }
-                              return acc;
-                            },
-                            0,
-                          ) || 0}
-                        </td>
 
                         <td className="px-1 py-1 text-center text-emerald-600 text-xs">
                           <div className="max-w-16 truncate">
@@ -998,7 +1000,7 @@ function AvailableRooms({
                               ?.filter((item) => item.roomId === booking.roomId)
                               .map((item, index) => (
                                 <span key={index} className="block truncate">
-                                  {item.foodPlan}
+                                  {item.foodPlan || 0}
                                 </span>
                               )) || "None"}
                           </div>

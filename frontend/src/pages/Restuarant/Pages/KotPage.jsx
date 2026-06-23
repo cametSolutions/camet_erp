@@ -54,7 +54,7 @@ const OrdersDashboard = () => {
   const [selectedDiscountCharge, setSelectedDiscountCharge] = useState(null);
   const [billFormat, setBillFormat] = useState("format1");
   const [note, setNote] = useState("");
-
+  const [selectedSaleDate,setSelectedSaleDate] = useState(new Date().toISOString().split("T")[0]);
   const [saveLoader, setSaveLoader] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
@@ -862,6 +862,7 @@ const complementaryWithTax =
       }
       // ================= FINAL PAYMENT OBJECT =================
       const payment = {
+        selectedSaleDate,
         paymentMethod,
         paymentDetails: {
           ...paymentDetails,
@@ -1332,6 +1333,8 @@ const complementaryWithTax =
               isPreview={true}
               sendToParent={handleSaveSales}
               handlePrintData={handlePrint}
+              selectedSaleDate={selectedSaleDate}
+              setSelectedSaleDate={setSelectedSaleDate}
             />
           )}
         </div>

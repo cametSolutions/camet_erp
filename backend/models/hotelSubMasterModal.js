@@ -14,6 +14,7 @@ const AdditionalPaxSchema = new mongoose.Schema({
     ref: "PrimaryUser",
     required: true,
   },
+    isDefault: { type: Boolean, default: false },
 });
 
 const VisitOfPurposeSchema = new mongoose.Schema({

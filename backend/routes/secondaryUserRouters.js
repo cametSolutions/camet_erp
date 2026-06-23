@@ -83,10 +83,15 @@ import {
     updateCheckout,
     getSalesByCheckInNumber,
     updateRestaurantSalePayments,
-    getRestaurantSales,getTravelAgentSalesReport,getAgentList,getFOSalesSummary,getCancellationReport
+    getRestaurantSales,getTravelAgentSalesReport,getAgentList,getFOSalesSummary,getCancellationReport,additionalPaxDefaultSetting
 } from '../controllers/hotelController.js'
 
 import { convertCheckOutToSale } from '../controllers/hotelController2CheckOut.js';
+import {
+    completeNightAudit,
+    getNightAuditStatus,
+    reopenNightAudit
+} from '../controllers/nightAuditController.js';
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot,getKotDash, updateKotStatus, editKot,
     getRoomDataForRestaurant, updateKotPayment, getPaymentType, saveTableNumber, getSalePrintData, updateTable, getTables, deleteTable,
@@ -400,6 +405,9 @@ router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,g
 router.put('/updateTableStatus/:cmp_id/:tableNumber',authSecondary,updateTableStatus )
 router.get('/getKotDataByTable/:cmp_id',authSecondary,getKotDataByTable )
 router.get('/getDateBasedRoomsWithStatus/:cmp_id',authSecondary,getDateBasedRoomsWithStatus)
+router.get('/nightAudit/:cmp_id/status', authSecondary, secondaryIsBlocked, companyAuthentication, getNightAuditStatus)
+router.post('/nightAudit/:cmp_id/complete', authSecondary, secondaryIsBlocked, companyAuthentication, completeNightAudit)
+router.post('/nightAudit/:cmp_id/reopen', authSecondary, secondaryIsBlocked, companyAuthentication, reopenNightAudit)
 router.put('/checkOutWithArray/:cmp_id',authSecondary,checkoutWithArrayOfData)
 router.post('/fetchOutStandingAndFoodData/:cmp_id',authSecondary,fetchOutStandingAndFoodData)
 router.post('/convertCheckOutToSale/:cmp_id',authSecondary,convertCheckOutToSale)
@@ -452,6 +460,7 @@ router.get("/fetchDashboardPropertySalesSummary/:cmp_id/:primaryUserId", fetchDa
 router.get("/fetchDashboardRoomCountSummary/:cmp_id/:primaryUserId", fetchDashboardRoomCountSummary);
 router.get("/cancellation-report/:cmp_id", getCancellationReport);
 router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
+router.put("/additionalPaxDefaultSetting/:cmp_id/:id", authSecondary, additionalPaxDefaultSetting);
 // Route to get detailed booking information for a specific room and date
 
 export default router

@@ -5,7 +5,6 @@ import {
   Text,
   View,
   StyleSheet,
-  Font,
   pdf,
 } from "@react-pdf/renderer";
 import * as XLSX from "xlsx";
@@ -13,34 +12,33 @@ import TitleDiv from "@/components/common/TitleDiv";
 import api from "../../../api/api";
 import { useSelector } from "react-redux";
 
-Font.register({
-  family: "Roboto",
-  src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-light-webfont.ttf",
-});
-
 const fmt = (n) =>
   Number(n || 0).toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
 
-const today = new Date().toISOString().split("T")[0];
+// FIX: Use local date instead of toISOString() which is UTC
+const getLocalToday = () => {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+const today = getLocalToday();
 
 const getFiscalYearDays = (selectedYear) => {
   const year = parseInt(selectedYear, 10);
-  const fiscalStart = new Date(year, 3, 1);
-  const fiscalEnd = new Date(year + 1, 2, 31);
+  const fiscalStart = new Date(year, 3, 1);       // Apr 1
+  const fiscalEnd = new Date(year + 1, 2, 31);    // Mar 31 next year
   const todayDate = new Date();
 
   if (todayDate < fiscalStart) return 1;
 
-  if (todayDate >= fiscalEnd) {
-    const diffMs = fiscalEnd - fiscalStart;
-    return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
-  }
-
-  const diffMs = todayDate - fiscalStart;
-  return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+  const effectiveEnd = todayDate >= fiscalEnd ? fiscalEnd : todayDate;
+  return (
+    Math.floor((effectiveEnd - fiscalStart) / (1000 * 60 * 60 * 24)) + 1
+  );
 };
 
 const getFiscalYearLabel = (selectedYear) => {
@@ -57,9 +55,12 @@ const getFiscalYearLabel = (selectedYear) => {
       year: "numeric",
     });
 
-  const endLabel = todayDate < fiscalEnd ? fmtDate(todayDate) : fmtDate(fiscalEnd);
+  const endLabel =
+    todayDate < fiscalEnd ? fmtDate(todayDate) : fmtDate(fiscalEnd);
   return `FY ${year} (${fmtDate(fiscalStart)} – ${endLabel} · ${days} days)`;
 };
+
+// ─── Table Primitives ────────────────────────────────────────────────────────
 
 const TH = ({ children, right }) => (
   <th
@@ -96,12 +97,9 @@ const TD = ({ children, right, bold, muted }) => (
   </td>
 );
 
-let _rowIndex = 0;
-
-const TDRow = ({ label, d, m, y, isPercent = false, bold = false }) => {
-  _rowIndex++;
-  const bg = _rowIndex % 2 === 0 ? "#fff" : "#f9fafb";
-
+// FIX: rowIndex passed as prop instead of module-level mutable var
+const TDRow = ({ label, d, m, y, isPercent = false, bold = false, rowIndex }) => {
+  const bg = rowIndex % 2 === 0 ? "#fff" : "#f9fafb";
   return (
     <tr style={{ background: bg, borderBottom: "1px solid #f0f0f0" }}>
       <TD muted>{label}</TD>
@@ -134,6 +132,8 @@ const SectionHeader = ({ title }) => (
   </tr>
 );
 
+// ─── PDF Component ────────────────────────────────────────────────────────────
+
 const FlashReportPDF = ({
   dateData,
   monthData,
@@ -141,12 +141,18 @@ const FlashReportPDF = ({
   selectedYear,
   fiscalYearDays,
 }) => {
+
+  
   const s = StyleSheet.create({
     page: { padding: 30, fontSize: 10, fontFamily: "Helvetica" },
     border: { border: "1px solid black", padding: 15 },
     header: { textAlign: "center", marginBottom: 10 },
     title: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
-    subtitle: { fontSize: 12, fontWeight: "bold", textDecoration: "underline" },
+    subtitle: {
+      fontSize: 12,
+      fontWeight: "bold",
+      textDecoration: "underline",
+    },
     dateRow: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -232,8 +238,9 @@ const FlashReportPDF = ({
 
           <View style={s.dateRow}>
             <Text>
-              Date: {fmtDate(dateData?.selectedDate)} | Month: {monthData?.monthName}{" "}
-              {monthData?.selectedYear} | FY {selectedYear} ({fiscalYearDays} days)
+              Date: {fmtDate(dateData?.selectedDate)} | Month:{" "}
+              {monthData?.monthName} {monthData?.selectedYear} | FY{" "}
+              {selectedYear} ({fiscalYearDays} days)
             </Text>
           </View>
 
@@ -273,8 +280,8 @@ const FlashReportPDF = ({
 
           <Text style={s.sectionTitle}>F&B REVENUE</Text>
           <R label="Plan Rate (Accrued)" d={dateData?.fbPlanRate} m={monthData?.fbPlanRate} y={yearData?.fbPlanRate} />
-          <R label="Rustic Room Service" d={dateData?.fbRoomService} m={monthData?.fbRoomService} y={yearData?.fbRoomService} />
-          <R label="Rustic Barn Restaurant" d={dateData?.fbRestaurant} m={monthData?.fbRestaurant} y={yearData?.fbRestaurant} />
+          <R label="Room Service" d={dateData?.fbRoomService} m={monthData?.fbRoomService} y={yearData?.fbRoomService} />
+          <R label="Restaurant" d={dateData?.fbRestaurant} m={monthData?.fbRestaurant} y={yearData?.fbRestaurant} />
           <TR label="Total : F&B REVENUE" d={dateData?.fbTotal} m={monthData?.fbTotal} y={yearData?.fbTotal} />
 
           <Text style={s.sectionTitle}>OTHER REVENUES</Text>
@@ -286,9 +293,11 @@ const FlashReportPDF = ({
   );
 };
 
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 export default function HotelFlashReportPage() {
   const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization?.secSelectedOrg?._id
+    (state) => state.secSelectedOrganization?.secSelectedOrg?._id,
   );
 
   const getCurrentYear = () => new Date().getFullYear();
@@ -306,7 +315,6 @@ export default function HotelFlashReportPage() {
   const [error, setError] = useState("");
 
   const requestIdRef = useRef(0);
-  const didFirstLoadRef = useRef(false);
 
   const fiscalYearDays = getFiscalYearDays(selectedYear);
 
@@ -319,21 +327,28 @@ export default function HotelFlashReportPage() {
       setLoading(true);
       setError("");
 
+      // FIX: Send explicit params to avoid branch ambiguity on backend
       const [dateRes, monthRes, yearRes] = await Promise.all([
-        api.get("/api/sUsers/flash-report", {
-          params: { cmp_id, reportDate: selectedDate },
-        }),
         api.get("/api/sUsers/flash-report", {
           params: {
             cmp_id,
-            reportMonth: selectedMonth,
-            reportYear: selectedYear,
+            reportDate: selectedDate,
+            // explicitly exclude reportMonth and reportYear
           },
         }),
         api.get("/api/sUsers/flash-report", {
           params: {
             cmp_id,
-            reportYear: selectedYear,
+            reportMonth: String(selectedMonth),
+            reportYear: String(selectedYear),
+            // explicitly exclude reportDate
+          },
+        }),
+        api.get("/api/sUsers/flash-report", {
+          params: {
+            cmp_id,
+            reportYear: String(selectedYear),
+            // explicitly exclude reportDate and reportMonth
           },
         }),
       ]);
@@ -345,10 +360,12 @@ export default function HotelFlashReportPage() {
       }
 
       if (monthRes?.data?.success) {
+        const pad = (n) => String(n).padStart(2, "0");
         const monthName = new Date(
-          `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-01`
+          selectedYear,
+          selectedMonth - 1,
+          1,
         ).toLocaleString("en-GB", { month: "long" });
-
         const monthLastDay = new Date(selectedYear, selectedMonth, 0).getDate();
 
         setMonthData({
@@ -369,27 +386,19 @@ export default function HotelFlashReportPage() {
     } catch (err) {
       if (currentRequestId !== requestIdRef.current) return;
       console.error("Flash report load error:", err);
-      setError("Failed to load flash report.");
+      setError("Failed to load flash report. Please try again.");
     } finally {
       if (currentRequestId === requestIdRef.current) {
         setLoading(false);
       }
     }
+  // FIX: removed loadReports from its own deps (was causing infinite loop)
   }, [cmp_id, selectedDate, selectedMonth, selectedYear]);
 
   useEffect(() => {
     if (!cmp_id) return;
-
-    if (!didFirstLoadRef.current) {
-      didFirstLoadRef.current = true;
-    }
-
     loadReports();
-  }, [cmp_id, selectedDate, selectedMonth, selectedYear, loadReports]);
-
-  const refreshAllReports = async () => {
-    await loadReports();
-  };
+  }, [loadReports]);
 
   const exportToPDF = async () => {
     if (!dateData || !monthData || !yearData) return;
@@ -401,19 +410,24 @@ export default function HotelFlashReportPage() {
         yearData={yearData}
         fiscalYearDays={fiscalYearDays}
         selectedYear={selectedYear}
-      />
+      />,
     ).toBlob();
 
     const url = URL.createObjectURL(blob);
     window.open(url, "_blank", "noopener,noreferrer");
 
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 10000);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
   };
 
   const exportToExcel = () => {
     if (!dateData || !monthData || !yearData) return;
+
+    const pad = (n) => String(n).padStart(2, "0");
+    const monthLabel = new Date(
+      selectedYear,
+      selectedMonth - 1,
+      1,
+    ).toLocaleString("en-GB", { month: "long" });
 
     const rows = [
       ["HOTEL FLASH REPORT - COMPARISON"],
@@ -422,7 +436,7 @@ export default function HotelFlashReportPage() {
       [
         "Particulars",
         `Date: ${selectedDate}`,
-        `Month: ${monthData.monthName} ${selectedYear}`,
+        `Month: ${monthLabel} ${selectedYear}`,
         getFiscalYearLabel(selectedYear),
       ],
       [],
@@ -455,8 +469,8 @@ export default function HotelFlashReportPage() {
       [],
       ["F&B REVENUE"],
       ["Plan Rate (Accrued)", dateData.fbPlanRate, monthData.fbPlanRate, yearData.fbPlanRate],
-      ["Rustic Room Service", dateData.fbRoomService, monthData.fbRoomService, yearData.fbRoomService],
-      ["Rustic Barn Restaurant", dateData.fbRestaurant, monthData.fbRestaurant, yearData.fbRestaurant],
+      ["Room Service", dateData.fbRoomService, monthData.fbRoomService, yearData.fbRoomService],
+      ["Restaurant", dateData.fbRestaurant, monthData.fbRestaurant, yearData.fbRestaurant],
       ["Total : F&B REVENUE", dateData.fbTotal, monthData.fbTotal, yearData.fbTotal],
       [],
       ["OTHER REVENUES"],
@@ -480,13 +494,23 @@ export default function HotelFlashReportPage() {
     });
 
   const pad = (n) => String(n).padStart(2, "0");
+
   const monthName = new Date(
-    `${selectedYear}-${pad(selectedMonth)}-01`
+    selectedYear,
+    selectedMonth - 1,
+    1,
   ).toLocaleString("en-GB", { month: "long" });
 
-  const yearOptions = Array.from({ length: 5 }, (_, i) => getCurrentYear() - i);
+  const yearOptions = Array.from(
+    { length: 5 },
+    (_, i) => getCurrentYear() - i,
+  );
 
-  _rowIndex = 0;
+  const hasData = Boolean(dateData && monthData && yearData);
+
+  // FIX: rowIndex is now a local counter per render, not a module-level var
+  let rowIndex = 0;
+  const Row = (props) => <TDRow {...props} rowIndex={++rowIndex} />;
 
   return (
     <>
@@ -500,6 +524,7 @@ export default function HotelFlashReportPage() {
           minHeight: "100vh",
         }}
       >
+        {/* Controls */}
         <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <h1 className="text-sm font-bold uppercase tracking-tight text-slate-800 md:text-base">
@@ -536,18 +561,8 @@ export default function HotelFlashReportPage() {
                   className="h-9 w-36 rounded-lg border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
                 >
                   {[
-                    "January",
-                    "February",
-                    "March",
-                    "April",
-                    "May",
-                    "June",
-                    "July",
-                    "August",
-                    "September",
-                    "October",
-                    "November",
-                    "December",
+                    "January","February","March","April","May","June",
+                    "July","August","September","October","November","December",
                   ].map((m, i) => (
                     <option key={i + 1} value={i + 1}>
                       {m}
@@ -577,7 +592,7 @@ export default function HotelFlashReportPage() {
               </div>
 
               <button
-                onClick={refreshAllReports}
+                onClick={loadReports}
                 disabled={loading}
                 className="h-9 rounded-lg bg-teal-700 px-4 text-xs font-semibold text-white hover:bg-teal-800 disabled:opacity-70"
               >
@@ -586,16 +601,16 @@ export default function HotelFlashReportPage() {
 
               <button
                 onClick={exportToExcel}
-                disabled={!dateData || !monthData || !yearData}
-                className="h-9 rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!hasData}
+                className="h-9 rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Excel
               </button>
 
               <button
                 onClick={exportToPDF}
-                disabled={!dateData || !monthData || !yearData}
-                className="h-9 rounded-lg bg-rose-700 px-4 text-xs font-semibold text-white hover:bg-rose-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!hasData}
+                className="h-9 rounded-lg bg-rose-700 px-4 text-xs font-semibold text-white hover:bg-rose-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 PDF
               </button>
@@ -603,6 +618,7 @@ export default function HotelFlashReportPage() {
           </div>
         </div>
 
+        {/* Error */}
         {error && (
           <div
             style={{
@@ -617,13 +633,15 @@ export default function HotelFlashReportPage() {
           </div>
         )}
 
-        {loading && !dateData && !monthData && !yearData && (
+        {/* Loading Skeleton */}
+        {loading && !hasData && (
           <div style={{ padding: 30, textAlign: "center", color: "#555" }}>
             Loading flash report…
           </div>
         )}
 
-        {!error && dateData && monthData && yearData && (
+        {/* Report Table */}
+        {!error && hasData && (
           <div
             style={{
               marginBottom: 28,
@@ -633,19 +651,24 @@ export default function HotelFlashReportPage() {
               boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
             }}
           >
+            {/* Table Header Info */}
             <div
               style={{
                 background: "#eef2f7",
                 padding: "10px 14px",
                 borderBottom: "1px solid #dde3ee",
+                display: "flex",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 8,
               }}
             >
               <span style={{ fontWeight: 700, fontSize: 13, color: "#1a3a5c" }}>
                 {dateData.companyName}
               </span>
-              <span style={{ float: "right", fontSize: 12, color: "#666" }}>
-                Date: {formatDate(selectedDate)}
-                &nbsp;|&nbsp;Month: {monthName} {selectedYear} ({monthData.fullMonthDays} days)
+              <span style={{ fontSize: 12, color: "#666" }}>
+                Date: {formatDate(selectedDate)}&nbsp;|&nbsp;Month:{" "}
+                {monthName} {selectedYear} ({monthData.fullMonthDays ?? "—"} days)
                 &nbsp;|&nbsp;{getFiscalYearLabel(selectedYear)}
               </span>
             </div>
@@ -656,48 +679,48 @@ export default function HotelFlashReportPage() {
                   <tr>
                     <TH>Particulars</TH>
                     <TH right>Date</TH>
-                    <TH right>Month ({monthData.fullMonthDays} days)</TH>
+                    <TH right>Month ({monthData.fullMonthDays ?? "—"} days)</TH>
                     <TH right>Year ({fiscalYearDays} days)</TH>
                   </tr>
                 </thead>
 
                 <tbody>
                   <SectionHeader title="ROOM STATISTICS" />
-                  <TDRow label="(A) Total Rooms" d={dateData.totalRooms} m={monthData.totalRooms} y={yearData.totalRooms} />
-                  <TDRow label="(B) Blocked Rooms" d={dateData.blockedRooms} m={monthData.blockedRooms} y={yearData.blockedRooms} />
-                  <TDRow label="(C) Saleable Rooms (A-B)" d={dateData.saleableRooms} m={monthData.saleableRooms} y={yearData.saleableRooms} />
-                  <TDRow label="(D) Occupied Rooms (Paid)" d={dateData.occupiedPaid} m={monthData.occupiedPaid} y={yearData.occupiedPaid} />
-                  <TDRow label="(E) Occupied Rooms (Comp/House Use)" d={dateData.occupiedComp} m={monthData.occupiedComp} y={yearData.occupiedComp} />
-                  <TDRow label="(F) Total Occupied Rooms (D+E)" d={dateData.totalOccupied} m={monthData.totalOccupied} y={yearData.totalOccupied} bold />
-                  <TDRow label="(N) No Shows" d={dateData.noShows} m={monthData.noShows} y={yearData.noShows} />
-                  <TDRow label="(O) % of Occupancy (D/A)%" d={dateData.occPercent} m={monthData.occPercent} y={yearData.occPercent} isPercent bold />
-                  <TDRow label="(P) ARR (Total Rooms)" d={dateData.arrTotalRooms} m={monthData.arrTotalRooms} y={yearData.arrTotalRooms} />
-                  <TDRow label="(Q) ARR (Saleable Rooms)" d={dateData.arrSaleableRooms} m={monthData.arrSaleableRooms} y={yearData.arrSaleableRooms} />
-                  <TDRow label="(R) ARR (Occupied Rooms)" d={dateData.arrOccupiedRooms} m={monthData.arrOccupiedRooms} y={yearData.arrOccupiedRooms} bold />
+                  <Row label="(A) Total Rooms" d={dateData.totalRooms} m={monthData.totalRooms} y={yearData.totalRooms} />
+                  <Row label="(B) Blocked Rooms" d={dateData.blockedRooms} m={monthData.blockedRooms} y={yearData.blockedRooms} />
+                  <Row label="(C) Saleable Rooms (A-B)" d={dateData.saleableRooms} m={monthData.saleableRooms} y={yearData.saleableRooms} />
+                  <Row label="(D) Occupied Rooms (Paid)" d={dateData.occupiedPaid} m={monthData.occupiedPaid} y={yearData.occupiedPaid} />
+                  <Row label="(E) Occupied Rooms (Comp/House Use)" d={dateData.occupiedComp} m={monthData.occupiedComp} y={yearData.occupiedComp} />
+                  <Row label="(F) Total Occupied Rooms (D+E)" d={dateData.totalOccupied} m={monthData.totalOccupied} y={yearData.totalOccupied} bold />
+                  <Row label="(N) No Shows" d={dateData.noShows} m={monthData.noShows} y={yearData.noShows} />
+                  <Row label="(O) % of Occupancy (D/A)%" d={dateData.occPercent} m={monthData.occPercent} y={yearData.occPercent} isPercent bold />
+                  <Row label="(P) ARR (Total Rooms)" d={dateData.arrTotalRooms} m={monthData.arrTotalRooms} y={yearData.arrTotalRooms} />
+                  <Row label="(Q) ARR (Saleable Rooms)" d={dateData.arrSaleableRooms} m={monthData.arrSaleableRooms} y={yearData.arrSaleableRooms} />
+                  <Row label="(R) ARR (Occupied Rooms)" d={dateData.arrOccupiedRooms} m={monthData.arrOccupiedRooms} y={yearData.arrOccupiedRooms} bold />
 
                   <SectionHeader title="GUEST PROFILE" />
-                  <TDRow label="(G) No of Pax - Domestic" d={dateData.paxDomestic} m={monthData.paxDomestic} y={yearData.paxDomestic} />
-                  <TDRow label="(H) No of Pax - Foreigners" d={dateData.paxForeign} m={monthData.paxForeign} y={yearData.paxForeign} />
-                  <TDRow label="(I) Total Pax (G+H)" d={dateData.totalPax} m={monthData.totalPax} y={yearData.totalPax} bold />
-                  <TDRow label="(J) No of Adults" d={dateData.adults} m={monthData.adults} y={yearData.adults} />
-                  <TDRow label="(K) No of Children" d={dateData.children} m={monthData.children} y={yearData.children} />
-                  <TDRow label="(L) No of Males" d={dateData.males} m={monthData.males} y={yearData.males} />
-                  <TDRow label="(M) No of Females" d={dateData.females} m={monthData.females} y={yearData.females} />
+                  <Row label="(G) No of Pax - Domestic" d={dateData.paxDomestic} m={monthData.paxDomestic} y={yearData.paxDomestic} />
+                  <Row label="(H) No of Pax - Foreigners" d={dateData.paxForeign} m={monthData.paxForeign} y={yearData.paxForeign} />
+                  <Row label="(I) Total Pax (G+H)" d={dateData.totalPax} m={monthData.totalPax} y={yearData.totalPax} bold />
+                  <Row label="(J) No of Adults" d={dateData.adults} m={monthData.adults} y={yearData.adults} />
+                  <Row label="(K) No of Children" d={dateData.children} m={monthData.children} y={yearData.children} />
+                  <Row label="(L) No of Males" d={dateData.males} m={monthData.males} y={yearData.males} />
+                  <Row label="(M) No of Females" d={dateData.females} m={monthData.females} y={yearData.females} />
 
                   <SectionHeader title="ROOM REVENUE" />
-                  <TDRow label="Apartment Charges (Accrued)" d={dateData.roomApartment} m={monthData.roomApartment} y={yearData.roomApartment} />
-                  <TDRow label="Extra Bed Charges (Accrued)" d={dateData.roomExtraBed} m={monthData.roomExtraBed} y={yearData.roomExtraBed} />
-                  <TDRow label="Total : ROOM REVENUE" d={dateData.roomTotal} m={monthData.roomTotal} y={yearData.roomTotal} bold />
+                  <Row label="Apartment Charges (Accrued)" d={dateData.roomApartment} m={monthData.roomApartment} y={yearData.roomApartment} />
+                  <Row label="Extra Bed Charges (Accrued)" d={dateData.roomExtraBed} m={monthData.roomExtraBed} y={yearData.roomExtraBed} />
+                  <Row label="Total : ROOM REVENUE" d={dateData.roomTotal} m={monthData.roomTotal} y={yearData.roomTotal} bold />
 
                   <SectionHeader title="F&B REVENUE" />
-                  <TDRow label="Plan Rate (Accrued)" d={dateData.fbPlanRate} m={monthData.fbPlanRate} y={yearData.fbPlanRate} />
-                  <TDRow label="Rustic Room Service" d={dateData.fbRoomService} m={monthData.fbRoomService} y={yearData.fbRoomService} />
-                  <TDRow label="Rustic Barn Restaurant" d={dateData.fbRestaurant} m={monthData.fbRestaurant} y={yearData.fbRestaurant} />
-                  <TDRow label="Total : F&B REVENUE" d={dateData.fbTotal} m={monthData.fbTotal} y={yearData.fbTotal} bold />
+                  <Row label="Plan Rate (Accrued)" d={dateData.fbPlanRate} m={monthData.fbPlanRate} y={yearData.fbPlanRate} />
+                  <Row label="Room Service" d={dateData.fbRoomService} m={monthData.fbRoomService} y={yearData.fbRoomService} />
+                  <Row label="Restaurant" d={dateData.fbRestaurant} m={monthData.fbRestaurant} y={yearData.fbRestaurant} />
+                  <Row label="Total : F&B REVENUE" d={dateData.fbTotal} m={monthData.fbTotal} y={yearData.fbTotal} bold />
 
                   <SectionHeader title="OTHER REVENUES" />
-                  <TDRow label="MOD REVENUES" d={dateData.modRevenues} m={monthData.modRevenues} y={yearData.modRevenues} />
-                  <TDRow label="Grand Total" d={dateData.grandTotal} m={monthData.grandTotal} y={yearData.grandTotal} bold />
+                  <Row label="MOD REVENUES" d={dateData.modRevenues} m={monthData.modRevenues} y={yearData.modRevenues} />
+                  <Row label="Grand Total" d={dateData.grandTotal} m={monthData.grandTotal} y={yearData.grandTotal} bold />
                 </tbody>
               </table>
             </div>
