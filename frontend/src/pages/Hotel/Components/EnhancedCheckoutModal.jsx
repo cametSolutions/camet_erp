@@ -422,7 +422,18 @@ export default function EnhancedCheckoutModal({
         originalCustomer: checkIn.customerId,
       })),
   );
-
+// const handleTimeChange = (id, newTime) => {
+//   setCheckouts((prev) =>
+//     prev.map((checkout) =>
+//       checkout._id === id
+//         ? {
+//             ...checkout,
+//             checkOutTime: newTime,
+//           }
+//         : checkout
+//     )
+//   );
+// };
   const handleNewDateChange = (id, newDate) => {
     console.log(id, newDate);
     setCheckOutDateTracker(newDate);
@@ -900,6 +911,7 @@ export default function EnhancedCheckoutModal({
                 onDaysChange={handleStayDaysChange}
                 checkouts={checkouts}
                 onDateChange={handleNewDateChange}
+                //  onTimeChange={handleTimeChange}
               />
             </div>
           </div>

@@ -61,7 +61,7 @@ function EditBooking() {
     }
   };
 
-  console.log(editData?.bookingId)
+  console.log(editData)
 
   return (
     <>

@@ -20,7 +20,7 @@ import { calculateOtherCharges } from "../Helper/hotelHelper.js";
 import OtherChargeSearchInPutBox from "./OtherChargeSearchInPutBox";
 import {useRef} from "react";
 
-import { MdCloudUpload, MdImage, MdDelete } from "react-icons/md"
+import { MdCloudUpload, MdImage, MdDelete, MdVisibility, MdDownload } from "react-icons/md"
 import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
 
 const nextIsoDate = (value) => {
@@ -64,33 +64,18 @@ function BookingForm({
   const [saveLoader, setSaveLoader] = useState(false);
   const [additionalChargeData, setAdditionalChargeData] = useState([]);
 const [showIdProofModal, setShowIdProofModal] = useState(false);
-  const idFrontRef = useRef(null)
-const idBackRef = useRef(null)
-const [idProof, setIdProof] = useState({
-  idType: "",           // Aadhaar / Passport / Driving License etc.
-  idNumber: "",
-  frontFile: null,
-  backFile: null,
-  frontPreview: "",
-  backPreview: "",
-  frontUrl: "",         // uploaded Cloudinary URL
-  backUrl: "",
-  isUploadingFront: false,
-  isUploadingBack: false,
-})
 
-const idTypeLabels = {
-  aadhaar: "Aadhaar Card",
-  passport: "Passport",
-  drivinglicense: "Driving License",
-  voterid: "Voter ID",
-  pan: "PAN Card",
-};
+  const idDocsRef = useRef(null);
 
-const selectedIdTypeLabel = idTypeLabels[idProof.idType] || "Selected ID";
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
+
+    const [idProof, setIdProof] = useState({
+    idType: "",
+    idNumber: "",
+    documents: [],
+  });
   let addFoodPlanWithRate = configurations?.[0]?.foodPlaWithRoomRate;
   let discountBasedOnGrossAmount =
     configurations?.[0]?.discountBasedOnGrossAmountInHotel;
@@ -268,21 +253,23 @@ useEffect(() => {
     setIncludeFoodRateWithRoom(editData?.addFoodPlanWithRate);
 
     // ✅ Restore idProof when editing
-    if (editData?.idProof) {
-      setIdProof({
-        idType:           editData.idProof.idType   || "",
-        idNumber:         editData.idProof.idNumber || "",
-        frontFile:        null,
-        backFile:         null,
-        frontPreview:     editData.idProof.frontUrl || "",
-        backPreview:      editData.idProof.backUrl  || "",
-        frontUrl:         editData.idProof.frontUrl || "",
-        backUrl:          editData.idProof.backUrl  || "",
-        isUploadingFront: false,
-        isUploadingBack:  false,
-      });
+   if (editData?.idProof) {
+        setIdProof({
+          idType: editData.idProof.idType || "",
+          idNumber: editData.idProof.idNumber || "",
+          documents: (editData.idProof.documents || []).map((doc, index) => ({
+            id: `existing-${index}`,
+            file: null,
+            preview: "",
+            url: doc.url,
+            name: doc.originalName || "Document",
+            type: doc.mimeType || "",
+            publicId: doc.publicId || "",
+            isExisting: true,
+          })),
+        });
+      }
     }
-  }
 }, [editData]);
 
   useEffect(() => {
@@ -448,70 +435,98 @@ console.log(name, value)
   };
 
   // arrival time and date helper
-const handleIdChange = (e) => {
-  const { name, value } = e.target
-  setIdProof((prev) => ({ ...prev, [name]: value }))
-}
+ const handleIdChange = (e) => {
+    const { name, value } = e.target;
+    setIdProof((prev) => ({ ...prev, [name]: value }));
+  };
 
-const handleIdFileChange = (side, e) => {
-  const file = e.target.files[0]
-  if (!file) return
+  const handleIdFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
-  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"]
-  if (!allowedTypes.includes(file.type)) {
-    toast.error("Please select JPEG, PNG, WebP or PDF")
-    return
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    toast.error("File size should be less than 5MB")
-    return
-  }
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "application/pdf",
+    ];
 
-  const reader = new FileReader()
-  reader.onloadend = () => {
+    const validFiles = [];
+
+    for (const file of files) {
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`${file.name}: Please select JPEG, PNG, WebP or PDF`);
+        continue;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name}: File size should be less than 5MB`);
+        continue;
+      }
+
+      validFiles.push({
+        id: `${Date.now()}-${Math.random()}`,
+        file,
+        preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : "",
+        url: "",
+        name: file.name,
+        type: file.type,
+        publicId: "",
+        isExisting: false,
+      });
+    }
+
     setIdProof((prev) => ({
       ...prev,
-      [`${side}File`]: file,
-      [`${side}Preview`]: reader.result,
-      [`${side}Url`]: "",   // reset uploaded URL when new file selected
-    }))
-  }
-  reader.readAsDataURL(file)
-}
+      documents: [...prev.documents, ...validFiles],
+    }));
 
-const handleIdUpload = async (side) => {
-  const file = idProof[`${side}File`]
-  if (!file) { toast.error("Please select a file first"); return }
+    e.target.value = "";
+  };
 
-  setIdProof((prev) => ({ ...prev, [`isUploading${capitalize(side)}`]: true }))
-  try {
-    const data = await uploadImageToCloudinary(file)
-    setIdProof((prev) => ({
-      ...prev,
-      [`${side}Url`]: data.secure_url,
-      [`${side}File`]: null,
-      [`isUploading${capitalize(side)}`]: false,
-    }))
-    toast.success(`ID ${side} uploaded successfully`)
-  } catch {
-    toast.error("Upload failed. Try again.")
-    setIdProof((prev) => ({ ...prev, [`isUploading${capitalize(side)}`]: false }))
-  }
-}
+  const handleIdRemove = (docId) => {
+    setIdProof((prev) => {
+      const doc = prev.documents.find((item) => item.id === docId);
 
-const handleIdRemove = (side) => {
-  setIdProof((prev) => ({
-    ...prev,
-    [`${side}File`]: null,
-    [`${side}Preview`]: "",
-    [`${side}Url`]: "",
-  }))
-  if (side === "front" && idFrontRef.current) idFrontRef.current.value = ""
-  if (side === "back" && idBackRef.current) idBackRef.current.value = ""
-}
+      if (doc?.preview && !doc?.isExisting) {
+        URL.revokeObjectURL(doc.preview);
+      }
 
-const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
+      return {
+        ...prev,
+        documents: prev.documents.filter((item) => item.id !== docId),
+      };
+    });
+  };
 
+  const uploadIdProofDocuments = async () => {
+    const existingDocs = idProof.documents.filter((doc) => doc.isExisting && doc.url);
+    const newDocs = idProof.documents.filter((doc) => doc.file);
+
+    const uploadedDocs = await Promise.all(
+      newDocs.map(async (doc) => {
+        const result = await uploadImageToCloudinary(doc.file);
+
+        return {
+          url: result.secure_url,
+          publicId: result.public_id || "",
+          originalName: doc.name,
+          mimeType: doc.type,
+        };
+      }),
+    );
+
+    return [
+      ...existingDocs.map((doc) => ({
+        url: doc.url,
+        publicId: doc.publicId || "",
+        originalName: doc.name || "",
+        mimeType: doc.type || "",
+      })),
+      ...uploadedDocs,
+    ];
+  };
   const handleArrivalTimeChange = (time) =>
     console.log(time) ||
     setFormData((prev) => ({
@@ -1168,7 +1183,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
     let guestPinCode = formData?.guestPinCode;
     let guestDetailedAddress = formData?.guestDetailedAddress;
     let guestMobileNumber = formData?.guestMobileNumber;
-
+   const uploadedDocuments = await uploadIdProofDocuments();
     console.log(guestName);
     console.log(guestId);
     console.log(guestCountry);
@@ -1314,12 +1329,11 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
       mobileNumber,
       voucherNumber,
       selectedRooms: formData.selectedRooms, 
-      idProof: {
-    idType:   idProof.idType,
-    idNumber: idProof.idNumber,
-    frontUrl: idProof.frontUrl,
-    backUrl:  idProof.backUrl,
-  },// Should contain ALL rooms
+       idProof: {
+          idType: idProof.idType,
+          idNumber: idProof.idNumber,
+          documents: uploadedDocuments,
+        },
     };
 
     if (
@@ -1338,26 +1352,25 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
     }
   };
 
-  const handlePayment = (paymentData) => {
+  const handlePayment =async  (paymentData) => {
     let finalSelectedRooms = formData.selectedRooms;
 
     if (isTariffRateChange && roomId && editData?.selectedRooms) {
       // Same merging logic as submitHandler
     }
-
+ const uploadedDocuments = await uploadIdProofDocuments();
     const payload = {
       ...formData,
       selectedRooms: finalSelectedRooms,
-      idProof: {
-    idType:   idProof.idType,
-    idNumber: idProof.idNumber,
-    frontUrl: idProof.frontUrl,
-    backUrl:  idProof.backUrl,
-  },
+     idProof: {
+  idType: idProof.idType,
+  idNumber: idProof.idNumber,
+  documents:uploadedDocuments,
+},
     };
 
     let cash = 0;
-    let upi = 0;
+    let upi = 0;handlePayment 
     let card = 0;
     const credit = 0;
     let bank = 0;
@@ -1522,7 +1535,33 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
   };
 
   const tariffMode = isTariffRateChange === true;
+const renderDocumentPreview = (doc) => {
+    const src = doc.preview || doc.url;
 
+    if (doc.type === "application/pdf") {
+      return (
+        <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-600 border">
+          PDF
+        </div>
+      );
+    }
+
+    if (src) {
+      return (
+        <img
+          src={src}
+          alt={doc.name || "Document"}
+          className="w-12 h-12 object-cover rounded border"
+        />
+      );
+    }
+
+    return (
+      <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-600 border">
+        FILE
+      </div>
+    );
+  };
   return (
     <>
       {isLoading || visitOfPurposeLoading || loading ? (
@@ -1926,22 +1965,22 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
 
 {showIdProofModal && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-    <div className="w-full max-w-2xl rounded-xl bg-white shadow-2xl">
+    <div className="w-full max-w-3xl rounded-xl bg-white shadow-2xl max-h-[90vh] overflow-hidden">
       <div className="flex items-center justify-between border-b px-6 py-4">
         <h2 className="text-lg font-semibold text-gray-800">ID Proof</h2>
         <button
           type="button"
           onClick={() => setShowIdProofModal(false)}
-          className="text-gray-500 hover:text-red-500 text-xl"
+          className="text-gray-500 hover:text-red-500 text-2xl leading-none"
         >
           ×
         </button>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-80px)]">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold uppercase text-gray-600 mb-2">
+            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
               ID Type
             </label>
             <select
@@ -1960,154 +1999,126 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase text-gray-600 mb-2">
+            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
               ID Number
             </label>
             <input
               type="text"
               name="idNumber"
+              placeholder="Enter ID Number"
               value={idProof.idNumber}
               onChange={handleIdChange}
-              placeholder="Enter ID Number"
+              maxLength={30}
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
             />
           </div>
         </div>
 
-        <div className="border rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Front Side</h3>
+        <div className="rounded-xl border bg-white shadow-sm p-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800">
+                ID Proof Documents
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                You can select multiple images or PDF files. Files upload only when you save/update the booking.
+              </p>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <input
-              ref={idFrontRef}
-              type="file"
-              accept="image/*,application/pdf"
-              onChange={(e) => handleIdFileChange("front", e)}
-              className="hidden"
-            />
-
-            <button
-              type="button"
-              onClick={() => idFrontRef.current?.click()}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
-            >
-              Upload
-            </button>
-
-           <span className="text-sm text-gray-700">
-  {idProof.frontFile?.name ||
-    (idProof.frontUrl
-      ? `${selectedIdTypeLabel} - Front Side`
-      : "No file selected")}
-</span>
-
-            {(idProof.frontPreview || idProof.frontUrl) && (
-              <>
-                <a
-                  href={idProof.frontUrl || idProof.frontPreview}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-2 bg-green-500 text-white rounded-md text-sm hover:bg-green-600"
-                >
-                  View
-                </a>
-
-                <a
-                  href={idProof.frontUrl || idProof.frontPreview}
-                  download
-                  className="px-3 py-2 bg-yellow-500 text-white rounded-md text-sm hover:bg-yellow-600"
-                >
-                  Download
-                </a>
-
-                <button
-                  type="button"
-                  onClick={() => handleIdRemove("front")}
-                  className="px-3 py-2 bg-red-500 text-white rounded-md text-sm hover:bg-red-600"
-                >
-                  Remove
-                </button>
-              </>
-            )}
+            <div className="flex gap-2">
+              <input
+                ref={idDocsRef}
+                type="file"
+                multiple
+                accept="image/*,application/pdf"
+                onChange={handleIdFileChange}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => idDocsRef.current?.click()}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
+              >
+                <MdImage size={18} />
+                Upload Documents
+              </button>
+            </div>
           </div>
 
-          {idProof.frontFile && !idProof.frontUrl && (
-            <button
-              type="button"
-              onClick={() => handleIdUpload("front")}
-              className="mt-3 px-4 py-2 bg-indigo-500 text-white rounded-md text-sm hover:bg-indigo-600"
-            >
-              {idProof.isUploadingFront ? "Uploading..." : "Save Upload"}
-            </button>
+          {idProof.documents.length === 0 ? (
+            <div className="text-sm text-gray-500 border border-dashed rounded-lg p-4 text-center">
+              No documents selected
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {idProof.documents.map((doc) => {
+                const fileUrl = doc.preview || doc.url;
+
+                return (
+                  <div
+                    key={doc.id}
+                    className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border rounded-lg p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      {renderDocumentPreview(doc)}
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">
+                          {doc.name || "Document"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {doc.type || "File"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {fileUrl && (
+                        <a
+                          href={fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-md text-sm hover:bg-green-600"
+                        >
+                          <MdVisibility size={16} />
+                          View
+                        </a>
+                      )}
+
+                      {fileUrl && (
+                        <a
+                          href={fileUrl}
+                          download={doc.name || "document"}
+                          className="inline-flex items-center gap-1 px-3 py-2 bg-yellow-500 text-white rounded-md text-sm hover:bg-yellow-600"
+                        >
+                          <MdDownload size={16} />
+                          Download
+                        </a>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleIdRemove(doc.id)}
+                        className="inline-flex items-center gap-1 px-3 py-2 bg-red-500 text-white rounded-md text-sm hover:bg-red-600"
+                      >
+                        <MdDelete size={16} />
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
 
-        <div className="border rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Back Side</h3>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <input
-              ref={idBackRef}
-              type="file"
-              accept="image/*,application/pdf"
-              onChange={(e) => handleIdFileChange("back", e)}
-              className="hidden"
-            />
-
-            <button
-              type="button"
-              onClick={() => idBackRef.current?.click()}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
-            >
-              Upload
-            </button>
-
-           <span className="text-sm text-gray-700">
-  {idProof.backFile?.name ||
-    (idProof.backUrl
-      ? `${selectedIdTypeLabel} - Back Side`
-      : "No file selected")}
-</span>
-
-            {(idProof.backPreview || idProof.backUrl) && (
-              <>
-                <a
-                  href={idProof.backUrl || idProof.backPreview}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-2 bg-green-500 text-white rounded-md text-sm hover:bg-green-600"
-                >
-                  View
-                </a>
-
-                <a
-                  href={idProof.backUrl || idProof.backPreview}
-                  download
-                  className="px-3 py-2 bg-yellow-500 text-white rounded-md text-sm hover:bg-yellow-600"
-                >
-                  Download
-                </a>
-
-                <button
-                  type="button"
-                  onClick={() => handleIdRemove("back")}
-                  className="px-3 py-2 bg-red-500 text-white rounded-md text-sm hover:bg-red-600"
-                >
-                  Remove
-                </button>
-              </>
-            )}
-          </div>
-
-          {idProof.backFile && !idProof.backUrl && (
-            <button
-              type="button"
-              onClick={() => handleIdUpload("back")}
-              className="mt-3 px-4 py-2 bg-indigo-500 text-white rounded-md text-sm hover:bg-indigo-600"
-            >
-              {idProof.isUploadingBack ? "Uploading..." : "Save Upload"}
-            </button>
-          )}
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => setShowIdProofModal(false)}
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>
@@ -2145,7 +2156,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
   </div> */}
 
   {/* ID Number */}
-  <div className="w-full lg:w-6/12 px-4">
+  {/* <div className="w-full lg:w-6/12 px-4">
     <div className="relative w-full mb-3">
       <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
         ID Number
@@ -2160,7 +2171,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
       />
     </div>
-  </div>
+  </div> */}
 
   {/* ID Front Upload */}
   {/* <div className="w-full lg:w-6/12 px-4">
@@ -2598,7 +2609,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                            <button
     type="button"
     onClick={() => setShowIdProofModal(true)}
-    className="px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
+    className="px-4 py-2 bg-red-400 text-white rounded-md text-sm hover:bg-blue-600"
   >
     ID Proof
   </button>

@@ -62,6 +62,29 @@ const hsnDetailsSchema = new mongoose.Schema({
   ],
 });
 
+
+const idProofDocumentSchema = new mongoose.Schema(
+  {
+    url: { type: String, required: true },
+    publicId: { type: String, default: "" },
+    originalName: { type: String, default: "" },
+    mimeType: { type: String, default: "" },
+  },
+  { _id: false },
+);
+
+const idProofSchema = new mongoose.Schema(
+  {
+    idType: { type: String, default: "" },
+    idNumber: { type: String, default: "" },
+    documents: {
+      type: [idProofDocumentSchema],
+      default: [],
+    },
+  },
+  { _id: false },
+);
+
 const selectedRoomSchema = new mongoose.Schema({
   roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
   roomName: String,
@@ -245,12 +268,15 @@ cancelledByName: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CheckIn",
     },
+   
     idProof: {
-  idType:   { type: String, default: "" },
-  idNumber: { type: String, default: "" },
-  frontUrl: { type: String, default: "" },
-  backUrl:  { type: String, default: "" },
-},
+      type: idProofSchema,
+      default: () => ({
+        idType: "",
+        idNumber: "",
+        documents: [],
+      }),
+    },
     roomSwapHistory: [roomSwapHistorySchema],
     isPartiallyCheckedOut: {
       type: Boolean,
