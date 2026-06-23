@@ -63,7 +63,7 @@ function BookingForm({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [saveLoader, setSaveLoader] = useState(false);
   const [additionalChargeData, setAdditionalChargeData] = useState([]);
-
+const [showIdProofModal, setShowIdProofModal] = useState(false);
   const idFrontRef = useRef(null)
 const idBackRef = useRef(null)
 const [idProof, setIdProof] = useState({
@@ -79,7 +79,15 @@ const [idProof, setIdProof] = useState({
   isUploadingBack: false,
 })
 
+const idTypeLabels = {
+  aadhaar: "Aadhaar Card",
+  passport: "Passport",
+  drivinglicense: "Driving License",
+  voterid: "Voter ID",
+  pan: "PAN Card",
+};
 
+const selectedIdTypeLabel = idTypeLabels[idProof.idType] || "Selected ID";
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
@@ -1914,17 +1922,208 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                     )}
                   </div>
 
+
+
+{showIdProofModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+    <div className="w-full max-w-2xl rounded-xl bg-white shadow-2xl">
+      <div className="flex items-center justify-between border-b px-6 py-4">
+        <h2 className="text-lg font-semibold text-gray-800">ID Proof</h2>
+        <button
+          type="button"
+          onClick={() => setShowIdProofModal(false)}
+          className="text-gray-500 hover:text-red-500 text-xl"
+        >
+          ×
+        </button>
+      </div>
+
+      <div className="p-6 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold uppercase text-gray-600 mb-2">
+              ID Type
+            </label>
+            <select
+              name="idType"
+              value={idProof.idType}
+              onChange={handleIdChange}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+            >
+              <option value="">Select ID Type</option>
+              <option value="aadhaar">Aadhaar Card</option>
+              <option value="passport">Passport</option>
+              <option value="drivinglicense">Driving License</option>
+              <option value="voterid">Voter ID</option>
+              <option value="pan">PAN Card</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase text-gray-600 mb-2">
+              ID Number
+            </label>
+            <input
+              type="text"
+              name="idNumber"
+              value={idProof.idNumber}
+              onChange={handleIdChange}
+              placeholder="Enter ID Number"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="border rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Front Side</h3>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              ref={idFrontRef}
+              type="file"
+              accept="image/*,application/pdf"
+              onChange={(e) => handleIdFileChange("front", e)}
+              className="hidden"
+            />
+
+            <button
+              type="button"
+              onClick={() => idFrontRef.current?.click()}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
+            >
+              Upload
+            </button>
+
+           <span className="text-sm text-gray-700">
+  {idProof.frontFile?.name ||
+    (idProof.frontUrl
+      ? `${selectedIdTypeLabel} - Front Side`
+      : "No file selected")}
+</span>
+
+            {(idProof.frontPreview || idProof.frontUrl) && (
+              <>
+                <a
+                  href={idProof.frontUrl || idProof.frontPreview}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2 bg-green-500 text-white rounded-md text-sm hover:bg-green-600"
+                >
+                  View
+                </a>
+
+                <a
+                  href={idProof.frontUrl || idProof.frontPreview}
+                  download
+                  className="px-3 py-2 bg-yellow-500 text-white rounded-md text-sm hover:bg-yellow-600"
+                >
+                  Download
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => handleIdRemove("front")}
+                  className="px-3 py-2 bg-red-500 text-white rounded-md text-sm hover:bg-red-600"
+                >
+                  Remove
+                </button>
+              </>
+            )}
+          </div>
+
+          {idProof.frontFile && !idProof.frontUrl && (
+            <button
+              type="button"
+              onClick={() => handleIdUpload("front")}
+              className="mt-3 px-4 py-2 bg-indigo-500 text-white rounded-md text-sm hover:bg-indigo-600"
+            >
+              {idProof.isUploadingFront ? "Uploading..." : "Save Upload"}
+            </button>
+          )}
+        </div>
+
+        <div className="border rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Back Side</h3>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              ref={idBackRef}
+              type="file"
+              accept="image/*,application/pdf"
+              onChange={(e) => handleIdFileChange("back", e)}
+              className="hidden"
+            />
+
+            <button
+              type="button"
+              onClick={() => idBackRef.current?.click()}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
+            >
+              Upload
+            </button>
+
+           <span className="text-sm text-gray-700">
+  {idProof.backFile?.name ||
+    (idProof.backUrl
+      ? `${selectedIdTypeLabel} - Back Side`
+      : "No file selected")}
+</span>
+
+            {(idProof.backPreview || idProof.backUrl) && (
+              <>
+                <a
+                  href={idProof.backUrl || idProof.backPreview}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2 bg-green-500 text-white rounded-md text-sm hover:bg-green-600"
+                >
+                  View
+                </a>
+
+                <a
+                  href={idProof.backUrl || idProof.backPreview}
+                  download
+                  className="px-3 py-2 bg-yellow-500 text-white rounded-md text-sm hover:bg-yellow-600"
+                >
+                  Download
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => handleIdRemove("back")}
+                  className="px-3 py-2 bg-red-500 text-white rounded-md text-sm hover:bg-red-600"
+                >
+                  Remove
+                </button>
+              </>
+            )}
+          </div>
+
+          {idProof.backFile && !idProof.backUrl && (
+            <button
+              type="button"
+              onClick={() => handleIdUpload("back")}
+              className="mt-3 px-4 py-2 bg-indigo-500 text-white rounded-md text-sm hover:bg-indigo-600"
+            >
+              {idProof.isUploadingBack ? "Uploading..." : "Save Upload"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 {/* ID Proof Section */}
-<div className="w-full px-4 mt-4">
+{/* <div className="w-full px-4 mt-4">
   <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase border-b pb-2">
     ID Proof
   </h6>
-</div>
+</div> */}
 
-<div className="flex flex-wrap w-full">
+{/* <div className="flex flex-wrap w-full"> */}
 
   {/* ID Type */}
-  <div className="w-full lg:w-6/12 px-4">
+  {/* <div className="w-full lg:w-6/12 px-4">
     <div className="relative w-full mb-3">
       <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
         ID Type
@@ -1941,9 +2140,9 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
         <option value="driving_license">Driving License</option>
         <option value="voter_id">Voter ID</option>
         <option value="pan">PAN Card</option>
-      </select>
-    </div>
-  </div>
+      </select> */}
+    {/* </div>
+  </div> */}
 
   {/* ID Number */}
   <div className="w-full lg:w-6/12 px-4">
@@ -1964,7 +2163,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
   </div>
 
   {/* ID Front Upload */}
-  <div className="w-full lg:w-6/12 px-4">
+  {/* <div className="w-full lg:w-6/12 px-4">
     <IdUploadSlot
       label="ID Front Side"
       side="front"
@@ -1974,10 +2173,10 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
       onUpload={handleIdUpload}
       onRemove={handleIdRemove}
     />
-  </div>
+  </div> */}
 
   {/* ID Back Upload */}
-  <div className="w-full lg:w-6/12 px-4">
+  {/* <div className="w-full lg:w-6/12 px-4">
     <IdUploadSlot
       label="ID Back Side"
       side="back"
@@ -1987,9 +2186,9 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
       onUpload={handleIdUpload}
       onRemove={handleIdRemove}
     />
-  </div>
+  </div> */}
 
-</div>
+{/* </div> */}
 
 
                   {/* Guest Info Box */}
@@ -2396,6 +2595,13 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
                               Other Charges
                             </span>
                           </button>
+                           <button
+    type="button"
+    onClick={() => setShowIdProofModal(true)}
+    className="px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
+  >
+    ID Proof
+  </button>
                         </div>
                       </div>
                     )}
