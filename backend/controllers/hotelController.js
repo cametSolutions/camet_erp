@@ -8167,6 +8167,8 @@ export const getFlashReportForDate = async (req, res) => {
       reportYear
     );
 
+    console.log("blockedCounts",blockedCounts)
+
     const buildOccupancyPipeline = (fromDate, toDate, isDay = false) => {
       const pipeline = [
         { $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id) } },
@@ -8470,7 +8472,7 @@ console.log("checkins",checkins)
       const totalPax = paxDomestic + paxForeign;
 
       const occupiedPaid = occupiedCount;
-      const occupiedComp = 0;
+      // const occupiedComp = 0;
       const totalOccupied = occupiedPaid;
 
       const occPercent =
@@ -8479,7 +8481,7 @@ console.log("checkins",checkins)
       const roomTotal = roomApartment + roomExtraBed;
       const fbTotal = foodPlanTotal + fbRoomService + fbRestaurant;
 
-      const arrTotalRooms = totalRooms > 0 ? roomTotal / totalRooms : 0;
+      const arrTotalRooms = totalRooms > 0 ? roomTotal / totalRooms : 0;  
       const arrSaleableRooms = saleableRooms > 0 ? roomTotal / saleableRooms : 0;
       const arrOccupiedRooms = occupiedPaid > 0 ? roomTotal / occupiedPaid : 0;
 
@@ -8493,7 +8495,7 @@ console.log("checkins",checkins)
         saleableRooms,
         periodDays: periodDays || 1,
         occupiedPaid,
-        occupiedComp,
+        // occupiedComp,
         totalOccupied,
         paxDomestic,
         paxForeign,
@@ -8533,7 +8535,7 @@ console.log("checkins",checkins)
       numbers.saleableRooms = saleableRoomNights;
 
       numbers.occupiedPaid = paidOccupiedNights;
-      numbers.occupiedComp = compOccupiedNights;
+      // numbers.occupiedComp = compOccupiedNights;
       numbers.totalOccupied = paidOccupiedNights + compOccupiedNights;
 
       numbers.occPercent =
@@ -8583,7 +8585,7 @@ console.log("checkins",checkins)
       numbers.blockedRooms = daySummary.blockedCount;
       numbers.saleableRooms = daySummary.saleableRooms;
       numbers.occupiedPaid = daySummary.occupiedCount;
-      numbers.occupiedComp = 0;
+      // numbers.occupiedComp = 0;
       numbers.totalOccupied = daySummary.occupiedCount;
 
       numbers.occPercent =
@@ -8610,12 +8612,15 @@ console.log("checkins",checkins)
 
       const dateObj = toLocalDateOnly(reportDate);
 
+      console.log("cccccccccc",blockedCounts?.data?.householdDaily)
+
       reportData = {
         companyName,
         fromDate: reportDate,
         toDate: reportDate,
         dayLabel: dateObj?.toLocaleDateString("en-GB"),
         monthLabel: dateObj?.toLocaleString("en-GB", { month: "long" }),
+        occupiedComp:blockedCounts?.data?.householdDaily || 0,
         ...numbers,
       };
     } else if (hasReportMonth && hasReportYear) {
@@ -8679,6 +8684,7 @@ console.log("checkins",checkins)
         selectedMonth: monthNum,
         selectedYear: yearNum,
         fullMonthDays: monthLastDay,
+        occupiedComp:blockedCounts?.data?.householdMonthly || 0,
         ...numbers,
       };
     } else if (hasReportYear) {
@@ -8725,6 +8731,7 @@ console.log("checkins",checkins)
         dayLabel: `${yearStart} to ${yearEnd}`,
         monthLabel: `FY ${year}-${year + 1}`,
         selectedYear: year,
+        occupiedComp:blockedCounts?.data?.householdYearly || 0,
         ...numbers,
       };
     } else {
