@@ -8167,8 +8167,6 @@ export const getFlashReportForDate = async (req, res) => {
       reportYear
     );
 
-    console.log("blockedCounts",blockedCounts)
-
     const buildOccupancyPipeline = (fromDate, toDate, isDay = false) => {
       const pipeline = [
         { $match: { cmp_id: new mongoose.Types.ObjectId(cmp_id) } },
@@ -8481,7 +8479,7 @@ console.log("checkins",checkins)
       const roomTotal = roomApartment + roomExtraBed;
       const fbTotal = foodPlanTotal + fbRoomService + fbRestaurant;
 
-      const arrTotalRooms = totalRooms > 0 ? roomTotal / totalRooms : 0;  
+      const arrTotalRooms = totalRooms > 0 ? roomTotal / totalRooms : 0;
       const arrSaleableRooms = saleableRooms > 0 ? roomTotal / saleableRooms : 0;
       const arrOccupiedRooms = occupiedPaid > 0 ? roomTotal / occupiedPaid : 0;
 
@@ -8612,8 +8610,6 @@ console.log("checkins",checkins)
 
       const dateObj = toLocalDateOnly(reportDate);
 
-      console.log("cccccccccc",blockedCounts?.data?.householdDaily)
-
       reportData = {
         companyName,
         fromDate: reportDate,
@@ -8638,8 +8634,10 @@ console.log("checkins",checkins)
       const monthLastDay = new Date(yearNum, monthNum, 0).getDate();
       const monthFull = `${yearNum}-${pad(monthNum)}-${pad(monthLastDay)}`;
       const todayStr = getTodayLocalYMD();
-      const monthEnd =
-        todayStr >= monthStart && todayStr <= monthFull ? todayStr : monthFull;
+      const monthEnd = monthFull
+        // todayStr >= monthStart && todayStr <= monthFull ? todayStr : monthFull;
+
+        console.log("endDate",)
 
       const roomMeta = await getRoomMetricsForPeriod({
         reportType: "month",
