@@ -946,8 +946,8 @@ function AvailableRooms({
                         <td className="px-1 py-1 disabled ">
                           <input
                             type="number "
-                            value={booking.pax || 2}
-                            onChange={(e) => handlePaxChange(e, booking.roomId)}
+                            // value={additionalPaxDetails?.filter((item) => item.roomId === booking.roomId)?.length || 0}
+                            // onChange={(e) => handlePaxChange(e, booking.roomId)}
                             disabled={isTariffRateChange ? true : false}
                             min="1"
                             className=" disabled w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
