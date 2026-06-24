@@ -8470,7 +8470,7 @@ console.log("checkins",checkins)
       const totalPax = paxDomestic + paxForeign;
 
       const occupiedPaid = occupiedCount;
-      const occupiedComp = 0;
+      // const occupiedComp = 0;
       const totalOccupied = occupiedPaid;
 
       const occPercent =
@@ -8493,7 +8493,7 @@ console.log("checkins",checkins)
         saleableRooms,
         periodDays: periodDays || 1,
         occupiedPaid,
-        occupiedComp,
+        // occupiedComp,
         totalOccupied,
         paxDomestic,
         paxForeign,
@@ -8533,7 +8533,7 @@ console.log("checkins",checkins)
       numbers.saleableRooms = saleableRoomNights;
 
       numbers.occupiedPaid = paidOccupiedNights;
-      numbers.occupiedComp = compOccupiedNights;
+      // numbers.occupiedComp = compOccupiedNights;
       numbers.totalOccupied = paidOccupiedNights + compOccupiedNights;
 
       numbers.occPercent =
@@ -8583,7 +8583,7 @@ console.log("checkins",checkins)
       numbers.blockedRooms = daySummary.blockedCount;
       numbers.saleableRooms = daySummary.saleableRooms;
       numbers.occupiedPaid = daySummary.occupiedCount;
-      numbers.occupiedComp = 0;
+      // numbers.occupiedComp = 0;
       numbers.totalOccupied = daySummary.occupiedCount;
 
       numbers.occPercent =
