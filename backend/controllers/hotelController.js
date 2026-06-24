@@ -8616,6 +8616,7 @@ console.log("checkins",checkins)
         toDate: reportDate,
         dayLabel: dateObj?.toLocaleDateString("en-GB"),
         monthLabel: dateObj?.toLocaleString("en-GB", { month: "long" }),
+        occupiedComp:blockedCounts?.data?.householdDaily || 0,
         ...numbers,
       };
     } else if (hasReportMonth && hasReportYear) {
@@ -8681,6 +8682,7 @@ console.log("checkins",checkins)
         selectedMonth: monthNum,
         selectedYear: yearNum,
         fullMonthDays: monthLastDay,
+        occupiedComp:blockedCounts?.data?.householdMonthly || 0,
         ...numbers,
       };
     } else if (hasReportYear) {
@@ -8727,6 +8729,7 @@ console.log("checkins",checkins)
         dayLabel: `${yearStart} to ${yearEnd}`,
         monthLabel: `FY ${year}-${year + 1}`,
         selectedYear: year,
+        occupiedComp:blockedCounts?.data?.householdYearly || 0,
         ...numbers,
       };
     } else {
