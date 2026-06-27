@@ -4,6 +4,7 @@ const ProtectedSecRoute = lazy(() => import("./ProtectedSecRoute"));
 import SuspenseLoader from "@/components/common/SuspenseLoader";
 import { ErrorTestComponent } from "@/components/errorBoundaries/ErrorTestComponent";
 import OutstandingListOfAccVoucherEdit from "@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucherEdit";
+import MenuRightsSettingsPage from "@/pages/secUsers/settilngs/MenuRightsSettingsPage";
 
 // Lazy load all components
 const SecHome = lazy(() => import("../pages/secUsers/SecHome"));
@@ -169,6 +170,8 @@ const BankingManagement = lazy(
 const SettingsList = lazy(
   () => import("../pages/secUsers/settilngs/SettingsList"),
 );
+
+
 const StockItem = lazy(
   () => import("../pages/secUsers/settilngs/stockItem/StockItem"),
 );
@@ -1497,6 +1500,15 @@ const Routers = () => {
             </ProtectedSecRoute>
           }
         ></Route>
+ <Route
+          path="/sUsers/MenuRightsSettingsPage"
+          element={
+            <ProtectedSecRoute>
+              <MenuRightsSettingsPage />
+            </ProtectedSecRoute>
+          }
+        ></Route>
+     
         <Route
           path="/sUsers/StockItem"
           element={
