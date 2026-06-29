@@ -13,7 +13,7 @@ import { formatToLocalDate } from "../helpers/helper.js";
 import salesModel from "../models/salesModel.js";
 import additionalChargesModel from "../models/additionalChargesModel.js";
 import Kot from "../models/kotModal.js";
-
+import { calculateStayDays } from "../helpers/tallyHelper.js";
 import {
   buildDatabaseFilterForRoom,
   sendRoomResponse,
@@ -29,7 +29,7 @@ import {
   updateSwapDetails,
   findBlockedRooms,
   getRoomMetricsForPeriod,
-  fetchRestaurantDetails
+  fetchRestaurantDetails,
 } from "../helpers/hotelHelper.js";
 import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
@@ -1052,19 +1052,19 @@ export const roomBooking = async (req, res) => {
   try {
     const bookingData = req.body?.data;
     bookingData.idProof = {
-  idType: bookingData?.idProof?.idType || "",
-  idNumber: bookingData?.idProof?.idNumber || "",
-  documents: Array.isArray(bookingData?.idProof?.documents)
-    ? bookingData.idProof.documents
-        .map((doc) => ({
-          url: doc?.url || "",
-          publicId: doc?.publicId || "",
-          originalName: doc?.originalName || "",
-          mimeType: doc?.mimeType || "",
-        }))
-        .filter((doc) => doc.url)
-    : [],
-};
+      idType: bookingData?.idProof?.idType || "",
+      idNumber: bookingData?.idProof?.idNumber || "",
+      documents: Array.isArray(bookingData?.idProof?.documents)
+        ? bookingData.idProof.documents
+            .map((doc) => ({
+              url: doc?.url || "",
+              publicId: doc?.publicId || "",
+              originalName: doc?.originalName || "",
+              mimeType: doc?.mimeType || "",
+            }))
+            .filter((doc) => doc.url)
+        : [],
+    };
     // console.log("bookingdata",bookingData)
     const isFor = req.body?.modal;
     // console.log("isfor",isFor)
@@ -1176,7 +1176,7 @@ export const roomBooking = async (req, res) => {
         const series_idReceipt = voucher?.series
           ?.find((s) => s.under === "hotel")
           ?._id.toString();
- 
+
         // 🔹 Save Advance Object
         const advanceObject = new TallyData({
           Primary_user_id: req.pUserId || req.owner,
@@ -2261,7 +2261,7 @@ export const getallnoncheckoutCheckins = async (req, res) => {
   try {
     const allnocheckoutcheckins = await CheckIn.find({
       cmp_id,
-      status: { $nin: ["checkOut", "cancelled"] }
+      status: { $nin: ["checkOut", "cancelled"] },
     });
     if (allnocheckoutcheckins && allnocheckoutcheckins.length) {
       return res.json({ success: true, data: allnocheckoutcheckins });
@@ -2297,12 +2297,11 @@ export const getAllRoomsWithStatusForDate = async (req, res) => {
       status: { $nin: ["checkIn", "cancelled"] }, // skip check-ins, only pre-arrival bookings
       arrivalDate: { $lte: selectedDate },
       checkOutDate: { $gte: selectedDate },
-      
     }).select("selectedRooms");
 
     const AllCheckIns = await CheckIn.find({
       cmp_id,
-       status: { $nin: ["checkOut", "cancelled"] }
+      status: { $nin: ["checkOut", "cancelled"] },
     }).select("selectedRooms checkOutDate arrivalDate isHold");
 
     // --- Collect booked room IDs
@@ -2422,14 +2421,13 @@ export const getDateBasedRoomsWithStatus = async (req, res) => {
       status: { $nin: ["checkIn", "cancelled"] },
       arrivalDate: { $lte: selectedDate },
       checkOutDate: { $gte: selectedDate },
-      
     });
 
     // 2. Fetch check-ins (status not 'checkOut')
     const checkins = await CheckIn.find({
       cmp_id,
       // status: { $ne: "checkOut" },
-       status: { $nin: ["checkOut", "cancelled"] },
+      status: { $nin: ["checkOut", "cancelled"] },
       isHold: false,
       // arrivalDate: { $lte: selectedDate },
       // checkOutDate: { $gte: selectedDate },
@@ -4231,8 +4229,18 @@ export const swapRoom = async (req, res) => {
     );
 
     const oldSelectedRoom = checkIn.selectedRooms[oldSelectedRoomIndex];
+
     oldSelectedRoom.isSwapped = true;
     oldSelectedRoom.swappingDateFrom = selectedDate;
+    let updatedRoom = {
+      ...oldSelectedRoom,
+      isSwapped: true,
+      swappingDateFrom: selectedDate,
+    }
+
+    oldSelectedRoom.stayDays = await calculateStayDays(checkIn, updatedRoom);
+
+
 
     if (oldSelectedRoom.hasOwnProperty("roomName")) {
       oldSelectedRoom.roomName = oldRoom.roomName;
@@ -4247,8 +4255,11 @@ export const swapRoom = async (req, res) => {
       swappingDateFrom: selectedDate,
       isSwapped: false,
     };
+    newSelectedRoom.stayDays = await calculateStayDays(checkIn, newSelectedRoom);
 
     checkIn.selectedRooms.push(newSelectedRoom);
+
+
 
     if (!Array.isArray(checkIn.additionalPaxDetails)) {
       checkIn.additionalPaxDetails = [];
@@ -4740,10 +4751,10 @@ export const getHotelSalesDetails = async (req, res) => {
       }
 
       // Get party name from either nested party object or partyDetails
-const roomNames =
-  sale.checkInData?.selectedRooms
-    ?.map((room) => room.roomName)
-    .filter(Boolean) || [];
+      const roomNames =
+        sale.checkInData?.selectedRooms
+          ?.map((room) => room.roomName)
+          .filter(Boolean) || [];
 
       const finalAmount = Number(sale.finalAmount) || 0;
       const subTotal = Number(sale.subTotal) || finalAmount;
@@ -4790,10 +4801,10 @@ const roomNames =
         businessClassification: sale.businessClassification,
         tableNumber: sale.tableNumber || "",
         waiterName: sale.waiterName || "",
-          roomNumber: roomNames.length
-    ? roomNames.join(", ")
-    : sale.roomNumber || "",
-  roomNames,
+        roomNumber: roomNames.length
+          ? roomNames.join(", ")
+          : sale.roomNumber || "",
+        roomNames,
         guestName: gusestName || "",
         itemCount: sale.items?.length || 0,
         isHotelSale: sale.isHotelSale || false,
@@ -5161,7 +5172,7 @@ export const cancelBooking = async (req, res) => {
         await Room.findByIdAndUpdate(
           record.selectedRoomId,
           { $set: { status: "dirty" } },
-          { new: true, session }
+          { new: true, session },
         );
       }
 
@@ -6802,8 +6813,6 @@ export const viewReport = async (req, res) => {
       // ✅ Room rent — from checkin room level
       const baseRoomRent = room.priceLevelRate
         ? parseFloat(room.priceLevelRate) * stayDays
-
-        
         : sale.subTotal || sale.finalAmount;
 
       // ✅ Discount — from additionalCharges where option === "discount"
@@ -7998,10 +8007,6 @@ export const getFOSalesSummary = async (req, res) => {
   }
 };
 
-
-
-
-
 // export const fetchRestaurantDetails = async (hotelId, fromDate, toDate) => {
 //   try {
 //     const startDate = new Date(fromDate);
@@ -8153,7 +8158,7 @@ export const getFlashReportForDate = async (req, res) => {
     const allRooms = await roomModal
       .find(
         { cmp_id: new mongoose.Types.ObjectId(cmp_id) },
-        { roomName: 1, status: 1 }
+        { roomName: 1, status: 1 },
       )
       .lean();
 
@@ -8164,7 +8169,7 @@ export const getFlashReportForDate = async (req, res) => {
       cmp_id,
       reportDate,
       reportMonth,
-      reportYear
+      reportYear,
     );
 
     const buildOccupancyPipeline = (fromDate, toDate, isDay = false) => {
@@ -8275,11 +8280,11 @@ export const getFlashReportForDate = async (req, res) => {
 
     const getDayOccupancySummary = async (date) => {
       const checkins = await CheckIn.aggregate(
-        buildOccupancyPipeline(date, date, true)
+        buildOccupancyPipeline(date, date, true),
       );
 
       const occupiedRoomNames = new Set();
-console.log("checkins",checkins)
+      console.log("checkins", checkins);
       checkins.forEach((doc) => {
         (doc?.selectedRooms || []).forEach((room) => {
           if (room?.isSwapped) return;
@@ -8358,7 +8363,7 @@ console.log("checkins",checkins)
 
         const days = Math.max(
           0,
-          Math.round((stayEndExclusive - stayStart) / MS_PER_DAY)
+          Math.round((stayEndExclusive - stayStart) / MS_PER_DAY),
         );
 
         const roomCount = Array.isArray(doc?.selectedRooms)
@@ -8372,13 +8377,8 @@ console.log("checkins",checkins)
     };
 
     const processCheckins = async (checkins, fromDate, toDate, roomMeta) => {
-      const {
-        totalRooms,
-        blockedRooms,
-        saleableRooms,
-        periodDays,
-        cmp_id,
-      } = roomMeta;
+      const { totalRooms, blockedRooms, saleableRooms, periodDays, cmp_id } =
+        roomMeta;
 
       const startDate = toLocalDateOnly(fromDate);
       const endDate = toLocalDateOnly(toDate);
@@ -8398,12 +8398,12 @@ console.log("checkins",checkins)
       const restaurantDetails = await fetchRestaurantDetails(
         cmp_id,
         startDate,
-        endDate
+        endDate,
       );
-      console.log("restaurantDetails",restaurantDetails);
+      console.log("restaurantDetails", restaurantDetails);
 
       const fbRoomService = Number(
-        restaurantDetails?.restaurantServiceTotal || 0
+        restaurantDetails?.restaurantServiceTotal || 0,
       );
       const fbRestaurant = Number(restaurantDetails?.restaurantTotal || 0);
 
@@ -8430,14 +8430,7 @@ console.log("checkins",checkins)
           if (domestic) paxDomestic += pax;
           else paxForeign += pax;
 
-          const tariff = Number(
-            Math.round(room?.priceLevelRate) ||
-              room?.baseAmount ||
-              room?.amountAfterTax ||
-              room?.totalAmount ||
-              room?.baseAmountWithTax ||
-              0
-          );
+          const tariff = Number(Math.round(room?.priceLevelRate) || 0);
 
           roomApartment += tariff;
 
@@ -8446,20 +8439,20 @@ console.log("checkins",checkins)
               item?.roomId?.toString() === room?.roomId?.toString()
                 ? acc + Number(item?.rate || 0)
                 : acc,
-            0
+            0,
           );
 
           roomExtraBed += extraBed;
         });
 
-       foodPlanTotal += (doc?.foodPlan || []).reduce(
-            (acc, item) => acc + Number(item?.rate || 0),
-            0
-          );
+        foodPlanTotal += (doc?.foodPlan || []).reduce(
+          (acc, item) => acc + Number(item?.rate || 0),
+          0,
+        );
 
         if (checkoutInRange) {
           modRevenues += Number(
-            checkoutDoc?.otherCharges || checkoutDoc?.otherAmount || 0
+            checkoutDoc?.otherCharges || checkoutDoc?.otherAmount || 0,
           );
 
           grandTotal += Number(checkoutDoc?.grandTotal || 0);
@@ -8473,14 +8466,14 @@ console.log("checkins",checkins)
       // const occupiedComp = 0;
       const totalOccupied = occupiedPaid;
 
-      const occPercent =
-        totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
+      const occPercent = totalRooms > 0 ? (occupiedPaid / totalRooms) * 100 : 0;
 
       const roomTotal = roomApartment + roomExtraBed;
       const fbTotal = foodPlanTotal + fbRoomService + fbRestaurant;
 
       const arrTotalRooms = totalRooms > 0 ? roomTotal / totalRooms : 0;
-      const arrSaleableRooms = saleableRooms > 0 ? roomTotal / saleableRooms : 0;
+      const arrSaleableRooms =
+        saleableRooms > 0 ? roomTotal / saleableRooms : 0;
       const arrOccupiedRooms = occupiedPaid > 0 ? roomTotal / occupiedPaid : 0;
 
       if (grandTotal === 0) {
@@ -8524,9 +8517,10 @@ console.log("checkins",checkins)
       numbers,
       roomMeta,
       paidOccupiedNights,
-      compOccupiedNights = 0
+      compOccupiedNights = 0,
     ) => {
-      const { totalRoomNights, blockedRoomNights, saleableRoomNights } = roomMeta;
+      const { totalRoomNights, blockedRoomNights, saleableRoomNights } =
+        roomMeta;
 
       numbers.totalRooms = totalRoomNights;
       numbers.blockedRooms = blockedRoomNights;
@@ -8576,7 +8570,7 @@ console.log("checkins",checkins)
           saleableRooms: daySummary.saleableRooms,
           periodDays: 1,
           cmp_id,
-        }
+        },
       );
 
       numbers.totalRooms = daySummary.totalRooms;
@@ -8589,7 +8583,10 @@ console.log("checkins",checkins)
       numbers.occPercent =
         daySummary.totalRooms > 0
           ? Number(
-              ((daySummary.occupiedCount / daySummary.totalRooms) * 100).toFixed(2)
+              (
+                (daySummary.occupiedCount / daySummary.totalRooms) *
+                100
+              ).toFixed(2),
             )
           : 0;
 
@@ -8616,7 +8613,7 @@ console.log("checkins",checkins)
         toDate: reportDate,
         dayLabel: dateObj?.toLocaleDateString("en-GB"),
         monthLabel: dateObj?.toLocaleString("en-GB", { month: "long" }),
-        occupiedComp:blockedCounts?.data?.householdDaily || 0,
+        occupiedComp: blockedCounts?.data?.householdDaily || 0,
         ...numbers,
       };
     } else if (hasReportMonth && hasReportYear) {
@@ -8634,10 +8631,10 @@ console.log("checkins",checkins)
       const monthLastDay = new Date(yearNum, monthNum, 0).getDate();
       const monthFull = `${yearNum}-${pad(monthNum)}-${pad(monthLastDay)}`;
       const todayStr = getTodayLocalYMD();
-      const monthEnd = monthFull
-        // todayStr >= monthStart && todayStr <= monthFull ? todayStr : monthFull;
+      const monthEnd = monthFull;
+      // todayStr >= monthStart && todayStr <= monthFull ? todayStr : monthFull;
 
-        console.log("endDate",)
+      console.log("endDate");
 
       const roomMeta = await getRoomMetricsForPeriod({
         reportType: "month",
@@ -8649,7 +8646,7 @@ console.log("checkins",checkins)
       });
 
       const checkins = await CheckIn.aggregate(
-        buildOccupancyPipeline(monthStart, monthEnd, false)
+        buildOccupancyPipeline(monthStart, monthEnd, false),
       );
 
       const numbers = await processCheckins(checkins, monthStart, monthEnd, {
@@ -8663,14 +8660,14 @@ console.log("checkins",checkins)
       const paidOccupiedNights = getOccupiedRoomNights(
         checkins,
         monthStart,
-        monthEnd
+        monthEnd,
       );
 
       applyRoomNightOverrides(numbers, roomMeta, paidOccupiedNights, 0);
 
       const monthLabel = new Date(yearNum, monthNum - 1, 1).toLocaleString(
         "en-GB",
-        { month: "long" }
+        { month: "long" },
       );
 
       reportData = {
@@ -8682,7 +8679,7 @@ console.log("checkins",checkins)
         selectedMonth: monthNum,
         selectedYear: yearNum,
         fullMonthDays: monthLastDay,
-        occupiedComp:blockedCounts?.data?.householdMonthly || 0,
+        occupiedComp: blockedCounts?.data?.householdMonthly || 0,
         ...numbers,
       };
     } else if (hasReportYear) {
@@ -8703,7 +8700,7 @@ console.log("checkins",checkins)
       });
 
       const checkins = await CheckIn.aggregate(
-        buildOccupancyPipeline(yearStart, yearEnd, false)
+        buildOccupancyPipeline(yearStart, yearEnd, false),
       );
 
       const numbers = await processCheckins(checkins, yearStart, yearEnd, {
@@ -8717,7 +8714,7 @@ console.log("checkins",checkins)
       const paidOccupiedNights = getOccupiedRoomNights(
         checkins,
         yearStart,
-        yearEnd
+        yearEnd,
       );
 
       applyRoomNightOverrides(numbers, roomMeta, paidOccupiedNights, 0);
@@ -8729,7 +8726,7 @@ console.log("checkins",checkins)
         dayLabel: `${yearStart} to ${yearEnd}`,
         monthLabel: `FY ${year}-${year + 1}`,
         selectedYear: year,
-        occupiedComp:blockedCounts?.data?.householdYearly || 0,
+        occupiedComp: blockedCounts?.data?.householdYearly || 0,
         ...numbers,
       };
     } else {
@@ -8822,9 +8819,9 @@ export const getCancellationReport = async (req, res) => {
         updatedAt: { $gte: start, $lte: end },
       })
         .populate("Secondary_user_id", "name")
-       .select(
-  "voucherNumber updatedAt Secondary_user_id cancelReason bookingDate status cancelledAt cancelledBy"
-);
+        .select(
+          "voucherNumber updatedAt Secondary_user_id cancelReason bookingDate status cancelledAt cancelledBy",
+        );
 
       bookingCancels.forEach((b) => {
         results.push({
@@ -8849,9 +8846,9 @@ export const getCancellationReport = async (req, res) => {
         updatedAt: { $gte: start, $lte: end },
       })
         .populate("Secondary_user_id", "name")
-       .select(
-  "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy"
-);
+        .select(
+          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy",
+        );
 
       checkinCancels.forEach((c) => {
         results.push({
@@ -8866,7 +8863,6 @@ export const getCancellationReport = async (req, res) => {
         });
       });
 
-
       summary.checkin += checkinCancels.length;
       summary.total += checkinCancels.length;
     }
@@ -8878,15 +8874,15 @@ export const getCancellationReport = async (req, res) => {
       })
         .populate("Secondary_user_id", "name")
         .select(
-  "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy"
-);
+          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy",
+        );
 
       checkoutCancels.forEach((c) => {
         results.push({
           cancelType: "checkout",
           voucherNumber: c.voucherNumber || "-",
           cancelledAt: c.cancelledAt || null,
-          cancelledBy: c.ScancelledBy|| "-",
+          cancelledBy: c.ScancelledBy || "-",
           cancelledByName: c.Secondary_user_id?.name || "-",
           reason: c.cancelReason || "-",
           referenceNumber: c.voucherNumber || "-",
@@ -8904,7 +8900,9 @@ export const getCancellationReport = async (req, res) => {
         cancelledAt: { $gte: start, $lte: end },
       })
         .populate("secondary_user_id", "name")
-        .select("voucherNumber cancelledAt cancelledBy secondary_user_id cancelReason tableNumber");
+        .select(
+          "voucherNumber cancelledAt cancelledBy secondary_user_id cancelReason tableNumber",
+        );
 
       kotCancels.forEach((k) => {
         results.push({
@@ -8912,7 +8910,7 @@ export const getCancellationReport = async (req, res) => {
           voucherNumber: k.voucherNumber || "-",
           cancelledAt: k.cancelledAt || null,
           cancelledBy: k.cancelledBy || "-",
-          cancelledByName:k.secondary_user_id?.name ||"_",
+          cancelledByName: k.secondary_user_id?.name || "_",
           reason: k.cancelReason || "-",
           referenceNumber: k.voucherNumber || "-",
           tableNumber: k.tableNumber || "-",
@@ -8924,20 +8922,20 @@ export const getCancellationReport = async (req, res) => {
     }
 
     if (typesToFetch.includes("receipt")) {
-    const receiptCancels = await ReceiptModel.find({
-  cmp_id: cmpObjectId,
-  isCancelled: true,
-  updatedAt: { $gte: start, $lte: end },
-})
-.populate("Secondary_user_id", "name")
-.lean();
+      const receiptCancels = await ReceiptModel.find({
+        cmp_id: cmpObjectId,
+        isCancelled: true,
+        updatedAt: { $gte: start, $lte: end },
+      })
+        .populate("Secondary_user_id", "name")
+        .lean();
 
       receiptCancels.forEach((r) => {
         results.push({
           cancelType: "receipt",
           voucherNumber: r.receiptNumber || "-",
           cancelledAt: r.cancelledAt || null,
-           cancelledBy: r.cancelledBy|| "-",
+          cancelledBy: r.cancelledBy || "-",
           cancelledByName: r.Secondary_user_id?.name || "-",
           reason: r.cancelReason || "-",
           referenceNumber: r.voucherNumber || "-",
@@ -8949,37 +8947,39 @@ export const getCancellationReport = async (req, res) => {
       summary.total += receiptCancels.length;
     }
 
-   if (typesToFetch.includes("sale")) {
-  const saleCancels = await salesModel.find({
-    cmp_id: cmpObjectId,
-    isCancelled: true,
-    updatedAt: { $gte: start, $lte: end },
-  })  .populate("Secondary_user_id", "name")
- .select(
-  "salesNumber updatedAt cancelledAt cancelledBy cancelledByName cancelReason partyName Secondary_user_id"
-);
+    if (typesToFetch.includes("sale")) {
+      const saleCancels = await salesModel
+        .find({
+          cmp_id: cmpObjectId,
+          isCancelled: true,
+          updatedAt: { $gte: start, $lte: end },
+        })
+        .populate("Secondary_user_id", "name")
+        .select(
+          "salesNumber updatedAt cancelledAt cancelledBy cancelledByName cancelReason partyName Secondary_user_id",
+        );
 
-  saleCancels.forEach((s) => {
-    results.push({
-      cancelType: "sale",
-      voucherNumber: s.salesNumber || "-",
-      cancelledAt: s.cancelledAt || null,
-      cancelledBy: s.cancelledBy || "-",
-      cancelledByName: s.Secondary_user_id?.name || "-",
-      reason: s.cancelReason || "-",
-      referenceNumber: s.salesNumber || "-",
-      partyName: s.partyName || "-",
-    });
-  });
+      saleCancels.forEach((s) => {
+        results.push({
+          cancelType: "sale",
+          voucherNumber: s.salesNumber || "-",
+          cancelledAt: s.cancelledAt || null,
+          cancelledBy: s.cancelledBy || "-",
+          cancelledByName: s.Secondary_user_id?.name || "-",
+          reason: s.cancelReason || "-",
+          referenceNumber: s.salesNumber || "-",
+          partyName: s.partyName || "-",
+        });
+      });
 
-  summary.sale += saleCancels.length;
-  summary.total += saleCancels.length;
-}
+      summary.sale += saleCancels.length;
+      summary.total += saleCancels.length;
+    }
 
     results.sort(
       (a, b) =>
         new Date(a.cancelledAt || 0).getTime() -
-        new Date(b.cancelledAt || 0).getTime()
+        new Date(b.cancelledAt || 0).getTime(),
     );
 
     return res.json({
@@ -9007,20 +9007,16 @@ export const getCancellationReport = async (req, res) => {
   }
 };
 
-
 export const additionalPaxDefaultSetting = async (req, res) => {
   try {
-    const {cmp_id , id } = req.params;
+    const { cmp_id, id } = req.params;
 
-    await AdditionalPax.updateMany(
-      { cmp_id },
-      { $set: { isDefault: false } }
-    );
+    await AdditionalPax.updateMany({ cmp_id }, { $set: { isDefault: false } });
 
     const updateAdditionalPax = await AdditionalPax.findByIdAndUpdate(
       id,
       { $set: { isDefault: true } },
-      { new: true }
+      { new: true },
     );
 
     return res.status(200).json({

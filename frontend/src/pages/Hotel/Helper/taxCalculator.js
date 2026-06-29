@@ -26,7 +26,7 @@ export const taxCalculator = (
         ? formData?.additionalPaxDetails?.reduce(
             (acc, item) =>
               item.roomId === taxCalculationRoomId
-                ? acc + (Number(item.rate) || 0) * Number(data?.stayDays || 1)
+                ? acc + (Number(item.rate) || 0) * Number(data?.stayDays )
                 : acc,
             0,
           ) || 0
@@ -38,7 +38,7 @@ export const taxCalculator = (
         ? formData?.foodPlan?.reduce(
             (acc, item) =>
               item.roomId === taxCalculationRoomId
-                ? acc + (Number(item.rate) || 0) * Number(data?.stayDays || 1)
+                ? acc + (Number(item.rate) || 0) * Number(data?.stayDays )
                 : acc,
             0,
           ) || 0

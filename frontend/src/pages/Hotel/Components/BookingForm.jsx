@@ -18,10 +18,16 @@ const AdditionalChargesModal = lazy(() => import("./AdditionalChargesModal"));
 import SuspenseLoader from "@/components/common/SuspenseLoader";
 import { calculateOtherCharges } from "../Helper/hotelHelper.js";
 import OtherChargeSearchInPutBox from "./OtherChargeSearchInPutBox";
-import {useRef} from "react";
-
-import { MdCloudUpload, MdImage, MdDelete, MdVisibility, MdDownload } from "react-icons/md"
+import { useRef } from "react";
+import {
+  MdCloudUpload,
+  MdImage,
+  MdDelete,
+  MdVisibility,
+  MdDownload,
+} from "react-icons/md";
 import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
+import { calculateStayDays } from "../Helper/hotelHelper";
 
 const nextIsoDate = (value) => {
   const date = new Date(value);
@@ -63,15 +69,15 @@ function BookingForm({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [saveLoader, setSaveLoader] = useState(false);
   const [additionalChargeData, setAdditionalChargeData] = useState([]);
-const [showIdProofModal, setShowIdProofModal] = useState(false);
-
+  const [showIdProofModal, setShowIdProofModal] = useState(false);
+  // const [isSaving, setIsSaving] = useState(false);
   const idDocsRef = useRef(null);
 
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
-    const [idProof, setIdProof] = useState({
+  const [idProof, setIdProof] = useState({
     idType: "",
     idNumber: "",
     documents: [],
@@ -176,84 +182,84 @@ const [showIdProofModal, setShowIdProofModal] = useState(false);
     addTaxWithRate: configurations[0]?.addRateWithTax?.hotelSale,
   });
 
-useEffect(() => {
-  if (editData) {
-       console.log("editData", editData);
-    setSelectedParty(editData?.customerId);
-    setSelectedGuest(editData?.guestId);
-    setHotelAgent(editData?.agentId);
-    setCountry(editData?.country || "");
-    setVoucherNumber(editData?.voucherNumber);
-    let highestDate = editData?.checkOutDate;
-    if (isTariffRateChange) {
-      highestDate =
-        currentDateDefault > highestDate ? currentDateDefault : highestDate;
-    }
-    setFormData((prev) => ({
-      ...prev,
-      country: editData?.country,
-      customerId: editData?.customerId?._id,
-      voucherNumber: editData?.voucherNumber,
-      state: editData?.state,
-      pinCode: editData?.pinCode,
-      detailedAddress: editData?.detailedAddress,
-      mobileNumber: editData?.mobileNumber,
-      arrivalDate: editData?.arrivalDate || prev.arrivalDate,
-      arrivalTime: editData?.arrivalTime || prev.arrivalTime,
-      checkOutDate: highestDate || prev.checkOutDate,
-      checkOutTime: editData?.checkOutTime || prev.checkOutTime,
-      stayDays: editData?.stayDays ?? prev.stayDays,
-      bookingType: editData?.bookingType || prev.bookingType,
-      selectedRooms: editData?.selectedRooms || [],
-      additionalPaxDetails: editData?.additionalPaxDetails || [],
-      foodPlan: editData?.foodPlan || [],
-      paxTotal: editData?.paxTotal || 0,
-      foodPlanTotal: editData?.foodPlanTotal || 0,
-      roomTotal: editData?.roomTotal || 0,
-      discountPercentage: editData?.discountPercentage || 0,
-      discountAmount: editData?.discountAmount || 0,
-      totalAdvance: editData?.totalAdvance || 0,
-      visitOfPurpose: editData?.visitOfPurpose,
-      voucherId: editData?.voucherId,
-      customerName: editData?.customerId?.partyName,
-      accountGroup: editData?.customerId?.accountGroup,
-      guestName: editData?.guestId?.partyName,
-      guestId: editData?.guestId?._id || editData?.guestId,
-      guestCountry: editData?.country,
-      guestState: editData?.state,
-      guestPinCode: editData?.pinCode,
-      guestDetailedAddress: editData?.guestDetailedAddress,
-      guestMobileNumber: editData?.guestMobileNumber,
-      balanceToPay: editData?.balanceToPay || 0,
-      advanceAmount:  0,
-      previousAdvance: editData?.previousAdvance || 0,
-      company: editData?.company || "",
-      nextDestination: editData?.nextDestination || "",
-      dateOfBirth: editData?.dateOfBirth || "",
-      dateOfArrivalInIndia: editData?.dateOfArrivalInIndia || "",
-      visaNo: editData?.visaNo || "",
-      visaPOI: editData?.visaPOI || "",
-      visaDOI: editData?.visaDOI || "",
-      visaExpDt: editData?.visaExpDt || "",
-      certOfRegistrationNumber: editData?.certOfRegistrationNumber || "",
-      passportNo: editData?.passportNo || "",
-      placeOfIssue: editData?.placeOfIssue || "",
-      dateOfIssue: editData?.dateOfIssue || "",
-      dateOfExpiry: editData?.dateOfExpiry || "",
-      grcno: editData?.grcno || "",
-      currentDate: editData?.arrivalDate || currentDateDefault,
-      updatedDate: editData?.updatedDate || currentDateDefault,
-      gstNo: editData?.gstNo || "",
-      otherChargeDetails: editData?.otherChargeDetails || [],
-      addFoodPlanWithRate: editData?.addFoodPlanWithRate,
-      roomSwapHistory: editData?.roomSwapHistory || [],
-      addTaxWithRate: editData?.addTaxWithRate || false,
-    }));
+  useEffect(() => {
+    if (editData) {
+      console.log("editData", editData);
+      setSelectedParty(editData?.customerId);
+      setSelectedGuest(editData?.guestId);
+      setHotelAgent(editData?.agentId);
+      setCountry(editData?.country || "");
+      setVoucherNumber(editData?.voucherNumber);
+      let highestDate = editData?.checkOutDate;
+      if (isTariffRateChange) {
+        highestDate =
+          currentDateDefault > highestDate ? currentDateDefault : highestDate;
+      }
+      setFormData((prev) => ({
+        ...prev,
+        country: editData?.country,
+        customerId: editData?.customerId?._id,
+        voucherNumber: editData?.voucherNumber,
+        state: editData?.state,
+        pinCode: editData?.pinCode,
+        detailedAddress: editData?.detailedAddress,
+        mobileNumber: editData?.mobileNumber,
+        arrivalDate: editData?.arrivalDate || prev.arrivalDate,
+        arrivalTime: editData?.arrivalTime || prev.arrivalTime,
+        checkOutDate: highestDate || prev.checkOutDate,
+        checkOutTime: editData?.checkOutTime || prev.checkOutTime,
+        stayDays: editData?.stayDays ?? prev.stayDays,
+        bookingType: editData?.bookingType || prev.bookingType,
+        selectedRooms: editData?.selectedRooms || [],
+        additionalPaxDetails: editData?.additionalPaxDetails || [],
+        foodPlan: editData?.foodPlan || [],
+        paxTotal: editData?.paxTotal || 0,
+        foodPlanTotal: editData?.foodPlanTotal || 0,
+        roomTotal: editData?.roomTotal || 0,
+        discountPercentage: editData?.discountPercentage || 0,
+        discountAmount: editData?.discountAmount || 0,
+        totalAdvance: editData?.totalAdvance || 0,
+        visitOfPurpose: editData?.visitOfPurpose,
+        voucherId: editData?.voucherId,
+        customerName: editData?.customerId?.partyName,
+        accountGroup: editData?.customerId?.accountGroup,
+        guestName: editData?.guestId?.partyName,
+        guestId: editData?.guestId?._id || editData?.guestId,
+        guestCountry: editData?.country,
+        guestState: editData?.state,
+        guestPinCode: editData?.pinCode,
+        guestDetailedAddress: editData?.guestDetailedAddress,
+        guestMobileNumber: editData?.guestMobileNumber,
+        balanceToPay: editData?.balanceToPay || 0,
+        advanceAmount: 0,
+        previousAdvance: editData?.previousAdvance || 0,
+        company: editData?.company || "",
+        nextDestination: editData?.nextDestination || "",
+        dateOfBirth: editData?.dateOfBirth || "",
+        dateOfArrivalInIndia: editData?.dateOfArrivalInIndia || "",
+        visaNo: editData?.visaNo || "",
+        visaPOI: editData?.visaPOI || "",
+        visaDOI: editData?.visaDOI || "",
+        visaExpDt: editData?.visaExpDt || "",
+        certOfRegistrationNumber: editData?.certOfRegistrationNumber || "",
+        passportNo: editData?.passportNo || "",
+        placeOfIssue: editData?.placeOfIssue || "",
+        dateOfIssue: editData?.dateOfIssue || "",
+        dateOfExpiry: editData?.dateOfExpiry || "",
+        grcno: editData?.grcno || "",
+        currentDate: editData?.arrivalDate || currentDateDefault,
+        updatedDate: editData?.updatedDate || currentDateDefault,
+        gstNo: editData?.gstNo || "",
+        otherChargeDetails: editData?.otherChargeDetails || [],
+        addFoodPlanWithRate: editData?.addFoodPlanWithRate,
+        roomSwapHistory: editData?.roomSwapHistory || [],
+        addTaxWithRate: editData?.addTaxWithRate || false,
+      }));
 
-    setIncludeFoodRateWithRoom(editData?.addFoodPlanWithRate);
+      setIncludeFoodRateWithRoom(editData?.addFoodPlanWithRate);
 
-    // ✅ Restore idProof when editing
-   if (editData?.idProof) {
+      // ✅ Restore idProof when editing
+      if (editData?.idProof) {
         setIdProof({
           idType: editData.idProof.idType || "",
           idNumber: editData.idProof.idNumber || "",
@@ -270,7 +276,7 @@ useEffect(() => {
         });
       }
     }
-}, [editData]);
+  }, [editData]);
 
   useEffect(() => {
     if (!isTariffRateChange || !editData?.checkOutDate) return;
@@ -300,7 +306,6 @@ useEffect(() => {
     isTariffRateChange,
     lockedThroughDate,
   ]);
-  
 
   // setting room id for selected room
   useEffect(() => {
@@ -324,21 +329,47 @@ useEffect(() => {
   // on change function
   const handleChange = (e) => {
     const { name, value } = e.target;
-console.log(name, value)
+    console.log(name, value);
     if (name === "country") setCountry(value);
 
     if (name === "arrivalDate") {
       const checkout = new Date(value);
+      console.log(checkout)
       if (formData.stayDays) {
-        checkout.setDate(checkout.getDate() + Number(formData.stayDays));
+        checkout.setDate(checkout.getDate() + (Number(formData.stayDays) + 1));
       } else {
         checkout.setDate(checkout.getDate() + 1);
       }
       const formattedCheckout = isoDate(checkout);
+      console.log(value, checkout, formattedCheckout);
+
+  const updatedSelectedItems =
+        formData.selectedRooms?.map((room) => {
+          const stayDay = calculateStayDays(
+            formData,
+            room,
+            value,
+            checkout,
+             (Number(formData.stayDays) + 1)
+          );
+
+          console.log(stayDay)
+
+          return {
+            ...room,
+            stayDays: stayDay,
+            totalAmount: room.priceLevelRate * stayDay,
+          };
+        }) ?? [];
+
+        console.log(updatedSelectedItems)
+      
       setFormData((prev) => ({
         ...prev,
         checkOutDate: formattedCheckout,
         arrivalDate: value,
+        stayDays: formData.stayDays ? Number(formData.stayDays + 1) :1,
+        selectedRooms: updatedSelectedItems,
         updatedDate: currentDateDefault,
       }));
       return;
@@ -352,11 +383,22 @@ console.log(name, value)
       // check stay the diffDays always greater than 1
       if (diffDays < 1) diffDays = 1;
       const updatedSelectedItems =
-        formData.selectedRooms?.map((room) => ({
-          ...room,
-          stayDays: diffDays,
-          totalAmount: diffDays * room.priceLevelRate,
-        })) || [];
+        formData.selectedRooms?.map((room) => {
+          const stayDays = calculateStayDays(
+            formData,
+            room,
+            formData?.arrivalDate,
+            checkOutDate,
+            diffDays
+          );
+
+          return {
+            ...room,
+            stayDays,
+            totalAmount: room.priceLevelRate * stayDays,
+          };
+        }) ?? [];
+
       setFormData((prev) => ({
         ...prev,
         checkOutDate: value,
@@ -373,12 +415,28 @@ console.log(name, value)
       if (!isNaN(stayDays)) {
         const checkout = new Date(arrival);
         checkout.setDate(arrival.getDate() + stayDays);
+
         const updatedSelectedItems =
-          formData.selectedRooms?.map((room) => ({
-            ...room,
-            stayDays,
-            totalAmount: stayDays * room.priceLevelRate,
-          })) || [];
+          formData.selectedRooms?.map((room) => {
+            const roomStayDays = calculateStayDays(
+              formData,
+              room,
+              formData?.arrivalDate,
+              checkout,
+              stayDays
+            );
+
+            console.log(stayDays,roomStayDays);
+
+            return {
+              ...room,
+              stayDays :roomStayDays,
+              totalAmount: roomStayDays * room.priceLevelRate,
+            };
+          }) || [];
+
+
+          console.log(updatedSelectedItems)
         const formattedCheckout = isoDate(checkout);
         setFormData((prev) => ({
           ...prev,
@@ -421,7 +479,7 @@ console.log(name, value)
       }));
       return;
     }
-    
+
     if (name === "country") {
       setFormData((prev) => ({ ...prev, [name]: value, guestCountry: value }));
       return;
@@ -435,7 +493,7 @@ console.log(name, value)
   };
 
   // arrival time and date helper
- const handleIdChange = (e) => {
+  const handleIdChange = (e) => {
     const { name, value } = e.target;
     setIdProof((prev) => ({ ...prev, [name]: value }));
   };
@@ -468,7 +526,9 @@ console.log(name, value)
       validFiles.push({
         id: `${Date.now()}-${Math.random()}`,
         file,
-        preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : "",
+        preview: file.type.startsWith("image/")
+          ? URL.createObjectURL(file)
+          : "",
         url: "",
         name: file.name,
         type: file.type,
@@ -501,7 +561,9 @@ console.log(name, value)
   };
 
   const uploadIdProofDocuments = async () => {
-    const existingDocs = idProof.documents.filter((doc) => doc.isExisting && doc.url);
+    const existingDocs = idProof.documents.filter(
+      (doc) => doc.isExisting && doc.url,
+    );
     const newDocs = idProof.documents.filter((doc) => doc.file);
 
     const uploadedDocs = await Promise.all(
@@ -627,7 +689,6 @@ console.log(name, value)
         discountAmount = valueDetails.discountAmount;
       }
       const totalAmount = roomTotal;
-    
 
       const grandTotal = roomTotal;
 
@@ -638,8 +699,10 @@ console.log(name, value)
       );
 
       const balanceToPay = (
-        Number(grandTotal) - discountAmount -
-        totalAdvance + otherChargeAmount 
+        Number(grandTotal) -
+        discountAmount -
+        totalAdvance +
+        otherChargeAmount
       ).toFixed(2);
 
       setFormData((prev) => ({
@@ -761,7 +824,7 @@ console.log(name, value)
       setSelectedGuest(party);
     }
 
-console.log(party);
+    console.log(party);
 
     if (!party) {
       if (!isGuest) {
@@ -1024,140 +1087,170 @@ console.log(party);
     }
   };
 
-const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, onRemove }) => {
-  const isUploading = idProof[`isUploading${side.charAt(0).toUpperCase() + side.slice(1)}`]
-  const preview = idProof[`${side}Preview`]
-  const file = idProof[`${side}File`]
-  const url = idProof[`${side}Url`]
+  const IdUploadSlot = ({
+    label,
+    side,
+    fileRef,
+    idProof,
+    onFileChange,
+    onUpload,
+    onRemove,
+  }) => {
+    const isUploading =
+      idProof[`isUploading${side.charAt(0).toUpperCase() + side.slice(1)}`];
+    const preview = idProof[`${side}Preview`];
+    const file = idProof[`${side}File`];
+    const url = idProof[`${side}Url`];
 
-  return (
-    <div className="w-full lg:w-6/12 px-4">
-      <div className="relative w-full mb-3">
-        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-          {label}
-        </label>
+    return (
+      <div className="w-full lg:w-6/12 px-4">
+        <div className="relative w-full mb-3">
+          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+            {label}
+          </label>
 
-        {/* Preview */}
-        {preview && (
-          <div className="mb-3 relative inline-block">
-            {preview.startsWith("data:application/pdf") ? (
-              <div className="w-24 h-24 flex items-center justify-center bg-gray-100 rounded border shadow text-xs text-gray-500">PDF</div>
-            ) : (
-              <img src={preview} alt={label} className="w-24 h-24 object-cover rounded border shadow" />
-            )}
-            <button
-              type="button"
-              onClick={() => onRemove(side)}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-            >×</button>
-          </div>
-        )}
+          {/* Preview */}
+          {preview && (
+            <div className="mb-3 relative inline-block">
+              {preview.startsWith("data:application/pdf") ? (
+                <div className="w-24 h-24 flex items-center justify-center bg-gray-100 rounded border shadow text-xs text-gray-500">
+                  PDF
+                </div>
+              ) : (
+                <img
+                  src={preview}
+                  alt={label}
+                  className="w-24 h-24 object-cover rounded border shadow"
+                />
+              )}
+              <button
+                type="button"
+                onClick={() => onRemove(side)}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+              >
+                ×
+              </button>
+            </div>
+          )}
 
-        {/* File Input */}
-        <div className="flex items-center space-x-2">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*,application/pdf"
-            onChange={(e) => onFileChange(side, e)}
-            className="hidden"
-          />
-          <div
-            onClick={() => fileRef.current?.click()}
-            className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded cursor-pointer hover:bg-gray-200 text-sm"
-          >
-            <MdImage className="mr-2" />
-            Choose File
-          </div>
-
-          {file && !url && (
-            <button
-              type="button"
-              onClick={() => onUpload(side)}
-              disabled={isUploading}
-              className="flex items-center px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300 text-sm"
+          {/* File Input */}
+          <div className="flex items-center space-x-2">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*,application/pdf"
+              onChange={(e) => onFileChange(side, e)}
+              className="hidden"
+            />
+            <div
+              onClick={() => fileRef.current?.click()}
+              className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded cursor-pointer hover:bg-gray-200 text-sm"
             >
-              <MdCloudUpload className="mr-2" />
-              {isUploading ? "Uploading..." : "Upload"}
-            </button>
+              <MdImage className="mr-2" />
+              Choose File
+            </div>
+
+            {file && !url && (
+              <button
+                type="button"
+                onClick={() => onUpload(side)}
+                disabled={isUploading}
+                className="flex items-center px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300 text-sm"
+              >
+                <MdCloudUpload className="mr-2" />
+                {isUploading ? "Uploading..." : "Upload"}
+              </button>
+            )}
+          </div>
+
+          {url && (
+            <p className="text-green-600 text-xs mt-1">
+              ✓ Uploaded successfully
+            </p>
           )}
         </div>
-
-        {url && <p className="text-green-600 text-xs mt-1">✓ Uploaded successfully</p>}
       </div>
-    </div>
-  )
-}
-
+    );
+  };
 
   const submitHandler = async () => {
+    // setIsSaving(true);
+    // if (!isSaving) return;
     if (isFormReadOnly) return;
+    console.log("hai");
     if (!formData.customerName || formData.customerName.trim() === "") {
       toast.error("Please enter a customer name");
       return;
     }
 
-    
- if (!formData.customerId) {
-    try {
-      const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
-        params: {
-          page: 1,
-          limit: 50,
-          search: formData.customerName.trim(),
-          voucher: "sale",
-          isAgent: false,
-        },
-        withCredentials: true,
-      });
+    if (!formData.customerId) {
+      try {
+        const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
+          params: {
+            page: 1,
+            limit: 50,
+            search: formData.customerName.trim(),
+            voucher: "sale",
+            isAgent: false,
+          },
+          withCredentials: true,
+        });
 
-      const parties = res?.data?.partyList ?? [];
-      const exactMatch = parties.find(
-        (p) => p.partyName?.toLowerCase() === formData.customerName.trim().toLowerCase()
-      );
-
-      if (exactMatch) {
-        toast.warning(
-          `Customer "${formData.customerName.trim()}" already exists. Please select from the dropdown instead of typing manually.`,
-          { duration: 5000 }
+        const parties = res?.data?.partyList ?? [];
+        const exactMatch = parties.find(
+          (p) =>
+            p.partyName?.toLowerCase() ===
+            formData.customerName.trim().toLowerCase(),
         );
-        return; // ❌ Block save
+
+        if (exactMatch) {
+          toast.warning(
+            `Customer "${formData.customerName.trim()}" already exists. Please select from the dropdown instead of typing manually.`,
+            { duration: 5000 },
+          );
+          return; // ❌ Block save
+        }
+      } catch (_) {
+        // silently fail — don't block submit on network error
       }
-    } catch (_) {
-      // silently fail — don't block submit on network error
     }
-  }
 
-  // ✅ NEW: Same check for Guest Name
-  if (!formData.guestId && formData.guestName && formData.guestName.trim() !== "") {
-    try {
-      const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
-        params: {
-          page: 1,
-          limit: 50,
-          search: formData.guestName.trim(),
-          voucher: "sale",
-          isAgent: false,
-        },
-        withCredentials: true,
-      });
+    // ✅ NEW: Same check for Guest Name
+    if (
+      !formData.guestId &&
+      formData.guestName &&
+      formData.guestName.trim() !== ""
+    ) {
+      try {
+        const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
+          params: {
+            page: 1,
+            limit: 50,
+            search: formData.guestName.trim(),
+            voucher: "sale",
+            isAgent: false,
+          },
+          withCredentials: true,
+        });
 
-      const parties = res?.data?.partyList ?? [];
-      const exactMatch = parties.find(
-        (p) => p.partyName?.toLowerCase() === formData.guestName.trim().toLowerCase()
-      );
-
-      if (exactMatch) {
-        toast.warning(
-          `Guest "${formData.guestName.trim()}" already exists. Please select from the dropdown instead of typing manually.`,
-          { duration: 5000 }
+        const parties = res?.data?.partyList ?? [];
+        const exactMatch = parties.find(
+          (p) =>
+            p.partyName?.toLowerCase() ===
+            formData.guestName.trim().toLowerCase(),
         );
-        return; // ❌ Block save
+
+        if (exactMatch) {
+          toast.warning(
+            `Guest "${formData.guestName.trim()}" already exists. Please select from the dropdown instead of typing manually.`,
+            { duration: 5000 },
+          );
+          return; // ❌ Block save
+        }
+      } catch (_) {
+        // silently fail
       }
-    } catch (_) {
-      // silently fail
     }
-  }
 
     if (Number(formData.grandTotal) < 0) {
       toast.error(
@@ -1183,7 +1276,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
     let guestPinCode = formData?.guestPinCode;
     let guestDetailedAddress = formData?.guestDetailedAddress;
     let guestMobileNumber = formData?.guestMobileNumber;
-   const uploadedDocuments = await uploadIdProofDocuments();
+    const uploadedDocuments = await uploadIdProofDocuments();
     console.log(guestName);
     console.log(guestId);
     console.log(guestCountry);
@@ -1328,12 +1421,12 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
       detailedAddress,
       mobileNumber,
       voucherNumber,
-      selectedRooms: formData.selectedRooms, 
-       idProof: {
-          idType: idProof.idType,
-          idNumber: idProof.idNumber,
-          documents: uploadedDocuments,
-        },
+      selectedRooms: formData.selectedRooms,
+      idProof: {
+        idType: idProof.idType,
+        idNumber: idProof.idNumber,
+        documents: uploadedDocuments,
+      },
     };
 
     if (
@@ -1352,43 +1445,44 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
     }
   };
 
-  const handlePayment =async  (paymentData) => {
+  const handlePayment = async (paymentData) => {
     let finalSelectedRooms = formData.selectedRooms;
 
     if (isTariffRateChange && roomId && editData?.selectedRooms) {
       // Same merging logic as submitHandler
     }
- const uploadedDocuments = await uploadIdProofDocuments();
+    const uploadedDocuments = await uploadIdProofDocuments();
     const payload = {
       ...formData,
       selectedRooms: finalSelectedRooms,
-     idProof: {
-  idType: idProof.idType,
-  idNumber: idProof.idNumber,
-  documents:uploadedDocuments,
-},
+      idProof: {
+        idType: idProof.idType,
+        idNumber: idProof.idNumber,
+        documents: uploadedDocuments,
+      },
     };
 
     let cash = 0;
-    let upi = 0;handlePayment 
+    let upi = 0;
+    handlePayment;
     let card = 0;
     const credit = 0;
     let bank = 0;
 
-    console.log(paymentData)
-  //     {
-  //   mode: 'single',
-  //   totalAmount: 100,
-  //   payments: [
-  //     {
-  //       method: 'cash',
-  //       paymentType: 'cash',
-  //       amount: 100,
-  //       accountId: '6895bff914dac3df95ec3971',
-  //       accountName: 'Cash1'
-  //     }
-  //   ]
-  // }
+    console.log(paymentData);
+    //     {
+    //   mode: 'single',
+    //   totalAmount: 100,
+    //   payments: [
+    //     {
+    //       method: 'cash',
+    //       paymentType: 'cash',
+    //       amount: 100,
+    //       accountId: '6895bff914dac3df95ec3971',
+    //       accountName: 'Cash1'
+    //     }
+    //   ]
+    // }
     // return
 
     paymentData.payments.forEach((item) => {
@@ -1410,11 +1504,10 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
       card: card,
       credit: credit,
     };
-    console.log(payload)
+    console.log(payload);
 
     // setSaveLoader(false)
     handleSubmit(payload, paymentData, paymenttypeDetails);
-    
   };
 
   const handleDeletion = (roomId) => {
@@ -1479,7 +1572,8 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
     const advanceAmount = Math.round(Number(value));
     const previousAdvance = Number(editData?.previousAdvance || 0);
     const grandTotal = Number(formData?.grandTotal || 0);
-    const totalAdvance = Number(editData?.totalAdvance || 0 ) + Number(value || 0);
+    const totalAdvance =
+      Number(editData?.totalAdvance || 0) + Number(value || 0);
 
     // if (advanceAmount > maxAllowed) {
     //   setErrorObject((prev) => ({
@@ -1517,7 +1611,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
 
     setFormData((prev) => ({
       ...prev,
-      advanceAmount:0,
+      advanceAmount: 0,
       balanceToPay:
         Number(formData.balanceToPay) + deletedOutStanding.bill_amount,
       totalAdvance:
@@ -1535,7 +1629,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
   };
 
   const tariffMode = isTariffRateChange === true;
-const renderDocumentPreview = (doc) => {
+  const renderDocumentPreview = (doc) => {
     const src = doc.preview || doc.url;
 
     if (doc.type === "application/pdf") {
@@ -1601,540 +1695,545 @@ const renderDocumentPreview = (doc) => {
             disabled={isFormReadOnly}
             className="border-0 p-0 m-0 min-w-0"
           >
+            {!tariffMode ? (
+              <>
+                <HeaderTile
+                  title={formatVoucherType("Booking")}
+                  number={voucherNumber}
+                  selectedDate={formData.bookingDate}
+                  setSelectedDate={(date) =>
+                    setFormData((prev) => ({ ...prev, bookingDate: date }))
+                  }
+                  tab="booking"
+                />
 
-          {!tariffMode ? (
-            <>
-              <HeaderTile
-                title={formatVoucherType("Booking")}
-                number={voucherNumber}
-                selectedDate={formData.bookingDate}
-                setSelectedDate={(date) =>
-                  setFormData((prev) => ({ ...prev, bookingDate: date }))
-                }
-                tab="booking"
-              />
+                <div className="flex-auto px-4 lg:px-10 py-10 pt-4">
+                  <div className="flex flex-wrap gap-6">
+                    {/* Booking Number */}
+                    <div className="w-full bg-gray-50 border rounded-xl shadow-md p-6">
+                      {/* Title */}
+                      <h2 className="text-lg font-semibold text-blueGray-800 mb-6">
+                        Guest Details
+                      </h2>
 
-              <div className="flex-auto px-4 lg:px-10 py-10 pt-4">
-                <div className="flex flex-wrap gap-6">
-                  {/* Booking Number */}
-                  <div className="w-full bg-gray-50 border rounded-xl shadow-md p-6">
-                    {/* Title */}
-                    <h2 className="text-lg font-semibold text-blueGray-800 mb-6">
-                      Guest Details
-                    </h2>
-
-                    {/* Main Guest Fields */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      {/* LEFT COLUMN */}
-                      <div className="space-y-6">
-                        {/* Billing Name */}
-                        <div>
-                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                            Billing Name
-                          </label>
-                          <CustomerSearchInputBox
-                            onSelect={handleSelection}
-                            selectedParty={selectedParty}
-                            isAgent={false}
-                            placeholder="Search customers..."
-                            sendSearchToParent={handleSearchCustomer}
-                            isGuest={false}
-                          />
-                        </div>
-
-                        {/* Detailed Address */}
-                        <div>
-                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                            Detailed Address
-                          </label>
-                          <input
-                            name="detailedAddress"
-                            value={formData.detailedAddress}
-                            onChange={handleChange}
-                            className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:ring-blue-200"
-                          />
-                        </div>
-
-                        {/* GST / Country / State */}
-                        <div className="grid grid-cols-3 gap-4">
+                      {/* Main Guest Fields */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* LEFT COLUMN */}
+                        <div className="space-y-6">
+                          {/* Billing Name */}
                           <div>
-                            <label className="block uppercase text-xs font-bold mb-2">
-                              GST No
+                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                              Billing Name
+                            </label>
+                            <CustomerSearchInputBox
+                              onSelect={handleSelection}
+                              selectedParty={selectedParty}
+                              isAgent={false}
+                              placeholder="Search customers..."
+                              sendSearchToParent={handleSearchCustomer}
+                              isGuest={false}
+                            />
+                          </div>
+
+                          {/* Detailed Address */}
+                          <div>
+                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                              Detailed Address
+                            </label>
+                            <input
+                              name="detailedAddress"
+                              value={formData.detailedAddress}
+                              onChange={handleChange}
+                              className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:ring-blue-200"
+                            />
+                          </div>
+
+                          {/* GST / Country / State */}
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <label className="block uppercase text-xs font-bold mb-2">
+                                GST No
+                              </label>
+                              <input
+                                className="w-full border px-3 py-2 rounded text-sm"
+                                value={formData.gstNo}
+                                name="gstNo"
+                                onChange={handleChange}
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block uppercase text-xs font-bold mb-2">
+                                Country
+                              </label>
+                              <input
+                                name="country"
+                                value={formData.country}
+                                onChange={handleChange}
+                                className="w-full border px-3 py-2 rounded text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block uppercase text-xs font-bold mb-2">
+                                State
+                              </label>
+                              <input
+                                name="state"
+                                value={formData.state}
+                                onChange={handleChange}
+                                className="w-full border px-3 py-2 rounded text-sm"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* RIGHT COLUMN */}
+                        <div className="space-y-6">
+                          {/* Guest Name */}
+                          <div>
+                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                              Guest Name
+                            </label>
+                            <CustomerSearchInputBox
+                              onSelect={handleSelection}
+                              selectedParty={selectedGuest}
+                              isAgent={false}
+                              placeholder="Search customers..."
+                              sendSearchToParent={handleSearchCustomer}
+                              isGuest={true}
+                            />
+                          </div>
+
+                          {/* Detailed Address */}
+                          <div>
+                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                              Detailed Address
                             </label>
                             <input
                               className="w-full border px-3 py-2 rounded text-sm"
-                              value={formData.gstNo}
-                              name="gstNo"
+                              name="guestDetailedAddress"
+                              value={formData.guestDetailedAddress}
                               onChange={handleChange}
                             />
                           </div>
 
-                          <div>
-                            <label className="block uppercase text-xs font-bold mb-2">
-                              Country
-                            </label>
-                            <input
-                              name="country"
-                              value={formData.country}
-                              onChange={handleChange}
-                              className="w-full border px-3 py-2 rounded text-sm"
-                            />
-                          </div>
+                          {/* Country / State / Mobile */}
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <label className="block uppercase text-xs font-bold mb-2">
+                                Country
+                              </label>
+                              <input
+                                className="w-full border px-3 py-2 rounded text-sm"
+                                name="guestCountry"
+                                value={formData.guestCountry}
+                                onChange={handleChange}
+                              />
+                            </div>
 
-                          <div>
-                            <label className="block uppercase text-xs font-bold mb-2">
-                              State
-                            </label>
-                            <input
-                              name="state"
-                              value={formData.state}
-                              onChange={handleChange}
-                              className="w-full border px-3 py-2 rounded text-sm"
-                            />
+                            <div>
+                              <label className="block uppercase text-xs font-bold mb-2">
+                                State
+                              </label>
+                              <input
+                                className="w-full border px-3 py-2 rounded text-sm"
+                                name="guestState"
+                                value={formData.guestState}
+                                onChange={handleChange}
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block uppercase text-xs font-bold mb-2">
+                                Mobile No
+                              </label>
+                              <input
+                                name="guestMobileNumber"
+                                value={formData.guestMobileNumber}
+                                onChange={handleChange}
+                                className="w-full border px-3 py-2 rounded text-sm"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* RIGHT COLUMN */}
-                      <div className="space-y-6">
-                        {/* Guest Name */}
-                        <div>
-                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                            Guest Name
-                          </label>
-                          <CustomerSearchInputBox
-                            onSelect={handleSelection}
-                            selectedParty={selectedGuest}
-                            isAgent={false}
-                            placeholder="Search customers..."
-                            sendSearchToParent={handleSearchCustomer}
-                            isGuest={true}
-                          />
-                        </div>
+                      {/* Foreign Guest Fields */}
+                      {isForeign && (
+                        <>
+                          <hr className="my-8" />
+                          <h3 className="text-base font-semibold text-gray-700 mb-4">
+                            Foreign Guest Details
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                            {/* Company */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Company
+                              </label>
+                              <input
+                                type="text"
+                                name="company"
+                                value={formData.company || ""}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+                              />
+                            </div>
+                            {/* Next Destination */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Next Destination
+                              </label>
+                              <input
+                                type="text"
+                                name="nextDestination"
+                                value={formData.nextDestination || ""}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+                              />
+                            </div>
+                            {/* Date of Birth */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Date of Birth
+                              </label>
+                              <input
+                                type="date"
+                                name="dateOfBirth"
+                                value={formData.dateOfBirth || ""}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+                              />
+                            </div>
+                            {/* Date of Arrival in India */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Date of Arrival in India
+                              </label>
+                              <input
+                                type="date"
+                                name="dateOfArrivalInIndia"
+                                value={formData.dateOfArrivalInIndia || ""}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+                              />
+                            </div>
+                            {/* Visa No. */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Visa No.
+                              </label>
+                              <input
+                                type="text"
+                                name="visaNo"
+                                value={formData.visaNo || ""}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+                              />
+                            </div>
+                            {/* Visa POI */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Visa POI
+                              </label>
+                              <input
+                                type="text"
+                                name="visaPOI"
+                                value={formData.visaPOI || ""}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+                              />
+                            </div>
+                            {/* Visa DOI */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Visa DOI
+                              </label>
+                              <input
+                                type="date"
+                                name="visaDOI"
+                                value={formData.visaDOI || ""}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+                              />
+                            </div>
+                            {/* Visa Exp. Dt */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Visa Exp. Dt
+                              </label>
+                              <input
+                                type="date"
+                                name="visaExpDt"
+                                value={formData.visaExpDt || ""}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+                              />
+                            </div>
+                            {/* Registration No. */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Cert. of Registration Number
+                              </label>
+                              <input
+                                type="text"
+                                name="certOfRegistrationNumber"
+                                value={formData.certOfRegistrationNumber || ""}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+                              />
+                            </div>
+                            {/* Passport No. */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Passport No.
+                              </label>
+                              <input
+                                type="text"
+                                name="passportNo"
+                                value={formData.passportNo || ""}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+                              />
+                            </div>
+                            {/* Place of Issue */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Place of Issue
+                              </label>
+                              <input
+                                type="text"
+                                name="placeOfIssue"
+                                value={formData.placeOfIssue || ""}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+                              />
+                            </div>
+                            {/* Date of Issue */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Date of Issue
+                              </label>
+                              <input
+                                type="date"
+                                name="dateOfIssue"
+                                value={formData.dateOfIssue || ""}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+                              />
+                            </div>
+                            {/* Date of Expiry */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Date of Expiry
+                              </label>
+                              <input
+                                type="date"
+                                name="dateOfExpiry"
+                                value={formData.dateOfExpiry || ""}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+                              />
+                            </div>
 
-                        {/* Detailed Address */}
-                        <div>
-                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                            Detailed Address
-                          </label>
-                          <input
-                            className="w-full border px-3 py-2 rounded text-sm"
-                            name="guestDetailedAddress"
-                            value={formData.guestDetailedAddress}
-                            onChange={handleChange}
-                          />
-                        </div>
-
-                        {/* Country / State / Mobile */}
-                        <div className="grid grid-cols-3 gap-4">
-                          <div>
-                            <label className="block uppercase text-xs font-bold mb-2">
-                              Country
-                            </label>
-                            <input
-                              className="w-full border px-3 py-2 rounded text-sm"
-                              name="guestCountry"
-                              value={formData.guestCountry}
-                              onChange={handleChange}
-                            />
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                GRC Number
+                              </label>
+                              <input
+                                type="text"
+                                name="grcno"
+                                value={formData.grcno || ""}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
+                              />
+                            </div>
                           </div>
-
-                          <div>
-                            <label className="block uppercase text-xs font-bold mb-2">
-                              State
-                            </label>
-                            <input
-                              className="w-full border px-3 py-2 rounded text-sm"
-                              name="guestState"
-                              value={formData.guestState}
-                              onChange={handleChange}
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block uppercase text-xs font-bold mb-2">
-                              Mobile No
-                            </label>
-                            <input
-                              name="guestMobileNumber"
-                              value={formData.guestMobileNumber}
-                              onChange={handleChange}
-                              className="w-full border px-3 py-2 rounded text-sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                        </>
+                      )}
                     </div>
 
-                    {/* Foreign Guest Fields */}
-                    {isForeign && (
-                      <>
-                        <hr className="my-8" />
-                        <h3 className="text-base font-semibold text-gray-700 mb-4">
-                          Foreign Guest Details
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                          {/* Company */}
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Company
-                            </label>
-                            <input
-                              type="text"
-                              name="company"
-                              value={formData.company || ""}
-                              onChange={handleChange}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
-                            />
-                          </div>
-                          {/* Next Destination */}
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Next Destination
-                            </label>
-                            <input
-                              type="text"
-                              name="nextDestination"
-                              value={formData.nextDestination || ""}
-                              onChange={handleChange}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
-                            />
-                          </div>
-                          {/* Date of Birth */}
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Date of Birth
-                            </label>
-                            <input
-                              type="date"
-                              name="dateOfBirth"
-                              value={formData.dateOfBirth || ""}
-                              onChange={handleChange}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
-                            />
-                          </div>
-                          {/* Date of Arrival in India */}
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Date of Arrival in India
-                            </label>
-                            <input
-                              type="date"
-                              name="dateOfArrivalInIndia"
-                              value={formData.dateOfArrivalInIndia || ""}
-                              onChange={handleChange}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
-                            />
-                          </div>
-                          {/* Visa No. */}
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Visa No.
-                            </label>
-                            <input
-                              type="text"
-                              name="visaNo"
-                              value={formData.visaNo || ""}
-                              onChange={handleChange}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
-                            />
-                          </div>
-                          {/* Visa POI */}
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Visa POI
-                            </label>
-                            <input
-                              type="text"
-                              name="visaPOI"
-                              value={formData.visaPOI || ""}
-                              onChange={handleChange}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
-                            />
-                          </div>
-                          {/* Visa DOI */}
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Visa DOI
-                            </label>
-                            <input
-                              type="date"
-                              name="visaDOI"
-                              value={formData.visaDOI || ""}
-                              onChange={handleChange}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
-                            />
-                          </div>
-                          {/* Visa Exp. Dt */}
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Visa Exp. Dt
-                            </label>
-                            <input
-                              type="date"
-                              name="visaExpDt"
-                              value={formData.visaExpDt || ""}
-                              onChange={handleChange}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
-                            />
-                          </div>
-                          {/* Registration No. */}
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Cert. of Registration Number
-                            </label>
-                            <input
-                              type="text"
-                              name="certOfRegistrationNumber"
-                              value={formData.certOfRegistrationNumber || ""}
-                              onChange={handleChange}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
-                            />
-                          </div>
-                          {/* Passport No. */}
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Passport No.
-                            </label>
-                            <input
-                              type="text"
-                              name="passportNo"
-                              value={formData.passportNo || ""}
-                              onChange={handleChange}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
-                            />
-                          </div>
-                          {/* Place of Issue */}
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Place of Issue
-                            </label>
-                            <input
-                              type="text"
-                              name="placeOfIssue"
-                              value={formData.placeOfIssue || ""}
-                              onChange={handleChange}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
-                            />
-                          </div>
-                          {/* Date of Issue */}
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Date of Issue
-                            </label>
-                            <input
-                              type="date"
-                              name="dateOfIssue"
-                              value={formData.dateOfIssue || ""}
-                              onChange={handleChange}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
-                            />
-                          </div>
-                          {/* Date of Expiry */}
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Date of Expiry
-                            </label>
-                            <input
-                              type="date"
-                              name="dateOfExpiry"
-                              value={formData.dateOfExpiry || ""}
-                              onChange={handleChange}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
-                            />
+                    {showIdProofModal && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                        <div className="w-full max-w-3xl rounded-xl bg-white shadow-2xl max-h-[90vh] overflow-hidden">
+                          <div className="flex items-center justify-between border-b px-6 py-4">
+                            <h2 className="text-lg font-semibold text-gray-800">
+                              ID Proof
+                            </h2>
+                            <button
+                              type="button"
+                              onClick={() => setShowIdProofModal(false)}
+                              className="text-gray-500 hover:text-red-500 text-2xl leading-none"
+                            >
+                              ×
+                            </button>
                           </div>
 
-                          <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                              GRC Number
-                            </label>
-                            <input
-                              type="text"
-                              name="grcno"
-                              value={formData.grcno || ""}
-                              onChange={handleChange}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring focus:ring-blue-200 focus:outline-none"
-                            />
+                          <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                                  ID Type
+                                </label>
+                                <select
+                                  name="idType"
+                                  value={idProof.idType}
+                                  onChange={handleIdChange}
+                                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                                >
+                                  <option value="">Select ID Type</option>
+                                  <option value="aadhaar">Aadhaar Card</option>
+                                  <option value="passport">Passport</option>
+                                  <option value="drivinglicense">
+                                    Driving License
+                                  </option>
+                                  <option value="voterid">Voter ID</option>
+                                  <option value="pan">PAN Card</option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                                  ID Number
+                                </label>
+                                <input
+                                  type="text"
+                                  name="idNumber"
+                                  placeholder="Enter ID Number"
+                                  value={idProof.idNumber}
+                                  onChange={handleIdChange}
+                                  maxLength={30}
+                                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="rounded-xl border bg-white shadow-sm p-4">
+                              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                                <div>
+                                  <h3 className="text-sm font-semibold text-gray-800">
+                                    ID Proof Documents
+                                  </h3>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    You can select multiple images or PDF files.
+                                    Files upload only when you save/update the
+                                    booking.
+                                  </p>
+                                </div>
+
+                                <div className="flex gap-2">
+                                  <input
+                                    ref={idDocsRef}
+                                    type="file"
+                                    multiple
+                                    accept="image/*,application/pdf"
+                                    onChange={handleIdFileChange}
+                                    className="hidden"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => idDocsRef.current?.click()}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
+                                  >
+                                    <MdImage size={18} />
+                                    Upload Documents
+                                  </button>
+                                </div>
+                              </div>
+
+                              {idProof.documents.length === 0 ? (
+                                <div className="text-sm text-gray-500 border border-dashed rounded-lg p-4 text-center">
+                                  No documents selected
+                                </div>
+                              ) : (
+                                <div className="space-y-3">
+                                  {idProof.documents.map((doc) => {
+                                    const fileUrl = doc.preview || doc.url;
+
+                                    return (
+                                      <div
+                                        key={doc.id}
+                                        className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border rounded-lg p-3"
+                                      >
+                                        <div className="flex items-center gap-3">
+                                          {renderDocumentPreview(doc)}
+                                          <div>
+                                            <p className="text-sm font-medium text-gray-800">
+                                              {doc.name || "Document"}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                              {doc.type || "File"}
+                                            </p>
+                                          </div>
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-2">
+                                          {fileUrl && (
+                                            <a
+                                              href={fileUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-md text-sm hover:bg-green-600"
+                                            >
+                                              <MdVisibility size={16} />
+                                              View
+                                            </a>
+                                          )}
+
+                                          {fileUrl && (
+                                            <a
+                                              href={fileUrl}
+                                              download={doc.name || "document"}
+                                              className="inline-flex items-center gap-1 px-3 py-2 bg-yellow-500 text-white rounded-md text-sm hover:bg-yellow-600"
+                                            >
+                                              <MdDownload size={16} />
+                                              Download
+                                            </a>
+                                          )}
+
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              handleIdRemove(doc.id)
+                                            }
+                                            className="inline-flex items-center gap-1 px-3 py-2 bg-red-500 text-white rounded-md text-sm hover:bg-red-600"
+                                          >
+                                            <MdDelete size={16} />
+                                            Remove
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-2">
+                              <button
+                                type="button"
+                                onClick={() => setShowIdProofModal(false)}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50"
+                              >
+                                Close
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </>
+                      </div>
                     )}
-                  </div>
-
-
-
-{showIdProofModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-    <div className="w-full max-w-3xl rounded-xl bg-white shadow-2xl max-h-[90vh] overflow-hidden">
-      <div className="flex items-center justify-between border-b px-6 py-4">
-        <h2 className="text-lg font-semibold text-gray-800">ID Proof</h2>
-        <button
-          type="button"
-          onClick={() => setShowIdProofModal(false)}
-          className="text-gray-500 hover:text-red-500 text-2xl leading-none"
-        >
-          ×
-        </button>
-      </div>
-
-      <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-              ID Type
-            </label>
-            <select
-              name="idType"
-              value={idProof.idType}
-              onChange={handleIdChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-            >
-              <option value="">Select ID Type</option>
-              <option value="aadhaar">Aadhaar Card</option>
-              <option value="passport">Passport</option>
-              <option value="drivinglicense">Driving License</option>
-              <option value="voterid">Voter ID</option>
-              <option value="pan">PAN Card</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-              ID Number
-            </label>
-            <input
-              type="text"
-              name="idNumber"
-              placeholder="Enter ID Number"
-              value={idProof.idNumber}
-              onChange={handleIdChange}
-              maxLength={30}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-            />
-          </div>
-        </div>
-
-        <div className="rounded-xl border bg-white shadow-sm p-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-800">
-                ID Proof Documents
-              </h3>
-              <p className="text-xs text-gray-500 mt-1">
-                You can select multiple images or PDF files. Files upload only when you save/update the booking.
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                ref={idDocsRef}
-                type="file"
-                multiple
-                accept="image/*,application/pdf"
-                onChange={handleIdFileChange}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => idDocsRef.current?.click()}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
-              >
-                <MdImage size={18} />
-                Upload Documents
-              </button>
-            </div>
-          </div>
-
-          {idProof.documents.length === 0 ? (
-            <div className="text-sm text-gray-500 border border-dashed rounded-lg p-4 text-center">
-              No documents selected
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {idProof.documents.map((doc) => {
-                const fileUrl = doc.preview || doc.url;
-
-                return (
-                  <div
-                    key={doc.id}
-                    className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border rounded-lg p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      {renderDocumentPreview(doc)}
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">
-                          {doc.name || "Document"}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {doc.type || "File"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {fileUrl && (
-                        <a
-                          href={fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-md text-sm hover:bg-green-600"
-                        >
-                          <MdVisibility size={16} />
-                          View
-                        </a>
-                      )}
-
-                      {fileUrl && (
-                        <a
-                          href={fileUrl}
-                          download={doc.name || "document"}
-                          className="inline-flex items-center gap-1 px-3 py-2 bg-yellow-500 text-white rounded-md text-sm hover:bg-yellow-600"
-                        >
-                          <MdDownload size={16} />
-                          Download
-                        </a>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => handleIdRemove(doc.id)}
-                        className="inline-flex items-center gap-1 px-3 py-2 bg-red-500 text-white rounded-md text-sm hover:bg-red-600"
-                      >
-                        <MdDelete size={16} />
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={() => setShowIdProofModal(false)}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-{/* ID Proof Section */}
-{/* <div className="w-full px-4 mt-4">
+                    {/* ID Proof Section */}
+                    {/* <div className="w-full px-4 mt-4">
   <h6 className="text-blueGray-400 text-sm mb-4 font-bold uppercase border-b pb-2">
     ID Proof
   </h6>
 </div> */}
 
-{/* <div className="flex flex-wrap w-full"> */}
+                    {/* <div className="flex flex-wrap w-full"> */}
 
-  {/* ID Type */}
-  {/* <div className="w-full lg:w-6/12 px-4">
+                    {/* ID Type */}
+                    {/* <div className="w-full lg:w-6/12 px-4">
     <div className="relative w-full mb-3">
       <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
         ID Type
@@ -2152,11 +2251,11 @@ const renderDocumentPreview = (doc) => {
         <option value="voter_id">Voter ID</option>
         <option value="pan">PAN Card</option>
       </select> */}
-    {/* </div>
+                    {/* </div>
   </div> */}
 
-  {/* ID Number */}
-  {/* <div className="w-full lg:w-6/12 px-4">
+                    {/* ID Number */}
+                    {/* <div className="w-full lg:w-6/12 px-4">
     <div className="relative w-full mb-3">
       <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
         ID Number
@@ -2173,8 +2272,8 @@ const renderDocumentPreview = (doc) => {
     </div>
   </div> */}
 
-  {/* ID Front Upload */}
-  {/* <div className="w-full lg:w-6/12 px-4">
+                    {/* ID Front Upload */}
+                    {/* <div className="w-full lg:w-6/12 px-4">
     <IdUploadSlot
       label="ID Front Side"
       side="front"
@@ -2186,8 +2285,8 @@ const renderDocumentPreview = (doc) => {
     />
   </div> */}
 
-  {/* ID Back Upload */}
-  {/* <div className="w-full lg:w-6/12 px-4">
+                    {/* ID Back Upload */}
+                    {/* <div className="w-full lg:w-6/12 px-4">
     <IdUploadSlot
       label="ID Back Side"
       side="back"
@@ -2199,288 +2298,287 @@ const renderDocumentPreview = (doc) => {
     />
   </div> */}
 
-{/* </div> */}
+                    {/* </div> */}
 
+                    {/* Guest Info Box */}
 
-                  {/* Guest Info Box */}
+                    <div className="w-full bg-gray-50 border rounded-xl shadow-md ">
+                      <h2 className="text-lg font-semibold text-blueGray-800 mb-6 p-2">
+                        Booking & Room Details
+                      </h2>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-3 gap-y-4 p-3">
+                        {/* Arrival Date */}
+                        <div>
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Arrival Date
+                          </label>
+                          <input
+                            type="date"
+                            name="arrivalDate"
+                            value={formData.arrivalDate}
+                            onChange={handleChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+                          />
+                        </div>
 
-                  <div className="w-full bg-gray-50 border rounded-xl shadow-md ">
-                    <h2 className="text-lg font-semibold text-blueGray-800 mb-6 p-2">
-                      Booking & Room Details
-                    </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-3 gap-y-4 p-3">
-                      {/* Arrival Date */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Arrival Date
-                        </label>
-                        <input
-                          type="date"
-                          name="arrivalDate"
-                          value={formData.arrivalDate}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        />
-                      </div>
+                        {/* Arrival Time */}
+                        <div>
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Arrival Time
+                          </label>
+                          <TimeSelector
+                            initialTime={editData?.arrivalTime}
+                            onTimeChange={handleArrivalTimeChange}
+                          />
+                        </div>
 
-                      {/* Arrival Time */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Arrival Time
-                        </label>
-                        <TimeSelector
-                          initialTime={editData?.arrivalTime}
-                          onTimeChange={handleArrivalTimeChange}
-                        />
-                      </div>
+                        {/* Check Out Date */}
+                        <div>
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Check Out Date
+                          </label>
+                          <input
+                            type="date"
+                            name="checkOutDate"
+                            value={formData.checkOutDate}
+                            onChange={handleChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+                          />
+                        </div>
 
-                      {/* Check Out Date */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Check Out Date
-                        </label>
-                        <input
-                          type="date"
-                          name="checkOutDate"
-                          value={formData.checkOutDate}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        />
-                      </div>
+                        {/* Check Out Time */}
+                        <div>
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Check Out Time
+                          </label>
+                          <TimeSelector
+                            initialTime={editData?.checkOutTime}
+                            onTimeChange={handleCheckOutTimeChange}
+                          />
+                        </div>
 
-                      {/* Check Out Time */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Check Out Time
-                        </label>
-                        <TimeSelector
-                          initialTime={editData?.checkOutTime}
-                          onTimeChange={handleCheckOutTimeChange}
-                        />
-                      </div>
+                        {/* Booking Type */}
+                        <div>
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Booking Type
+                          </label>
+                          <select
+                            name="bookingType"
+                            value={formData.bookingType}
+                            onChange={handleChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+                          >
+                            <option value="offline">Offline Booking</option>
+                            <option value="online">Online Booking</option>
+                          </select>
+                        </div>
 
-                      {/* Booking Type */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Booking Type
-                        </label>
-                        <select
-                          name="bookingType"
-                          value={formData.bookingType}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        >
-                          <option value="offline">Offline Booking</option>
-                          <option value="online">Online Booking</option>
-                        </select>
-                      </div>
+                        {/* Hotel Agent */}
+                        <div>
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Hotel Agent
+                          </label>
+                          <CustomerSearchInputBox
+                            key={"hotelAgent"}
+                            onSelect={handleAgentSelect}
+                            isAgent={true}
+                            selectedParty={hotelAgent}
+                            placeholder="Search customers..."
+                          />
+                        </div>
 
-                      {/* Hotel Agent */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Hotel Agent
-                        </label>
-                        <CustomerSearchInputBox
-                          key={"hotelAgent"}
-                          onSelect={handleAgentSelect}
-                          isAgent={true}
-                          selectedParty={hotelAgent}
-                          placeholder="Search customers..."
-                        />
-                      </div>
+                        {/* Stay Days */}
+                        <div>
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Stay Days
+                          </label>
+                          <input
+                            type="text"
+                            name="stayDays"
+                            value={formData.stayDays}
+                            onChange={handleChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+                          />
+                        </div>
 
-                      {/* Stay Days */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Stay Days
-                        </label>
-                        <input
-                          type="text"
-                          name="stayDays"
-                          value={formData.stayDays}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        />
-                      </div>
+                        {/* Visit of Purpose */}
+                        <div>
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Visit of purpose
+                          </label>
+                          <select
+                            name="visitOfPurpose"
+                            value={formData.visitOfPurpose}
+                            onChange={handleChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+                          >
+                            <option value="All">Select Room Type</option>
+                            {visitOfPurpose.map((data) => (
+                              <option key={data?._id} value={data?._id}>
+                                {data?.visitOfPurpose}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-                      {/* Visit of Purpose */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Visit of purpose
-                        </label>
-                        <select
-                          name="visitOfPurpose"
-                          value={formData.visitOfPurpose}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        >
-                          <option value="All">Select Room Type</option>
-                          {visitOfPurpose.map((data) => (
-                            <option key={data?._id} value={data?._id}>
-                              {data?.visitOfPurpose}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Room Type */}
-                      <div>
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Room Type
-                        </label>
-                        <select
-                          name="roomType"
-                          value={formData.roomType}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
-                        >
-                          <option value="All">Select Room Type</option>
-                          {roomType.map((roomType) => (
-                            <option key={roomType?._id} value={roomType?._id}>
-                              {roomType?.brand}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        {/* Add Tax With Rate & GRC (spans all columns) */}
-                        <div className="col-span-full lg:col-span-5">
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                            {isShowGrc && (
+                        {/* Room Type */}
+                        <div>
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Room Type
+                          </label>
+                          <select
+                            name="roomType"
+                            value={formData.roomType}
+                            onChange={handleChange}
+                            className="w-full border border-gray-300 px-3 py-2 rounded text-sm shadow focus:outline-none focus:ring focus:ring-blue-200 bg-white"
+                          >
+                            <option value="All">Select Room Type</option>
+                            {roomType.map((roomType) => (
+                              <option key={roomType?._id} value={roomType?._id}>
+                                {roomType?.brand}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          {/* Add Tax With Rate & GRC (spans all columns) */}
+                          <div className="col-span-full lg:col-span-5">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                              {isShowGrc && (
+                                <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                                  GRC NO
+                                </label>
+                              )}
                               <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                                GRC NO
+                                Add Tax With Rate
                               </label>
-                            )}
-                            <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                              Add Tax With Rate
-                            </label>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            {/* GRC Input */}
-                            {isShowGrc && (
-                              <input
-                                type="text"
-                                name="grcno"
-                                value={formData.grcno || ""}
-                                onChange={handleChange}
-                                placeholder="GRC %"
-                                className="w-24 border px-2 py-1 rounded text-sm focus:outline-none focus:ring bg-white border-gray-200"
-                              />
-                            )}
-                            {/* Toggle */}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleChange({
-                                  target: {
-                                    name: "addTaxWithRate",
-                                    value: !formData.addTaxWithRate,
-                                  },
-                                })
-                              }
-                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition
+                            </div>
+                            <div className="flex items-center gap-4">
+                              {/* GRC Input */}
+                              {isShowGrc && (
+                                <input
+                                  type="text"
+                                  name="grcno"
+                                  value={formData.grcno || ""}
+                                  onChange={handleChange}
+                                  placeholder="GRC %"
+                                  className="w-24 border px-2 py-1 rounded text-sm focus:outline-none focus:ring bg-white border-gray-200"
+                                />
+                              )}
+                              {/* Toggle */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleChange({
+                                    target: {
+                                      name: "addTaxWithRate",
+                                      value: !formData.addTaxWithRate,
+                                    },
+                                  })
+                                }
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition
             ${formData.addTaxWithRate ? "bg-green-600" : "bg-gray-300"}`}
-                            >
-                              <span
-                                className={`inline-block h-5 w-5 transform rounded-full bg-white transition
+                              >
+                                <span
+                                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition
               ${formData.addTaxWithRate ? "translate-x-5" : "translate-x-1"}`}
-                              />
-                            </button>
+                                />
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      {/* <div className="lg:col-span-2">
+                        {/* <div className="lg:col-span-2">
                         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                           Other Charge
                         </label> */}
-                      {/* <OtherChargeSearchInPutBox
+                        {/* <OtherChargeSearchInPutBox
                           onSelect={handleSelectOtherCharge}
                           selectedCharge={formData.otherChargeDetails}
                         /> */}
-                      {/* </div> */}
+                        {/* </div> */}
 
-                      {/* Available Rooms (spans all columns) */}
-                      <div className="col-span-full lg:col-span-5">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Available Rooms
-                        </label>
-                        <AvailableRooms
-                          onSelect={handleAvailableRoomSelection}
-                          selectedParty={selectedParty}
-                          placeholder="Search customers..."
-                          selectedRoomData={selectedRoomData}
-                          setDisplayFoodPlan={setDisplayFoodPlan}
-                          sendToParent={handleAvailableRooms}
-                          formData={formData}
-                          selectedRoomId={selectedRoomId}
-                          isTariffRateChange={isTariffRateChange}
-                          roomIdToUpdate={roomId}
-                          roomFromDashboard={rooms}
-                          addTaxWithRate={formData.addTaxWithRate}
-                          handleDeletion={handleDeletion}
-                          includeFoodRateWithRoom={includeFoodRateWithRoom}
-                        />
+                        {/* Available Rooms (spans all columns) */}
+                        <div className="col-span-full lg:col-span-5">
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Available Rooms
+                          </label>
+                          <AvailableRooms
+                            onSelect={handleAvailableRoomSelection}
+                            selectedParty={selectedParty}
+                            placeholder="Search customers..."
+                            selectedRoomData={selectedRoomData}
+                            setDisplayFoodPlan={setDisplayFoodPlan}
+                            sendToParent={handleAvailableRooms}
+                            formData={formData}
+                            selectedRoomId={selectedRoomId}
+                            isTariffRateChange={isTariffRateChange}
+                            roomIdToUpdate={roomId}
+                            roomFromDashboard={rooms}
+                            addTaxWithRate={formData.addTaxWithRate}
+                            handleDeletion={handleDeletion}
+                            includeFoodRateWithRoom={includeFoodRateWithRoom}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-wrap pt-4">
-                    {/* Booking Number */}
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Total Amount
-                        </label>
-                        <input
-                          type="number"
-                          name="totalAmount"
-                          value={formData.totalAmount}
-                          readOnly
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
+                    <div className="flex flex-wrap pt-4">
+                      {/* Booking Number */}
+                      <div className="w-full lg:w-6/12 px-4">
+                        <div className="relative w-full mb-3">
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Total Amount
+                          </label>
+                          <input
+                            type="number"
+                            name="totalAmount"
+                            value={formData.totalAmount}
+                            readOnly
+                            className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3 ">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Discount Amount
-                        </label>
-                        <input
-                          type="number"
-                          name="discountAmount"
-                          value={
-                            formData?.discountAmount === "0"
-                              ? ""
-                              : formData?.discountAmount
-                          }
-                          min="0"
-                          step="0.01"
-                          readOnly
-                          className=" border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
+                      <div className="w-full lg:w-6/12 px-4">
+                        <div className="relative w-full mb-3 ">
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Discount Amount
+                          </label>
+                          <input
+                            type="number"
+                            name="discountAmount"
+                            value={
+                              formData?.discountAmount === "0"
+                                ? ""
+                                : formData?.discountAmount
+                            }
+                            min="0"
+                            step="0.01"
+                            readOnly
+                            className=" border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Other Charge Amount
-                        </label>
-                        <input
-                          readOnly
-                          type="number"
-                          name="advanceAmount"
-                          value={formData?.otherChargeAmount}
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                        {errorObject?.advanceAmount &&
-                          errorObject?.advanceAmount !== "" && (
-                            <span className="text-red-500">
-                              {errorObject?.advanceAmount}
-                            </span>
-                          )}
+                      <div className="w-full lg:w-6/12 px-4">
+                        <div className="relative w-full mb-3">
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Other Charge Amount
+                          </label>
+                          <input
+                            readOnly
+                            type="number"
+                            name="advanceAmount"
+                            value={formData?.otherChargeAmount}
+                            className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                          />
+                          {errorObject?.advanceAmount &&
+                            errorObject?.advanceAmount !== "" && (
+                              <span className="text-red-500">
+                                {errorObject?.advanceAmount}
+                              </span>
+                            )}
+                        </div>
                       </div>
-                    </div>
-                    {/* <div className="w-full lg:w-6/12 px-4">
+                      {/* <div className="w-full lg:w-6/12 px-4">
                       <div className="relative w-full mb-3">
                         <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
                           Previous Advance
@@ -2493,242 +2591,248 @@ const renderDocumentPreview = (doc) => {
                         />
                       </div>
                     </div> */}
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          {isFor == "sales" ? "Amount" : "Advance Amount"}
-                        </label>
-                        <input
-                          // readOnly
-                          type="number"
-                          name="advanceAmount"
-                          value={formData?.advanceAmount}
-                          onChange={handleAdvanceAmountChange}
-                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                        {errorObject?.advanceAmount &&
-                          errorObject?.advanceAmount !== "" && (
-                            <span className="text-red-500">
-                              {errorObject?.advanceAmount}
-                            </span>
-                          )}
+                      <div className="w-full lg:w-6/12 px-4">
+                        <div className="relative w-full mb-3">
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            {isFor == "sales" ? "Amount" : "Advance Amount"}
+                          </label>
+                          <input
+                            // readOnly
+                            type="number"
+                            name="advanceAmount"
+                            value={formData?.advanceAmount}
+                            onChange={handleAdvanceAmountChange}
+                            className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                          />
+                          {errorObject?.advanceAmount &&
+                            errorObject?.advanceAmount !== "" && (
+                              <span className="text-red-500">
+                                {errorObject?.advanceAmount}
+                              </span>
+                            )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Total given advance
-                        </label>
-                        <input
-                          type="number"
-                          readOnly
-                          value={Number(formData?.totalAdvance)}
-                          className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                      </div>
-                    </div>
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Balance To Be Paid
-                        </label>
-                        <input
-                          type="number"
-                          name="balanceToPay"
-                          value={formData.balanceToPay}
-                          className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="w-full lg:w-6/12 px-4">
-                      <div className="relative w-full mb-3">
-                        <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                          Grand Total
-                        </label>
-                        <div className="space-y-2">
+                      <div className="w-full lg:w-6/12 px-4">
+                        <div className="relative w-full mb-3">
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Total given advance
+                          </label>
                           <input
                             type="number"
-                            name="grandTotal"
-                            value={Math.round(formData.grandTotal)}
-                            className="text-green-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                             readOnly
+                            value={Number(formData?.totalAdvance)}
+                            className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                           />
                         </div>
                       </div>
-                    </div>
-                    {formData?.grandTotal > 0 && (
                       <div className="w-full lg:w-6/12 px-4">
-                        <div className="flex gap-2 mt-6">
-                          {/* Advance — outlined, compact */}
-                          <button
-                            type="button"
-                            onClick={() => setAdvanceModalOpen(true)}
-                            className="group flex items-center gap-1.5 px-3 py-2 rounded border border-gray-200 bg-white hover:border-gray-800 hover:bg-gray-50 active:scale-95 transition-all duration-150"
-                          >
-                            <svg
-                              className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-800 transition-colors duration-150"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <rect x="2" y="5" width="20" height="14" rx="2" />
-                              <line x1="2" y1="10" x2="22" y2="10" />
-                            </svg>
-                            <span className="text-xs font-700 text-gray-600 group-hover:text-gray-900 transition-colors duration-150">
-                              Advance
-                            </span>
-                          </button>
-
-                          {/* Other Charges — filled navy, compact */}
-                          <button
-                            type="button"
-                            onClick={() => setOtherChargeModalOpen(true)}
-                            className="group flex items-center gap-1.5 px-3 py-2 rounded bg-[#0f172a] hover:bg-[#1e293b] active:scale-95 transition-all duration-150"
-                          >
-                            <svg
-                              className="w-3.5 h-3.5 text-white/70 group-hover:text-white transition-colors duration-150"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <circle cx="12" cy="12" r="10" />
-                              <line x1="12" y1="8" x2="12" y2="16" />
-                              <line x1="8" y1="12" x2="16" y2="12" />
-                            </svg>
-                            <span className="text-xs font-semibold text-white">
-                              Other Charges
-                            </span>
-                          </button>
-                           <button
-    type="button"
-    onClick={() => setShowIdProofModal(true)}
-    className="px-4 py-2 bg-red-400 text-white rounded-md text-sm hover:bg-blue-600"
-  >
-    ID Proof
-  </button>
+                        <div className="relative w-full mb-3">
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Balance To Be Paid
+                          </label>
+                          <input
+                            type="number"
+                            name="balanceToPay"
+                            value={formData.balanceToPay}
+                            className="text-red-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                          />
                         </div>
                       </div>
-                    )}
-                  </div>
 
-                  {/* Save Button */}
-                  <div className="flex justify-end">
-                    <button
-                      className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105 disabled:cursor-not-allowed disabled:bg-pink-300 disabled:hover:scale-100"
-                      type="button"
-                      onClick={submitHandler}
-                      disabled={isFormReadOnly}
-                    >
-                      {editData ? "Update" : "Save"}
-                    </button>
+                      <div className="w-full lg:w-6/12 px-4">
+                        <div className="relative w-full mb-3">
+                          <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                            Grand Total
+                          </label>
+                          <div className="space-y-2">
+                            <input
+                              type="number"
+                              name="grandTotal"
+                              value={Math.round(formData.grandTotal)}
+                              className="text-green-500 border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                              readOnly
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      {formData?.grandTotal > 0 && (
+                        <div className="w-full lg:w-6/12 px-4">
+                          <div className="flex gap-2 mt-6">
+                            {/* Advance — outlined, compact */}
+                            <button
+                              type="button"
+                              onClick={() => setAdvanceModalOpen(true)}
+                              className="group flex items-center gap-1.5 px-3 py-2 rounded border border-gray-200 bg-white hover:border-gray-800 hover:bg-gray-50 active:scale-95 transition-all duration-150"
+                            >
+                              <svg
+                                className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-800 transition-colors duration-150"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <rect
+                                  x="2"
+                                  y="5"
+                                  width="20"
+                                  height="14"
+                                  rx="2"
+                                />
+                                <line x1="2" y1="10" x2="22" y2="10" />
+                              </svg>
+                              <span className="text-xs font-700 text-gray-600 group-hover:text-gray-900 transition-colors duration-150">
+                                Advance
+                              </span>
+                            </button>
+
+                            {/* Other Charges — filled navy, compact */}
+                            <button
+                              type="button"
+                              onClick={() => setOtherChargeModalOpen(true)}
+                              className="group flex items-center gap-1.5 px-3 py-2 rounded bg-[#0f172a] hover:bg-[#1e293b] active:scale-95 transition-all duration-150"
+                            >
+                              <svg
+                                className="w-3.5 h-3.5 text-white/70 group-hover:text-white transition-colors duration-150"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="8" x2="12" y2="16" />
+                                <line x1="8" y1="12" x2="16" y2="12" />
+                              </svg>
+                              <span className="text-xs font-semibold text-white">
+                                Other Charges
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowIdProofModal(true)}
+                              className="px-4 py-2 bg-red-400 text-white rounded-md text-sm hover:bg-blue-600"
+                            >
+                              ID Proof
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Save Button */}
+                    <div className="flex justify-end">
+                      <button
+                        className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105 disabled:cursor-not-allowed disabled:bg-pink-300 disabled:hover:scale-100"
+                        type="button"
+                        onClick={submitHandler}
+                        disabled={isFormReadOnly}
+                      >
+                        { editData ? "Update" : "Save"}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </>
-          ) : (
-            //t
-            <div className="flex-auto px-4 lg:px-10 py-8">
-              <div className="w-full bg-gray-50 border rounded-xl shadow-md p-4 mb-6">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                  <Field
-                    label="Check-in Number"
-                    value={voucherNumber}
-                    readOnly
-                  />
-                  <FieldDate
-                    name="currentDate"
-                    label="Tariff Applicable Date"
-                    value={formData.currentDate}
-                    onChange={handleChange}
-                    min={
-                      isTariffRateChange && lockedThroughDate
-                        ? nextIsoDate(lockedThroughDate)
-                        : formData.arrivalDate
-                    }
-                    max={formData.checkOutDate}
-                  />
-                  <div>
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Updated Date (Last Rate Update)
-                    </label>
-                    <input
-                      type="date"
-                      name="updatedDate"
-                      value={formData.updatedDate}
+              </>
+            ) : (
+              //t
+              <div className="flex-auto px-4 lg:px-10 py-8">
+                <div className="w-full bg-gray-50 border rounded-xl shadow-md p-4 mb-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                    <Field
+                      label="Check-in Number"
+                      value={voucherNumber}
                       readOnly
-                      className="w-full border border-gray-300 px-3 py-2 rounded text-sm bg-gray-100"
                     />
-                  </div>
-                  <div>
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      Arrival Time
-                    </label>
-                    <TimeSelector
-                      initialTime={editData?.arrivalTime}
-                      onTimeChange={handleArrivalTimeChange}
+                    <FieldDate
+                      name="currentDate"
+                      label="Tariff Applicable Date"
+                      value={formData.currentDate}
+                      onChange={handleChange}
+                      min={
+                        isTariffRateChange && lockedThroughDate
+                          ? nextIsoDate(lockedThroughDate)
+                          : formData.arrivalDate
+                      }
+                      max={formData.checkOutDate}
                     />
-                  </div>
-                  <div>
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      CheckIn Date
-                    </label>
-                    <input
-                      type="date"
-                      name="arrivalDate"
-                      value={formData.arrivalDate}
-                      readOnly
-                      className="w-full border border-gray-300 px-3 py-2 rounded text-sm bg-gray-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                      CheckOut Date
-                    </label>
-                    <input
-                      type="date"
-                      name="checkOutDate"
-                      value={formData.checkOutDate}
-                      readOnly
-                      className="w-full border border-gray-300 px-3 py-2 rounded text-sm bg-gray-100"
-                    />
+                    <div>
+                      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                        Updated Date (Last Rate Update)
+                      </label>
+                      <input
+                        type="date"
+                        name="updatedDate"
+                        value={formData.updatedDate}
+                        readOnly
+                        className="w-full border border-gray-300 px-3 py-2 rounded text-sm bg-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                        Arrival Time
+                      </label>
+                      <TimeSelector
+                        initialTime={editData?.arrivalTime}
+                        onTimeChange={handleArrivalTimeChange}
+                      />
+                    </div>
+                    <div>
+                      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                        CheckIn Date
+                      </label>
+                      <input
+                        type="date"
+                        name="arrivalDate"
+                        value={formData.arrivalDate}
+                        readOnly
+                        className="w-full border border-gray-300 px-3 py-2 rounded text-sm bg-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                        CheckOut Date
+                      </label>
+                      <input
+                        type="date"
+                        name="checkOutDate"
+                        value={formData.checkOutDate}
+                        readOnly
+                        className="w-full border border-gray-300 px-3 py-2 rounded text-sm bg-gray-100"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="w-full bg-gray-50 border rounded-xl shadow-md p-4 mb-6">
-                <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-                  Available Rooms
-                </label>
-                <AvailableRooms
-                  onSelect={handleAvailableRoomSelection}
-                  selectedParty={selectedParty}
-                  selectedRoomData={selectedRoomData}
-                  setDisplayFoodPlan={setDisplayFoodPlan}
-                  sendToParent={handleAvailableRooms}
+                <div className="w-full bg-gray-50 border rounded-xl shadow-md p-4 mb-6">
+                  <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
+                    Available Rooms
+                  </label>
+                  <AvailableRooms
+                    onSelect={handleAvailableRoomSelection}
+                    selectedParty={selectedParty}
+                    selectedRoomData={selectedRoomData}
+                    setDisplayFoodPlan={setDisplayFoodPlan}
+                    sendToParent={handleAvailableRooms}
+                    formData={formData}
+                    selectedRoomId={selectedRoomId}
+                    isTariffRateChange={isTariffRateChange}
+                    roomIdToUpdate={roomId}
+                    addTaxWithRate={formData.addTaxWithRate}
+                    includeFoodRateWithRoom={includeFoodRateWithRoom}
+                  />
+                </div>
+
+                <TotalsSection
                   formData={formData}
-                  selectedRoomId={selectedRoomId}
-                  isTariffRateChange={isTariffRateChange}
                   roomIdToUpdate={roomId}
-                  addTaxWithRate={formData.addTaxWithRate}
-                  includeFoodRateWithRoom={includeFoodRateWithRoom}
+                  errorObject={errorObject}
                 />
-              </div>
 
-              <TotalsSection
-                formData={formData}
-                roomIdToUpdate={roomId}
-                errorObject={errorObject}
-              />
-
-              <div className="flex justify-end">
-                {/* {outStanding.length > 0 && (
+                <div className="flex justify-end">
+                  {/* {outStanding.length > 0 && (
                   <button
                     className="bg-pink-500 mt-4 ml-4 w-24 text-white font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md"
                     type="button"
@@ -2737,17 +2841,17 @@ const renderDocumentPreview = (doc) => {
                     History
                   </button>
                 )} */}
-                <button
-                  className="bg-pink-500 mt-4 ml-4 w-24 text-white font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md disabled:cursor-not-allowed disabled:bg-pink-300"
-                  type="button"
-                  onClick={submitHandler}
-                  disabled={isFormReadOnly}
-                >
-                  Update
-                </button>
+                  <button
+                    className="bg-pink-500 mt-4 ml-4 w-24 text-white font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md disabled:cursor-not-allowed disabled:bg-pink-300"
+                    type="button"
+                    onClick={submitHandler}
+                    disabled={isFormReadOnly}
+                  >
+                    Update
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
           </fieldset>
 
           <Suspense fallback={<SuspenseLoader />}>

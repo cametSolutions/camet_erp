@@ -223,3 +223,75 @@ export const getTaxPercentage = (amount, hsnDetails) => {
       Number(matchedRow.sgstUtgstRate || 0),
   };
 };
+
+
+
+export const reArrangeFoodPlan = (foodPlan = [], roomId) => {
+  console.log("foodPlan",roomId);
+  return foodPlan.map((foodData) => ({
+    ...foodData,
+    roomId: roomId,
+  }));
+};
+
+export const reArrangeAdditionalPaxDetails = (additionalPax = [], roomId) => {
+  return additionalPax.map((paxData) => ({
+    ...paxData,
+    roomId: roomId,
+  }));
+};
+
+
+
+export const calculateStayDays =  (doc, room , arrival,checkOut, days) => {
+  let fullDaysAre = days
+  console.log(room , arrival,checkOut, days);
+  const normalizeToDate = (d) => {
+    const nd = new Date(d);
+    nd.setHours(0, 0, 0, 0);
+    return nd;
+  };
+
+
+  const swapDate = room?.swappingDateFrom
+    ? new Date(room.swappingDateFrom).toISOString().split("T")[0]
+    : "";
+  if (room.isSwapped && room.swappingDateFrom) {
+    const swappingDate = normalizeToDate(room.swappingDateFrom);
+    const arrivalDate = normalizeToDate(arrival);
+  console.log(swappingDate,arrivalDate);
+    fullDaysAre = Math.floor(
+      (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24),
+    );
+ console.log(fullDaysAre);
+    if (fullDaysAre <= 0) {
+      if (swapDate == doc.arrivalDate) {
+        fullDaysAre = 0;
+      } else {
+        fullDaysAre = 1;
+      }
+    }
+  }
+
+  if (!room.isSwapped && room.swappingDateFrom) {
+    console.log(room.roomName);
+    const swappingDate = normalizeToDate(room.swappingDateFrom);
+    const checkoutDate = normalizeToDate(checkOut);
+
+    fullDaysAre = Math.floor(
+      (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
+    );
+
+    console.log(fullDaysAre);
+
+    if (fullDaysAre <= 0) {
+      if (swapDate == doc.arrivalDate) {
+        fullDaysAre = 1;
+      } else {
+        fullDaysAre = 0;
+      }
+    }
+  }
+
+  return fullDaysAre;
+};
