@@ -64,7 +64,7 @@ function BookingForm({
   const [saveLoader, setSaveLoader] = useState(false);
   const [additionalChargeData, setAdditionalChargeData] = useState([]);
 const [showIdProofModal, setShowIdProofModal] = useState(false);
-
+const isSaving = saveLoader || submitLoader || isSubmittingRef.current;
   const idDocsRef = useRef(null);
 
   const { _id: cmp_id, configurations } = useSelector(
@@ -1093,7 +1093,7 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
 
 
   const submitHandler = async () => {
-    if (isFormReadOnly) return;
+    if (isFormReadOnly || isSubmittingRef.current) return;
     if (!formData.customerName || formData.customerName.trim() === "") {
       toast.error("Please enter a customer name");
       return;
@@ -1102,6 +1102,10 @@ const IdUploadSlot = ({ label, side, fileRef, idProof, onFileChange, onUpload, o
     
  if (!formData.customerId) {
     try {
+
+
+      isSubmittingRef.current = true;
+    setSaveLoader(true);
       const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
         params: {
           page: 1,
@@ -2626,9 +2630,9 @@ const renderDocumentPreview = (doc) => {
                       className="bg-pink-500 mt-4 ml-4 w-20 text-white active:bg-pink-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150 transform hover:scale-105 disabled:cursor-not-allowed disabled:bg-pink-300 disabled:hover:scale-100"
                       type="button"
                       onClick={submitHandler}
-                      disabled={isFormReadOnly}
+                      disabled={isFormReadOnly || isSaving}
                     >
-                      {editData ? "Update" : "Save"}
+                      {isSaving ? "Saving..." : editData ? "Update" : "Save"}
                     </button>
                   </div>
                 </div>

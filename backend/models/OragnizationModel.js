@@ -62,6 +62,10 @@ const organizationSchema = new mongoose.Schema(
           type: Boolean,
           default: true,
           },
+          aditionalPaxWithRoomRate: {
+          type: Boolean,
+          default: true,
+        },
         addRateWithTax: {
           type: Object,
           default: {
