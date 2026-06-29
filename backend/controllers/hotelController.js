@@ -8633,8 +8633,10 @@ console.log("checkins",checkins)
       const monthLastDay = new Date(yearNum, monthNum, 0).getDate();
       const monthFull = `${yearNum}-${pad(monthNum)}-${pad(monthLastDay)}`;
       const todayStr = getTodayLocalYMD();
-      const monthEnd =
-        todayStr >= monthStart && todayStr <= monthFull ? todayStr : monthFull;
+      const monthEnd = monthFull
+        // todayStr >= monthStart && todayStr <= monthFull ? todayStr : monthFull;
+
+        console.log("endDate",)
 
       const roomMeta = await getRoomMetricsForPeriod({
         reportType: "month",
