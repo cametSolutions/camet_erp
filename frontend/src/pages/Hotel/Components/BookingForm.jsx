@@ -139,8 +139,10 @@ const [showIdProofModal, setShowIdProofModal] = useState(false);
     updatedDate: currentDateDefault,
     stayDays: 1,
     bookingType: "offline",
-    country: "",
-    state: "",
+    country: "India",
+    state: "Kerala",
+     guestCountry: "India",
+  guestState: "Kerala",
     pinCode: "",
     detailedAddress: "",
     mobileNumber: "",
@@ -219,8 +221,8 @@ useEffect(() => {
       accountGroup: editData?.customerId?.accountGroup,
       guestName: editData?.guestId?.partyName,
       guestId: editData?.guestId?._id || editData?.guestId,
-      guestCountry: editData?.country,
-      guestState: editData?.state,
+      guestCountry: editData?.guestCountry,
+      guestState: editData?.guestState,
       guestPinCode: editData?.pinCode,
       guestDetailedAddress: editData?.guestDetailedAddress,
       guestMobileNumber: editData?.guestMobileNumber,
@@ -2254,7 +2256,7 @@ const renderDocumentPreview = (doc) => {
                           Check Out Time
                         </label>
                         <TimeSelector
-                          initialTime={editData?.checkOutTime}
+                          initialTime={ "11:00 AM" || editData?.checkOutTime}
                           onTimeChange={handleCheckOutTimeChange}
                         />
                       </div>

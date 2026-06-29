@@ -454,7 +454,7 @@ const handleTimeChange = (id, newTime) => {
         if (checkout._id === id) {
           const arrival = new Date(checkout.arrivalDate);
           const checkoutDate = new Date(newDate);
-         const time = checkout.checkOutTime || originalCheckout?.checkOutTime || "";
+         const time =  "11.00 AM" || checkout.checkOutTime || originalCheckout?.checkOutTime || "";
           const diffTime = checkoutDate - arrival;
           const calculatedDays =
             diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24));

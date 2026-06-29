@@ -5158,7 +5158,7 @@ export const cancelBooking = async (req, res) => {
       await record.save({ session });
 
       if (record.selectedRoomId) {
-        await Room.findByIdAndUpdate(
+        await roomModal.findByIdAndUpdate(
           record.selectedRoomId,
           { $set: { status: "dirty" } },
           { new: true, session }
