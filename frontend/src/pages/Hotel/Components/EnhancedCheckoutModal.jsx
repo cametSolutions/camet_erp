@@ -1,4 +1,16 @@
 /* eslint-disable react/prop-types */
+
+const formatInputTimeTo12Hour = (time24h = "") => {
+  if (!time24h) return "";
+
+  let [hours, minutes] = time24h.split(":");
+  hours = parseInt(hours, 10);
+
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 || 12;
+
+  return `${String(displayHours).padStart(2, "0")}:${minutes} ${ampm}`;
+};
 import { useState, useEffect } from "react";
 
 import { Users, X, DoorOpen, Trash2 } from "lucide-react";
@@ -422,18 +434,18 @@ export default function EnhancedCheckoutModal({
         originalCustomer: checkIn.customerId,
       })),
   );
-// const handleTimeChange = (id, newTime) => {
-//   setCheckouts((prev) =>
-//     prev.map((checkout) =>
-//       checkout._id === id
-//         ? {
-//             ...checkout,
-//             checkOutTime: newTime,
-//           }
-//         : checkout
-//     )
-//   );
-// };
+const handleTimeChange = (id, newTime) => {
+  setCheckouts((prev) =>
+    prev.map((checkout) =>
+      checkout._id === id
+        ? {
+            ...checkout,
+            checkOutTime: formatInputTimeTo12Hour(newTime),
+          }
+        : checkout
+    )
+  );
+};
   const handleNewDateChange = (id, newDate) => {
     console.log(id, newDate);
     setCheckOutDateTracker(newDate);
@@ -442,11 +454,7 @@ export default function EnhancedCheckoutModal({
         if (checkout._id === id) {
           const arrival = new Date(checkout.arrivalDate);
           const checkoutDate = new Date(newDate);
-          const time = new Date(newDate).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true, // 12-hour format
-          });
+         const time =  "11.00 AM" || checkout.checkOutTime || originalCheckout?.checkOutTime || "";
           const diffTime = checkoutDate - arrival;
           const calculatedDays =
             diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -541,7 +549,8 @@ export default function EnhancedCheckoutModal({
           return {
             ...checkout,
             checkOutDate: newDate,
-            checkOutTime: time,
+            checkOutTime:time,
+
             stayDays: calculatedDays,
             selectedRooms: updatedRooms,
             totalAmount: updatedRooms.reduce(
@@ -911,7 +920,7 @@ export default function EnhancedCheckoutModal({
                 onDaysChange={handleStayDaysChange}
                 checkouts={checkouts}
                 onDateChange={handleNewDateChange}
-                //  onTimeChange={handleTimeChange}
+                 onTimeChange={handleTimeChange}
               />
             </div>
           </div>
