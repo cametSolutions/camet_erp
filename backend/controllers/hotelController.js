@@ -1149,12 +1149,16 @@ export const roomBooking = async (req, res) => {
       bookingData.voucherId = series_id;
 
       const isHotelAgent = customerData?.isHotelAgent || false;
+
+      
       // 🔹 Save Booking
       const newBooking = new selectedModal({
         cmp_id: orgId,
         Primary_user_id: req.pUserId || req.owner,
         Secondary_user_id: req.sUserId,
         paymenttypeDetails,
+        paymentMetaData:req?.body?.paymentData?.payments|| [],
+
         isHotelAgent,
         currentDate: new Date().toISOString().split("T")[0],
         advanceTracking: {
@@ -1917,59 +1921,118 @@ export const updateBooking = async (req, res) => {
     // -----------------------------
     // TRANSACTION
     // -----------------------------
-    await session.withTransaction(async () => {
-      // 2) Handle advance logic (delete-only vs delete+recreate)
-      if (bookingData.advanceAmount && bookingData.advanceAmount > 0) {
-        // a) Create new TallyData advance object
-        const advanceObject = new TallyData({
-          Primary_user_id: req.pUserId || req.owner,
-          cmp_id: orgId,
-          party_id: bookingData?.customerId,
-          party_name: bookingData?.customerName,
-          mobile_no: bookingData?.mobileNumber,
-          bill_date: new Date(),
+    // await session.withTransaction(async () => {
+    // 2) Handle advance logic (delete-only vs delete+recreate)
+    if (bookingData.advanceAmount && bookingData.advanceAmount > 0) {
+      // a) Create new TallyData advance object
+      const advanceObject = new TallyData({
+        Primary_user_id: req.pUserId || req.owner,
+        cmp_id: orgId,
+        party_id: bookingData?.customerId,
+        party_name: bookingData?.customerName,
+        mobile_no: bookingData?.mobileNumber,
+        bill_date: new Date(),
+        bill_no: findOne?.voucherNumber || bookingData.voucherNumber,
+        billId: bookingId,
+        bill_amount: bookingData.advanceAmount,
+        bill_pending_amt: 0,
+        accountGroup: bookingData.accountGroup,
+        user_id: req.sUserId,
+        advanceAmount: bookingData.advanceAmount,
+        // paymenttypeDetails: paymentData,
+        advanceDate: new Date(),
+        classification: "Cr",
+        paymenttypeDetails,
+        source: "hotel",
+        from: selectedModal.modelName,
+      });
+
+      await advanceObject.save({ session });
+
+      // b) Bill data for receipts
+      const billData = [
+        {
+          _id: advanceObject._id,
           bill_no: findOne?.voucherNumber || bookingData.voucherNumber,
           billId: bookingId,
-          bill_amount: bookingData.advanceAmount,
+          bill_date: new Date(),
           bill_pending_amt: 0,
-          accountGroup: bookingData.accountGroup,
-          user_id: req.sUserId,
-          advanceAmount: bookingData.advanceAmount,
-          // paymenttypeDetails: paymentData,
-          advanceDate: new Date(),
-          classification: "Cr",
-          paymenttypeDetails,
           source: "hotel",
-          from: selectedModal.modelName,
-        });
+          settledAmount: bookingData.advanceAmount,
+          remainingAmount: 0,
+        },
+      ];
 
-        await advanceObject.save({ session });
+      // c) Party for settlement (raw doc for saveSettlementDataHotel, not flattened)
+      const rawParty = await partyModel
+        .findOne({ _id: bookingData.customerId })
+        .session(session);
 
-        // b) Bill data for receipts
-        const billData = [
-          {
-            _id: advanceObject._id,
-            bill_no: findOne?.voucherNumber || bookingData.voucherNumber,
-            billId: bookingId,
-            bill_date: new Date(),
-            bill_pending_amt: 0,
-            source: "hotel",
-            settledAmount: bookingData.advanceAmount,
-            remainingAmount: 0,
-          },
-        ];
+      // d) Single vs Multiple payment creation (same pattern as create)
+      if (paymentData?.mode === "single") {
+        const singlePaymentDetails = paymentData.payments[0];
+        const method = singlePaymentDetails?.method; // "cash" | "bank" / "online"
+        const selectedBankOrCashParty = singlePaymentDetails?.accountId;
 
-        // c) Party for settlement (raw doc for saveSettlementDataHotel, not flattened)
-        const rawParty = await partyModel
-          .findOne({ _id: bookingData.customerId })
-          .session(session);
+        const receiptVoucher = await generateVoucherNumber(
+          effectiveCmpId,
+          "receipt",
+          series_idReceipt,
+          session,
+        );
 
-        // d) Single vs Multiple payment creation (same pattern as create)
-        if (paymentData?.mode === "single") {
-          const singlePaymentDetails = paymentData.payments[0];
-          const method = singlePaymentDetails?.method; // "cash" | "bank" / "online"
-          const selectedBankOrCashParty = singlePaymentDetails?.accountId;
+        const serialNumber = await getNewSerialNumber(
+          ReceiptModel,
+          "serialNumber",
+          session,
+        );
 
+        const paymentDetails =
+          method === "cash"
+            ? {
+                cash_ledname: singlePaymentDetails?.accountName,
+                cash_name: singlePaymentDetails?.accountName,
+              }
+            : {
+                bank_ledname: singlePaymentDetails?.accountName,
+                bank_name: singlePaymentDetails?.accountName,
+              };
+        console.log("line 1807");
+        // Receipt
+        await buildReceipt(
+          receiptVoucher,
+          serialNumber,
+          paymentDetails,
+          bookingData.advanceAmount,
+          method === "cash" ? "Cash" : "Online",
+          billData,
+          effectiveCmpId,
+          series_idReceipt,
+          selectedParty,
+          bookingData,
+          req,
+          session,
+        );
+
+        // Settlement
+        await saveSettlementDataHotel(
+          rawParty,
+          effectiveCmpId,
+          method === "cash" ? "cash" : "bank",
+          selectedModal.modelName,
+          findOne?.voucherNumber || bookingData.voucherNumber,
+          bookingId,
+          bookingData.advanceAmount,
+          new Date(),
+          rawParty?.partyName,
+          selectedBankOrCashParty,
+          selectedModal.modelName,
+          req,
+          session,
+        );
+      } else {
+        // multiple payments
+        for (const payment of paymentData?.payments || []) {
           const receiptVoucher = await generateVoucherNumber(
             effectiveCmpId,
             "receipt",
@@ -1983,24 +2046,41 @@ export const updateBooking = async (req, res) => {
             session,
           );
 
+          const selectedBankOrCashParty = payment?.accountId;
+
+          await saveSettlementDataHotel(
+            rawParty,
+            effectiveCmpId,
+            payment.method === "cash" ? "cash" : "bank",
+            selectedModal.modelName,
+            findOne?.voucherNumber || bookingData.voucherNumber,
+            bookingId,
+            payment.amount,
+            new Date(),
+            rawParty?.partyName,
+            selectedBankOrCashParty,
+            selectedModal.modelName,
+            req,
+            session,
+          );
+
           const paymentDetails =
-            method === "cash"
+            payment.method === "cash"
               ? {
-                  cash_ledname: singlePaymentDetails?.accountName,
-                  cash_name: singlePaymentDetails?.accountName,
+                  cash_ledname: payment?.accountName,
+                  cash_name: payment?.accountName,
                 }
               : {
-                  bank_ledname: singlePaymentDetails?.accountName,
-                  bank_name: singlePaymentDetails?.accountName,
+                  bank_ledname: payment?.accountName,
+                  bank_name: payment?.accountName,
                 };
-          console.log("line 1807");
-          // Receipt
+          console.log("line 1884");
           await buildReceipt(
             receiptVoucher,
             serialNumber,
             paymentDetails,
-            bookingData.advanceAmount,
-            method === "cash" ? "Cash" : "Online",
+            payment.amount,
+            payment.method === "cash" ? "Cash" : "Online",
             billData,
             effectiveCmpId,
             series_idReceipt,
@@ -2009,140 +2089,96 @@ export const updateBooking = async (req, res) => {
             req,
             session,
           );
-
-          // Settlement
-          await saveSettlementDataHotel(
-            rawParty,
-            effectiveCmpId,
-            method === "cash" ? "cash" : "bank",
-            selectedModal.modelName,
-            findOne?.voucherNumber || bookingData.voucherNumber,
-            bookingId,
-            bookingData.advanceAmount,
-            new Date(),
-            rawParty?.partyName,
-            selectedBankOrCashParty,
-            selectedModal.modelName,
-            req,
-            session,
-          );
-        } else {
-          // multiple payments
-          for (const payment of paymentData?.payments || []) {
-            const receiptVoucher = await generateVoucherNumber(
-              effectiveCmpId,
-              "receipt",
-              series_idReceipt,
-              session,
-            );
-
-            const serialNumber = await getNewSerialNumber(
-              ReceiptModel,
-              "serialNumber",
-              session,
-            );
-
-            const selectedBankOrCashParty = payment?.accountId;
-
-            await saveSettlementDataHotel(
-              rawParty,
-              effectiveCmpId,
-              payment.method === "cash" ? "cash" : "bank",
-              selectedModal.modelName,
-              findOne?.voucherNumber || bookingData.voucherNumber,
-              bookingId,
-              payment.amount,
-              new Date(),
-              rawParty?.partyName,
-              selectedBankOrCashParty,
-              selectedModal.modelName,
-              req,
-              session,
-            );
-
-            const paymentDetails =
-              payment.method === "cash"
-                ? {
-                    cash_ledname: payment?.accountName,
-                    cash_name: payment?.accountName,
-                  }
-                : {
-                    bank_ledname: payment?.accountName,
-                    bank_name: payment?.accountName,
-                  };
-            console.log("line 1884");
-            await buildReceipt(
-              receiptVoucher,
-              serialNumber,
-              paymentDetails,
-              payment.amount,
-              payment.method === "cash" ? "Cash" : "Online",
-              billData,
-              effectiveCmpId,
-              series_idReceipt,
-              selectedParty,
-              bookingData,
-              req,
-              session,
-            );
-          }
         }
       }
-      // else {
-      //   // No advance now -> ensure old advance records are gone
-      //   await TallyData.deleteMany({ billId: bookingId.toString() }).session(
-      //     session,
-      //   );
-      // }
-      //advance tracking
+    }
+    // else {
+    //   // No advance now -> ensure old advance records are gone
+    //   await TallyData.deleteMany({ billId: bookingId.toString() }).session(
+    //     session,
+    //   );
+    // }
+    //advance tracking
 
-      const today = new Date().toISOString().slice(0, 10);
-      const newAdvance = bookingData.advanceAmount;
+    const today = new Date().toISOString().slice(0, 10);
+    const newAdvance = bookingData.advanceAmount;
 
-      const advanceMap = bookingData.advanceTracking || new Map();
+    const advanceMap = bookingData.advanceTracking || new Map();
 
-      // Calculate total previous advance
-      let totalPreviousAdvance = 0;
-      for (const value of advanceMap.values()) {
-        totalPreviousAdvance += value;
-      }
+    // Calculate total previous advance
+    let totalPreviousAdvance = 0;
+    for (const value of advanceMap.values()) {
+      totalPreviousAdvance += value;
+    }
 
-      if (advanceMap.has(today)) {
-        // Replace today's value
-        advanceMap.set(today, newAdvance);
-      } else {
-        // Add difference
-        const difference = newAdvance - totalPreviousAdvance;
-        advanceMap.set(today, difference);
-      }
+    if (advanceMap.has(today)) {
+      // Replace today's value
+      advanceMap.set(today, newAdvance);
+    } else {
+      // Add difference
+      const difference = newAdvance - totalPreviousAdvance;
+      advanceMap.set(today, difference);
+    }
 
-      bookingData.advanceTracking = Array.from(advanceMap.entries());
-      bookingData.paymenttypeDetails = paymenttypeDetails;
+    bookingData.advanceTracking = Array.from(advanceMap.entries());
 
-      // 3) Finally, update booking/checkIn/checkOut document
-      const updateResult = await selectedModal.findByIdAndUpdate(
-        bookingId,
-        { $set: bookingData },
-        { new: true, session },
-      );
+    // merging new payment details with existing
+    let incPayload = {};
 
-      if (isTariffRateChange && roomIdToEdit) {
-        const savedCount = updateResult?.selectedRooms?.length || 0;
-        const originalCount = findOne?.selectedRooms?.length || 0;
-
-        if (savedCount !== originalCount) {
-          throw new Error(
-            `Room count mismatch after save! Original: ${originalCount}, Saved: ${savedCount}`,
-          );
+    if (paymenttypeDetails && typeof paymenttypeDetails === "object") {
+      Object.keys(paymenttypeDetails).forEach((key) => {
+        if (paymenttypeDetails[key]) {
+          // skip zero values
+          incPayload[`paymenttypeDetails.${key}`] = paymenttypeDetails[key];
         }
-      }
+      });
+    }
 
-      // 4) Optionally update room status if your edit flow needs it:
-      //    (if required, uncomment & adapt)
-      // let status =
-      //   selectedModal.modelName === "CheckIn" ? "checkIn" : "booking";
-      // await updateStatus(bookingData?.selectedRooms, status, session);
-    });
+        // Remove paymenttypeDetails from bookingData to avoid $set overwriting it
+    delete bookingData.paymenttypeDetails;
+
+    // ✅ Build checkoutpaymenttypedetails from paymentData.payments
+    let checkoutPaymentsToAdd = [];
+
+    if (paymentData?.payments && Array.isArray(paymentData.payments)) {
+      checkoutPaymentsToAdd = paymentData.payments;
+    }
+
+    // 3) Finally, update booking/checkIn/checkOut document
+    const updateResult = await selectedModal.findByIdAndUpdate(
+      bookingId,
+      {
+        $set: bookingData,
+        ...(Object.keys(incPayload).length > 0 && { $inc: incPayload }),
+        // ✅ Push new payments into checkoutpaymenttypedetails array (never overwrites)
+        ...(checkoutPaymentsToAdd.length > 0 && {
+          $push: {
+            checkoutpaymenttypedetails: { $each: checkoutPaymentsToAdd },
+          },
+        }),
+      },
+      { new: true, session },
+    );
+
+    if (isTariffRateChange && roomIdToEdit) {
+      const savedCount = updateResult?.selectedRooms?.length || 0;
+      const originalCount = findOne?.selectedRooms?.length || 0;
+
+      if (savedCount !== originalCount) {
+        throw new Error(
+          `Room count mismatch after save! Original: ${originalCount}, Saved: ${savedCount}`,
+        );
+      }
+    }
+
+    // 4) Optionally update room status if your edit flow needs it:
+    //    (if required, uncomment & adapt)
+    // let status =
+    //   selectedModal.modelName === "CheckIn" ? "checkIn" : "booking";
+    // await updateStatus(bookingData?.selectedRooms, status, session);
+    // });
+
+    // await session.commitTransaction();
 
     res.status(200).json({
       success: true,
@@ -2152,6 +2188,8 @@ export const updateBooking = async (req, res) => {
       roomsCount: finalSelectedRooms?.length,
     });
   } catch (error) {
+    console.log(error);
+
     console.error("❌ Error updating booking:", {
       error: error.message,
       bookingId: req.params.id,
@@ -4001,8 +4039,7 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
           [`configurations.0.foodPlaWithRoomRate`]: data.checked,
         },
       };
-    } 
-else if (data.title === "additionalPaxWithRoomRate") {
+    } else if (data.title === "additionalPaxWithRoomRate") {
       console.log("aditionalPaxWithRoomRate");
       // Handle existing addRateWithTax toggle updates
       updateData = {
@@ -4010,8 +4047,7 @@ else if (data.title === "additionalPaxWithRoomRate") {
           [`configurations.0.additionalPaxWithRoomRate`]: data.checked,
         },
       };
-    } 
- else if (data.fieldType === "orderTypes") {
+    } else if (data.fieldType === "orderTypes") {
       updateData = {
         $set: {
           [`configurations.0.orderTypes.${data.field}`]: data.checked,
@@ -4246,11 +4282,9 @@ export const swapRoom = async (req, res) => {
       ...oldSelectedRoom,
       isSwapped: true,
       swappingDateFrom: selectedDate,
-    }
+    };
 
     oldSelectedRoom.stayDays = await calculateStayDays(checkIn, updatedRoom);
-
-
 
     if (oldSelectedRoom.hasOwnProperty("roomName")) {
       oldSelectedRoom.roomName = oldRoom.roomName;
@@ -4265,11 +4299,12 @@ export const swapRoom = async (req, res) => {
       swappingDateFrom: selectedDate,
       isSwapped: false,
     };
-    newSelectedRoom.stayDays = await calculateStayDays(checkIn, newSelectedRoom);
+    newSelectedRoom.stayDays = await calculateStayDays(
+      checkIn,
+      newSelectedRoom,
+    );
 
     checkIn.selectedRooms.push(newSelectedRoom);
-
-
 
     if (!Array.isArray(checkIn.additionalPaxDetails)) {
       checkIn.additionalPaxDetails = [];
@@ -5417,7 +5452,7 @@ export const getCheckoutStatementByDate = async (req, res) => {
       ],
     };
     const advanceAmountExpr = {
-      $gt: [{ $toDouble: "$advanceAmount" }, 0],
+      $gt: [{ $toDouble: "$totalAdvance" }, 0],
     };
 
     const checkouts = await CheckOut.find({
@@ -5435,6 +5470,9 @@ export const getCheckoutStatementByDate = async (req, res) => {
     })
       .lean()
       .sort({ voucherNumber: 1 });
+
+    console.log("bookings", bookings);
+
     const checkings = await CheckIn.find({
       cmp_id,
       $expr: {
@@ -5443,6 +5481,13 @@ export const getCheckoutStatementByDate = async (req, res) => {
     })
       .lean()
       .sort({ voucherNumber: 1 });
+
+    const sumPaymentTypeDetails = (record) =>
+      Number(record?.paymenttypeDetails?.cash || 0) +
+      Number(record?.paymenttypeDetails?.bank || 0) +
+      Number(record?.paymenttypeDetails?.upi || 0) +
+      Number(record?.paymenttypeDetails?.credit || 0) +
+      Number(record?.paymenttypeDetails?.card || 0);
 
     // Calculate summary based on unique checkouts (not rows)
     const summaryData = {
@@ -5468,19 +5513,26 @@ export const getCheckoutStatementByDate = async (req, res) => {
     //fetch all advancs with respected dates
 
     // Process each checkout - expand rooms
-    const combinedArray = [...bookings, ...checkings, ...checkouts];
+    const combinedArray = [
+      ...bookings.map((booking) => ({
+        ...booking,
+        documentSource: "BOOKING",
+      })),
+      ...checkings.map((checking) => ({
+        ...checking,
+        documentSource: "CHECKIN",
+      })),
+      ...checkouts.map((checkout) => ({
+        ...checkout,
+        documentSource: "CHECKOUT",
+      })),
+    ];
     const checkoutData = [];
     summaryData.totalBookingAdvance = bookings
-      .reduce(
-        (total, booking) => total + parseFloat(booking.advanceAmount || 0),
-        0,
-      )
+      .reduce((total, booking) => total + sumPaymentTypeDetails(booking), 0)
       .toFixed(2);
     summaryData.totalCheckingAdvance = checkings
-      .reduce(
-        (total, checking) => total + parseFloat(checking.advanceAmount || 0),
-        0,
-      )
+      .reduce((total, checking) => total + sumPaymentTypeDetails(checking), 0)
       .toFixed(2);
     summaryData.totalAdvanceAmount = (
       Number(summaryData.totalBookingAdvance) +
@@ -5518,6 +5570,7 @@ export const getCheckoutStatementByDate = async (req, res) => {
         checkoutData.push({
           billNo: checkout.voucherNumber,
           date: checkout.bookingDate,
+          documentSource: checkout.documentSource || "CHECKOUT",
           customerName: checkout.customerName,
           guestName: checkout.guestName,
           roomName: roomNames,
@@ -5525,7 +5578,7 @@ export const getCheckoutStatementByDate = async (req, res) => {
           totalAmount: parseFloat(checkout.totalAmount || 0),
           grandTotal: parseFloat(checkout.grandTotal || 0),
 
-          advanceAmount: parseFloat(checkout.advanceAmount || 0),
+          advanceAmount: parseFloat(checkout.totalAdvance || 0),
           balanceToPay: parseFloat(checkout.balanceToPay || 0),
           paymentMode: checkout.paymentMode || "N/A",
           checkOutDate: checkout.checkOutDate,
@@ -9044,19 +9097,18 @@ export const additionalPaxDefaultSetting = async (req, res) => {
   }
 };
 
-
 export const getDefault = async (req, res) => {
   try {
     const { cmp_id } = req.params;
 
-let defaultPax = await AdditionalPax.findOne({
-  cmp_id,
-  isDefault: true,
-});
+    let defaultPax = await AdditionalPax.findOne({
+      cmp_id,
+      isDefault: true,
+    });
 
-if (!defaultPax) {
-  defaultPax = await AdditionalPax.findOne({ cmp_id });
-}
+    if (!defaultPax) {
+      defaultPax = await AdditionalPax.findOne({ cmp_id });
+    }
     if (!defaultPax) {
       return res.status(404).json({
         success: false,
