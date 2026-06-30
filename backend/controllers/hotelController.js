@@ -5482,6 +5482,13 @@ export const getCheckoutStatementByDate = async (req, res) => {
       .lean()
       .sort({ voucherNumber: 1 });
 
+    const sumPaymentTypeDetails = (record) =>
+      Number(record?.paymenttypeDetails?.cash || 0) +
+      Number(record?.paymenttypeDetails?.bank || 0) +
+      Number(record?.paymenttypeDetails?.upi || 0) +
+      Number(record?.paymenttypeDetails?.credit || 0) +
+      Number(record?.paymenttypeDetails?.card || 0);
+
     // Calculate summary based on unique checkouts (not rows)
     const summaryData = {
       totalCheckoutAmount: 0,
@@ -5506,19 +5513,26 @@ export const getCheckoutStatementByDate = async (req, res) => {
     //fetch all advancs with respected dates
 
     // Process each checkout - expand rooms
-    const combinedArray = [...bookings, ...checkings, ...checkouts];
+    const combinedArray = [
+      ...bookings.map((booking) => ({
+        ...booking,
+        documentSource: "BOOKING",
+      })),
+      ...checkings.map((checking) => ({
+        ...checking,
+        documentSource: "CHECKIN",
+      })),
+      ...checkouts.map((checkout) => ({
+        ...checkout,
+        documentSource: "CHECKOUT",
+      })),
+    ];
     const checkoutData = [];
     summaryData.totalBookingAdvance = bookings
-      .reduce(
-        (total, booking) => total + parseFloat(booking.advanceAmount || 0),
-        0,
-      )
+      .reduce((total, booking) => total + sumPaymentTypeDetails(booking), 0)
       .toFixed(2);
     summaryData.totalCheckingAdvance = checkings
-      .reduce(
-        (total, checking) => total + parseFloat(checking.advanceAmount || 0),
-        0,
-      )
+      .reduce((total, checking) => total + sumPaymentTypeDetails(checking), 0)
       .toFixed(2);
     summaryData.totalAdvanceAmount = (
       Number(summaryData.totalBookingAdvance) +
@@ -5556,6 +5570,7 @@ export const getCheckoutStatementByDate = async (req, res) => {
         checkoutData.push({
           billNo: checkout.voucherNumber,
           date: checkout.bookingDate,
+          documentSource: checkout.documentSource || "CHECKOUT",
           customerName: checkout.customerName,
           guestName: checkout.guestName,
           roomName: roomNames,

@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { useState, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { lazy, Suspense } from "react";
@@ -1467,7 +1468,7 @@ useEffect(() => {
       if (isSubmittingRef.current) return;
       isSubmittingRef.current = true;
       console.log(payload);
-      let paymenttypeDetails = editData?.paymenttypeDetails;
+      let paymenttypeDetails = {}
       handleSubmit(payload, null, paymenttypeDetails);
     } else {
       setFormData((prev) => ({ ...prev, ...payload }));

@@ -29,6 +29,16 @@ const HotelCheckoutStatement = () => {
   ) || {};
 
   const num = (v) => Number(v || 0);
+  const sectionConfigs = [
+    { key: "BOOKING", title: "Reservation Bills" },
+    { key: "CHECKIN", title: "Checking Bills" },
+    { key: "CHECKOUT", title: "Checkout Bills" },
+  ];
+  const sectionedData = sectionConfigs.map((section) => ({
+    ...section,
+    items: checkoutData.filter((item) => item.documentSource === section.key),
+  }));
+  const hasRecords = checkoutData.length > 0;
 
   function formatDate(dateStr) {
     if (!dateStr) return "";
@@ -232,6 +242,13 @@ const HotelCheckoutStatement = () => {
 }
 
   function renderTableRow(item, index) {
+    const rowTotal =
+      num(item?.cash) +
+      num(item?.bank) +
+      num(item?.card) +
+      num(item?.credit) +
+      num(item?.upi);
+
     return (
       <tr
         key={item?._id || item?.billNo || index}
@@ -261,17 +278,17 @@ const HotelCheckoutStatement = () => {
           {Number(item?.upi) > 0 ? num(item.upi).toFixed(2) : ""}
         </td>
         <td className="text-right py-1 px-1 font-medium">
-          {num(item.advanceAmount).toFixed(2)}
+          {rowTotal.toFixed(2)}
         </td>
         <td className="py-1 px-1">{getPaymentModeDisplay(item)}</td>
       </tr>
     );
   }
 
-  function renderEmptyState() {
+  function renderEmptyState(message = "No records found") {
     return (
       <tr>
-        <td colSpan="12" className="text-center py-6 text-gray-500">
+        <td colSpan="13" className="text-center py-6 text-gray-500">
           <div className="flex flex-col items-center">
             <svg
               className="w-12 h-12 text-gray-300 mb-3"
@@ -286,7 +303,7 @@ const HotelCheckoutStatement = () => {
                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
-            <p className="text-sm font-medium">No checkout records found</p>
+            <p className="text-sm font-medium">{message}</p>
             <p className="text-xs mt-1">
               from {formatDate(fromDate)} to {formatDate(toDate)}
             </p>
@@ -318,6 +335,29 @@ const HotelCheckoutStatement = () => {
     );
   }
 
+  function renderStatementSection(section, showSummary = false) {
+    return (
+      <div key={section.key} className="overflow-x-auto mb-5">
+        <table className="w-full border-collapse print-table">
+          <thead>{renderTableHeader()}</thead>
+          <tbody>
+            <tr className="border-b border-gray-300 bg-gray-50">
+              <td colSpan="13" className="py-1.5 px-1 font-semibold text-xs">
+                {section.title} ({section.items.length}{" "}
+                {section.items.length === 1 ? "record" : "records"})
+              </td>
+            </tr>
+
+            {section.items.length > 0
+              ? section.items.map((item, index) => renderTableRow(item, index))
+              : renderEmptyState(`No ${section.title.toLowerCase()} found`)}
+          </tbody>
+          {showSummary ? <tfoot>{renderSummary()}</tfoot> : null}
+        </table>
+      </div>
+    );
+  }
+
   function renderSummarySection() {
     if (checkoutData.length === 0 || !summary) return null;
 
@@ -340,10 +380,10 @@ const HotelCheckoutStatement = () => {
                 {num(summary?.totalCheckingAdvance).toFixed(2)}
               </span>
             </div>
-            <div className="flex justify-between">
+            {/* <div className="flex justify-between">
               <span>Total Before Res Adv</span>
               <span className="tabular-nums">0.00</span>
-            </div>
+            </div> */}
             <div className="border-t border-gray-300 pt-1.5 mt-2 flex justify-between font-semibold">
               <span>Total Advance Amt</span>
               <span className="tabular-nums">
@@ -535,29 +575,12 @@ const HotelCheckoutStatement = () => {
             </div>
           )}
 
-          <div className="overflow-x-auto">
-         <table className="w-full border-collapse mb-3 print-table">
-              <thead>{renderTableHeader()}</thead>
-              <tbody>
-                <tr className="border-b border-gray-300 bg-gray-50">
-                  <td
-                    colSpan="12"
-                    className="py-1.5 px-1 font-semibold text-xs"
-                  >
-                    Checkout Bills ({checkoutData.length}{" "}
-                    {checkoutData.length === 1 ? "record" : "records"})
-                  </td>
-                </tr>
-
-                {checkoutData.length > 0
-                  ? checkoutData.map((item, index) =>
-                      renderTableRow(item, index)
-                    )
-                  : renderEmptyState()}
-              </tbody>
-              <tfoot>{renderSummary()}</tfoot>
-            </table>
-          </div>
+          {sectionedData.map((section, index) =>
+            renderStatementSection(
+              section,
+              index === sectionedData.length - 1 && hasRecords
+            )
+          )}
 
           {renderSummarySection()}
         </div>
@@ -571,10 +594,10 @@ const HotelCheckoutStatement = () => {
               }
               handlePrint();
             }}
-            disabled={checkoutData.length === 0 || loading}
+            disabled={!hasRecords || loading}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold shadow-md text-sm"
           >
-            {checkoutData.length === 0 ? "No Data to Print" : "Print Statement"}
+            {!hasRecords ? "No Data to Print" : "Print Statement"}
           </button>
         </div>
 
