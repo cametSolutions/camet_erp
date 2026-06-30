@@ -236,6 +236,7 @@ const restuarentSettings = () => {
         toggleValue: configurations[0]?.orderTypes?.roomService ?? false,
         dbField: "orderTypes.roomService",
       },
+     
        {
         title: "Complementary include tax",
         description: "Management of complementary include tax",
