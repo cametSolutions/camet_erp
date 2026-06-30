@@ -8,13 +8,16 @@ function AdditionalPaxDetails({
   sendDataToParent,
   setDisplayAdditionalPax,
   selectedRoomId,
-  formData
+  formData,
+  includePaxRateWithRoom,
+  setIncludePaxRateWithRoom
 }) {
 console.log(formData)
   const [additionalPax, setAdditionalPax] = useState([
     { paxID: "", paxName: 0, rate: "" }
   ])
   const [additionalPaxData, setAdditionalPaxData] = useState([])
+
   const { data, error } = useFetch(`/api/sUsers/getAdditionalPax/${cmp_id}`)
   // useEffect used to fetch the additional pax data
   useEffect(() => {
@@ -45,11 +48,10 @@ console.log(formData)
   // function used to send data to the parent
   useEffect(() => {
     if (additionalPax.length > 0) {
-console.log(additionalPax)
       console.log("H")
       let filteredData = additionalPax.filter((item) => item.paxID !== "")
       console.log(filteredData)
-      sendDataToParent(filteredData, selectedRoomId)
+      // sendDataToParent(filteredData, selectedRoomId)
     }
   }, [additionalPax])
 
@@ -57,12 +59,11 @@ console.log(additionalPax)
   const handlePaxChange = (index, value) => {
     let specificData = additionalPaxData?.find((item) => item._id === value)
     const updatedRows = [...additionalPax]
-    console.log(specificData)
     updatedRows[index].paxID = specificData._id
     updatedRows[index].paxName = specificData.additionalPaxName
     updatedRows[index].rate = specificData.amount
     updatedRows[index].roomId = selectedRoomId
-console.log(updatedRows)
+    updatedRows[index].isDefault = specificData.isDefault
     setAdditionalPax(updatedRows)
   }
 
@@ -101,16 +102,39 @@ console.log(updatedRows)
     <div className="">
       <div className="relative w-full rounded-xl bg-white shadow-lg border">
         <div className="flex justify-start px-8 pt-6 border-b border-blue-200 p-2">
-          <button
-            type="button"
-            className="pb-2 px-4 text-lg font-semibold text-blue-700 border-b-2 border-blue-500"
-          >
-            Pax
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-base font-bold text-blue-700 tracking-tight">
+              Additional Pax
+            </span>
+            {/* ── Toggle: Add with Rate ── */}
+            <button
+              type="button"
+              onClick={() => setIncludePaxRateWithRoom((p) => !p)}
+              className={`relative inline-flex items-center h-5 w-9 rounded-full 
+                          transition-colors duration-200 focus:outline-none flex-shrink-0
+                          ${includePaxRateWithRoom ? "bg-blue-500" : "bg-gray-300"}`}
+            >
+              <span
+                className={`inline-block w-3.5 h-3.5 bg-white rounded-full shadow 
+                            transition-transform duration-200
+                            ${includePaxRateWithRoom ? "translate-x-4" : "translate-x-0.5"}`}
+              />
+            </button>
+            <span className="text-xs font-medium text-gray-500 select-none">
+              {includePaxRateWithRoom ? (
+                <span className="text-blue-600 font-semibold">With Rate</span>
+              ) : (
+                "With Rate"
+              )}
+            </span>
+          </div>
           <div className="ml-auto flex gap-2">
             <button
               className="ml-auto px-4 py-2 text-sm font-semibold text-white bg-black rounded-md hover:bg-gray-800 transition-all duration-200"
-              onClick={() => setDisplayAdditionalPax(false)}
+              onClick={() => {
+                setDisplayAdditionalPax(false) 
+                sendDataToParent(additionalPax, selectedRoomId)
+              }}
             >
               Save
             </button>

@@ -125,8 +125,8 @@ const StockItemSettings = () => {
             to: "sec",
             active: true,
             toggle: true,
-            toggleValue: configurations[0]?.aditionalPaxWithRoomRate,
-            dbField: "aditionalPaxWithRoomRate",
+            toggleValue: configurations[0]?.additionalPaxWithRoomRate,
+            dbField: "additionalPaxWithRoomRate",
           },
           {
             title: "addRateWithTax",

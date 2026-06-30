@@ -5,6 +5,7 @@ const foodPlanSchema = new mongoose.Schema({
   foodPlan: String,
   rate: Number,
   roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
+  isDefault: { type: Boolean, default: false },
   isComplimentary: {
     type: Boolean,
     default: false,
@@ -16,6 +17,7 @@ const paxDetailSchema = new mongoose.Schema({
   paxName: String,
   rate: Number,
   roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
+  isDefault: { type: Boolean, default: false },
 });
 
 const roomSwapHistorySchema = new mongoose.Schema({
@@ -62,7 +64,6 @@ const hsnDetailsSchema = new mongoose.Schema({
   ],
 });
 
-
 const idProofDocumentSchema = new mongoose.Schema(
   {
     url: { type: String, required: true },
@@ -101,9 +102,9 @@ const selectedRoomSchema = new mongoose.Schema({
     Primary_user_id: mongoose.Schema.Types.ObjectId,
   },
   dateTariffs: {
-  type: Object,
-  default: {},
-},
+    type: Object,
+    default: {},
+  },
   pax: Number,
   priceLevelRate: String,
   stayDays: Number,
@@ -207,6 +208,7 @@ const bookingSchema = new mongoose.Schema(
     totalAmount: String,
     balanceToPay: String,
     addFoodPlanWithRate: { type: Boolean, default: false },
+    addPaxWithRate: { type: Boolean, default: false },
     guestName: String,
     guestId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     guestCountry: String,
@@ -254,21 +256,21 @@ const bookingSchema = new mongoose.Schema(
     arrayBookIn: [{ type: mongoose.Schema.Types.ObjectId, ref: "Booking" }],
     status: String,
     cancelledAt: {
-  type: Date,
-},
-cancelledBy: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "SecondaryUser",
-},
-cancelledByName: {
-  type: String,
-  default: "",
-},
+      type: Date,
+    },
+    cancelledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SecondaryUser",
+    },
+    cancelledByName: {
+      type: String,
+      default: "",
+    },
     originalCheckInId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CheckIn",
     },
-   
+
     idProof: {
       type: idProofSchema,
       default: () => ({
@@ -346,15 +348,14 @@ cancelledByName: {
     charge: {
       _id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Charge"
+        ref: "Charge",
       },
       cmp_id: mongoose.Schema.Types.ObjectId,
       Primary_user_id: mongoose.Schema.Types.ObjectId,
       name: String,
       hsn: String,
-      taxPercentage: Number
-    }
-    
+      taxPercentage: Number,
+    },
   },
   { timestamps: true },
 );
