@@ -8910,6 +8910,7 @@ export const getCancellationReport = async (req, res) => {
         cancelledAt: { $gte: start, $lte: end },
       })
         .populate("secondary_user_id", "name")
+         .populate("cancelledBy", "name")
         .select(
           "voucherNumber cancelledAt cancelledBy secondary_user_id cancelReason tableNumber",
         );
@@ -8920,7 +8921,7 @@ export const getCancellationReport = async (req, res) => {
           voucherNumber: k.voucherNumber || "-",
           cancelledAt: k.cancelledAt || null,
           cancelledBy: k.cancelledBy || "-",
-          cancelledByName: k.secondary_user_id?.name || "_",
+          cancelledByName: k.secondary_user_id?.name || k.cancelledBy?.name || "-",
           reason: k.cancelReason || "-",
           referenceNumber: k.voucherNumber || "-",
           tableNumber: k.tableNumber || "-",
