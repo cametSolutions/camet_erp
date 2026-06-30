@@ -8957,30 +8957,29 @@ export const getCancellationReport = async (req, res) => {
       summary.total += receiptCancels.length;
     }
 
-    if (typesToFetch.includes("sale")) {
-      const saleCancels = await salesModel
-        .find({
-          cmp_id: cmpObjectId,
-          isCancelled: true,
-          updatedAt: { $gte: start, $lte: end },
-        })
-        .populate("Secondary_user_id", "name")
-        .select(
-          "salesNumber updatedAt cancelledAt cancelledBy cancelledByName cancelReason partyName Secondary_user_id",
-        );
+   if (typesToFetch.includes("sale")) {
+  const saleCancels = await salesModel.find({
+    cmp_id: cmpObjectId,
+    isCancelled: true,
+    updatedAt: { $gte: start, $lte: end },
+  })  .populate("Secondary_user_id", "name")
+  .populate("cancelledBy", "name")
+ .select(
+  "salesNumber updatedAt cancelledAt cancelledBy cancelledByName cancelReason partyName Secondary_user_id"
+);
 
-      saleCancels.forEach((s) => {
-        results.push({
-          cancelType: "sale",
-          voucherNumber: s.salesNumber || "-",
-          cancelledAt: s.cancelledAt || null,
-          cancelledBy: s.cancelledBy || "-",
-          cancelledByName: s.Secondary_user_id?.name || "-",
-          reason: s.cancelReason || "-",
-          referenceNumber: s.salesNumber || "-",
-          partyName: s.partyName || "-",
-        });
-      });
+  saleCancels.forEach((s) => {
+    results.push({
+      cancelType: "sale",
+      voucherNumber: s.salesNumber || "-",
+      cancelledAt: s.cancelledAt || null,
+      cancelledBy: s.cancelledBy || "-",
+      cancelledByName: s.Secondary_user_id?.name ||  s.cancelledBy?.name || "-",
+      reason: s.cancelReason || "-",
+      referenceNumber: s.salesNumber || "-",
+      partyName: s.partyName || "-",
+    });
+  });
 
       summary.sale += saleCancels.length;
       summary.total += saleCancels.length;
