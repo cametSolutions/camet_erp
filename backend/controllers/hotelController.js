@@ -9019,11 +9019,15 @@ export const getCancellationReport = async (req, res) => {
 
 export const additionalPaxDefaultSetting = async (req, res) => {
   try {
-    const { cmp_id, id } = req.params;
+    const { cmp_id, id ,selectedModal } = req.params;
+    let modal = AdditionalPax;
+    if(selectedModal == "FoodPlan"){
+modal = FoodPlan
+    }
 
-    await AdditionalPax.updateMany({ cmp_id }, { $set: { isDefault: false } });
+    await modal.updateMany({ cmp_id }, { $set: { isDefault: false } });
 
-    const updateAdditionalPax = await AdditionalPax.findByIdAndUpdate(
+    const updateAdditionalPax = await modal.findByIdAndUpdate(
       id,
       { $set: { isDefault: true } },
       { new: true },
@@ -9031,7 +9035,7 @@ export const additionalPaxDefaultSetting = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Default Additional Pax updated successfully",
+      message: `${selectedModal == "FoodPlan" ? "Food Plan" : "Additional Pax"} is updated successfully}`,
       data: updateAdditionalPax,
     });
   } catch (error) {
@@ -9067,6 +9071,39 @@ if (!defaultPax) {
     return res.status(200).json({
       success: true,
       data: defaultPax,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+export const getDefaultPlan = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+
+let defaultPlan = await FoodPlan.findOne({
+  cmp_id,
+  isDefault: true,
+});
+
+if (!defaultPlan) {
+  defaultPlan = await FoodPlan.findOne({ cmp_id });
+}
+    if (!defaultPlan) {
+      return res.status(404).json({
+        success: false,
+        message: "Default pax not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: defaultPlan,
     });
   } catch (error) {
     console.error(error);

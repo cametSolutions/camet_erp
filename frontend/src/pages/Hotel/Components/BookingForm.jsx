@@ -72,6 +72,7 @@ function BookingForm({
   const [additionalChargeData, setAdditionalChargeData] = useState([]);
   const [showIdProofModal, setShowIdProofModal] = useState(false);
   const [defaultPax,setDefaultPax] = useState({})
+  const [defaultFoodPlan,setDefaultFoodPlan] = useState({})
   const isSaving = saveLoader || submitLoader || isSubmittingRef.current;
   const idDocsRef = useRef(null);
 
@@ -86,6 +87,7 @@ function BookingForm({
   });
   let addFoodPlanWithRate = configurations?.[0]?.foodPlaWithRoomRate;
   let addPaxWithRate = configurations?.[0]?.additionalPaxWithRoomRate;
+  console.log(addFoodPlanWithRate)
   let discountBasedOnGrossAmount =
     configurations?.[0]?.discountBasedOnGrossAmountInHotel;
   const tariffMinAllowedDate =
@@ -109,6 +111,9 @@ function BookingForm({
   const [includePaxRateWithRoom, setIncludePaxRateWithRoom] = useState(
     addPaxWithRate ?? false,
   )
+
+  console.log(addFoodPlanWithRate,includeFoodRateWithRoom)
+
   const { data, loading } = useFetch(
     `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`,
   );
@@ -125,6 +130,18 @@ useEffect(() => {
     setDefaultPax(defaultPaxResponse.data);
   }
 }, [defaultPaxResponse]);
+
+
+
+const {
+  data: defaultPlanResponse,
+} = useFetch(`/api/sUsers/getDefaultPlan/${cmp_id}`);
+
+useEffect(() => {
+  if (defaultPlanResponse) {
+    setDefaultFoodPlan(defaultPlanResponse.data);
+  }
+}, [defaultPlanResponse]);
 
   const { data: visitOfPurposeData, loading: visitOfPurposeLoading } = useFetch(
     `/api/sUsers/getVisitOfPurpose/${cmp_id}`,
@@ -198,6 +215,8 @@ useEffect(() => {
     dateOfExpiry: "",
     grcno: "",
     addTaxWithRate: configurations[0]?.addRateWithTax?.hotelSale,
+    addPaxWithRate:includePaxRateWithRoom,
+    addFoodPlanWithRate:includeFoodRateWithRoom
   });
 
 useEffect(() => {
@@ -273,6 +292,7 @@ useEffect(() => {
       addPaxWithRate: editData?.addPaxWithRate,
       roomSwapHistory: editData?.roomSwapHistory || [],
       addTaxWithRate: editData?.addTaxWithRate || false,
+      // addFoodPlanWithRate: editData?.addFoodPlanWithRate || false,
     }));
 
       setIncludeFoodRateWithRoom(editData?.addFoodPlanWithRate);
@@ -2557,6 +2577,7 @@ useEffect(() => {
                             includeFoodRateWithRoom={includeFoodRateWithRoom}
                             includePaxRateWithRoom={includePaxRateWithRoom}
                             defaultPax={defaultPax}
+                            defaultFoodPlan={defaultFoodPlan}
                             sendDataToParent={handleAdditionalPaxDetails}
                             setFormData={setFormData}
                           />
@@ -2866,6 +2887,7 @@ useEffect(() => {
                     includeFoodRateWithRoom={includeFoodRateWithRoom}
                     includePaxRateWithRoom={includePaxRateWithRoom}
                     defaultPax={defaultPax}
+                    defaultFoodPlan={defaultFoodPlan}
                     sendDataToParent={handleAdditionalPaxDetails}
                   />
                 </div>

@@ -280,8 +280,7 @@ function BookingList() {
       const checkoutTotal = rooms.reduce((sum, room) => {
         // if (room.dateTariffs) {
 
-        // }
-        console.log(room?.amountAfterTax);
+        // };
 
         if (!hasSwapping) {
           return sum + Number(room?.amountAfterTax || 0);
@@ -345,12 +344,14 @@ function BookingList() {
         const additionalPaxPerDay =
           Number(room?.additionalPaxAmountWithTax || 0) / totalStayDays;
 
+
+          console.log(additionalPaxPerDay)
         const foodPlanPerDay =
           Number(room?.foodPlanAmountWithTax || 0) / totalStayDays;
 
         const additionalPaxAmount = additionalPaxPerDay * stayDays;
         let foodPlanAmount = foodPlanPerDay * stayDays;
-
+  console.log(additionalPaxAmount)
         console.log(baseAmount, additionalPaxPerDay, foodPlanAmount);
 
         taxAmount = configurations[0]?.addRateWithTax?.hotelSale
@@ -359,10 +360,10 @@ function BookingList() {
         foodPlanAmount = configurations[0]?.addRateWithTax?.hotelSale
           ? 0
           : foodPlanAmount;
-        console.log(taxAmount);
+
 
         return (
-          sum + baseAmount + taxAmount + additionalPaxAmount + foodPlanAmount
+          sum + baseAmount + taxAmount  + foodPlanAmount
         );
       }, 0);
 
@@ -1548,9 +1549,10 @@ function BookingList() {
                 checkout,
                 room.roomId,
                 checkout?.addFoodPlanWithRate,
+                checkout?.addPaxWithRate,
               );
 
-              console.log(room.totalAmount);
+              console.log(room);
 
               return {
                 ...room,
