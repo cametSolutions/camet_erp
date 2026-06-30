@@ -245,13 +245,14 @@ const RestaurantPOS = () => {
   const config = configurations?.[0] || {};
   const orderTypesConfig = config.orderTypes || {};
 
-  const getDefaultOrderType = () => {
-    if (orderTypesConfig.dineIn !== false) return "dine-in";
-    if (orderTypesConfig.takeaway !== false) return "takeaway";
-    if (orderTypesConfig.delivery !== false) return "delivery";
-    if (orderTypesConfig.roomService !== false) return "roomService";
-    return "direct-sale";
-  };
+ const getDefaultOrderType = () => {
+  if (orderTypesConfig?.dineIn) return "dine-in";
+  if (orderTypesConfig?.takeaway) return "takeaway";
+  if (orderTypesConfig?.delivery) return "delivery";
+  if (orderTypesConfig?.roomService) return "roomService";
+  if (orderTypesConfig?.directSale) return "direct-sale";
+  return "";
+};
 
   const [orderType, setOrderType] = useState(getDefaultOrderType());
 
@@ -2363,20 +2364,22 @@ const RestaurantPOS = () => {
                       </span>
                     </button>
                   )}
-                  <button
-                    onClick={() => {
-                      console.log("Direct Sale button clicked"); // Debug log
-                      setOrderType("direct-sale");
-                    }}
-                    className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 col-span-2 ${
-                      orderType === "direct-sale"
-                        ? "border-transparent bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-emerald-500/25"
-                        : "border-gray-200 bg-white/80 text-gray-700 hover:border-green-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50"
-                    }`}
-                  >
-                    <Receipt className="w-4 h-4 mb-0.5" />
-                    <span className="font-semibold text-xs">Direct Sale</span>
-                  </button>
+                     {orderTypesConfig?.directSale !== false && (
+      <button
+        onClick={() => {
+          console.log("Direct Sale button clicked");
+          setOrderType("direct-sale");
+        }}
+        className={`flex flex-col items-center justify-center h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 col-span-2 ${
+          orderType === "direct-sale"
+            ? "border-transparent bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-emerald-500/25"
+            : "border-gray-200 bg-white/80 text-gray-700 hover:border-green-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50"
+        }`}
+      >
+        <Receipt className="w-4 h-4 mb-0.5" />
+        <span className="font-semibold text-xs">Direct Sale</span>
+      </button>
+    )}
                 </div>
               </div>
 

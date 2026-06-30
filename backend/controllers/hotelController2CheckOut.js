@@ -297,7 +297,7 @@ export const convertCheckOutToSale = async (req, res) => {
         console.log("checkoutamounttypes", checkoutamounttypes);
 
         // Restaurant payment totals for CheckOut doc
-        const paymentTotals = restaurantSplitArray.reduce(
+        const paymentTotals = paymentSplittingArray.reduce(
           (acc, s) => {
             const type = s.sourceType;
             const amount = Number(s.amount || 0);

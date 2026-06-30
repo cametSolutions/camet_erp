@@ -101,6 +101,7 @@ const organizationSchema = new mongoose.Schema(
             takeaway: false,
             delivery: false,
             roomService: false,
+            directSale: false,
           },
         },
         showDescription: {

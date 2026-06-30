@@ -43,7 +43,7 @@ import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { addAccountGroupIdToOutstanding, addAccountGroupIdToParties, convertPrimaryToSecondary, createAccountGroups, updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
-import { addSecondaryConfigurations, addSecUsers, allocateCompany, allocateSubDetails, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getSecUserDetails,updateTransactionAccess } from '../controllers/primaryUserController.js';
+import { addSecondaryConfigurations, addSecUsers, allocateCompany, allocateSubDetails, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getSecUserDetails,updateTransactionAccess, getUserPermissions,updateUserPermissions} from '../controllers/primaryUserController.js';
 
 import {
     fetchDashboardCompanyDailyCollectionBreakdown,
@@ -294,6 +294,8 @@ router.get('/fetchSecondaryUsers', authPrimary, secondaryIsBlocked, fetchSeconda
 router.post('/addSecUsers', authPrimary, secondaryIsBlocked, addSecUsers);
 router.get('/getSecUserDetails/:id', authPrimary, secondaryIsBlocked, getSecUserDetails)
 router.put('/editSecUSer/:id', authPrimary, secondaryIsBlocked, editSecUSer)
+router.get("/getUserPermissions/:id", authPrimary,secondaryIsBlocked, getUserPermissions);
+router.put("/updateUserPermissions/:id", authPrimary,secondaryIsBlocked, updateUserPermissions);
 router.get("/fetchConfigurationCurrentNumber/:orgId/:_id", authPrimary, secondaryIsBlocked, fetchConfigurationCurrentNumber)
 router.get('/fetchGodownsAndPriceLevels/:cmp_id', authPrimary, secondaryIsBlocked, companyAuthentication, fetchGodownsAndPriceLevels)
 router.post('/addSecondaryConfigurations/:cmp_id/:userId', authPrimary, secondaryIsBlocked, companyAuthentication, addSecondaryConfigurations)
