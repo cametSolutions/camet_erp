@@ -61,8 +61,8 @@ const organizationSchema = new mongoose.Schema(
         foodPlaWithRoomRate: {
           type: Boolean,
           default: true,
-          },
-          aditionalPaxWithRoomRate: {
+        },
+        additionalPaxWithRoomRate: {
           type: Boolean,
           default: true,
         },
@@ -172,12 +172,12 @@ const organizationSchema = new mongoose.Schema(
           type: Boolean,
           default: true,
         },
-          discountBasedOnGrossAmountInHotel: {
+        discountBasedOnGrossAmountInHotel: {
           type: Boolean,
           default: true,
         },
 
-        complementaryWithTax : {
+        complementaryWithTax: {
           type: Boolean,
           default: true,
         },

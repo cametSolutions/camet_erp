@@ -109,6 +109,9 @@ function AvailableRooms({
   addTaxWithRate = false,
   handleDeletion = () => {},
   includeFoodRateWithRoom,
+  includePaxRateWithRoom,
+  sendDataToParent = () => {},
+  defaultPax = {},
   showRooms = true,
   selectedGuest = null,
   setFormData = () => {},
@@ -433,6 +436,7 @@ function AvailableRooms({
           formData,
           booking.roomId,
           includeFoodRateWithRoom,
+          includePaxRateWithRoom,
         );
 
         return {
@@ -813,8 +817,68 @@ function AvailableRooms({
       prev.includes(roomIdToUpdate) ? prev : [...prev, roomIdToUpdate],
     );
   };
-  console.log(formData?.foodPlan);
-  console.log(formData);
+
+  const handleAdditionalPaxChange = (e, roomId, booking) => {
+    selectedRoomData(booking?.roomId, "increasePaxCount");
+
+    const count = Number(e.target.value);
+    console.log(formData?.additionalPaxDetails, roomId);
+    const roomPaxLength =
+      formData?.additionalPaxDetails?.filter((pax) => pax.roomId === roomId)
+        ?.length || 0;
+
+    const defaultCount =
+      formData?.additionalPaxDetails?.filter(
+        (pax) => pax.roomId === roomId && pax.isDefault,
+      )?.length || 0;
+
+    console.log(count, roomPaxLength);
+    // Remove
+    if (count < roomPaxLength) {
+      if (defaultCount < 1) {
+        toast.error("Please select at least one default pax");
+        return;
+      }
+
+      const additionalPaxDetails = [...(formData.additionalPaxDetails || [])];
+
+      const index = additionalPaxDetails.findIndex(
+        (pax) => pax.roomId === roomId && pax.isDefault,
+      );
+
+      if (index !== -1) {
+        additionalPaxDetails.splice(index, 1);
+      }
+      setFormData((prev) => ({
+        ...prev,
+        additionalPaxDetails: additionalPaxDetails,
+      }));
+    }
+
+    // Add
+    else {
+      const newPax = {
+        paxID: defaultPax?._id,
+        paxName: defaultPax?.additionalPaxName,
+        rate: defaultPax?.amount,
+        roomId,
+        isDefault: defaultPax?.isDefault,
+      };
+      const updatedAdditionalPaxDetails = [
+        ...(formData?.additionalPaxDetails || []),
+        newPax,
+      ];
+
+      setFormData((prev) => ({
+        ...prev,
+        additionalPaxDetails: updatedAdditionalPaxDetails,
+      }));
+
+      // sendDataToParent(updatedAdditionalPaxDetails, booking);
+    }
+  };
+
+  console.log(formData.additionalPaxDetails);
 
   const bookedRoomIds = bookings.map((b) => b.roomId);
   return showHistory ? (
@@ -1022,15 +1086,24 @@ function AvailableRooms({
                         </td>
 
                         <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
-                          {/* <input
-                            type="number "
-                            // value={booking.pax || 2}
-                            // onChange={(e) => handlePaxChange(e, booking.roomId)}
-                            // disabled={isTariffRateChange ? true : false}
-                            min="1"
-                            className=" disabled w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                          /> */}{" "}
-                          0
+                          <input
+                            type="number"
+                            value={
+                              formData?.additionalPaxDetails?.filter(
+                                (pax) => pax.roomId === booking.roomId,
+                              )?.length || 0
+                            }
+                            onChange={(e) =>
+                              handleAdditionalPaxChange(
+                                e,
+                                booking.roomId,
+                                booking,
+                              )
+                            }
+                            disabled={isTariffRateChange}
+                            min="0"
+                            className="w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          />
                         </td>
                         <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
                           {Number(booking.taxPercentage || 0).toFixed(1)}%

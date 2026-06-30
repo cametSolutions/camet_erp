@@ -28,6 +28,7 @@ import {
 } from "react-icons/md";
 import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
 import { calculateStayDays } from "../Helper/hotelHelper";
+import { set } from "mongoose";
 
 const nextIsoDate = (value) => {
   const date = new Date(value);
@@ -69,8 +70,9 @@ function BookingForm({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [saveLoader, setSaveLoader] = useState(false);
   const [additionalChargeData, setAdditionalChargeData] = useState([]);
-const [showIdProofModal, setShowIdProofModal] = useState(false);
-const isSaving = saveLoader || submitLoader || isSubmittingRef.current;
+  const [showIdProofModal, setShowIdProofModal] = useState(false);
+  const [defaultPax,setDefaultPax] = useState({})
+  const isSaving = saveLoader || submitLoader || isSubmittingRef.current;
   const idDocsRef = useRef(null);
 
   const { _id: cmp_id, configurations } = useSelector(
@@ -83,6 +85,7 @@ const isSaving = saveLoader || submitLoader || isSubmittingRef.current;
     documents: [],
   });
   let addFoodPlanWithRate = configurations?.[0]?.foodPlaWithRoomRate;
+  let addPaxWithRate = configurations?.[0]?.additionalPaxWithRoomRate;
   let discountBasedOnGrossAmount =
     configurations?.[0]?.discountBasedOnGrossAmountInHotel;
   const tariffMinAllowedDate =
@@ -103,12 +106,25 @@ const isSaving = saveLoader || submitLoader || isSubmittingRef.current;
   const [includeFoodRateWithRoom, setIncludeFoodRateWithRoom] = useState(
     addFoodPlanWithRate ?? false,
   );
+  const [includePaxRateWithRoom, setIncludePaxRateWithRoom] = useState(
+    addPaxWithRate ?? false,
+  )
   const { data, loading } = useFetch(
     `/api/sUsers/getProductSubDetails/${cmp_id}?type=roomType`,
   );
   useEffect(() => {
     if (data) setRoomType(data?.data);
   }, [data]);
+
+const {
+  data: defaultPaxResponse,
+} = useFetch(`/api/sUsers/getDefaultPax/${cmp_id}`);
+
+useEffect(() => {
+  if (defaultPaxResponse) {
+    setDefaultPax(defaultPaxResponse.data);
+  }
+}, [defaultPaxResponse]);
 
   const { data: visitOfPurposeData, loading: visitOfPurposeLoading } = useFetch(
     `/api/sUsers/getVisitOfPurpose/${cmp_id}`,
@@ -254,12 +270,13 @@ useEffect(() => {
       gstNo: editData?.gstNo || "",
       otherChargeDetails: editData?.otherChargeDetails || [],
       addFoodPlanWithRate: editData?.addFoodPlanWithRate,
+      addPaxWithRate: editData?.addPaxWithRate,
       roomSwapHistory: editData?.roomSwapHistory || [],
       addTaxWithRate: editData?.addTaxWithRate || false,
     }));
 
       setIncludeFoodRateWithRoom(editData?.addFoodPlanWithRate);
-
+      setIncludePaxRateWithRoom(editData?.addPaxWithRate);
       // ✅ Restore idProof when editing
       if (editData?.idProof) {
         setIdProof({
@@ -970,6 +987,9 @@ useEffect(() => {
   };
 
   const handleAdditionalPaxDetails = (details, room) => {
+
+    console.log(details,room)
+
     const existingDetails = Array.isArray(formData?.additionalPaxDetails)
       ? formData.additionalPaxDetails
       : [];
@@ -1002,6 +1022,7 @@ useEffect(() => {
       foodPlan: [...filterData, ...details],
       foodPlanTotal: totalAmount,
       addFoodPlanWithRate: includeFoodRateWithRoom,
+      addPaxWithRate: includePaxRateWithRoom,
       updatedDate: currentDateDefault,
     }));
   };
@@ -1019,6 +1040,10 @@ useEffect(() => {
     }
     if (to === "addAdjustment") {
       setOtherChargeModalOpen(true);
+      setSelectedRoomId(id);
+    }
+    if(to === "increasePaxCount") {
+      // setDiscountModalOpen(true);
       setSelectedRoomId(id);
     }
   };
@@ -1536,10 +1561,8 @@ useEffect(() => {
       (acc, item) => acc + Number(item.rate),
       0,
     );
-    console.log(filterData);
-    console.log(totalAmount);
-    console.log(filterAdditionalData);
-    console.log(AdditionalPaxTotalAmount);
+
+    setSelectedRoomId(null)
 
     setFormData((prev) => ({
       ...prev,
@@ -2532,6 +2555,10 @@ useEffect(() => {
                             addTaxWithRate={formData.addTaxWithRate}
                             handleDeletion={handleDeletion}
                             includeFoodRateWithRoom={includeFoodRateWithRoom}
+                            includePaxRateWithRoom={includePaxRateWithRoom}
+                            defaultPax={defaultPax}
+                            sendDataToParent={handleAdditionalPaxDetails}
+                            setFormData={setFormData}
                           />
                         </div>
                       </div>
@@ -2837,6 +2864,9 @@ useEffect(() => {
                     roomIdToUpdate={roomId}
                     addTaxWithRate={formData.addTaxWithRate}
                     includeFoodRateWithRoom={includeFoodRateWithRoom}
+                    includePaxRateWithRoom={includePaxRateWithRoom}
+                    defaultPax={defaultPax}
+                    sendDataToParent={handleAdditionalPaxDetails}
                   />
                 </div>
 
@@ -2899,6 +2929,8 @@ useEffect(() => {
                   setDisplayAdditionalPax={setDisplayAdditionalPax}
                   selectedRoomId={selectedRoomId}
                   formData={formData}
+                  includePaxRateWithRoom={includePaxRateWithRoom}
+                  setIncludePaxRateWithRoom={setIncludePaxRateWithRoom}
                 />
               </div>
             </div>

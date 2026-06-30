@@ -4002,12 +4002,12 @@ export const updateConfigurationForHotelAndRestaurant = async (req, res) => {
         },
       };
     } 
-else if (data.title === "aditionalPaxWithRoomRate") {
+else if (data.title === "additionalPaxWithRoomRate") {
       console.log("aditionalPaxWithRoomRate");
       // Handle existing addRateWithTax toggle updates
       updateData = {
         $set: {
-          [`configurations.0.aditionalPaxWithRoomRate`]: data.checked,
+          [`configurations.0.additionalPaxWithRoomRate`]: data.checked,
         },
       };
     } 
@@ -9033,6 +9033,40 @@ export const additionalPaxDefaultSetting = async (req, res) => {
       success: true,
       message: "Default Additional Pax updated successfully",
       data: updateAdditionalPax,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+
+export const getDefault = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+
+let defaultPax = await AdditionalPax.findOne({
+  cmp_id,
+  isDefault: true,
+});
+
+if (!defaultPax) {
+  defaultPax = await AdditionalPax.findOne({ cmp_id });
+}
+    if (!defaultPax) {
+      return res.status(404).json({
+        success: false,
+        message: "Default pax not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: defaultPax,
     });
   } catch (error) {
     console.error(error);
