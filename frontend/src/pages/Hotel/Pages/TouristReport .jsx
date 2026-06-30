@@ -148,11 +148,7 @@ const TouristReport = () => {
       worksheet,
       [
         ["Tourist Report"],
-        [
-          `Report From ${formatDisplayDate(filters.fromDate)} To ${formatDisplayDate(
-            filters.toDate
-          )}`,
-        ],
+       
         [`Generated On ${printMeta.date} ${printMeta.time}`],
       ],
       { origin: "A1" }
@@ -272,10 +268,7 @@ const TouristReport = () => {
 
           {/* Report Card — full width */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:rounded-none print:border-0 print:p-0 print:shadow-none md:p-7">
-            <div className="mb-2 text-sm text-slate-700">
-              Report From {formatDisplayDate(filters.fromDate)} To{" "}
-              {formatDisplayDate(filters.toDate)}
-            </div>
+           
 
             <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <h2 className="text-2xl font-bold text-green-700 md:text-3xl">

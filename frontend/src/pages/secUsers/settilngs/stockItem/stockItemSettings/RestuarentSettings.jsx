@@ -237,6 +237,15 @@ const restuarentSettings = () => {
         dbField: "orderTypes.roomService",
       },
        {
+        title: "Direct Sale",
+        description: "Enable Direct Sale in restaurant dashboard",
+        icon: <MdFoodBank />,
+        active: true,
+        toggle: true,
+        toggleValue: configurations[0]?.orderTypes?.directSale ?? false,
+        dbField: "orderTypes.directSale",
+      },
+       {
         title: "Complementary include tax",
         description: "Management of complementary include tax",
         icon: <MdCalculate />,

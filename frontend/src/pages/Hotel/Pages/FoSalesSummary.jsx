@@ -655,16 +655,9 @@ export default function FOSalesSummaryReport() {
                 flexWrap: "wrap",
               }}
             >
-              <div>
-                <div className="print-title">FO Sales Summary Report</div>
-                <div className="print-meta">
-                  {formatDate(fromDate)} to {formatDate(toDate)}
-                </div>
-              </div>
+              
 
-              <div className="print-summary">
-                Total Records: {filteredData.length}
-              </div>
+           
             </div>
 
             {loading ? (

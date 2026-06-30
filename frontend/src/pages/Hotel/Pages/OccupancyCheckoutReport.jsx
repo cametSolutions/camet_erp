@@ -4,6 +4,8 @@ import { saveAs } from "file-saver";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
 import TitleDiv from "@/components/common/TitleDiv";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 // Add below any existing helpers at the top:
 const getToday = () => new Date().toISOString().slice(0, 10);
 const OccupancyCheckoutReport = () => {
@@ -24,6 +26,9 @@ const [filters, setFilters] = useState({
 
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id,
+  );
+ const owner = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
   const [loading, setLoading] = useState(false);
@@ -104,9 +109,159 @@ useEffect(() => {
     fetchReport();
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+const handleExportPDF = () => {
+  const doc = new jsPDF("l", "mm", "a4");
+
+  doc.setFontSize(16);
+  doc.setTextColor(30, 58, 95);
+  doc.text(owner?.companyName || owner?.name || "Occupancy Report", 14, 12);
+
+  doc.setFontSize(13);
+  doc.text("Occupancy Checkout Report", 14, 19);
+
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text(
+    `From: ${filters.fromDate}   To: ${filters.toDate}   |   Print: ${printMeta.date} ${printMeta.time}`,
+    14,
+    25
+  );
+
+  const detailHead = [[
+    "Sl.No.",
+    "Room",
+    "Grc No",
+    "Guest Name",
+    "Company",
+    "Pax",
+    "Ex Person",
+    "Arrival",
+    "Departure",
+    "Plan",
+    "Tariff",
+    "Extra Person",
+    "Total Tariff",
+    "Disc %",
+    "Discount Amt."
+  ]];
+
+  const detailBody = report.rows
+    .slice()
+    .sort((a, b) => {
+      const roomA = isNaN(a.room) ? a.room : Number(a.room);
+      const roomB = isNaN(b.room) ? b.room : Number(b.room);
+      if (typeof roomA === "number" && typeof roomB === "number") {
+        return roomA - roomB;
+      }
+      return String(roomA).localeCompare(String(roomB));
+    })
+    .map((row, index) => [
+      index + 1,
+      row.room || "",
+      row.grcNo || "",
+      row.guestName || "",
+      row.company || "",
+      row.pax || 0,
+      row.additionalPax || 0,
+      `${formatDateTime(row.arrivalDate)} ${row.arrivalTime || ""}`.trim(),
+      `${formatDateTime(row.departureDate)} ${row.departureTime || ""}`.trim(),
+      row.plan || "",
+      row.tariff || 0,
+      row.extraPersonTariff || 0,
+      row.totalTariffWithPax || 0,
+      row.discountPercent || 0,
+      row.discountAmount || 0,
+    ]);
+
+  autoTable(doc, {
+    startY: 30,
+    head: detailHead,
+    body: detailBody,
+    styles: { fontSize: 7, cellPadding: 1.8 },
+    headStyles: {
+      fillColor: [30, 58, 95],
+      textColor: 255,
+      fontStyle: "bold",
+    },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    margin: { left: 8, right: 8 },
+  });
+
+  const detailsEndY = doc.lastAutoTable.finalY + 8;
+
+  doc.setFontSize(11);
+  doc.setTextColor(30, 58, 95);
+  doc.text("Statistics", 14, detailsEndY);
+
+  autoTable(doc, {
+    startY: detailsEndY + 2,
+    head: [["Metric", "Value", "Metric", "Value"]],
+    body: [
+      ["Occupancy %", report.summary?.occupancyPercentage || 0, "Rooms occupied", report.summary?.roomsOccupied || 0],
+      ["House Count", report.summary?.houseCount || 0, "Vacant", report.summary?.vacant || 0],
+      ["Domestic", report.summary?.domestic || 0, "Cleaning", report.summary?.cleaning || 0],
+      ["Foreigners", report.summary?.foreigners || 0, "Blocked", report.summary?.blocked || 0],
+      ["Room Revenue", report.summary?.roomRevenue || 0, "Total", report.summary?.totalRooms || 0],
+      ["A.R.R.", report.summary?.arr || 0, "", ""],
+    ],
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: {
+      fillColor: [51, 65, 85],
+      textColor: 255,
+      fontStyle: "bold",
+    },
+    margin: { left: 8, right: 150 },
+  });
+
+  const statsEndY = doc.lastAutoTable.finalY + 8;
+
+  doc.setFontSize(11);
+  doc.setTextColor(30, 58, 95);
+  doc.text("Plan Summary", 14, statsEndY);
+
+  autoTable(doc, {
+    startY: statsEndY + 2,
+    head: [["Plan", "Rms", "Pax", "Addnl", "Total"]],
+    body: report.planSummary.map((plan) => [
+      plan.plan || "",
+      plan.rms || 0,
+      plan.pax || 0,
+      plan.addnl || 0,
+      plan.total || 0,
+    ]),
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: {
+      fillColor: [22, 101, 52],
+      textColor: 255,
+      fontStyle: "bold",
+    },
+    margin: { left: 8, right: 180 },
+  });
+
+  const planEndY = doc.lastAutoTable.finalY + 8;
+
+  doc.setFontSize(11);
+  doc.setTextColor(30, 58, 95);
+  doc.text("Room Status", 14, planEndY);
+
+  autoTable(doc, {
+    startY: planEndY + 2,
+    head: [["Room No", "Status"]],
+    body: report.roomStatus.map((room) => [
+      room.roomNo || "",
+      room.status || "",
+    ]),
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: {
+      fillColor: [146, 64, 14],
+      textColor: 255,
+      fontStyle: "bold",
+    },
+    margin: { left: 8, right: 220 },
+  });
+
+  doc.save(`occupancy-checkout-report-${filters.fromDate}-to-${filters.toDate}.pdf`);
+};
 
   const handleExportExcel = () => {
     const wb = XLSX.utils.book_new();
@@ -326,7 +481,7 @@ useEffect(() => {
 
                   <button
                     type="button"
-                    onClick={handlePrint}
+                    onClick={handleExportPDF }
                     className="inline-flex h-8 items-center justify-center rounded-md bg-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-300"
                   >
                     Print
@@ -352,18 +507,12 @@ useEffect(() => {
           ) : null}
 
           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm print:rounded-none print:border-0 print:p-0 print:shadow-none md:p-4">
-            <h2 className="text-lg font-semibold text-slate-900">
-              THE FEEL MUNNAR RESORT AND SPA
-            </h2>
-            <p className="mt-3 text-sm font-semibold">
-              Occupancy List Summary :-
-            </p>
-
+           <div className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
+    {owner?.companyName || owner?.name || "Sales Report"}
+  </div>
+           
             <div className="mt-4 flex flex-col gap-1 text-xs md:flex-row md:justify-between">
-              <div>
-                <span className="font-medium">Report Date :- </span>
-                <span>{report.reportDate || filters.toDate}</span>
-              </div>
+            
               <div>
                 <span className="font-medium">Print Date & Time :- </span>
                 <span>

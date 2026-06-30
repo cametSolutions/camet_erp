@@ -4,7 +4,8 @@ import { saveAs } from "file-saver";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
 import TitleDiv from "@/components/common/TitleDiv";
-
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 const formatDate = (d) => {
   if (!d) return "";
   const dt = new Date(d);
@@ -175,49 +176,121 @@ export default function ViewReport() {
     fetchReport();
   };
 
-  const handlePrint = () => window.print();
+  const exportToPDF = () => {
+  const cols = getColumns();
+  const doc = new jsPDF("l", "mm", "a4");
+
+  doc.setFontSize(14);
+  doc.setTextColor(30, 58, 95);
+  doc.text(showDetails ? "Sales Report - Details" : "Sales Report - Summary", 14, 14);
+
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text(
+    `Period: ${filters.fromDate || "-"} to ${filters.toDate || "-"}   |   ${rows.length} rows   |   Printed: ${printMeta.date} ${printMeta.time}`,
+    14,
+    20
+  );
+
+  const head = [[
+    "#",
+    ...cols.map((c) => c.label),
+  ]];
+
+  const body = rows.map((row, idx) => [
+    idx + 1,
+    ...cols.map((col) => {
+      const value = row[col.key];
+      return col.render ? col.render(value) : (value ?? "");
+    }),
+  ]);
+
+  body.push([
+    "TOTAL",
+    ...cols.map((col, index) => {
+      if (index === 0) return "";
+      return SUMMARY_NUMERIC_KEYS.includes(col.key) ? fmt(total(col.key)) : "";
+    }),
+  ]);
+
+  autoTable(doc, {
+    startY: 25,
+    head,
+    body,
+    styles: {
+      fontSize: 6.5,
+      cellPadding: 1.8,
+      overflow: "linebreak",
+    },
+    headStyles: {
+      fillColor: [30, 58, 95],
+      textColor: 255,
+      fontStyle: "bold",
+      halign: "center",
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
+    },
+    bodyStyles: {
+      textColor: 20,
+    },
+    didParseCell: (hook) => {
+      if (hook.section === "body" && hook.row.index === body.length - 1) {
+        hook.cell.styles.fontStyle = "bold";
+        hook.cell.styles.fillColor = [30, 58, 95];
+        hook.cell.styles.textColor = 255;
+      }
+    },
+    margin: { top: 25, right: 8, bottom: 10, left: 8 },
+    tableWidth: "auto",
+  });
+
+  doc.save(
+    `sales-report-${filters.fromDate}-to-${filters.toDate}${showDetails ? "-details" : "-summary"}.pdf`
+  );
+};
 
   const total = (key) =>
     rows.reduce((s, r) => s + (Number(r[key]) || 0), 0);
 
  const getColumns = () => (showDetails ? DETAIL_COLUMNS : SUMMARY_COLUMNS);
 
-  const handleExportExcel = () => {
-     const cols = getColumns();
-    const headers = cols.map((c) => c.label);
-     const dataRows = rows.map((r) =>
-      cols.map((col) =>
-        col.render && col.key !== "date" ? col.render(r[col.key]) : r[col.key] ?? ""
-      )
-    );
+const handleExportExcel = () => {
+  const cols = getColumns();
+  const headers = cols.map((c) => c.label);
 
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([
-   
-      [],
-      ["Sales Report"],
-      [],
-      [
-        "From:", filters.fromDate,
-        "", "", "", "", "", "", "", "",
-        "Print Date & Time:",
-        `${printMeta.date} ${printMeta.time}`,
-      ],
-      [],
-      headers,
-      ...dataRows,
-    ]);
+  const dataRows = rows.map((r) =>
+    cols.map((col) =>
+      col.render ? col.render(r[col.key]) : (r[col.key] ?? "")
+    )
+  );
 
-    ws["!cols"] = COLUMNS.map(() => ({ wch: 14 }));
-    XLSX.utils.book_append_sheet(wb, ws, "Sales Report");
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([
+    [],
+    ["Sales Report"],
+    [],
+    [
+      "From:", filters.fromDate,
+      "", "", "", "", "", "", "", "",
+      "Print Date & Time:",
+      `${printMeta.date} ${printMeta.time}`,
+    ],
+    [],
+    headers,
+    ...dataRows,
+  ]);
 
-    const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    saveAs(
-      new Blob([buf], { type: "application/octet-stream" }),
-      `Sales_Report_${filters.fromDate}_to_${filters.toDate}${showDetails ? "_details" : ""}.xlsx`
-    );
-  };
+  ws["!cols"] = cols.map(() => ({ wch: 14 }));
+  XLSX.utils.book_append_sheet(wb, ws, "Sales Report");
 
+  const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+
+  saveAs(
+    new Blob([buf], { type: "application/octet-stream" }),
+    `Sales_Report_${filters.fromDate}_to_${filters.toDate}${showDetails ? "_details" : ""}.xlsx`
+  );
+};
   const columns = getColumns();
 
   return (
@@ -279,7 +352,7 @@ export default function ViewReport() {
 
                   <button
                     type="button"
-                    onClick={handlePrint}
+                    onClick={exportToPDF}
                     className="inline-flex h-8 items-center justify-center rounded-md bg-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-300"
                   >
                     Print
@@ -312,10 +385,8 @@ export default function ViewReport() {
 
            <div className="flex items-center justify-between gap-2">
               <div className="text-xs">
-                <span className="font-medium">Period :- </span>
-                <span>
-                  {filters.fromDate || "—"} to {filters.toDate || "—"}
-                </span>
+               
+                
               </div>
 
               <button

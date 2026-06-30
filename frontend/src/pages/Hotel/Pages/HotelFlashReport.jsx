@@ -233,7 +233,7 @@ const FlashReportPDF = ({
         <View style={s.border}>
           <View style={s.header}>
             <Text style={s.title}>{dateData?.companyName}</Text>
-            <Text style={s.subtitle}>Hotel Flash Report - Comparison</Text>
+            <Text style={s.subtitle}>Hotel Flash Report </Text>
           </View>
 
           <View style={s.dateRow}>

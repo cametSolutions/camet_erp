@@ -11,7 +11,7 @@ import { FaRegEye } from "react-icons/fa";1
 import { IoMdEyeOff } from "react-icons/io";
 import { useNavigate, Link } from "react-router-dom";
 import Footer from "../footer/Footer";
-import { storingPermissions, storingUserType } from "slices/permissionSlice";
+// import { storingPermissions, storingUserType } from "slices/permissionSlice";
 
 
 function LoginForm({ user }) {
