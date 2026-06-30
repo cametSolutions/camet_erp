@@ -1859,11 +1859,12 @@ function BookingList() {
       },
     });
   };
-  const calculateTotalPax = (addpax, rooms) => {
-    let count = addpax && addpax.length ? addpax.length : 0;
-    rooms.forEach((it) => (count += it.pax));
+  const calculateRoomPax = (rooms = []) => {
+    return rooms.reduce((count, room) => count + Number(room?.pax || 0), 0);
+  };
 
-    return count;
+  const calculateExtraPax = (addpax = []) => {
+    return addpax?.length || 0;
   };
 
   const isCheckoutList = location.pathname === "/sUsers/checkOutList";
@@ -1934,7 +1935,7 @@ function BookingList() {
               ? "ARRIVAL DATE"
               : "BOOKING DATE"}
         </div>
-        <div className="w-32 text-center">
+        <div className="w-28 text-center">
           {location.pathname == "/sUsers/checkOutList"
             ? "CHECKOUT NO"
             : location.pathname == "/sUsers/checkInList"
@@ -1945,7 +1946,7 @@ function BookingList() {
       </div>
 
       <div className="hidden md:flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider">
-        <div className="w-10 text-center">SL.NO</div>
+        <div className="w-10 text-center">NO</div>
         <div className="w-28 text-center">
           {location.pathname == "/sUsers/checkOutList"
             ? "CHECKOUT DATE"
@@ -1958,11 +1959,12 @@ function BookingList() {
               ? "CHECK-IN NO"
               : "BOOKING NO"}
         </div>
-        <div className="w-40 text-center">GUEST NAME</div>
+        <div className="w-20 text-center">GUEST NAME</div>
         <div className="w-20 text-center">ROOM NO</div>
-        <div className="w-36 text-center">ARRIVAL DATE</div>
+        <div className="w-28 text-center">ARRIVAL DATE</div>
         <div className="w-28 text-center">ROOM TARIFF</div>
-        <div className="w-20 text-center">PAX</div>
+        <div className="w-16 text-center">PAX</div>
+        <div className="w-16 text-center">EXTRA PAX</div>
         <div className="w-20 text-center">FOOD PLAN</div>
         <div className="w-28 text-center">FOODPLAN AMOUNT</div>
         <div className="w-28 text-center">TRAVEL AGENT</div>
@@ -2266,7 +2268,7 @@ function BookingList() {
               </button>
             </div>
 
-            <div className="w-36 text-center text-gray-600 text-xs">
+            <div className="w-28 text-center text-gray-600 text-xs">
               {formatDate(el?.arrivalDate)}
               <span>({el.arrivalTime})</span>
             </div>
@@ -2276,8 +2278,12 @@ function BookingList() {
               {el.selectedRooms.length > 1 && "....."}
             </div>
 
-            <div className="w-20 text-center text-gray-600 font-medium">
-              {calculateTotalPax(el?.additionalPaxDetails, el?.selectedRooms)}
+            <div className="w-16 text-center text-gray-600 font-medium">
+              {calculateRoomPax(el?.selectedRooms)}
+            </div>
+
+            <div className="w-16 text-center text-gray-600 font-medium">
+              {calculateExtraPax(el?.additionalPaxDetails)}
             </div>
 
             <div className="w-28 text-center text-gray-600 text-xs">
