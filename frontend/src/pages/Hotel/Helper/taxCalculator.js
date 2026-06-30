@@ -5,7 +5,8 @@ export const taxCalculator = (
   inclusive = false,
   formData = null,
   taxCalculationRoomId = null,
-  includeFoodRateWithRoom
+  includeFoodRateWithRoom,
+  includePaxRateWithRoom,
 ) => {
   try {
     if (!data || typeof data !== "object") {
@@ -26,7 +27,7 @@ export const taxCalculator = (
         ? formData?.additionalPaxDetails?.reduce(
             (acc, item) =>
               item.roomId === taxCalculationRoomId
-                ? acc + (Number(item.rate) || 0) * Number(data?.stayDays || 1)
+                ? acc + (Number(item.rate) || 0) * Number(data?.stayDays )
                 : acc,
             0,
           ) || 0
@@ -38,7 +39,7 @@ export const taxCalculator = (
         ? formData?.foodPlan?.reduce(
             (acc, item) =>
               item.roomId === taxCalculationRoomId
-                ? acc + (Number(item.rate) || 0) * Number(data?.stayDays || 1)
+                ? acc + (Number(item.rate) || 0) * Number(data?.stayDays )
                 : acc,
             0,
           ) || 0
@@ -49,13 +50,13 @@ export const taxCalculator = (
     const otherChargeAmt = Number(data?.otherChargeAmount || 0);
 
     const baseAmount = Number(data?.totalAmount || 0);
-    console.log("baseAmount",baseAmount);
+    console.log("baseAmount",includePaxRateWithRoom);
     const isOffline = formData?.bookingType === "offline";
 
     // totalAmount for tax slab detection
     // includeFoodRateWithRoom = true  → food already inside baseAmount, don't add again
     // includeFoodRateWithRoom = false → food is separate, add for correct slab detection
-    let totalAmount = Math.round(baseAmount + reducedAdditionalPaxAmount ) 
+    let totalAmount = Math.round(baseAmount + (includePaxRateWithRoom ? 0 : reducedAdditionalPaxAmount ) )
     
     if (!includeFoodRateWithRoom && !isOffline) {
       totalAmount += reducedFoodPlanAmount;
