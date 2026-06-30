@@ -68,11 +68,15 @@ const RoomSubDetailsManagement = ({
 
  const handleDefault = async (cmp_id, id) => {
   if (!id) return;
+    let selectedModal = "AdditionalPax";
+    if(tab == "Food Plan"){
+selectedModal = "FoodPlan"
+    }
 
   try {
 
     const { data } = await api.put(
-      `/api/sUsers/additionalPaxDefaultSetting/${cmp_id}/${id}`,
+      `/api/sUsers/defaultSetting/${cmp_id}/${id}/${selectedModal}`,
       {},
        { withCredentials: true }
     );
@@ -256,7 +260,7 @@ const RoomSubDetailsManagement = ({
                         <input
                           type="checkbox"
                             checked={el._id === selectedDefault}
-                          onChange={(e) => handleDefault(el.cmp_id, el._id)}
+                          onChange={(e) => handleDefault(el.cmp_id, el._id )}
                           className="text-blue-500"
                         >
                           {/* <FaEdit size={15} /> */}

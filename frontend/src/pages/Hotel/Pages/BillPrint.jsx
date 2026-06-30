@@ -232,6 +232,7 @@ console.log(merged);
 
       const dateTariffs = room.dateTariffs || {};
       let activePrice = room?.priceLevelRate;
+      activePrice = doc?.addPaxWithRate ?  room?.priceLevelRate - room?.additionalPaxAmountWithTax : room?.priceLevelRate
 
       // Build per-day prices/taxes keyed by ISO date (YYYY-MM-DD)
       for (let i = 0; i < stayDays; i++) {
@@ -330,7 +331,7 @@ console.log(merged);
           }
         }
       }
-      console.log(fullDaysAre);
+  
 
       // Add full days (respect swap base date, read tariff via ISO key)
       for (let i = 0; i < fullDaysAre; i++) {
@@ -356,7 +357,7 @@ console.log(merged);
         const addArray = room?.otherChargeDetails.filter(
           (item) => item.action === "add",
         );
-
+      console.log(doc?.addPaxWithRate)
         result.push({
           date: formattedDate,
           description: `Room Rent - Room ${room.roomName}`,
@@ -871,13 +872,20 @@ console.log(merged);
           0,
         );
 
+        const totalAdditionalPaxWithTax = roomDays.reduce(
+          (sum, i) => sum + (i.additionalPaxDataWithTax || 0),
+          0,
+        );
+
+        console.log(totalAdditionalPaxWithTax - totalAdditionalPaxWithoutTax);
+
         if (totalAdditionalPaxWithoutTax > 0) {
           charges.push({
             date: roomArrivalDate,
             description: `Extra Person`,
             docNo: "-",
             amount: totalAdditionalPaxWithoutTax,
-            taxes: 0,
+            taxes: totalAdditionalPaxWithTax - totalAdditionalPaxWithoutTax,
             advance: "",
             roomName,
           });
@@ -901,6 +909,7 @@ console.log(merged);
                   totalAdditionalPaxWithoutTax) *
                 100
               : 0;
+              
           const halfAdditionalPaxTaxPercentage = additionalPaxTaxPercentage / 2;
 
           const paxCGST = roomAdditionalPaxTax / 2;
