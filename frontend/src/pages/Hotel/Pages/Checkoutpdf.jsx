@@ -505,12 +505,7 @@ const HotelCheckoutStatement = () => {
             </div>
           </div>
 
-          <div className="text-xs md:text-sm mb-3">
-            <span className="font-semibold">FO Cash Statement From</span>{" "}
-            {formatDate(fromDate)}
-            <span className="font-semibold"> To </span>
-            {formatDate(toDate)}
-          </div>
+         
 
           {error && (
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-3">
