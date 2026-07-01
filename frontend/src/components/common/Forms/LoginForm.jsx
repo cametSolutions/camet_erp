@@ -7,21 +7,22 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PropagateLoader } from "react-spinners";
 import api from "../../../api/api";
-import { FaRegEye } from "react-icons/fa";1
+import { FaRegEye } from "react-icons/fa";
+1;
 import { IoMdEyeOff } from "react-icons/io";
 import { useNavigate, Link } from "react-router-dom";
 import Footer from "../footer/Footer";
-// import { storingPermissions, storingUserType } from "slices/permissionSlice";
+import { useDispatch } from "react-redux";
+import { storingPermissions, storingUserType } from "/slices/permissionSlice";
 
 
 function LoginForm({ user }) {
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loader, setLoader] = useState(false);
   const navigate = useNavigate();
-const dispatch = useDispatch();
+  const dispatch = useDispatch();
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
@@ -61,25 +62,21 @@ const dispatch = useDispatch();
             "Content-Type": "application/json",
           },
           withCredentials: true,
-        }
+        },
       );
 
       setTimeout(() => {
         setLoader(false);
         toast.success(res.data.message);
         localStorage.setItem(storageKey, JSON.stringify(res.data.data));
-         if (user === "secondary") {
+        if (user === "secondary") {
           dispatch(storingPermissions(res?.data?.data?.permissions || {}));
           dispatch(storingUserType(res?.data?.data?.userType || null));
-
           localStorage.setItem(
             "permissions",
-            JSON.stringify(res?.data?.data?.permissions || {})
+            JSON.stringify(res?.data?.data?.permissions || {}),
           );
-          localStorage.setItem(
-            "userType",
-            res?.data?.data?.userType || ""
-          );
+          localStorage.setItem("userType", res?.data?.data?.userType || "");
         }
         navigate(dashboardPath);
         setEmail("");

@@ -65,6 +65,7 @@ const FoodPlanSchema = new mongoose.Schema({
     ref: "PrimaryUser",
     required: true,
   },
+   isDefault: { type: Boolean, default: false },
 });
 
 
