@@ -62,6 +62,46 @@ const isDateLockedByAudit = (date, lockedThroughDate) => {
   return normalizedDate <= normalizedLockedDate;
 };
 
+const LIST_DATE_FILTER_STORAGE_PREFIX = "hotelListDateFilter";
+const DATE_FILTER_PATHS = new Set([
+  "/sUsers/bookingList",
+  "/sUsers/checkInList",
+  "/sUsers/checkOutList",
+]);
+
+const getListDateFilterStorageKey = (pathname) => {
+  return `${LIST_DATE_FILTER_STORAGE_PREFIX}:${pathname}`;
+};
+
+const getDefaultListDates = () => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(new Date().getDate() - 30);
+
+  return {
+    fromDate: thirtyDaysAgo.toISOString().split("T")[0],
+    toDate: new Date().toISOString().split("T")[0],
+  };
+};
+
+const getStoredListDates = (pathname) => {
+  const defaultDates = getDefaultListDates();
+
+  if (!DATE_FILTER_PATHS.has(pathname)) return defaultDates;
+
+  try {
+    const savedDates = JSON.parse(
+      localStorage.getItem(getListDateFilterStorageKey(pathname)),
+    );
+
+    return {
+      fromDate: savedDates?.fromDate || defaultDates.fromDate,
+      toDate: savedDates?.toDate || defaultDates.toDate,
+    };
+  } catch {
+    return defaultDates;
+  }
+};
+
 function BookingList() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -138,15 +178,14 @@ function BookingList() {
 
   const [remarks, setRemarks] = useState("");
   const [transactionNumber, setTransactionNumber] = useState("");
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(new Date().getDate() - 30);
-  const [fromDate, setFromDate] = useState(
-    thirtyDaysAgo.toISOString().split("T")[0],
-  );
+  const initialDateFilter = useMemo(() => {
+    return getStoredListDates(location.pathname);
+  }, [location.pathname]);
+  const [fromDate, setFromDate] = useState(initialDateFilter.fromDate);
   const [restaurantSaleManageMent, setRestaurantSaleManageMent] =
     useState(false);
 
-  const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
+  const [toDate, setToDate] = useState(initialDateFilter.toDate);
   const [nightAuditStatus, setNightAuditStatus] = useState(null);
   const [nightAuditLoading, setNightAuditLoading] = useState(false);
   const [nightAuditActionLoading, setNightAuditActionLoading] = useState(false);
@@ -203,6 +242,25 @@ function BookingList() {
   const selectedAuditDate = isSingleAuditDateSelected ? fromDate : "";
   const isNightAuditLocked = Boolean(nightAuditStatus?.isLocked);
   const lockedThroughDate = nightAuditStatus?.lockedThroughDate || null;
+
+  useEffect(() => {
+    const nextDateFilter = getStoredListDates(location.pathname);
+
+    setFromDate(nextDateFilter.fromDate);
+    setToDate(nextDateFilter.toDate);
+  }, [location.pathname]);
+
+  const handleDateChange = ({ from, to }) => {
+    setFromDate(from);
+    setToDate(to);
+
+    if (DATE_FILTER_PATHS.has(location.pathname)) {
+      localStorage.setItem(
+        getListDateFilterStorageKey(location.pathname),
+        JSON.stringify({ fromDate: from, toDate: to }),
+      );
+    }
+  };
 
   const [expandedRows, setExpandedRows] = useState({});
 
@@ -2801,10 +2859,9 @@ function BookingList() {
             onType={searchData}
             toggle={location.pathname === "/sUsers/bookingList"}
             from={location.pathname}
-            onDateChange={({ from, to }) => {
-              setFromDate(from);
-              setToDate(to);
-            }}
+            initialFromDate={fromDate}
+            initialToDate={toDate}
+            onDateChange={handleDateChange}
             extraActions={
               location.pathname === "/sUsers/checkInList" && (
                 <div className="flex flex-wrap items-center gap-2">

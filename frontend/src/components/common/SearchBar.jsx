@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CiSearch } from "react-icons/ci";
 import { IoIosCloseCircleOutline } from "react-icons/io";
 import { MdOutlineCalendarToday } from "react-icons/md";
@@ -10,6 +10,8 @@ function SearchBar({
   from,
   onDateChange,
   extraActions,
+  initialFromDate,
+  initialToDate,
 }) {
   const [search, setSearch] = useState("");
   const [checked, setChecked] = useState(false);
@@ -18,9 +20,14 @@ function SearchBar({
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(new Date().getDate() - 30);
   const [fromDate, setFromDate] = useState(
-    thirtyDaysAgo.toISOString().split("T")[0]
+    initialFromDate || thirtyDaysAgo.toISOString().split("T")[0]
   );
-  const [toDate, setToDate] = useState(today);
+  const [toDate, setToDate] = useState(initialToDate || today);
+
+  useEffect(() => {
+    if (initialFromDate) setFromDate(initialFromDate);
+    if (initialToDate) setToDate(initialToDate);
+  }, [initialFromDate, initialToDate]);
 
   const handleCheckboxChange = () => {
     if (search === "completed") {
