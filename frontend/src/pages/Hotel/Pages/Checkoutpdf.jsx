@@ -30,8 +30,8 @@ const HotelCheckoutStatement = () => {
 
   const num = (v) => Number(v || 0);
   const sectionConfigs = [
-    { key: "BOOKING", title: "Reservation Bills" },
-    { key: "CHECKIN", title: "Checking Bills" },
+    { key: "BOOKING", title: "Reservation Advance" },
+    { key: "CHECKIN", title: "Checking Advance" },
     { key: "CHECKOUT", title: "Checkout Bills" },
   ];
   const sectionedData = sectionConfigs.map((section) => ({
@@ -241,7 +241,8 @@ const HotelCheckoutStatement = () => {
   return paymentModes.length > 0 ? paymentModes.join("/") : "N/A";
 }
 
-  function renderTableRow(item, index) {
+  function renderTableRow(item, index, sectionKey) {
+    const isCheckoutSection = sectionKey === "CHECKOUT";
     const rowTotal =
       num(item?.cash) +
       num(item?.bank) +
@@ -258,9 +259,15 @@ const HotelCheckoutStatement = () => {
         <td className="py-1 px-1">{formatDate(item.date)}</td>
         <td className="py-1 px-1">{item.customerName || "-"}</td>
         <td className="py-1 px-1">{item.guestName || "-"}</td>
-        <td className="py-1 px-1">{item.roomName || "-"}</td>
+        <td className="py-1 px-1">
+          {isCheckoutSection ? item.roomName || "-" : ""}
+        </td>
         <td className="py-1 px-1 text-right">
-          {item.grandTotal != null ? num(item.grandTotal).toFixed(2) : "-"}
+          {isCheckoutSection
+            ? item.grandTotal != null
+              ? num(item.grandTotal).toFixed(2)
+              : "-"
+            : ""}
         </td>
         <td className="py-1 px-1 text-right">
           {Number(item?.cash) > 0 ? num(item.cash).toFixed(2) : ""}
@@ -281,6 +288,75 @@ const HotelCheckoutStatement = () => {
           {rowTotal.toFixed(2)}
         </td>
         <td className="py-1 px-1">{getPaymentModeDisplay(item)}</td>
+      </tr>
+    );
+  }
+
+  function getSectionTotals(section) {
+    return section.items.reduce(
+      (acc, item) => {
+        const cash = num(item?.cash);
+        const bank = num(item?.bank);
+        const card = num(item?.card);
+        const credit = num(item?.credit);
+        const upi = num(item?.upi);
+
+        acc.cash += cash;
+        acc.bank += bank;
+        acc.card += card;
+        acc.credit += credit;
+        acc.upi += upi;
+        acc.total += cash + bank + card + credit + upi;
+
+        if (section.key === "CHECKOUT") {
+          acc.billAmount += num(item?.grandTotal);
+        }
+
+        return acc;
+      },
+      {
+        billAmount: 0,
+        cash: 0,
+        bank: 0,
+        card: 0,
+        credit: 0,
+        upi: 0,
+        total: 0,
+      }
+    );
+  }
+
+  function renderSectionTotalRow(section) {
+    if (section.items.length === 0) return null;
+
+    const totals = getSectionTotals(section);
+
+    return (
+      <tr className="border-t-2 border-black font-semibold bg-gray-100 text-xs">
+        <td colSpan="4" className="py-1.5 px-1 text-left">
+          {section.title} Total
+        </td>
+        <td className="py-1.5 px-1" />
+        <td className="py-1.5 px-1 text-right">
+          {section.key === "CHECKOUT" ? totals.billAmount.toFixed(2) : ""}
+        </td>
+        <td className="py-1.5 px-1 text-right">
+          {totals.cash > 0 ? totals.cash.toFixed(2) : ""}
+        </td>
+        <td className="py-1.5 px-1 text-right">
+          {totals.bank > 0 ? totals.bank.toFixed(2) : ""}
+        </td>
+        <td className="py-1.5 px-1 text-right">
+          {totals.card > 0 ? totals.card.toFixed(2) : ""}
+        </td>
+        <td className="py-1.5 px-1 text-right">
+          {totals.credit > 0 ? totals.credit.toFixed(2) : ""}
+        </td>
+        <td className="py-1.5 px-1 text-right">
+          {totals.upi > 0 ? totals.upi.toFixed(2) : ""}
+        </td>
+        <td className="py-1.5 px-1 text-right">{totals.total.toFixed(2)}</td>
+        <td className="py-1.5 px-1" />
       </tr>
     );
   }
@@ -349,10 +425,14 @@ const HotelCheckoutStatement = () => {
             </tr>
 
             {section.items.length > 0
-              ? section.items.map((item, index) => renderTableRow(item, index))
+              ? section.items.map((item, index) =>
+                  renderTableRow(item, index, section.key)
+                )
               : renderEmptyState(`No ${section.title.toLowerCase()} found`)}
+
+            {renderSectionTotalRow(section)}
           </tbody>
-          {showSummary ? <tfoot>{renderSummary()}</tfoot> : null}
+          {/* {showSummary ? <tfoot>{renderSummary()}</tfoot> : null} */}
         </table>
       </div>
     );
