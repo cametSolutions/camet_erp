@@ -191,7 +191,7 @@ function EditChecking() {
         <div>
           <TitleDiv
             title={isTariffRateChange ? "Edit Tariff Rate" : "Edit Checking"}
-            from="/sUsers/hotelDashBoard"
+            from="/sUsers/checkInList"
             dropdownContents={
               !isTariffRateChange
                 ? [
