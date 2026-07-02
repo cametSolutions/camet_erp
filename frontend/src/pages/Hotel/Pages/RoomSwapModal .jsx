@@ -12,7 +12,8 @@ import AvailableRooms from "../Components/AvailableRooms";
 import AdditionalPaxDetails from "../Components/AdditionalPaxDetails";
 import FoodPlanComponent from "../Components/FoodPlanComponent";
 import { toast } from "sonner";
-import {reArrangeFoodPlan} from "../Helper/hotelHelper"
+import useFetch from "@/customHook/useFetch";
+
 
 const RoomSwapModal = ({
   isOpen,
@@ -34,12 +35,38 @@ const RoomSwapModal = ({
   const [displayAdditionalPax, setDisplayAdditionalPax] = useState(false);
   const [displayFoodPlan, setDisplayFoodPlan] = useState(false);
   const [formData, setFormData] = useState({});
+  const [defaultPax,setDefaultPax] = useState({})
+  const [defaultFoodPlan,setDefaultFoodPlan] = useState({})
 
   useEffect(() => {
     if (isOpen) {
       fetchCheckedInGuests();
     }
   }, [isOpen]);
+
+  const {
+    data: defaultPaxResponse,
+  } = useFetch(`/api/sUsers/getDefaultPax/${cmp_id}`);
+  
+  useEffect(() => {
+    if (defaultPaxResponse) {
+      setDefaultPax(defaultPaxResponse.data);
+    }
+  }, [defaultPaxResponse]);
+  
+  
+  
+  const {
+    data: defaultPlanResponse,
+  } = useFetch(`/api/sUsers/getDefaultPlan/${cmp_id}`);
+  
+  useEffect(() => {
+    if (defaultPlanResponse) {
+      setDefaultFoodPlan(defaultPlanResponse.data);
+    }
+  }, [defaultPlanResponse]);
+
+  console.log(selectedGuest)
 
   const fetchCheckedInGuests = async () => {
     setLoading(true);
@@ -118,7 +145,8 @@ const RoomSwapModal = ({
           checkInDate: guest?.arrivalDate,
           checkOutDate: guest?.checkOutDate,
           addTaxWithRate: guest?.addTaxWithRate,
-          includeFoodRateWithRoom: guest?.includeFoodRateWithRoom,
+          addFoodPlanWithRate: guest?.addFoodPlanWithRate,
+          addPaxWithRate: guest?.addPaxWithRate,
           rate:room.priceLevelRate || 0,
           room: {
             _id: room?.roomId?._id || room?.roomId,
@@ -148,6 +176,8 @@ const RoomSwapModal = ({
   }, [flattenedGuests, searchTerm]);
 
   if (!isOpen) return null;
+
+  console.log(selectedGuest)
 
   const selectedDetails = (_, to) => {
     if (to === "addPax") setDisplayAdditionalPax(true);
@@ -419,11 +449,15 @@ const RoomSwapModal = ({
                         roomIdToUpdate={selectedRoom?._id}
                         addTaxWithRate={selectedGuest?.addTaxWithRate}
                         includeFoodRateWithRoom={
-                          selectedGuest?.includeFoodRateWithRoom
+                          selectedGuest?.addFoodPlanWithRate
                         }
+                        includePaxRateWithRoom={selectedGuest?.addPaxWithRate}
+                        defaultFoodPlan ={selectedGuest?.foodPlanArray[0]||{}}
+                        defaultPax={defaultPax}
                         showRooms={false}
                         selectedGuest={selectedGuest}
                         setFormData={setFormData}
+                        forSwap={true}
                       />
                     )}
                   </div>
@@ -480,6 +514,7 @@ const RoomSwapModal = ({
               setDisplayAdditionalPax={setDisplayAdditionalPax}
               selectedRoomId={selectedRoom?._id}
               formData={formData}
+              includePaxRateWithRoom={selectedGuest?.addPaxWithRate}
             />
           </div>
         </div>
@@ -494,7 +529,7 @@ const RoomSwapModal = ({
               setDisplayFoodPlan={setDisplayFoodPlan}
               selectedRoomId={selectedRoom?._id}
               formData={formData}
-              includeFoodRateWithRoom={selectedGuest?.includeFoodRateWithRoom}
+              includeFoodRateWithRoom={selectedGuest?.addFoodPlanWithRate}
             />
           </div>
         </div>

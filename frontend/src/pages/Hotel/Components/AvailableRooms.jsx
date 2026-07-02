@@ -116,7 +116,9 @@ function AvailableRooms({
   showRooms = true,
   selectedGuest = null,
   setFormData = () => {},
+  forSwap = false
 }) {
+  
   const [rooms, setRooms] = useState([]);
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -137,7 +139,7 @@ function AvailableRooms({
   const dropdownRef = useRef(null);
   const PAGE_SIZE = 50;
 
-  console.log(formData?.selectedRooms);
+  console.log(defaultFoodPlan);
   useEffect(() => {
     const fetchBookings = async () => {
       if (formData?.selectedRooms?.length > 0) {
@@ -427,7 +429,6 @@ function AvailableRooms({
   const calculateTax = useCallback(
     async (booking) => {
       if (!booking) return booking;
-      console.log("dada");
       const updatedRoom = recalculateBookingTotals(booking);
 
       try {
@@ -709,6 +710,7 @@ function AvailableRooms({
   };
 
   const handleSelect = async (room) => {
+    console.log(room,defaultFoodPlan)
     let defaultRate = 0;
     let foodPlan = [];
     let additionalPaxDetails = [];
@@ -725,6 +727,18 @@ function AvailableRooms({
     } else {
       defaultRate =
         room?.priceLevel[0]?.priceRate || room?.roomType?.roomRent || 0;
+    }
+
+    if(defaultFoodPlan && !forSwap ){
+      const newPlan = {
+        foodPlanId: defaultFoodPlan?._id,
+        foodPlan: defaultFoodPlan?.foodPlan,
+        rate: defaultFoodPlan?.amount,
+        roomId : room?._id,
+        isDefault: defaultFoodPlan?.isDefault,
+        isComplimentary : defaultFoodPlan?.isComplimentary
+      };
+     foodPlan.push(newPlan);
     }
 
     const stayDays = formData?.stayDays || 1;
@@ -747,11 +761,11 @@ function AvailableRooms({
       prev.some((b) => b.roomId === booking.roomId) ? prev : [...prev, booking],
     );
     if (foodPlan?.length > 0) {
-      setFormData((prev) => ({
-        ...prev,
-        foodPlan: foodPlan,
-        additionalPaxDetails: additionalPaxDetails,
-      }));
+    setFormData((prev) => ({
+  ...prev,
+  foodPlan: [...(prev.foodPlan || []), ...foodPlan],
+  additionalPaxDetails,
+}));
     }
 
     setSelectedValue(room);
@@ -850,6 +864,8 @@ function AvailableRooms({
       if (index !== -1) {
         additionalPaxDetails.splice(index, 1);
       }
+
+   
       setFormData((prev) => ({
         ...prev,
         additionalPaxDetails: additionalPaxDetails,
@@ -996,8 +1012,11 @@ function AvailableRooms({
                     <th className="w-10 px-1 py-2 text-center text-xs font-bold text-white uppercase">
                       EX.Pax
                     </th>
-                   <th className="w-16 px-1 py-2 text-center text-xs font-bold text-white uppercase">
+                   {/* <th className="w-12 px-1 py-2 text-center text-xs font-bold text-white uppercase">
                       Food
+                    </th> */}
+                       <th className="w-12 px-1 py-2 text-center text-xs font-bold text-white uppercase">
+                      DFP
                     </th>
                     <th className="w-12 px-1 py-2 text-center text-xs font-bold text-white uppercase">
                       Tax
@@ -1168,7 +1187,7 @@ function AvailableRooms({
                             className="w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
                           />
                         </td>
-                        <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
+                        {/* <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
                           <input
                             type="number"
                             value={
@@ -1187,7 +1206,16 @@ function AvailableRooms({
                             min="0"
                             className="w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
                           />
-                        </td>
+                        </td> */}
+                    <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
+  <span className="block">
+    {defaultFoodPlan ? defaultFoodPlan.foodPlan : ""}
+  </span>
+
+  <span className="block text-[10px] text-gray-500 font-normal">
+    {defaultFoodPlan ? defaultFoodPlan.amount ||  defaultFoodPlan.rate : ""}
+  </span>
+</td>
                         <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
                           {Number(booking.taxPercentage || 0).toFixed(1)}%
                         </td>
@@ -1248,14 +1276,14 @@ function AvailableRooms({
                                       <span className="text-[10px] text-gray-500">
                                         {booking?.stayDays} × ₹
                                         {(
-                                          booking?.additionalPaxAmountWithOutTax /
+                                          booking?.additionalPaxAmountWithTax /
                                             booking?.stayDays || 0
                                         ).toFixed(0)}
                                       </span>
                                       <span className="text-xs font-bold">
                                         ₹
                                         {Number(
-                                          booking?.additionalPaxAmountWithOutTax ||
+                                          booking?.additionalPaxAmountWithTax ||
                                             0,
                                         ).toFixed(0)}
                                       </span>
@@ -1264,7 +1292,7 @@ function AvailableRooms({
                                     <span>
                                       ₹
                                       {Number(
-                                        booking?.additionalPaxAmountWithOutTax ||
+                                        booking?.additionalPaxAmountWithTax ||
                                           0,
                                       ).toFixed(0)}
                                     </span>
