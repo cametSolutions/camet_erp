@@ -1215,7 +1215,7 @@ console.log(merged);
       summary: {
         roomRent: (
           Number(roomTariffTotal || 0) +
-          Number(additionalPaxAmount || 0) +
+          // Number(additionalPaxAmount || 0) +
           Number(otherChargesAmount || 0) -
           Number(roomWiseDiscount || 0)
         ).toFixed(2),
@@ -2300,6 +2300,29 @@ ${hotelName}`;
                           </td>
                         </tr>
                       )}
+                    {activeMode !== "restaurant" &&
+                      billData?.summary?.additionalPax > 0 && (
+                        <tr>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                            Additional Pax 
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {Number(
+                              billData?.summary?.additionalPax || 0,
+                            ).toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                        </tr>
+                      )}
                     {activeMode !== "restaurant" && billData?.summary?.sgst && (
                       <tr>
                         <td
@@ -2394,7 +2417,7 @@ ${hotelName}`;
                           <td
                             style={{ border: "1px solid #000", padding: "4px" }}
                           >
-                            Newly added restaurant discount
+                            Restaurant Side Discount
                           </td>
                           <td
                             style={{

@@ -152,11 +152,7 @@ export default function EnhancedCheckoutModal({
 
           const balanceToPay = totalAmount - Number(checkout.advanceAmount);
 
-          const time = new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          });
+          const time = "11:30 AM";
 
           return {
             ...checkout,
@@ -454,7 +450,6 @@ const handleTimeChange = (id, newTime) => {
         if (checkout._id === id) {
           const arrival = new Date(checkout.arrivalDate);
           const checkoutDate = new Date(newDate);
-         const time =  "11.00 AM" || checkout.checkOutTime || originalCheckout?.checkOutTime || "";
           const diffTime = checkoutDate - arrival;
           const calculatedDays =
             diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -464,6 +459,8 @@ const handleTimeChange = (id, newTime) => {
           const originalCheckout = originalCheckouts.find(
             (oc) => oc._id === id,
           );
+          const time =
+            checkout.checkOutTime || originalCheckout?.checkOutTime || "11:30 AM";
           if (!originalCheckout) return checkout;
 
           const updatedRooms =
@@ -531,6 +528,10 @@ const handleTimeChange = (id, newTime) => {
               return {
                 ...room,
                 stayDays: calculatedDays,
+                totalAmount: Math.round(newBaseAmount * 100) / 100,
+                amountAfterTax:
+                  Math.round((newBaseAmount + newTaxAmount) * 100) / 100,
+                amountWithOutTax: Math.round(newBaseAmount * 100) / 100,
                 baseAmount: Math.round(newBaseAmount * 100) / 100,
                 taxAmount: Math.round(newTaxAmount * 100) / 100,
                 baseAmountWithTax:
@@ -750,11 +751,10 @@ const handleTimeChange = (id, newTime) => {
               0,
             ),
             checkOutDate: newCheckoutDate.toISOString().split("T")[0],
-            checkOutTime: newCheckoutDate.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true, // 12-hour format
-            }),
+            checkOutTime:
+              checkout.checkOutTime ||
+              originalCheckout?.checkOutTime ||
+              "11:30 AM",
           };
         }
         return checkout;

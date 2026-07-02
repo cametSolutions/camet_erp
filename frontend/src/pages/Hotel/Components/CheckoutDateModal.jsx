@@ -23,59 +23,68 @@ export default function CheckoutDateModal({
 }) {
   console.log(checkouts);
   return (
-  <div className="border rounded-md bg-white overflow-x-auto m-3">
-  <table className="w-full min-w-[600px] text-xs sm:text-sm">
-    <thead className="bg-gray-100">
-      <tr>
-        <th className="p-2 text-left whitespace-nowrap">VoucherNo & Arrival Date</th>
-        <th className="p-2 text-left whitespace-nowrap">Checkout Date</th>
-        <th className="p-2 text-left whitespace-nowrap">Checkout Time</th>
-        <th className="p-2 text-left whitespace-nowrap">Days</th>
-      </tr>
-    </thead>
+    <div className="m-3 space-y-2">
+      <div className="hidden rounded-md border bg-gray-100 px-3 py-2 text-xs font-medium text-gray-700 sm:grid sm:grid-cols-[1.35fr_1fr_0.9fr_0.55fr] sm:gap-2">
+        <div>VoucherNo & Arrival Date</div>
+        <div>Checkout Date</div>
+        <div>Checkout Time</div>
+        <div>Days</div>
+      </div>
 
-    <tbody>
       {checkouts.map((c) => (
-        <tr key={c._id} className="border-t">
-          <td className="p-2">
-            <p>{c.voucherNumber} </p>{" "}
-            <p>
+        <div
+          key={c._id}
+          className="rounded-md border bg-white p-3 text-xs sm:grid sm:grid-cols-[1.35fr_1fr_0.9fr_0.55fr] sm:items-center sm:gap-2 sm:p-2"
+        >
+          <div className="mb-2 sm:mb-0">
+            <p className="font-medium text-gray-800">{c.voucherNumber}</p>
+            <p className="text-[11px] text-gray-500">
               {new Date(c.arrivalDate).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
               })}
-            </p>{" "}
-          </td>
-          <td className="p-2">
+            </p>
+          </div>
+
+          <label className="mb-2 block sm:mb-0">
+            <span className="mb-1 block text-[11px] font-medium text-gray-500 sm:hidden">
+              Checkout Date
+            </span>
             <input
               type="date"
               value={c.checkOutDate}
               onChange={(e) => onDateChange(c._id, e.target.value)}
-              className="border rounded px-2 py-1 w-full min-w-[130px]"
+              className="w-full rounded border px-2 py-1"
             />
-          </td>
-          <td className="p-2">
+          </label>
+
+          <label className="mb-2 block sm:mb-0">
+            <span className="mb-1 block text-[11px] font-medium text-gray-500 sm:hidden">
+              Checkout Time
+            </span>
             <input
               type="time"
               value={formatTimeForInput(c.checkOutTime || "")}
               onChange={(e) => onTimeChange(c._id, e.target.value)}
-              className="border rounded px-2 py-1 w-full min-w-[100px]"
+              className="w-full rounded border px-2 py-1"
             />
-          </td>
-          <td className="p-2">
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-[11px] font-medium text-gray-500 sm:hidden">
+              Days
+            </span>
             <input
               type="number"
               step="0.5"
               value={c.stayDays}
               onChange={(e) => onDaysChange(c._id, e.target.value)}
-              className="border rounded px-2 py-1 w-16 sm:w-24"
+              className="w-full rounded border px-2 py-1"
             />
-          </td>
-        </tr>
+          </label>
+        </div>
       ))}
-    </tbody>
-  </table>
-</div>
+    </div>
   );
 }
