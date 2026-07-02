@@ -112,13 +112,12 @@ function AvailableRooms({
   includePaxRateWithRoom,
   sendDataToParent = () => {},
   defaultPax = {},
-  defaultFoodPlan={},
+  defaultFoodPlan = {},
   showRooms = true,
   selectedGuest = null,
   setFormData = () => {},
-  forSwap = false
+  forSwap = false,
 }) {
-  
   const [rooms, setRooms] = useState([]);
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -654,7 +653,8 @@ function AvailableRooms({
   };
 
   const handlePaxChange = (e, roomId) => {
-    const newPax = Number(e.target.value) || 0;
+    console.log(e.target.value);
+    const newPax = Number(e.target.value || 1)
     setBookings((prev) =>
       prev.map((b) => (b.roomId === roomId ? { ...b, pax: newPax } : b)),
     );
@@ -710,7 +710,7 @@ function AvailableRooms({
   };
 
   const handleSelect = async (room) => {
-    console.log(room,defaultFoodPlan)
+    console.log(room, defaultFoodPlan);
     let defaultRate = 0;
     let foodPlan = [];
     let additionalPaxDetails = [];
@@ -729,16 +729,16 @@ function AvailableRooms({
         room?.priceLevel[0]?.priceRate || room?.roomType?.roomRent || 0;
     }
 
-    if(defaultFoodPlan && !forSwap ){
+    if (defaultFoodPlan && !forSwap) {
       const newPlan = {
         foodPlanId: defaultFoodPlan?._id,
         foodPlan: defaultFoodPlan?.foodPlan,
         rate: defaultFoodPlan?.amount,
-        roomId : room?._id,
+        roomId: room?._id,
         isDefault: defaultFoodPlan?.isDefault,
-        isComplimentary : defaultFoodPlan?.isComplimentary
+        isComplimentary: defaultFoodPlan?.isComplimentary,
       };
-     foodPlan.push(newPlan);
+      foodPlan.push(newPlan);
     }
 
     const stayDays = formData?.stayDays || 1;
@@ -761,11 +761,11 @@ function AvailableRooms({
       prev.some((b) => b.roomId === booking.roomId) ? prev : [...prev, booking],
     );
     if (foodPlan?.length > 0) {
-    setFormData((prev) => ({
-  ...prev,
-  foodPlan: [...(prev.foodPlan || []), ...foodPlan],
-  additionalPaxDetails,
-}));
+      setFormData((prev) => ({
+        ...prev,
+        foodPlan: [...(prev.foodPlan || []), ...foodPlan],
+        additionalPaxDetails,
+      }));
     }
 
     setSelectedValue(room);
@@ -865,11 +865,13 @@ function AvailableRooms({
         additionalPaxDetails.splice(index, 1);
       }
 
-   
       setFormData((prev) => ({
         ...prev,
         additionalPaxDetails: additionalPaxDetails,
-        paxTotal : additionalPaxDetails?.reduce((acc, item) => acc + Number(item.rate), 0),
+        paxTotal: additionalPaxDetails?.reduce(
+          (acc, item) => acc + Number(item.rate),
+          0,
+        ),
       }));
     }
 
@@ -889,20 +891,22 @@ function AvailableRooms({
       setFormData((prev) => ({
         ...prev,
         additionalPaxDetails: updatedAdditionalPaxDetails,
-         paxTotal : updatedAdditionalPaxDetails?.reduce((acc, item) => acc + Number(item.rate), 0),
+        paxTotal: updatedAdditionalPaxDetails?.reduce(
+          (acc, item) => acc + Number(item.rate),
+          0,
+        ),
       }));
 
       // sendDataToParent(updatedAdditionalPaxDetails, booking);
     }
   };
-   const handleAdditionalFoodPlanChange = (e, roomId, booking) => {
+  const handleAdditionalFoodPlanChange = (e, roomId, booking) => {
     selectedRoomData(booking?.roomId, "increasePaxCount");
 
     const count = Number(e.target.value);
 
     const roomPlanLength =
-      formData?.foodPlan?.filter((pax) => pax.roomId === roomId)
-        ?.length || 0;
+      formData?.foodPlan?.filter((pax) => pax.roomId === roomId)?.length || 0;
 
     const defaultCount =
       formData?.foodPlan?.filter(
@@ -928,7 +932,10 @@ function AvailableRooms({
       setFormData((prev) => ({
         ...prev,
         foodPlan: additionalFoodPlanDetails,
-        foodPlanTotal : additionalFoodPlanDetails?.reduce((acc, item) => acc + Number(item.rate), 0),
+        foodPlanTotal: additionalFoodPlanDetails?.reduce(
+          (acc, item) => acc + Number(item.rate),
+          0,
+        ),
       }));
     }
 
@@ -940,7 +947,7 @@ function AvailableRooms({
         rate: defaultFoodPlan?.amount,
         roomId,
         isDefault: defaultFoodPlan?.isDefault,
-        isComplimentary : defaultFoodPlan?.isComplimentary
+        isComplimentary: defaultFoodPlan?.isComplimentary,
       };
 
       console.log(defaultFoodPlan);
@@ -951,13 +958,15 @@ function AvailableRooms({
       setFormData((prev) => ({
         ...prev,
         foodPlan: updatedAdditionalFoodPlanDetails,
-        foodPlanTotal : updatedAdditionalFoodPlanDetails?.reduce((acc, item) => acc + Number(item.rate), 0),
+        foodPlanTotal: updatedAdditionalFoodPlanDetails?.reduce(
+          (acc, item) => acc + Number(item.rate),
+          0,
+        ),
       }));
 
       // sendDataToParent(updatedAdditionalPaxDetails, booking);
     }
   };
-
 
   const bookedRoomIds = bookings.map((b) => b.roomId);
   return showHistory ? (
@@ -1012,10 +1021,10 @@ function AvailableRooms({
                     <th className="w-10 px-1 py-2 text-center text-xs font-bold text-white uppercase">
                       EX.Pax
                     </th>
-                   {/* <th className="w-12 px-1 py-2 text-center text-xs font-bold text-white uppercase">
+                    {/* <th className="w-12 px-1 py-2 text-center text-xs font-bold text-white uppercase">
                       Food
                     </th> */}
-                       <th className="w-12 px-1 py-2 text-center text-xs font-bold text-white uppercase">
+                    <th className="w-12 px-1 py-2 text-center text-xs font-bold text-white uppercase">
                       DFP
                     </th>
                     <th className="w-12 px-1 py-2 text-center text-xs font-bold text-white uppercase">
@@ -1158,7 +1167,7 @@ function AvailableRooms({
 
                         <td className="px-1 py-1 disabled ">
                           <input
-                            type="number "
+                            type="number"
                             value={booking.pax || 2}
                             onChange={(e) => handlePaxChange(e, booking.roomId)}
                             disabled={isTariffRateChange ? true : false}
@@ -1207,15 +1216,17 @@ function AvailableRooms({
                             className="w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
                           />
                         </td> */}
-                    <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
-  <span className="block">
-    {defaultFoodPlan ? defaultFoodPlan.foodPlan : ""}
-  </span>
+                        <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
+                          <span className="block">
+                            {defaultFoodPlan ? defaultFoodPlan.foodPlan : ""}
+                          </span>
 
-  <span className="block text-[10px] text-gray-500 font-normal">
-    {defaultFoodPlan ? defaultFoodPlan.amount ||  defaultFoodPlan.rate : ""}
-  </span>
-</td>
+                          <span className="block text-[10px] text-gray-500 font-normal">
+                            {defaultFoodPlan
+                              ? defaultFoodPlan.amount || defaultFoodPlan.rate
+                              : ""}
+                          </span>
+                        </td>
                         <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
                           {Number(booking.taxPercentage || 0).toFixed(1)}%
                         </td>
@@ -1242,7 +1253,7 @@ function AvailableRooms({
                             booking.amountAfterTax || booking.totalAmount || 0,
                           )}
                         </td>
-{/* 
+                        {/* 
                         <td className="px-1 py-1 text-center text-emerald-600 text-xs">
                           <div className="max-w-16 truncate">
                             {formData?.foodPlan
@@ -1331,8 +1342,7 @@ function AvailableRooms({
                                       <span className="text-xs font-bold">
                                         ₹
                                         {Number(
-                                          booking?.foodPlanAmountWithTax ||
-                                            0,
+                                          booking?.foodPlanAmountWithTax || 0,
                                         ).toFixed(0)}
                                       </span>
                                     </div>

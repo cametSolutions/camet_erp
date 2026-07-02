@@ -1424,6 +1424,7 @@ export const updateKotPayment = async (req, res) => {
         if (paymentSplittingArray && paymentSplittingArray?.length > 0) {
           // One receipt per split row
           for (const split of paymentSplittingArray) {
+            console.log("splitsplit",split)
             if (split.type == "credit") continue;
             let receipt = await buildReceipt({
               cmp_id,
@@ -1456,6 +1457,7 @@ export const updateKotPayment = async (req, res) => {
               req,
               session,
             });
+            console.log("split",split)
 
             await Settlement.create({
               voucherNumber: receipt.receiptNumber,
@@ -1880,6 +1882,8 @@ async function createPaymentSplittingArray(paymentDetails, cashAmt, onlineAmt) {
     arr.push({
       type: referral.under || "bank",
       amount: onlineAmt,
+      source: paymentDetails?.selectedBank,
+      subsource: referral?.partyName,
       ref_id: paymentDetails?.selectedBank,
       reference_name: referral?.partyName,
     });
