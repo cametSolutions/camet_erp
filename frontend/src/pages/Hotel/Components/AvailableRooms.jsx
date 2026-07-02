@@ -1172,6 +1172,7 @@ function AvailableRooms({
                             onChange={(e) => handlePaxChange(e, booking.roomId)}
                             disabled={isTariffRateChange ? true : false}
                             min="1"
+                            max={2}
                             className=" disabled w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
                           />
                         </td>
