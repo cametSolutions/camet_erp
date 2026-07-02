@@ -113,6 +113,8 @@ function BookingForm({
     addPaxWithRate ?? false,
   )
 
+  console.log("jaiid")
+
   console.log(addFoodPlanWithRate,includeFoodRateWithRoom)
 
   const { data, loading } = useFetch(
@@ -1014,6 +1016,7 @@ useEffect(() => {
     const existingDetails = Array.isArray(formData?.additionalPaxDetails)
       ? formData.additionalPaxDetails
       : [];
+      
     const filterData = existingDetails.filter((i) => i.roomId !== room);
     const totalAmount = [...filterData, ...details].reduce(
       (acc, item) => acc + Number(item.rate),
@@ -1583,6 +1586,12 @@ useEffect(() => {
       0,
     );
 
+    const existingRooms = Array.isArray(formData?.selectedRooms)
+      ? formData.selectedRooms
+      : [];
+      console.log(existingRooms);
+    const filterRooms = existingRooms.filter((i) => i.roomId !== roomId);
+
     setSelectedRoomId(null)
 
     setFormData((prev) => ({
@@ -1592,6 +1601,7 @@ useEffect(() => {
       additionalPaxDetails: [...filterAdditionalData],
       paxTotal: AdditionalPaxTotalAmount,
       updatedDate: currentDateDefault,
+      selectedRooms: [...filterRooms],
     }));
   };
 

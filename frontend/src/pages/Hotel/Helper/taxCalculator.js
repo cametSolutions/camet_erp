@@ -20,7 +20,7 @@ export const taxCalculator = (
     console.log("inclusive", inclusive);
     console.log("formData", formData);
     console.log("taxCalculationRoomId", taxCalculationRoomId);
-    console.log("includeFoodRateWithRoom", includeFoodRateWithRoom);
+    console.log("includeFoodRateWithRoom", includePaxRateWithRoom);
 
     const reducedAdditionalPaxAmount = Math.round(
       taxCalculationRoomId
@@ -63,6 +63,7 @@ export const taxCalculator = (
     }
     let rate = includePaxRateWithRoom ? (data.priceLevelRate - (reducedAdditionalPaxAmount/data.stayDays)) : data.priceLevelRate;
      rate = includeFoodRateWithRoom ? (rate - reducedFoodPlanAmount/data.stayDays) : rate;
+     console.log("rate", rate);
     // Tax slab detection
     let taxRate = 0;
     let applicableSlab = null;

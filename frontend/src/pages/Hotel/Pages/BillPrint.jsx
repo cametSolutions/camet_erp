@@ -232,14 +232,14 @@ console.log(merged);
 
       const dateTariffs = room.dateTariffs || {};
       let activePrice = room?.priceLevelRate;
-      activePrice = doc?.addPaxWithRate ?  room?.priceLevelRate - room?.additionalPaxAmountWithTax : room?.priceLevelRate
+      console.log(room?.additionalPaxAmountWithTax)
+      activePrice = doc?.addPaxWithRate ?  room?.priceLevelRate - (room?.additionalPaxAmountWithTax / room.stayDays) : room?.priceLevelRate
 
       // Build per-day prices/taxes keyed by ISO date (YYYY-MM-DD)
       for (let i = 0; i < stayDays; i++) {
         const d = new Date(roomStartDate);
         d.setDate(roomStartDate.getDate() + i);
         const key = d.toISOString().split("T")[0];
-
         if (dateTariffs[key] !== undefined) {
           activePrice = Number(dateTariffs[key]);
         }
