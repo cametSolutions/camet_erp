@@ -197,7 +197,7 @@ function UserWiseMenuRightsSettings() {
 
     setSaving(true);
     try {
-      await api.patch(
+      await api.put(
         `/api/sUsers/updateUserPermissions/${selectedUser}`,
         { permissions },
         { withCredentials: true }
