@@ -1990,17 +1990,17 @@ function BookingList() {
         <div className="w-18 text-center">SL.NO</div>
         <div className="w-32 text-center">
           {location.pathname == "/sUsers/checkOutList"
-            ? "CHECKOUT DATE"
+            ? "CHO DATE"
             : location.pathname == "/sUsers/checkInList"
-              ? "ARRIVAL DATE"
-              : "BOOKING DATE"}
+              ? "ARR DATE"
+              : "BK DATE"}
         </div>
         <div className="w-28 text-center">
           {location.pathname == "/sUsers/checkOutList"
-            ? "CHECKOUT NO"
+            ? "CHO NO"
             : location.pathname == "/sUsers/checkInList"
-              ? "CHECK-IN NO"
-              : "BOOKING NO"}
+              ? "CHK-IN NO"
+              : "BK NO"}
         </div>
         <div className="w-32 text-center"> ACTIONS</div>
       </div>
@@ -2009,31 +2009,33 @@ function BookingList() {
         <div className="w-10 text-center">NO</div>
         <div className="w-28 text-center">
           {location.pathname == "/sUsers/checkOutList"
-            ? "CHECKOUT DATE"
-            : "BOOKING DATE"}
+            ? "CHO DATE"
+            : "BK DATE"}
         </div>
         <div className="w-32 text-center">
           {location.pathname === "/sUsers/checkOutList"
-            ? "CHECKOUT NO"
+            ? "CHO NO"
             : location.pathname === "/sUsers/checkInList"
-              ? "CHECK-IN NO"
-              : "BOOKING NO"}
+              ? "CHK-IN NO"
+              : "BK NO"}
         </div>
-        <div className="w-20 text-center">GUEST NAME</div>
-        <div className="w-20 text-center">ROOM NO</div>
-        <div className="w-28 text-center">ARRIVAL DATE</div>
-        <div className="w-28 text-center">ROOM TARIFF</div>
+        <div className="w-20 text-center">GUEST</div>
+        <div className="w-20 text-center">ROOM</div>
+        <div className="w-28 text-center">ARR DATE</div>
+        <div className="w-28 text-center">TARIFF</div>
         <div className="w-16 text-center">PAX</div>
-        <div className="w-16 text-center">EXTRA PAX</div>
-        <div className="w-20 text-center">FOOD PLAN</div>
-        <div className="w-28 text-center">FOODPLAN AMOUNT</div>
-        <div className="w-28 text-center">TRAVEL AGENT</div>
+        <div className="w-16 text-center">EX.PAX</div>
+        <div className="w-20 text-center">FDP</div>
+        <div className="w-28 text-center">FDP.AMT</div>
+        <div className="w-28 text-center">AGENT</div>
 
         {isCheckoutList && (
-          <div className="w-28 text-center">PAYMENT STATUS</div>
+          <div className="w-28 text-center">PAY STATUS</div>
         )}
 
-        <div className="w-24 text-center">ADVANCE</div>
+        <div className="w-24 text-center">ADV</div>
+        <div className="w-24 text-center">RES.AMT</div>
+        <div className="w-24 text-center">ROOM.AMT</div>
         <div className="w-28 text-center">TOTAL</div>
         <div className="w-32 text-center">ACTIONS</div>
       </div>
@@ -2313,7 +2315,7 @@ function BookingList() {
             </div>
 
             {/* 🔹 ROOM CLICK */}
-            <div className="w-20 text-center text-gray-600 font-medium">
+            <div className="w-20 text-start text-gray-600 font-medium">
               <button
                 type="button"
                 onClick={(e) => {
@@ -2328,11 +2330,10 @@ function BookingList() {
               </button>
             </div>
 
-            <div className="w-28 text-center text-gray-600 text-xs">
-              {formatDate(el?.arrivalDate)}
-              <span>({el.arrivalTime})</span>
-            </div>
-
+           <div className="w-28 text-center text-gray-600 text-xs">
+  <div>{formatDate(el?.arrivalDate)}</div>
+  <div>({el.arrivalTime})</div>
+</div>
             <div className="w-28 text-center text-gray-600 text-xs">
               ₹{el?.selectedRooms?.[0]?.priceLevelRate || "0.00"}
               {el.selectedRooms.length > 1 && "....."}
@@ -2379,12 +2380,28 @@ function BookingList() {
                 : "0.00"}
             </div>
 
-            <div className="w-28 text-center text-gray-800 font-semibold text-xs">
+            <div className="w-28 text-center text-gray-600 text-xs">
+              ₹
+              { el?.restaurantSubTotal
+                  ? formatCurrency(el.restaurantSubTotal).replace("₹", "")
+                  : "00.00"}
+            </div>
+
+              <div className="w-28 text-center text-gray-800 font-semibold text-xs">
               ₹
               {el?.displayTotal > 0
                 ? el?.displayTotal
                 : el?.grandTotal
                   ? formatCurrency(el.roomTotal).replace("₹", "")
+                  : "00.00"}
+            </div>
+
+            <div className="w-28 text-center text-gray-800 font-semibold text-xs">
+              ₹
+              {el?.displayTotal > 0
+                ? el?.displayTotal
+                : el?.grandTotal
+                  ? formatCurrency(el.roomTotal + el?.restaurantSubTotal).replace("₹", "")
                   : "00.00"}
             </div>
 

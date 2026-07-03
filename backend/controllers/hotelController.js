@@ -4239,6 +4239,7 @@ export const swapRoom = async (req, res) => {
       ? formData.additionalPaxDetails
       : [];
 
+      
     const newFoodPlan = Array.isArray(formData.foodPlan)
       ? formData.foodPlan
       : [];
