@@ -12,6 +12,7 @@ import TariffHistory from "./TariffHistory";
 import {
   reArrangeFoodPlan,
   reArrangeAdditionalPaxDetails,
+  calculateStayDays,
 } from "../Helper/hotelHelper";
 
 // Visual Room Card Component
@@ -181,6 +182,13 @@ function AvailableRooms({
               discountAmount: booking.discountAmount,
               otherChargeAmount: booking.otherChargeAmount,
             };
+            normalizedBooking.stayDays = calculateStayDays(
+              formData,
+              normalizedBooking,
+              formData?.arrivalDate,
+              formData?.checkOutDate,
+              formData?.stayDays,
+            );
             const taxCalculation = await calculateTax(normalizedBooking);
             return taxCalculation;
           }),
@@ -208,6 +216,8 @@ function AvailableRooms({
   }, [
     formData?.selectedRooms?.length,
     formData?.stayDays,
+    formData?.arrivalDate,
+    formData?.checkOutDate,
     rooms?.length,
     isTariffRateChange,
     roomIdToUpdate,
@@ -382,13 +392,16 @@ function AvailableRooms({
       }
 
       const stayDates = [];
-      const currentDate = new Date(checkInDate);
-      const endDate = new Date(checkOutDate);
+      const startDate =
+        booking?.swappingDateFrom && !booking?.isSwapped
+          ? new Date(booking.swappingDateFrom)
+          : new Date(checkInDate);
+      const totalStayDays = Number(booking?.stayDays || 0);
 
-      while (currentDate < endDate) {
-        const formattedDate = currentDate.toISOString().split("T")[0];
-        stayDates.push(formattedDate);
-        currentDate.setDate(currentDate.getDate() + 1);
+      for (let i = 0; i < totalStayDays; i++) {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + i);
+        stayDates.push(currentDate.toISOString().split("T")[0]);
       }
 
       let totalAmount = 0;

@@ -21,7 +21,7 @@ import {
   handleBillDownloadPDF,
   generateBillPDFAsBase64,
 } from "../PrintSide/generateBillPrintPDF";
-
+import {calculateStayDays} from "../Helper/hotelHelper";
 import Swal from "sweetalert2";
 import { constructNow } from "date-fns";
 const HotelBillPrint = () => {
@@ -636,7 +636,8 @@ const getEffectiveStayDays = (doc, room) => {
 
 const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
   const originalStayDays = Math.max(Number(room?.stayDays || 0), 0);
-  const effectiveStayDays = getEffectiveStayDays(doc, room);
+  const effectiveStayDays = calculateStayDays(doc, room, doc?.arrivalDate, doc?.checkOutDate, originalStayDays);
+  console.log("effectiveStayDays",effectiveStayDays)
 
   const totalPaxWithoutTax = Number(room?.additionalPaxAmountWithOutTax || 0);
 
@@ -661,7 +662,7 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
         Number(i.additionalPaxDataWithOutTax || 0),
       0,
     );
-    console.log(roomTariffTotal);
+    console.log(additionalPaxTax);
 
     const sgstAmount = ((roomTaxTotal + additionalPaxTax) / 2).toFixed(2);
     const cgstAmount = ((roomTaxTotal + additionalPaxTax) / 2).toFixed(2);

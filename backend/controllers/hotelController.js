@@ -55,7 +55,10 @@ import nodemailer from "nodemailer";
 import { transactions } from "./commonController.js";
 import settlementModel from "../models/settlementModel.js";
 import { statesData } from "../../frontend/constants/states.js";
-import { getFullRoomDetails } from "../helpers/saleCalculationHelper.js";
+import {
+  getFullRoomDetails,
+  recalculateCheckInFinancials,
+} from "../helpers/saleCalculationHelper.js";
 import {
   ensureHotelDateIsEditable,
   ensureHotelTariffDateIsEditable,
@@ -1834,21 +1837,15 @@ export const updateBooking = async (req, res) => {
       }
     }
 
-    // Recalculate room / grand totals with finalSelectedRooms
-    const newRoomTotal = finalSelectedRooms.reduce(
-      (sum, room) => sum + Number(room.amountAfterTax || room.totalAmount || 0),
-      0,
+    bookingData.selectedRooms = finalSelectedRooms;
+    bookingData.selectedRooms = await Promise.all(
+      bookingData.selectedRooms.map(async (room) => ({
+        ...room,
+        stayDays: await calculateStayDays(bookingData, room),
+      })),
     );
 
-    bookingData.selectedRooms = finalSelectedRooms;
-    bookingData.roomTotal = newRoomTotal;
-
-    const paxTotal = Number(bookingData.paxTotal || 0);
-    const foodPlanTotal = Number(bookingData.foodPlanTotal || 0);
-    const totalBeforeDiscount = newRoomTotal + paxTotal + foodPlanTotal;
-    const discountAmount = Number(bookingData.discountAmount || 0);
-    bookingData.grandTotal = totalBeforeDiscount - discountAmount;
-    bookingData.totalAmount = totalBeforeDiscount;
+    Object.assign(bookingData, recalculateCheckInFinancials(bookingData));
 
     // -----------------------------
     // ADVANCE / RECEIPT CONTEXT
@@ -4244,16 +4241,6 @@ export const swapRoom = async (req, res) => {
       ? formData.foodPlan
       : [];
 
-    const roomAmount = Number(selectedRoomToAdd?.amountAfterTax || 0);
-    const paxAmount = newAdditionalPax.reduce(
-      (sum, item) => sum + Number(item?.rate || 0),
-      0,
-    );
-    const foodPlanAmount = newFoodPlan.reduce(
-      (sum, item) => sum + Number(item?.rate || 0),
-      0,
-    );
-
     await roomModal.findByIdAndUpdate(
       oldRoomId,
       {
@@ -4335,26 +4322,17 @@ export const swapRoom = async (req, res) => {
       reason: "Guest requested room change",
     });
 
-    checkIn.roomTotal = Number(checkIn.roomTotal || 0) + roomAmount;
-    checkIn.paxTotal = Number(checkIn.paxTotal || 0) + paxAmount;
-    checkIn.foodPlanTotal = Number(checkIn.foodPlanTotal || 0) + foodPlanAmount;
+    checkIn.selectedRooms = await Promise.all(
+      checkIn.selectedRooms.map(async (room) => {
+        const plainRoom = room?.toObject ? room.toObject() : room;
+        return {
+          ...plainRoom,
+          stayDays: await calculateStayDays(checkIn, plainRoom),
+        };
+      }),
+    );
 
-    checkIn.totalAmount =
-      Number(checkIn.roomTotal || 0) +
-      Number(checkIn.paxTotal || 0) +
-      Number(checkIn.foodPlanTotal || 0);
-
-    checkIn.grandTotal = checkIn.totalAmount;
-
-    const paidAmount =
-      Number(checkIn.advanceAmount || 0) +
-      Number(checkIn.paymenttypeDetails?.cash || 0) +
-      Number(checkIn.paymenttypeDetails?.bank || 0) +
-      Number(checkIn.paymenttypeDetails?.upi || 0) +
-      Number(checkIn.paymenttypeDetails?.credit || 0) +
-      Number(checkIn.paymenttypeDetails?.card || 0);
-
-    checkIn.balanceToPay = Number(checkIn.grandTotal || 0) - paidAmount;
+    Object.assign(checkIn, recalculateCheckInFinancials(checkIn));
 
     checkIn.markModified("selectedRooms");
     checkIn.markModified("additionalPaxDetails");
@@ -4383,10 +4361,22 @@ export const swapRoom = async (req, res) => {
         selectedDate,
         swapDate: new Date(),
         addedAmounts: {
-          roomAmount,
-          paxAmount,
-          foodPlanAmount,
-          totalAdded: roomAmount + paxAmount + foodPlanAmount,
+          roomAmount: Number(newSelectedRoom?.amountAfterTax || newSelectedRoom?.totalAmount || 0),
+          paxAmount: newAdditionalPax.reduce(
+            (sum, item) => sum + Number(item?.rate || 0),
+            0,
+          ),
+          foodPlanAmount: newFoodPlan.reduce(
+            (sum, item) => sum + Number(item?.rate || 0),
+            0,
+          ),
+          totalAdded:
+            Number(newSelectedRoom?.amountAfterTax || newSelectedRoom?.totalAmount || 0) +
+            newAdditionalPax.reduce(
+              (sum, item) => sum + Number(item?.rate || 0),
+              0,
+            ) +
+            newFoodPlan.reduce((sum, item) => sum + Number(item?.rate || 0), 0),
         },
         totals: {
           roomTotal: checkIn.roomTotal,

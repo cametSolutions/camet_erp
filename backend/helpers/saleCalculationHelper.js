@@ -5,6 +5,86 @@ const normalizeUTCDate = (d) => {
   return new Date(Date.UTC(nd.getUTCFullYear(), nd.getUTCMonth(), nd.getUTCDate()));
 };
 
+const getApplicableTaxSlab = (row, totalAmount) => {
+  try {
+    const greaterThan = parseFloat(row?.greaterThan);
+    const uptoValue = row?.upto;
+
+    if (Number.isNaN(greaterThan)) return null;
+
+    if (uptoValue === "" || uptoValue === null || uptoValue === undefined) {
+      return totalAmount > greaterThan ? row : null;
+    }
+
+    const upto = parseFloat(uptoValue);
+    if (Number.isNaN(upto)) return null;
+
+    return totalAmount > greaterThan && totalAmount <= upto ? row : null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const getEffectiveStartDate = (doc, room) => {
+  if (room?.swappingDateFrom && !room?.isSwapped) {
+    return normalizeUTCDate(room.swappingDateFrom);
+  }
+
+  return normalizeUTCDate(doc?.arrivalDate);
+};
+
+const getDefaultNightlyRate = (room) => {
+  const existingStayDays = Math.max(Number(room?.stayDays || 0), 1);
+
+  return (
+    Number(room?.priceLevelRate || 0) ||
+    Number(room?.baseAmount || 0) / existingStayDays ||
+    Number(room?.totalAmount || 0) / existingStayDays ||
+    0
+  );
+};
+
+const getNightlyRateForDate = (room, date) => {
+  const dateTariffs = room?.dateTariffs || {};
+  const isoDate = date.toISOString().split("T")[0];
+
+  if (dateTariffs[isoDate] !== undefined) {
+    return Number(dateTariffs[isoDate] || 0);
+  }
+
+  const tariffDates = Object.keys(dateTariffs).sort();
+  for (let i = tariffDates.length - 1; i >= 0; i -= 1) {
+    if (tariffDates[i] <= isoDate) {
+      return Number(dateTariffs[tariffDates[i]] || 0);
+    }
+  }
+
+  return getDefaultNightlyRate(room);
+};
+
+const calculateBaseAmountFromTariff = (doc, room) => {
+  const stayDays = Number(room?.stayDays || 0);
+  if (stayDays <= 0) return 0;
+
+  const startDate = getEffectiveStartDate(doc, room);
+  let total = 0;
+
+  for (let i = 0; i < stayDays; i += 1) {
+    const currentDate = new Date(startDate);
+    currentDate.setUTCDate(startDate.getUTCDate() + i);
+    total += getNightlyRateForDate(room, currentDate);
+  }
+
+  return round2(total);
+};
+
+const sumPerNightRows = (rows = [], roomId) =>
+  rows.reduce((acc, item) => {
+    return item?.roomId?.toString?.() === roomId?.toString?.()
+      ? acc + Number(item?.rate || 0)
+      : acc;
+  }, 0);
+
 export const calculateStayDays = (doc, room) => {
   const arrival = normalizeUTCDate(doc.arrivalDate);
   const checkout = normalizeUTCDate(doc.checkOutDate);
@@ -165,4 +245,188 @@ export const getFullRoomDetails = async (roomData, doc) => {
   }
 
   return finalData;
+};
+
+export const recalculateRoomFinancials = (doc, room) => {
+  const stayDays = Math.max(Number(room?.stayDays || 0), 0);
+  const roomId = room?.roomId?._id || room?.roomId;
+  const baseAmount = calculateBaseAmountFromTariff(doc, room);
+  const isOffline = doc?.bookingType === "offline";
+  const addTaxWithRate = Boolean(doc?.addTaxWithRate);
+  const addFoodPlanWithRate = Boolean(doc?.addFoodPlanWithRate);
+  const addPaxWithRate = Boolean(doc?.addPaxWithRate);
+
+  if (stayDays <= 0) {
+    return {
+      ...room,
+      totalAmount: 0,
+      amountAfterTax: 0,
+      amountWithOutTax: 0,
+      additionalPaxAmount: 0,
+      foodPlanAmount: 0,
+      taxAmount: 0,
+      additionalPaxAmountWithTax: 0,
+      additionalPaxAmountWithOutTax: 0,
+      foodPlanAmountWithTax: 0,
+      foodPlanAmountWithOutTax: 0,
+      baseAmount: 0,
+      baseAmountWithTax: 0,
+      totalCgstAmt: 0,
+      totalSgstAmt: 0,
+      totalIgstAmt: 0,
+    };
+  }
+
+  const paxPerNight = sumPerNightRows(doc?.additionalPaxDetails, roomId);
+  const foodPlanPerNight = sumPerNightRows(doc?.foodPlan, roomId);
+
+  const reducedAdditionalPaxAmount = round2(paxPerNight * stayDays);
+  const reducedFoodPlanAmount = round2(foodPlanPerNight * stayDays);
+
+  let slabRate = Number(room?.priceLevelRate || getDefaultNightlyRate(room) || 0);
+  if (addPaxWithRate) {
+    slabRate -= stayDays > 0 ? reducedAdditionalPaxAmount / stayDays : 0;
+  }
+  if (addFoodPlanWithRate) {
+    slabRate -= stayDays > 0 ? reducedFoodPlanAmount / stayDays : 0;
+  }
+
+  let taxRate = Number(room?.taxPercentage || 0);
+  if (Array.isArray(room?.hsnDetails?.rows)) {
+    for (const row of room.hsnDetails.rows) {
+      const slab = getApplicableTaxSlab(row, slabRate);
+      if (slab) {
+        taxRate = Number(slab?.igstRate || 0);
+        break;
+      }
+    }
+  }
+
+  let totalAmountForTax = round2(baseAmount + (addPaxWithRate ? 0 : reducedAdditionalPaxAmount));
+  if (!addFoodPlanWithRate && !isOffline) {
+    totalAmountForTax = round2(totalAmountForTax + reducedFoodPlanAmount);
+  }
+
+  const taxAmount = round2((totalAmountForTax * taxRate) / 100);
+  let amountAfterTax = round2(addTaxWithRate ? totalAmountForTax : totalAmountForTax + taxAmount);
+
+  const foodPlanTaxRate = isOffline ? 5 : taxRate;
+  const paxInclusiveDivisor = 1 + taxRate / 100;
+  const foodInclusiveDivisor = 1 + foodPlanTaxRate / 100;
+  const additionalPaxAmountWithTax = round2(
+    addTaxWithRate
+      ? reducedAdditionalPaxAmount
+      : reducedAdditionalPaxAmount + (reducedAdditionalPaxAmount * taxRate) / 100,
+  );
+  const additionalPaxAmountWithOutTax = round2(
+    addTaxWithRate
+      ? reducedAdditionalPaxAmount / paxInclusiveDivisor
+      : reducedAdditionalPaxAmount,
+  );
+
+  let foodPlanAmountWithTax = 0;
+  let foodPlanAmountWithOutTax = 0;
+  let foodPlanTaxAmount = 0;
+
+  if (addFoodPlanWithRate) {
+    foodPlanAmountWithTax = reducedFoodPlanAmount;
+    foodPlanAmountWithOutTax = reducedFoodPlanAmount;
+  } else {
+    foodPlanAmountWithTax = round2(
+      addTaxWithRate
+        ? reducedFoodPlanAmount
+        : reducedFoodPlanAmount + (reducedFoodPlanAmount * foodPlanTaxRate) / 100,
+    );
+    foodPlanAmountWithOutTax = round2(
+      addTaxWithRate
+        ? reducedFoodPlanAmount / foodInclusiveDivisor
+        : reducedFoodPlanAmount,
+    );
+    foodPlanTaxAmount = round2(foodPlanAmountWithTax - foodPlanAmountWithOutTax);
+  }
+
+  amountAfterTax = round2(
+    amountAfterTax +
+      Number(room?.otherChargeAmount || 0) -
+      Number(room?.discountAmount || 0),
+  );
+
+  if (isOffline && !addFoodPlanWithRate) {
+    amountAfterTax = round2(amountAfterTax + foodPlanAmountWithTax);
+  }
+
+  const amountWithOutTax = round2(
+    baseAmount +
+      reducedAdditionalPaxAmount +
+      (addFoodPlanWithRate ? 0 : reducedFoodPlanAmount) +
+      Number(room?.otherChargeWithOutTax || 0) -
+      Number(room?.discountAmountWithOutTax || 0),
+  );
+
+  const totalTaxForSplit = round2(
+    taxAmount + (addFoodPlanWithRate ? 0 : foodPlanTaxAmount),
+  );
+
+  return {
+    ...room,
+    totalAmount: baseAmount,
+    amountAfterTax,
+    amountWithOutTax,
+    taxPercentage: taxRate,
+    foodPlanTaxRate,
+    additionalPaxAmount: reducedAdditionalPaxAmount,
+    foodPlanAmount: reducedFoodPlanAmount,
+    taxAmount,
+    additionalPaxAmountWithTax,
+    additionalPaxAmountWithOutTax,
+    foodPlanAmountWithTax,
+    foodPlanAmountWithOutTax,
+    baseAmount,
+    baseAmountWithTax: round2(baseAmount + taxAmount),
+    totalCgstAmt: round2(totalTaxForSplit / 2),
+    totalSgstAmt: round2(totalTaxForSplit / 2),
+    totalIgstAmt: round2(totalTaxForSplit),
+  };
+};
+
+export const recalculateCheckInFinancials = (doc) => {
+  const selectedRooms = Array.isArray(doc?.selectedRooms) ? doc.selectedRooms : [];
+  const recalculatedRooms = selectedRooms.map((room) => recalculateRoomFinancials(doc, room));
+
+  const roomTotal = round2(
+    recalculatedRooms.reduce(
+      (sum, room) => sum + Number(room?.amountAfterTax || room?.totalAmount || 0),
+      0,
+    ),
+  );
+  const paxTotal = round2(
+    (doc?.additionalPaxDetails || []).reduce(
+      (sum, item) => sum + Number(item?.rate || 0),
+      0,
+    ),
+  );
+  const foodPlanTotal = round2(
+    (doc?.foodPlan || []).reduce((sum, item) => sum + Number(item?.rate || 0), 0),
+  );
+  const discountAmount = round2(Number(doc?.discountAmount || 0));
+  const totalAmount = round2(roomTotal + paxTotal + foodPlanTotal);
+  const grandTotal = round2(totalAmount - discountAmount);
+  const paidAmount = round2(
+    Number(doc?.advanceAmount || 0) +
+      Number(doc?.paymenttypeDetails?.cash || 0) +
+      Number(doc?.paymenttypeDetails?.bank || 0) +
+      Number(doc?.paymenttypeDetails?.upi || 0) +
+      Number(doc?.paymenttypeDetails?.credit || 0) +
+      Number(doc?.paymenttypeDetails?.card || 0),
+  );
+
+  return {
+    selectedRooms: recalculatedRooms,
+    roomTotal,
+    paxTotal,
+    foodPlanTotal,
+    totalAmount,
+    grandTotal,
+    balanceToPay: round2(grandTotal - paidAmount),
+  };
 };
