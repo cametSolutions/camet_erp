@@ -18,6 +18,10 @@ import { removeAllSales } from "../../../slices/salesSecondary";
 import { removeAll as removeAllStock } from "../../../slices/stockTransferSecondary";
 import { removeAll as removeAllPurchase } from "../../../slices/purchase";
 import { removeAll as removeAllCredit } from "../../../slices/creditNote";
+import {
+  storingPermissions,
+  storingUserType,
+} from "../../../slices/permissionSlice";
 import CametHead from "../sidebar/CametHead";
 import ProfileSection from "../sidebar/ProfileSection";
 import { FaHome } from "react-icons/fa";
@@ -30,6 +34,7 @@ import { IoMdPower } from "react-icons/io";
 import { BsFillBuildingsFill } from "react-icons/bs";
 import { SlUserFollow } from "react-icons/sl";
 import LogoutModal from "../common/modal/LogoutModal";
+import { canAccessPath, isAdminUser } from "@/utils/permissions";
 
 function SidebarSec({ showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -42,6 +47,8 @@ function SidebarSec({ showBar }) {
   const [open, setOpen] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const selectedTab = localStorage.getItem("selectedSecondatSidebarTab");
+  const storedUserData = JSON.parse(localStorage.getItem("sUserData"));
+  const storedPermissions = JSON.parse(localStorage.getItem("permissions"));
 
   const [tab, setTab] = useState(selectedTab);
   const navigate = useNavigate();
@@ -65,6 +72,17 @@ function SidebarSec({ showBar }) {
     };
   }, [sidebarRef, setShowSidebar]);
 
+  const canAccess = useCallback(
+    (path) =>
+      canAccessPath({
+        pathname: path,
+        user: userData?._id ? userData : storedUserData,
+        permissions:
+          userData?.permissions || storedUserData?.permissions || storedPermissions || {},
+      }),
+    [storedPermissions, storedUserData, userData]
+  );
+
   const navItems = [
     {
       to: "/sUsers/dashboard",
@@ -74,7 +92,7 @@ function SidebarSec({ showBar }) {
     },
   ];
 
-  if (role === "admin") {
+  if (isAdminUser({ role })) {
     navItems.push(
       {
         to: "/sUsers/company/list",
@@ -121,7 +139,12 @@ function SidebarSec({ showBar }) {
     },
   ];
 
-  if (companies && companies.length > 0 && org.isApproved === true) {
+  if (
+    companies &&
+    companies.length > 0 &&
+    org.isApproved === true &&
+    canAccess("/sUsers/settings")
+  ) {
     const additionalTabs = [];
     additionalTabs.push({
       to: "/sUsers/settings",
@@ -146,6 +169,14 @@ function SidebarSec({ showBar }) {
       setUserData(userData);
       setCompanies(userData?.organization);
       setRole(userData?.role || "user");
+      localStorage.setItem("sUserData", JSON.stringify(userData));
+      localStorage.setItem(
+        "permissions",
+        JSON.stringify(userData?.permissions || {})
+      );
+      localStorage.setItem("userType", userData?.userType || "");
+      dispatch(storingPermissions(userData?.permissions || {}));
+      dispatch(storingUserType(userData?.userType || null));
 
       if (!prevOrg) {
         setOrg(userData?.organization[0]);
@@ -362,7 +393,7 @@ function SidebarSec({ showBar }) {
 
             {/* my accounts */}
             <nav>
-              {navItems.map((item, index) => (
+              {navItems.filter((item) => canAccess(item.to)).map((item, index) => (
                 <div key={index}>
                   <SidebarCard
                     item={item}

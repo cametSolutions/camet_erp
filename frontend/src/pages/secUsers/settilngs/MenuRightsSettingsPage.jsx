@@ -2,88 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import api from "../../../api/api";
 import { toast } from "sonner";
 import TitleDiv from "@/components/common/TitleDiv";
-
-const permissionSections = [
-
-{
-    title: "Main Menu",
-    items: [
-     
-      { key: "hotelManagement", label: "Hotel Management" },
-      { key: "restaurantManagement", label: "Restaurant Management" },
-      { key: "voucher", label: "Voucher" },
-       { key: "Reports", label: "Reports" },
-    ],
-  },
-{
-    title: "Hotel",
-    items: [
-      { key: "hotelDashboard", label: "Hotel Dashboard" },
-      { key: "bookingList", label: "Booking List" },
-      { key: "checkinList", label: "Check-in List" },
-      { key: "checkoutList", label: "Checkout List" },
-      { key: "editTariffRate", label: "Edit Tariff Rate" },
-      { key: "swapRoom", label: "Swap Room" },
-      { key: "roomShift", label: "Room Shift" },
-      { key: "guestLedger", label: "Guest Ledger" },
-    ],
-  },
-  {
-    title: "Restaurant",
-    items: [
-      { key: "restaurantDashboard", label: "Restaurant Dashboard" },
-      { key: "kotPage", label: "KOT Page" },
-      { key: "restaurantPayment", label: "Restaurant Payment" },
-    
-       { key: "restaurantDailySales", label: "Daily Sales" },
-    { key: "categoryWiseSales", label: "Category Wise Sales" },
-    { key: "itemWiseSales", label: "Item Wise Sales" },
-    { key: "kotRegister", label: "KOT Register" },
-    { key: "receiptReport", label: "Receipt Report" },
-    { key: "saleRegister", label: "Sale Register" },
-    ],
-  },
-  {
-    title: "Reports",
-    items: [
-      { key: "hotelReports", label: "Hotel Reports" },
-      { key: "restaurantReports", label: "Restaurant Reports" },
-      { key: "voucherReports", label: "Voucher Reports" },
-    
-        { key: "dailySalesReport", label: "Daily Sales" },
-    { key: "foDailyStatement", label: "FO Daily Statement" },
-    { key: "flashReport", label: "Flash Report" },
-    { key: "paxReport", label: "Pax Report" },
-    { key: "foodPlanReport", label: "Food Plan Report" },
-    { key: "occupancyReport", label: "Occupancy Report" },
-    { key: "roomSummaryReport", label: "Room Summary Report" },
-    { key: "receiptReport", label: "Receipt Report" },
-    { key: "travelAgentReport", label: "Travel Agent Report" },
-    { key: "foBillSummary", label: "FO Bill Summary" },
-    { key: "cancellationReport", label: "Cancellation Report" },
-
-    ],
-  },
-  // {
-  //   title: "Admin Settings",
-  //   items: [
-  //     { key: "userCreation", label: "User Creation" },
-  //     { key: "menuRights", label: "Menu Rights" },
-  //     { key: "companySettings", label: "Company Settings" },
-  //     { key: "branchSettings", label: "Branch Settings" },
-  //   ],
-  // },
-];
-
-const allKeys = permissionSections.flatMap((section) =>
-  section.items.map((item) => item.key)
-);
-
-const buildDefaultPermissions = () =>
-  allKeys.reduce((acc, key) => {
-    acc[key] = false;
-    return acc;
-  }, {});
+import {
+  allPermissionKeys,
+  buildDefaultPermissions,
+  permissionSections,
+} from "@/utils/permissions";
 
 function UserWiseMenuRightsSettings() {
   const [users, setUsers] = useState([]);
@@ -101,7 +24,9 @@ function UserWiseMenuRightsSettings() {
           withCredentials: true,
         });
 
-        const fetchedUsers = res?.data?.secondaryUsers || [];
+        const fetchedUsers = (res?.data?.secondaryUsers || []).filter(
+          (user) => user?.role !== "admin"
+        );
         setUsers(fetchedUsers);
       } catch (error) {
         console.log(error);
@@ -179,7 +104,7 @@ function UserWiseMenuRightsSettings() {
 
   const handleTickAll = () => {
     const updated = {};
-    allKeys.forEach((key) => {
+    allPermissionKeys.forEach((key) => {
       updated[key] = true;
     });
     setPermissions(updated);
@@ -256,7 +181,7 @@ function UserWiseMenuRightsSettings() {
             <div className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                  Allowed {allowedCount} / {allKeys.length}
+                  Allowed {allowedCount} / {allPermissionKeys.length}
                 </span>
 
                 {selectedUserData?.name && (
