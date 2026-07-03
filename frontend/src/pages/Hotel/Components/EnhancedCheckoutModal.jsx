@@ -152,7 +152,7 @@ export default function EnhancedCheckoutModal({
 
           const balanceToPay = totalAmount - Number(checkout.advanceAmount);
 
-          const time = "11:30 AM";
+          const time = "11:00 AM";
 
           return {
             ...checkout,
@@ -460,7 +460,7 @@ const handleTimeChange = (id, newTime) => {
             (oc) => oc._id === id,
           );
           const time =
-            checkout.checkOutTime || originalCheckout?.checkOutTime || "11:30 AM";
+            checkout.checkOutTime || originalCheckout?.checkOutTime || "11:00 AM";
           if (!originalCheckout) return checkout;
 
           const updatedRooms =
@@ -754,7 +754,7 @@ const handleTimeChange = (id, newTime) => {
             checkOutTime:
               checkout.checkOutTime ||
               originalCheckout?.checkOutTime ||
-              "11:30 AM",
+              "11:00 AM",
           };
         }
         return checkout;
