@@ -4,6 +4,7 @@ const ProtectedSecRoute = lazy(() => import("./ProtectedSecRoute"));
 import SuspenseLoader from "@/components/common/SuspenseLoader";
 import { ErrorTestComponent } from "@/components/errorBoundaries/ErrorTestComponent";
 import OutstandingListOfAccVoucherEdit from "@/pages/accountingVoucher/voucherCreation/OutstandingListOfAccVoucherEdit";
+import MenuRightsSettingsPage from "@/pages/secUsers/settilngs/MenuRightsSettingsPage";
 
 // Lazy load all components
 const SecHome = lazy(() => import("../pages/secUsers/SecHome"));
@@ -16,6 +17,9 @@ const FoodPlanReportPage = lazy(
 );
 const OccupancyCheckoutReport = lazy(
   () => import("../pages/Hotel/Pages/OccupancyCheckoutReport"),
+);
+const FOSalesSummaryReport = lazy(
+  () => import("../pages/Hotel/Pages/FoSalesSummary"),
 );
 
 const OutstandingDetails = lazy(
@@ -166,6 +170,8 @@ const BankingManagement = lazy(
 const SettingsList = lazy(
   () => import("../pages/secUsers/settilngs/SettingsList"),
 );
+
+
 const StockItem = lazy(
   () => import("../pages/secUsers/settilngs/stockItem/StockItem"),
 );
@@ -467,6 +473,9 @@ const SummaryDashboard = lazy(
   () => import("@/pages/Hotel/Pages/SummaryDashboard")
 )
 const BillSummary = lazy(() => import("@/pages/Hotel/Pages/BillSummary"))
+const CancellationReport=lazy(()=>import("@/pages/Hotel/Pages/CancellationReport"))
+const Receiptreport = lazy(() => import("@/pages/Hotel/Pages/Receiptreport"))
+const TravelAgentReport = lazy(() => import("@/pages/Hotel/Pages/TravelAgentReport"))
 const CheckInPrint = lazy(() => import("@/pages/Hotel/Pages/CheckInPrint"))
 const ViewReport = lazy(() => import("@/pages/Hotel/Pages/viewReport"))
 const Checkoutpdf = lazy(() => import("@/pages/Hotel/Pages/Checkoutpdf"))
@@ -1491,6 +1500,15 @@ const Routers = () => {
             </ProtectedSecRoute>
           }
         ></Route>
+ <Route
+          path="/sUsers/MenuRightsSettingsPage"
+          element={
+            <ProtectedSecRoute>
+              <MenuRightsSettingsPage />
+            </ProtectedSecRoute>
+          }
+        ></Route>
+     
         <Route
           path="/sUsers/StockItem"
           element={
@@ -2159,6 +2177,30 @@ const Routers = () => {
             </ProtectedSecRoute>
           }
         />
+         <Route
+          path="/sUsers/CancellationReport"
+          element={
+            <ProtectedSecRoute>
+              <CancellationReport />
+            </ProtectedSecRoute>
+          }
+        />
+         <Route
+          path="/sUsers/Receiptreport"
+          element={
+            <ProtectedSecRoute>
+              <Receiptreport />
+            </ProtectedSecRoute>
+          }
+        />
+         <Route
+          path="/sUsers/TravelAgentReport"
+          element={
+            <ProtectedSecRoute>
+              <TravelAgentReport />
+            </ProtectedSecRoute>
+          }
+        />
         <Route
           path="/sUsers/CheckInPrint"
           element={
@@ -2215,6 +2257,15 @@ const Routers = () => {
             </ProtectedSecRoute>
           }
         />
+          <Route
+          path="/sUsers/FOSalesSummaryReport"
+          element={
+            <ProtectedSecRoute>
+              <FOSalesSummaryReport />
+            </ProtectedSecRoute>
+          }
+        />
+      
         <Route
           path="/sUsers/register"
           element={

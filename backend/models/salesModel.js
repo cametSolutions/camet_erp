@@ -98,7 +98,7 @@ const salesSchema = new Schema(
       required: true,
     },
     cmp_id: { type: Schema.Types.ObjectId, ref: "Company", required: true },
-    Secondary_user_id: { type: Schema.Types.ObjectId, ref: "User" },
+    Secondary_user_id: { type: Schema.Types.ObjectId, ref: "SecondaryUser" },
     selectedGodownDetails: {
       godownName: { type: String, default: null },
       godownId: { type: Schema.Types.ObjectId, ref: "Godown", default: null },
@@ -116,6 +116,32 @@ const salesSchema = new Schema(
         type: mongoose.Types.ObjectId,
         ref: "AccountGroup",
         required: true,
+      },
+      subGroupName: { type: String },
+      subGroup_id: { type: mongoose.Schema.Types.ObjectId, ref: "SubGroup" },
+      mobileNumber: { type: String },
+      country: { type: String },
+      state: { type: String },
+      pin: { type: String },
+      emailID: { type: String },
+      gstNo: { type: String },
+      party_master_id: { type: String },
+      billingAddress: { type: String },
+      shippingAddress: { type: String },
+      accountGroup: { type: String },
+      totalOutstanding: { type: Number },
+      latestBillDate: { type: Date, default: null, set: convertToUTCMidnight },
+      newAddress: { type: Object },
+    },
+    guest: {
+      _id: { type: Schema.Types.ObjectId, ref: "Party" },
+      partyName: { type: String },
+      partyType: { type: String, default: "party" },
+      accountGroupName: { type: String },
+      accountGroup_id: {
+        type: mongoose.Types.ObjectId,
+        ref: "AccountGroup",
+        // required: true,
       },
       subGroupName: { type: String },
       subGroup_id: { type: mongoose.Schema.Types.ObjectId, ref: "SubGroup" },
@@ -294,7 +320,7 @@ const salesSchema = new Schema(
     totalPaymentSplits: { type: Number, default: null },
     finalOutstandingAmount: { type: Number, default: null },
     finalAmount: { type: Number, required: true, default: 0 },
-    uniqueSaleNumber: {type: Number,default: null,},
+    uniqueSaleNumber: { type: Number, default: null },
 
     paymentSplittingData: {
       type: [paymentSplitSchema],
@@ -316,6 +342,17 @@ const salesSchema = new Schema(
     },
 
     isCancelled: { type: Boolean, default: false },
+      cancelledAt: {
+      type: Date,
+    },
+    cancelledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SecondaryUser",
+    },
+    cancelledByName: {
+      type: String,
+      default: "",
+    },
     checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
     checkOutId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckOut" },
   },
@@ -335,8 +372,7 @@ salesSchema.pre("save", async function (next) {
       .sort({ uniqueSaleNumber: -1 })
       .select("uniqueSaleNumber");
 
-    this.uniqueSaleNumber =
-      Number(lastSale?.uniqueSaleNumber || 0) + 1;
+    this.uniqueSaleNumber = Number(lastSale?.uniqueSaleNumber || 0) + 1;
 
     next();
   } catch (error) {

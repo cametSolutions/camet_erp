@@ -284,6 +284,7 @@ const HotelDashboard = () => {
     occupied: "from-orange-500 to-red-600", // orange/red gradient
     dirty: "from-yellow-500 to-orange-600",
     blocked: "from-gray-500 to-slate-800",
+    household:'from-stone-400 to-stone-700',
   };
 
   const handleRoomAction = async (action) => {
@@ -315,6 +316,7 @@ const HotelDashboard = () => {
       });
       return;
     }
+    
 
     if (action === "editChecking") {
       setShowRoomModal(false);
@@ -353,7 +355,7 @@ const HotelDashboard = () => {
       return;
     }
 
-    if (["dirty", "blocked", "vacant"].includes(action)) {
+    if (["dirty", "blocked", "vacant" , "household"].includes(action)) {
       try {
         console.log("Updating room status:", {
           roomId: selectedRoomData._id,
@@ -458,11 +460,11 @@ const handleRoomSwapConfirm = async () => {
       booked: 0,
       dirty: 0,
       blocked: 0,
+      household:0,
     };
     filteredRooms.forEach((room) => {
-      if (counts.hasOwnProperty(room.status)) {
-        counts[room.status]++;
-      }
+        const status = room.status === "available" ? "vacant" : room.status;
+      if (counts.hasOwnProperty(status)) counts[status]++;
     });
 
     return counts;
@@ -641,116 +643,96 @@ console.log(baseStatus);
         {/* Main Layout Container */}
         <div className="relative z-10 flex flex-col h-full">
           <div className="p-3 flex flex-col h-full overflow-hidden">
-            {/* Header */}
-            <div className="bg-[#0B1D34] p-2 mb-4">
-              <div className="flex flex-col md:flex-row md:items-center gap-3">
-                {/* Title */}
-                <div className="flex items-center gap-2 justify-center md:justify-start">
-                  <BedDouble className="w-4 h-4 text-cyan-400" />
-                  <h3 className="font-bold text-blue-400 text-base md:text-lg">
-                    Room Status Overview
-                  </h3>
-                </div>
+        
+          {/* Header */}
+<div className="bg-[#0B1D34] p-2 mb-4">
+  <div className="flex flex-col md:flex-row md:items-center gap-3">
 
-                {/* Buttons */}
-                <div className="md:ml-auto flex flex-wrap gap-2">
-                  <button
-                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-sm"
-                    onClick={() => navigate("/sUsers/bookingList")}
-                  >
-                   Room Reservations
-                  </button>
+    {/* Title */}
+    <div className="flex items-center justify-between md:justify-start gap-2">
+      {/* Mobile: icon badge + stacked text | Desktop: original style */}
+      <div className="flex items-center gap-2">
+        <div className="bg-cyan-500/20 p-1 rounded-md md:bg-transparent md:p-0">
+          <BedDouble className="w-4 h-4 text-cyan-400" />
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center md:gap-0">
+          <h3 className="font-bold text-white md:text-blue-400 text-sm md:text-lg leading-tight tracking-wide uppercase md:normal-case md:tracking-normal">
+            Room Status<span className="hidden md:inline"> Overview</span>
+          </h3>
+          <p className="text-cyan-400 text-xs font-medium md:hidden">Overview</p>
+        </div>
+      </div>
 
-                  <button
-                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-sm"
-                    onClick={() => navigate("/sUsers/checkInList")}
-                  >
-                    Currently Occupied
+      {/* Mobile-only Bookings toggle — moved here to title row */}
+      {isMobile && (
+        <button
+          onClick={() => setShowBookingDetails(!showBookingDetails)}
+          className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold px-3 py-1.5 rounded text-xs flex items-center gap-1"
+        >
+          <Calendar className="w-3.5 h-3.5" />
+          Bookings
+        </button>
+      )}
+    </div>
 
-                  </button>
+    {/* Buttons */}
+    <div className="md:ml-auto flex flex-wrap gap-1.5 md:gap-2">
+      <button
+        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-xs md:text-sm"
+        onClick={() => navigate("/sUsers/bookingList")}
+      >
+        <span className="md:hidden">Reservations</span>
+        <span className="hidden md:inline">Room Reservations</span>
+      </button>
 
-                  <button
-                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-sm"
-                    onClick={() => navigate("/sUsers/checkOutList")}
-                  >
-                    Completed Stays
-                  </button>
+      <button
+        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-xs md:text-sm"
+        onClick={() => navigate("/sUsers/checkInList")}
+      >
+        <span className="md:hidden">Occupied</span>
+        <span className="hidden md:inline">Currently Occupied</span>
+      </button>
 
-                  <button
-                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-sm"
-                    onClick={() => navigate("/sUsers/partyList")}
-                  >
-                    New Guest
-                  </button>
+      <button
+        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-xs md:text-sm"
+        onClick={() => navigate("/sUsers/checkOutList")}
+      >
+        <span className="md:hidden">Completed</span>
+        <span className="hidden md:inline">Completed Stays</span>
+      </button>
 
-                  {/* <button
-                    className="
-          flex items-center gap-2 px-2 py-1.5 rounded-xl
-          font-semibold text-xs transition-all duration-300
-          whitespace-nowrap
-          bg-gradient-to-r from-green-600 to-emerald-600 text-white 
-          border-transparent shadow-lg shadow-emerald-500/25
-          hover:scale-105 active:scale-95 transform
-          hover:from-green-700 hover:to-emerald-700
-        "
-                    onClick={() => navigate("/sUsers/BillSummary?type=hotel")}
-                  >
-                    <span className="text-sm">📊</span>
-                    HOTEL DAILY SALES
-                  </button>
+      <button
+        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-xs md:text-sm"
+        onClick={() => navigate("/sUsers/partyList")}
+      >
+        New Guest
+      </button>
 
-                  <button
-                    className="
-          flex items-center gap-2 px-2 py-1.5 rounded-xl
-          font-semibold text-xs transition-all duration-300
-          whitespace-nowrap
-          bg-gradient-to-r from-green-600 to-emerald-600 text-white 
-          border-transparent shadow-lg shadow-emerald-500/25
-          hover:scale-105 active:scale-95 transform
-          hover:from-green-700 hover:to-emerald-700
-        "
-                    onClick={() => navigate("/sUsers/Checkoutpdf")}
-                  >
-                    <span className="text-sm">📊</span>
-                    FO DAILY STATEMENT
-                  </button>
-  <button
-                    className="
-          flex items-center gap-2 px-2 py-1.5 rounded-xl
-          font-semibold text-xs transition-all duration-300
-          whitespace-nowrap
-          bg-gradient-to-r from-green-600 to-emerald-600 text-white 
-          border-transparent shadow-lg shadow-emerald-500/25
-          hover:scale-105 active:scale-95 transform
-          hover:from-green-700 hover:to-emerald-700
-        "
-                    onClick={() => navigate("/sUsers/HotelFlashReport")}
-                  >
-                    <span className="text-sm">📊</span>
-                    HOTEL FLASH REPORT
-                  </button> */}
-                  <div className="flex items-center gap-2">
-  <ReportsMenu />
-                  <button
-                    className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-2 py-1 rounded text-sm flex items-center gap-1"
-                    onClick={() => setShowFilters(!showFilters)}
-                  >
-                    <Filter className="w-4 h-4" />
-                    Filters
-                  </button>
+      <div className="flex items-center gap-2">
+        <ReportsMenu />
+        <button
+          className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-2 py-1 rounded text-xs md:text-sm flex items-center gap-1"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <Filter className="w-4 h-4" />
+          Filters
+        </button>
+      </div>
+
+      {/* Desktop-only Bookings toggle — original position */}
+      {isMobile === false && (
+        <button
+          onClick={() => setShowBookingDetails(!showBookingDetails)}
+          className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
+        >
+          <Calendar className="w-4 h-4" />
+          Bookings
+        </button>
+      )}
+    </div>
+
+  </div>
 </div>
-                  {isMobile && (
-                    <button
-                      onClick={() => setShowBookingDetails(!showBookingDetails)}
-                      className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
-                    >
-                      <Calendar className="w-4 h-4" />
-                      Bookings
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
 
             {/* Date Selector */}
             <div className="mb-2 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
@@ -910,6 +892,11 @@ console.log(baseStatus);
                   color: "from-gray-500 to-slate-800",
                   count: statusCounts.blocked,
                 },
+                 {
+                  label: "household",
+                  color: "from-red-400 to-red-800",
+                  count: statusCounts.household,
+                },
               ].map((status, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <div
@@ -1065,7 +1052,7 @@ console.log(baseStatus);
                         <p className="text-gray-400 text-sm mt-1">
                           Today's reservations
                         </p>
-                      </div>
+                      </div> 
 
                       {/* Close button for mobile */}
                       {isMobile && (
@@ -1088,7 +1075,7 @@ console.log(baseStatus);
                         <div className="flex justify-center items-center py-8">
                           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
                         </div>
-                      ) : bookings.filter((b) => {
+                      ) : bookings?.filter((b) => {
                           const bookingDate = new Date(b.bookingDate);
                           const today = new Date();
                           const isToday =
@@ -1397,6 +1384,7 @@ console.log(baseStatus);
                     <option value="dirty">Mark as Dirty</option>
                     <option value="blocked">Mark as Blocked</option>
                     <option value="vacant">Mark as available</option>
+                    <option value="household">Mark as household</option>
                     <option value="swapRoom">Swap Room</option>
                   </>
                 )}
@@ -1411,43 +1399,52 @@ console.log(baseStatus);
             </div>
           </div>
         )}
-        {showBookingOrCheckingSelection && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-white rounded-xl p-8 shadow-2xl max-w-md w-full">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
-                Confirm Your Booking
-              </h2>
+      {showBookingOrCheckingSelection && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="relative bg-white rounded-xl p-8 shadow-2xl max-w-md w-full">
 
-              <p className="text-gray-600 text-center mb-8">
-                Are you ready to proceed with your booking?
-              </p>
+      {/* Close Button */}
+      <button
+        onClick={() => setShowBookingOrCheckingSelection(false)}
+        className="absolute top-3 right-4 text-gray-500 hover:text-red-500 text-2xl font-bold"
+      >
+        ×
+      </button>
 
-              <div className="flex gap-4">
-                <button
-                  onClick={() => {
-                    navigate("/sUsers/bookingPage", {
-                      state: { rooms: selectedRooms },
-                    });
-                  }}
-                  className="flex-1 bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-all"
-                >
-                  Continue
-                </button>
+      <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
+        Confirm Your Booking
+      </h2>
 
-                <button
-                  onClick={() => {
-                    navigate("/sUsers/checkInPage", {
-                      state: { rooms: selectedRooms },
-                    });
-                  }}
-                  className="flex-1 bg-gray-100 text-gray-800 font-semibold py-3 rounded-lg border border-blue-600 hover:bg-gray-200 transition-all"
-                >
-                  Checking
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+      <p className="text-gray-600 text-center mb-8">
+        Are you ready to proceed with your booking?
+      </p>
+
+      <div className="flex gap-4">
+        <button
+          onClick={() => {
+            navigate("/sUsers/bookingPage", {
+              state: { rooms: selectedRooms },
+            });
+          }}
+          className="flex-1 bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-all"
+        >
+          Continue
+        </button>
+
+        <button
+          onClick={() => {
+            navigate("/sUsers/checkInPage", {
+              state: { rooms: selectedRooms },
+            });
+          }}
+          className="flex-1 bg-gray-100 text-gray-800 font-semibold py-3 rounded-lg border border-blue-600 hover:bg-gray-200 transition-all"
+        >
+          Check-In
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
         <RoomSwapModal
           isOpen={showRoomSwapModal}
@@ -1460,9 +1457,6 @@ console.log(baseStatus);
           cmp_id={cmp_id}
           api={api}
         />
-        {/* Animations */}
-
-        {/* Animations */}
         <style>{`
     @keyframes fade-in {
       from { opacity: 0; transform: translateY(20px); }

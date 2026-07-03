@@ -304,10 +304,7 @@ console.log(data)
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:rounded-none print:border-0 print:p-4 print:shadow-none md:p-7">
 
           <div className="mt-4 flex flex-col justify-between gap-3 text-sm md:flex-row">
-            <div>
-              For the Period {formatDisplayDate(filters.fromDate)} To{" "}
-              {formatDisplayDate(filters.toDate)}
-            </div>
+           
             <div className="text-left text-sm md:text-right">
               <div className="text-xs font-medium text-slate-500">
                 Print Date &amp; Time

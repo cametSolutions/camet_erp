@@ -34,7 +34,7 @@ import { transactions, addHsn, getSingleHsn, editHsn, deleteHsn, getOpeningBalan
 import { authSecondary } from '../middlewares/authSecUsers.js';
 import { secondaryIsBlocked } from '../middlewares/isBlocked.js';
 import { companyAuthentication } from '../middlewares/authCompany.js';
-import { createReceipt, cancelReceipt, editReceipt, getReceiptDetails } from '../controllers/receiptController.js';
+import { createReceipt, cancelReceipt, editReceipt, getReceiptDetails ,getReceiptsByVoucherSeries } from '../controllers/receiptController.js';
 import { createPayment, cancelPayment, editPayment, getPaymentDetails } from '../controllers/paymentController.js';
 import { createInvoice, editInvoice, cancelSalesOrder, PartyListWithOrderPending, getInvoiceDetails } from '../controllers/saleOrderController.js';
 import { createStockTransfer, editStockTransfer, cancelStockTransfer, getStockTransferDetails } from '../controllers/stockTransferController.js';
@@ -43,9 +43,17 @@ import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { addAccountGroupIdToOutstanding, addAccountGroupIdToParties, convertPrimaryToSecondary, createAccountGroups, updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
-import { addSecondaryConfigurations, addSecUsers, allocateCompany, allocateSubDetails, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getSecUserDetails,updateTransactionAccess } from '../controllers/primaryUserController.js';
+import { addSecondaryConfigurations, addSecUsers, allocateCompany, allocateSubDetails, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getSecUserDetails,updateTransactionAccess, getUserPermissions,updateUserPermissions} from '../controllers/primaryUserController.js';
 
-import { getSummary } from "../controllers/summaryController.js"
+import {
+    fetchDashboardCompanyDailyCollectionBreakdown,
+    fetchDashboardCompanyMonthlyCollectionBreakdown,
+    fetchDashboardCompanyRevenueBreakdown,
+    fetchDashboardConsolidatedTotals,
+    fetchDashboardPropertySalesSummary,
+    fetchDashboardRoomCountSummary,
+    getSummary
+} from "../controllers/summaryController.js"
 import { getSummaryReport } from "../controllers/summaryController.js";
 import { fetchOutstandingDetails, fetchOutstandingTotal, getOutstandingSummary } from '../controllers/outStandingController.js';
 import { addProduct, deleteProduct, productDetails, editProduct, getProducts, addProductSubDetails, getProductSubDetails, deleteProductSubDetails, editProductSubDetails, getAllProductsForExcel } from '../controllers/productController.js';
@@ -62,7 +70,7 @@ import {
     updateVisitOfPurpose, deleteVisitOfPurpose, saveIdProof, getIdProof, updateIdProof, deleteIdProof, saveFoodPlan, getFoodPlan
     , updateFoodPlan, deleteFoodPlan, addRoom, getRooms, editRoom, deleteRoom, getAllRooms, roomBooking, getBookings, deleteBooking, updateBooking,
     fetchAdvanceDetails, getAllRoomsWithStatusForDate, updateRoomStatus, getDateBasedRoomsWithStatus, checkoutWithArrayOfData,
-    fetchOutStandingAndFoodData, convertCheckOutToSale, updateConfigurationForHotelAndRestaurant, swapRoom, getRoomSwapHistory, checkedInGuest,
+    fetchOutStandingAndFoodData, updateConfigurationForHotelAndRestaurant, swapRoom, getRoomSwapHistory, checkedInGuest,
     getallroomsCurrentStatus,
     getallnoncheckoutCheckins,
     getHotelSalesDetails, getRoomCheckInDetails, cancelBooking,getCheckoutStatementByDate,convertToAvailable,controlTaggedCheckIn,
@@ -72,8 +80,19 @@ import {
     viewReport,
     deleteAdvance,
     getSaleBasedOnVoucher,
-    updateCheckout
+    updateCheckout,
+    getSalesByCheckInNumber,
+    updateRestaurantSalePayments,
+    getRestaurantSales,getTravelAgentSalesReport,getAgentList,getFOSalesSummary,
+    getCancellationReport,additionalPaxDefaultSetting,getDefault,getDefaultPlan
 } from '../controllers/hotelController.js'
+
+import { convertCheckOutToSale } from '../controllers/hotelController2CheckOut.js';
+import {
+    completeNightAudit,
+    getNightAuditStatus,
+    reopenNightAudit
+} from '../controllers/nightAuditController.js';
 import {
     addItem, getAllItems, getItems, getCategories, deleteItem, updateItem, generateKot, getKot,getKotDash, updateKotStatus, editKot,
     getRoomDataForRestaurant, updateKotPayment, getPaymentType, saveTableNumber, getSalePrintData, updateTable, getTables, deleteTable,
@@ -275,6 +294,8 @@ router.get('/fetchSecondaryUsers', authPrimary, secondaryIsBlocked, fetchSeconda
 router.post('/addSecUsers', authPrimary, secondaryIsBlocked, addSecUsers);
 router.get('/getSecUserDetails/:id', authPrimary, secondaryIsBlocked, getSecUserDetails)
 router.put('/editSecUSer/:id', authPrimary, secondaryIsBlocked, editSecUSer)
+router.get("/getUserPermissions/:id", authPrimary,secondaryIsBlocked, getUserPermissions);
+router.put("/updateUserPermissions/:id", authPrimary,secondaryIsBlocked, updateUserPermissions);
 router.get("/fetchConfigurationCurrentNumber/:orgId/:_id", authPrimary, secondaryIsBlocked, fetchConfigurationCurrentNumber)
 router.get('/fetchGodownsAndPriceLevels/:cmp_id', authPrimary, secondaryIsBlocked, companyAuthentication, fetchGodownsAndPriceLevels)
 router.post('/addSecondaryConfigurations/:cmp_id/:userId', authPrimary, secondaryIsBlocked, companyAuthentication, addSecondaryConfigurations)
@@ -387,19 +408,24 @@ router.get("/getSalePrintData/:cmp_id/:kotId",authSecondary,secondaryIsBlocked,g
 router.put('/updateTableStatus/:cmp_id/:tableNumber',authSecondary,updateTableStatus )
 router.get('/getKotDataByTable/:cmp_id',authSecondary,getKotDataByTable )
 router.get('/getDateBasedRoomsWithStatus/:cmp_id',authSecondary,getDateBasedRoomsWithStatus)
+router.get('/nightAudit/:cmp_id/status', authSecondary, secondaryIsBlocked, companyAuthentication, getNightAuditStatus)
+router.post('/nightAudit/:cmp_id/complete', authSecondary, secondaryIsBlocked, companyAuthentication, completeNightAudit)
+router.post('/nightAudit/:cmp_id/reopen', authSecondary, secondaryIsBlocked, companyAuthentication, reopenNightAudit)
 router.put('/checkOutWithArray/:cmp_id',authSecondary,checkoutWithArrayOfData)
 router.post('/fetchOutStandingAndFoodData/:cmp_id',authSecondary,fetchOutStandingAndFoodData)
 router.post('/convertCheckOutToSale/:cmp_id',authSecondary,convertCheckOutToSale)
 router.put('/updateConfigurationForHotelAndRestaurant/:cmp_id',authSecondary,updateConfigurationForHotelAndRestaurant)
 router.put('/updateConfigurationForKotApproval/:cmp_id',authSecondary,updateConfigurationForKotApproval)
-router.put("/swapRoom/:checkInId", swapRoom);
+router.put("/swapRoom/:checkInId",authSecondary, swapRoom);
 router.get("/getRoomSwapHistory/:checkInId",getRoomSwapHistory);
 router.get("/getCheckedInGuests/:cmp_id", checkedInGuest);
 router.get('/summary', getSummaryDashboard);
 router.get('/hotel-sales/:cmp_id/:type', getHotelSalesDetails);
-router.put("/cancel/:id", cancelKot);
+router.get("/receiptReport/:cmp_id",getReceiptsByVoucherSeries)
+// router.get("/unreconciled/:cmp_id", getUnreconciledSales);
+router.put("/cancel/:id",authSecondary, cancelKot);
 router.get('/getRoomCheckInDetails/:cmp_id/:roomId',getRoomCheckInDetails);
-router.put('/cancelBooking/:id', cancelBooking);
+router.put('/cancelBooking/:id', authSecondary,cancelBooking);
 router.get('/statement', getCheckoutStatementByDate);
 router.post("/convertToAvailable/:cmp_id",convertToAvailable);
 router.post("/controlTaggedCheckIn/:cmp_id", authSecondary,controlTaggedCheckIn);
@@ -412,6 +438,8 @@ router.get("/flash-report", getFlashReportForDate);
 router.get("/restaurant-category-wise-sales", getRestaurantCategoryWiseSalesReport);
 router.get("/restaurant-date-wise-item-report", getRestaurantDateWiseItemReport);
 router.get("/tourist-report", getTouristReport);
+router.get("/travel-agent-sales", getTravelAgentSalesReport);
+router.get("/travel-agent-sales/agents", getAgentList);
 router.get("/foodplan-report", getFoodPlanReport);
 router.get("/occupancy-checkout-report", getOccupancyCheckoutReport);
 router.get("/register", getKotRegister);
@@ -422,8 +450,22 @@ router.post("/transferKotBills/:cmp_id", transferKotBills);
 router.delete("/deleteAdvance/:id", deleteAdvance);
 router.post('/send-bill-email', sendBillEmail);
 router.get("/viewReport", viewReport);
-router.get("/getSaleBasedOnVoucher/:voucherNumber", getSaleBasedOnVoucher);
+router.get("/getSaleBasedOnVoucher", getSaleBasedOnVoucher);
 router.put("/updateCheckout/:id", updateCheckout);
+router.get("/getSalesByCheckInNumber", getSalesByCheckInNumber);  
+router.put("/updateRestaurantSalePayments/:id", updateRestaurantSalePayments);
+router.get("/fo-sales-summary", getFOSalesSummary);
+router.get("/fetchDashboardConsolidatedTotals/:cmp_id/:primaryUserId",fetchDashboardConsolidatedTotals );
+router.get("/fetchDashboardCompanyRevenueBreakdown/:cmp_id/:primaryUserId", fetchDashboardCompanyRevenueBreakdown);
+router.get("/fetchDashboardCompanyDailyCollectionBreakdown/:cmp_id/:primaryUserId", fetchDashboardCompanyDailyCollectionBreakdown);
+router.get("/fetchDashboardCompanyMonthlyCollectionBreakdown/:cmp_id/:primaryUserId", fetchDashboardCompanyMonthlyCollectionBreakdown);
+router.get("/fetchDashboardPropertySalesSummary/:cmp_id/:primaryUserId", fetchDashboardPropertySalesSummary);
+router.get("/fetchDashboardRoomCountSummary/:cmp_id/:primaryUserId", fetchDashboardRoomCountSummary);
+router.get("/cancellation-report/:cmp_id", getCancellationReport);
+router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
+router.put("/defaultSetting/:cmp_id/:id/:selectedModal", authSecondary, additionalPaxDefaultSetting);
+router.get("/getDefaultPax/:cmp_id", authSecondary, getDefault);
+router.get("/getDefaultPlan/:cmp_id", authSecondary, getDefaultPlan);
 // Route to get detailed booking information for a specific room and date
 
 export default router

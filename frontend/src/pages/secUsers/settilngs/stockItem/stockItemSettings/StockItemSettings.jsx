@@ -118,6 +118,16 @@ const StockItemSettings = () => {
             toggleValue: configurations[0]?.foodPlaWithRoomRate,
             dbField: "foodPlaWithRoomRate",
           },
+            {
+            title: "Add Additional pax with room rate",
+            description: "Add additional pax with room rate for better organization",
+            icon: <LiaMoneyCheckAltSolid />,
+            to: "sec",
+            active: true,
+            toggle: true,
+            toggleValue: configurations[0]?.additionalPaxWithRoomRate,
+            dbField: "additionalPaxWithRoomRate",
+          },
           {
             title: "addRateWithTax",
             description: "Better tax calculations for better organization",
@@ -137,6 +147,26 @@ const StockItemSettings = () => {
             toggle: true,
             toggleValue: configurations[0]?.discountBasedOnGrossAmountInHotel,
             dbField: "discountBasedOnGrossAmountInHotel",
+          },
+          {
+            title: "Save  restaurant sale based on agent or guest",
+            description: "Choose whether restaurant sale can be saved based on agent or guest",
+            icon: <GrClipboard />,
+            to: "sec",
+            active: true,
+            checkboxGroup: true,
+            checkboxes: [
+              {
+                label: "Agent",
+                checked: configurations?.[0]?.saveSaleBasedOn?.agent ?? true,
+                dbField: "saveSaleBasedOn.agent",
+              },
+              {
+                label: "Guest",
+                checked: configurations?.[0]?.saveSaleBasedOn?.guest ?? false,
+                dbField: "saveSaleBasedOn.guest",
+              },
+            ],
           },
           {
             title: "Default Print",

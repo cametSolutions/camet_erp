@@ -56,13 +56,46 @@ const reports = [
     path: "/sUsers/occupancy-checkout-report",
   },
    {
-    label: "The View Report",
+    label: "Room Summary Report",
     desc: "food plan pax report ",
   icon: Coffee,
     iconBg: "bg-teal-50",
     iconColor: "text-teal-700",
     path: "/sUsers/viewReport",
   },
+   {
+    label: "Receipt Report",
+    desc: "Receipt of rest & hotel",
+    icon: Home,
+    iconBg: "bg-teal-50",
+    iconColor: "text-teal-700",
+    path: "/sUsers/Receiptreport",
+  },
+   {
+    label: "Travel Agent Report",
+    desc: "Travel agent performance summary",
+    icon: Coffee,
+    iconBg: "bg-orange-50",
+    iconColor: "text-orange-700",
+    path: "/sUsers/TravelAgentReport",
+  },
+   {
+    label: "FO Bill Summary",
+    desc: "Front office Sales report",
+    icon: FileText,
+    iconBg: "bg-blue-50",
+    iconColor: "text-blue-700",
+    path: "/sUsers/FOSalesSummaryReport",
+  },
+   {
+    label: "Cancellation Report",
+    desc: "Cancellation  report",
+    icon: Zap,
+    iconBg: "bg-blue-50",
+    iconColor: "text-blue-700",
+    path: "/sUsers/CancellationReport",
+  },
+  
           
 ];
 
@@ -100,7 +133,7 @@ const ReportsMenu = () => {
       {/* Dropdown */}
       {open && (
         <div className="absolute right-0 mt-1.5 w-64 bg-white border border-gray-200 
-                        rounded-xl shadow-xl z-30 overflow-hidden">
+                        rounded-xl shadow-xl z-30 overflow-scroll overflow-x-hidden max-h-96">
           {/* Header */}
           <div className="flex items-center gap-2.5 px-3.5 py-3 border-b border-gray-100">
             <div className="w-7 h-7 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">

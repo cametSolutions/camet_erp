@@ -23,6 +23,7 @@ import {
   addSubDetails,
   addGodowns,
   backfillUniqueSaleNumber,
+  backfillUniqueReceiptNumber,
   createReceiptForSales,
 } from "../controllers/tallyController.js";
 
@@ -47,6 +48,7 @@ router.post("/master/addSubCategory", addSubDetails);
 router.post("/master/item/updateStock", updateStock);
 router.post("/master/item/updatePriceLevels", updatePriceLevels);
 router.post("/master/backfillUniqueSaleNumber", backfillUniqueSaleNumber);
+router.post("/master/backfillUniqueReceiptNumber/:cmp_id", backfillUniqueReceiptNumber);
 // router.post("/master/clearStock/:cmp_id", clearStock);
 
 //get

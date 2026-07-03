@@ -20,9 +20,17 @@ const RoomSubDetailsManagement = ({
   const [price, setPrice] = useState(0);
   const [isComplimentary, setIsComplimentary] = useState(false); // ✅ NEW STATE
   const [edit, setEdit] = useState({ id: "", enabled: false });
+  const [selectedDefault, setSelectedDefault] = useState(null);
+  useEffect(() => {
+    console.log("displayData", displayData);
+    if (displayData.length > 0) {
+      let findOne = displayData.find((item) => item.isDefault === true);
+      console.log("findOne", findOne);
+      setSelectedDefault(findOne?._id || null);
+    }
+  }, [displayData]);
 
- 
-
+  console.log("selectedDefault", selectedDefault);
   const handleSubmit = async () => {
     if (!value.trim()) return toast.error("Please enter a value");
     sendToParent(false, value, price, null, isComplimentary); // ✅ PASS COMPLIMENTARY
@@ -57,6 +65,38 @@ const RoomSubDetailsManagement = ({
     setIsComplimentary(false); // ✅ RESET
     setEdit({ id: "", enabled: false });
   };
+
+ const handleDefault = async (cmp_id, id) => {
+  if (!id) return;
+    let selectedModal = "AdditionalPax";
+    if(tab == "Food Plan"){
+selectedModal = "FoodPlan"
+    }
+
+  try {
+
+    const { data } = await api.put(
+      `/api/sUsers/defaultSetting/${cmp_id}/${id}/${selectedModal}`,
+      {},
+       { withCredentials: true }
+    );
+
+    if (!data?.success) {
+      throw new Error(data?.message || "Failed to update default setting");
+    }
+
+    toast.success?.(data?.message || "Default updated successfully");
+    return data;
+
+  } catch (err) {
+    console.error("handleDefault error:", err);
+    toast.error?.(
+      err?.response?.data?.message || err.message || "Something went wrong"
+    );
+  } finally {
+    setSelectedDefault(id);
+  }
+};
 
   return (
     <div className={`${loading ? "opacity-50 animate-pulse" : ""}`}>
@@ -163,6 +203,9 @@ const RoomSubDetailsManagement = ({
                   <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
+                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    Default
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -210,6 +253,18 @@ const RoomSubDetailsManagement = ({
                         >
                           <FaTrash size={15} />
                         </button>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                      <div className="flex justify-center gap-6">
+                        <input
+                          type="checkbox"
+                            checked={el._id === selectedDefault}
+                          onChange={(e) => handleDefault(el.cmp_id, el._id )}
+                          className="text-blue-500"
+                        >
+                          {/* <FaEdit size={15} /> */}
+                        </input>
                       </div>
                     </td>
                   </tr>

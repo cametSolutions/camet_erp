@@ -44,13 +44,15 @@ export const transactions = async (req, res) => {
 
   let returnFullDetails = fullDetails === "true";
 
+
+
   try {
     // Parse ignore parameter - split by comma to handle multiple collections
     const ignoredCollections = ignore
       .split(",")
       .map((item) => item.trim().toLowerCase());
 
-const secUser = await SecondaryUser.findById(userId).lean();
+    const secUser = await SecondaryUser.findById(userId).lean();
 
     if (!secUser) {
       return res
@@ -60,14 +62,15 @@ const secUser = await SecondaryUser.findById(userId).lean();
 
     const cmpIdStr = cmp_id.toString();
     const configForCompany = secUser.configurations?.find(
-      (c) => c.organization?.toString() === cmpIdStr
+      (c) => c.organization?.toString() === cmpIdStr,
     );
 
-    const ownTransactions =
-      configForCompany?.ownTransactions === true;
-    const allTransactions =
-      configForCompany?.allTransactions === true ;
+    const ownTransactions = configForCompany?.ownTransactions === true;
+    const allTransactions = configForCompany?.allTransactions === true;
 
+    // console.log("ownTransactions", ownTransactions);
+    // console.log("allTransactions", allTransactions);
+    // console.log("isAdmin", isAdmin);
 
     // Initialize dateFilter based on provided parameters
     let dateFilter = {};
@@ -92,8 +95,8 @@ const secUser = await SecondaryUser.findById(userId).lean();
               0,
               0,
               0,
-              0
-            )
+              0,
+            ),
           ),
           $lte: new Date(
             Date.UTC(
@@ -103,43 +106,65 @@ const secUser = await SecondaryUser.findById(userId).lean();
               23,
               59,
               59,
-              999
-            )
+              999,
+            ),
           ),
         },
       };
     }
 
-     let userFilter = {};
+    let userFilter = {};
 
     if (isAdmin) {
-      // Admin:
-      //  - if secondary user selected -> filter by that user
-      //  - else -> see all
+    // console.log("userFilter 1");
+
+      userFilter = {}; // no filter
+      // // Admin:
+      // //  - if secondary user selected -> filter by that user
+      // //  - else -> see all
+      // if (selectedSecondaryUser) {
+      //   userFilter = {
+      //     Secondary_user_id: new mongoose.Types.ObjectId(selectedSecondaryUser),
+      //   };
+      // } else {
+      //   userFilter = {}; // no filter
+      // }
+    } else {
+    // console.log("userFilter 2");
+
       if (selectedSecondaryUser) {
+    // console.log("userFilter 3");
+
         userFilter = {
           Secondary_user_id: new mongoose.Types.ObjectId(selectedSecondaryUser),
         };
       } else {
+    // console.log("userFilter 4");
+
         userFilter = {}; // no filter
       }
-    } else {
-      // Normal secondary user:
-      if (allTransactions) {
-        // all transactions for this company
-        userFilter = {};
-      } else if (ownTransactions) {
-        // only own transactions
-        userFilter = {
-          Secondary_user_id: new mongoose.Types.ObjectId(userId),
-        };
-      } else {
-        // default fallback: only own transactions (safer)
-        userFilter = {
-          Secondary_user_id: new mongoose.Types.ObjectId(userId),
-        };
-      }
     }
+
+    // console.log("userFilter",userFilter);
+    
+
+    // else {
+    //   // Normal secondary user:
+    //   if (allTransactions) {
+    //     // all transactions for this company
+    //     userFilter = {};
+    //   } else if (ownTransactions) {
+    //     // only own transactions
+    //     userFilter = {
+    //       Secondary_user_id: new mongoose.Types.ObjectId(userId),
+    //     };
+    //   } else {
+    //     // default fallback: only own transactions (safer)
+    //     userFilter = {
+    //       Secondary_user_id: new mongoose.Types.ObjectId(userId),
+    //     };
+    //   }
+    // }
 
     // Apply user filtering:
     // - If not an admin → filter with logged-in user's ID
@@ -258,18 +283,17 @@ const secUser = await SecondaryUser.findById(userId).lean();
       ? selectedVoucher === "allType" && summaryType === "Sales Summary"
         ? voucherTypeMap.saleType
         : selectedVoucher === "allType" && summaryType === "Purchase Summary"
-        ? voucherTypeMap.purchaseType
-        : voucherTypeMap[selectedVoucher]
+          ? voucherTypeMap.purchaseType
+          : voucherTypeMap[selectedVoucher]
       : voucherTypeMap.all;
 
-
-      if (!Array.isArray(modelsToQuery)) {
-  modelsToQuery = voucherTypeMap.all; // Fallback to all transactions
-}
+    if (!Array.isArray(modelsToQuery)) {
+      modelsToQuery = voucherTypeMap.all; // Fallback to all transactions
+    }
     // Filter out ignored collections
     modelsToQuery = modelsToQuery.filter(
       ({ type }) =>
-        !ignoredCollections.includes(type.toLowerCase().replace(/\s+/g, ""))
+        !ignoredCollections.includes(type.toLowerCase().replace(/\s+/g, "")),
     );
 
     if (!modelsToQuery || modelsToQuery.length === 0) {
@@ -289,11 +313,12 @@ const secUser = await SecondaryUser.findById(userId).lean();
           },
           type,
           numberField,
-          returnFullDetails
-        )
+          returnFullDetails,
+        ),
     );
 
     const results = await Promise.all(transactionPromises);
+    console.log("results",results)
 
     const combined = results
       .flat()
@@ -309,8 +334,8 @@ const secUser = await SecondaryUser.findById(userId).lean();
           selectedVoucher === "all"
             ? "All transactions"
             : selectedVoucher === "allType"
-            ? "All"
-            : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
+              ? "All"
+              : `${voucherTypeMap[selectedVoucher]?.[0]?.type} transactions`
         } fetched${todayOnly === "true" ? " for today" : ""}`,
         data: { combined, totalTransactionAmount },
       });
@@ -365,7 +390,7 @@ export const addHsn = async (req, res) => {
       rows,
     });
     let findOne = await hsnModel.findOne({
-       cpm_id: cpm_id,
+      cpm_id: cpm_id,
       hsn: { $regex: `^${hsn}$`, $options: "i" },
     });
 
@@ -428,14 +453,13 @@ export const editHsn = async (req, res) => {
     if (req.body.hsn) {
       // Get the current record to compare
       const currentRecord = await hsnModel.findById(hsnId);
-      
+
       // Only check for duplicates if the HSN name is actually being changed
       if (currentRecord && currentRecord.hsn !== req.body.hsn) {
         let findOne = await hsnModel.findOne({
           _id: { $ne: hsnId },
           hsn: { $regex: `^${req.body.hsn}$`, $options: "i" },
         });
-
 
         if (findOne) {
           return res.status(400).json({
@@ -449,7 +473,7 @@ export const editHsn = async (req, res) => {
     const updateHsn = await hsnModel.findOneAndUpdate(
       { _id: hsnId },
       req.body,
-      { new: true }
+      { new: true },
     );
 
     if (!updateHsn) {
@@ -466,9 +490,9 @@ export const editHsn = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Internal Server Error" 
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
     });
   }
 };
@@ -543,38 +567,38 @@ export const getOpeningBalances = async (req, res) => {
       aggregateOpeningBalance(
         debitNoteModel,
         openingBalanceMatchCriteria,
-        "Debit Note"
+        "Debit Note",
       ),
       aggregateOpeningBalance(
         salesModel,
         openingBalanceMatchCriteria,
-        "Tax Invoice"
+        "Tax Invoice",
       ),
       aggregateOpeningBalance(
         paymentModel,
         openingBalanceMatchCriteria,
-        "Payment"
+        "Payment",
       ),
       aggregateOpeningBalance(
         vanSaleModel,
         openingBalanceMatchCriteria,
-        "Van Sale"
+        "Van Sale",
       ),
       // Credit opening balances
       aggregateOpeningBalance(
         purchaseModel,
         openingBalanceMatchCriteria,
-        "Purchase"
+        "Purchase",
       ),
       aggregateOpeningBalance(
         receiptModel,
         openingBalanceMatchCriteria,
-        "Receipt"
+        "Receipt",
       ),
       aggregateOpeningBalance(
         creditNoteModel,
         openingBalanceMatchCriteria,
-        "Credit Note"
+        "Credit Note",
       ),
     ];
 
@@ -714,15 +738,15 @@ export const updateMissingBillIds = async (req, res) => {
                 lastModifiedBy: "system",
                 documentType: matchedModel.type, // Adding document type for reference
               },
-            }
+            },
           );
           console.log(
-            `Updated document ${doc._id} with billId ${sourceDoc._id} (${matchedModel.type})`
+            `Updated document ${doc._id} with billId ${sourceDoc._id} (${matchedModel.type})`,
           );
           results.updated++;
         } else {
           console.log(
-            `No matching document found for bill_no: ${doc.bill_no} `
+            `No matching document found for bill_no: ${doc.bill_no} `,
           );
           results.notFound++;
           results.errors.push({
@@ -762,7 +786,7 @@ export const updateMissingBillIds = async (req, res) => {
         notFound: results.notFound,
         failed: results.failed,
         successRate: `${((results.updated / results.total) * 100).toFixed(
-          2
+          2,
         )}% `,
       },
     });

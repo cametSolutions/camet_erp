@@ -1,598 +1,359 @@
-/* eslint-disable react/prop-types */
-import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import TitleDiv from "@/components/common/TitleDiv";
+import SummaryCards from "../Components/SummaryDashboard/SummaryCards";
+import SummaryCardsSkeleton from "../Components/SummaryDashboard/SummaryCardsSkeleton";
+import RevenueTable from "../Components/SummaryDashboard/RevenueTable";
+import { useSelector } from "react-redux";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import api from "@/api/api";
-import GraphHotelSummary from '../../Hotel/Pages/GraphHotelSummary'
-import { 
-  Calendar, Hotel, UtensilsCrossed, TrendingUp, DollarSign, CreditCard, 
-  Banknote, Wallet, PiggyBank, Receipt, BarChart3, ArrowUpRight, 
-  ArrowDownRight, Target, Clock, Users, Building2, ChefHat, Bed,
-  RefreshCw, Loader2, AlertCircle, Smartphone, FileText, TrendingDown
-} from 'lucide-react';
-import TableSummary from './TableSummary';
+import { AlertCircle, CalendarIcon, RefreshCw } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+
+const fmt = (n) => "₹" + Number(n ?? 0).toLocaleString("en-IN");
 
 const SummaryDashboard = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [dateRange, setDateRange] = useState('day');
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [companyIndustry, setCompanyIndustry] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id
-  );
- 
-  const owner = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg.owner
-  );
-
-  // NEW: Get industry from selected organization
-  const selectedOrg = useSelector(
+  const company = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
 
-  // Helper functions for determining what to show based on industry
-  const shouldShowHotel = () => {
-    if (!companyIndustry) return true; // Show all if industry not yet loaded
-    return companyIndustry === 6 || companyIndustry === 7; // Hotel only (6) or Both (7)
-  };
-
-  const shouldShowRestaurant = () => {
-    if (!companyIndustry) return true; // Show all if industry not yet loaded
-    return companyIndustry === 3 || companyIndustry === 7 || companyIndustry === 8; // Restaurant only (3, 8) or Both (7)
-  };
-
-  const shouldShowCombined = () => {
-    return companyIndustry === 7; // Only show combined when industry is 7 (both)
-  };
-
-  const getMonthStartDate = (dateString) => {
-    const date = new Date(dateString);
-    return new Date(date.getFullYear(), date.getMonth(), 1).toISOString().split('T')[0];
-  };
-
-  const getMonthEndDate = (dateString) => {
-    const date = new Date(dateString);
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0];
-  };
-
-  // NEW: Fetch company details to get industry
-  const fetchCompanyIndustry = async () => {
-    try {
-      if (selectedOrg?.industry !== undefined) {
-        setCompanyIndustry(selectedOrg.industry);
-        console.log('Industry from Redux:', selectedOrg.industry);
-        return;
-      }
-
-      // Fallback: fetch from API if not in Redux
-      const response = await api.get(`/api/organization/${cmp_id}`);
-      if (response.data && response.data.industry !== undefined) {
-        setCompanyIndustry(response.data.industry);
-        console.log('Industry from API:', response.data.industry);
-      }
-    } catch (err) {
-      console.error('Error fetching company industry:', err);
-      // Default to showing all if we can't determine industry
-      setCompanyIndustry(7);
-    }
-  };
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const dailyParams = {
-        cmp_id,
-        owner,
-        date: selectedDate,
-        dateRange: 'day',
-        ...(cmp_id && owner && { cmp_id, owner })
-      };
-
-      const monthStartDate = getMonthStartDate(selectedDate);
-      const monthEndDate = getMonthEndDate(selectedDate);
-      
-      const monthlyParams = {
-        cmp_id,
-        owner,
-        startDate: monthStartDate,
-        endDate: monthEndDate,
-        dateRange: 'month',
-        ...(cmp_id && owner && { cmp_id, owner })
-      };
-
-      const [dailyResponse, monthlyResponse] = await Promise.all([
-        api.get('/api/sUsers/summary', { params: dailyParams }),
-        api.get('/api/sUsers/summary', { params: monthlyParams })
-      ]);
-
-      if (dailyResponse.data.success && monthlyResponse.data.success) {
-        console.log(dailyResponse.data)
-        setDashboardData({
-          daily: dailyResponse.data.data?.daily,
-          monthly: monthlyResponse.data.data.monthly,
-          analytics: {
-            paymentMethodBreakdown: dailyResponse.data.data.analytics?.paymentMethodBreakdown || {
-              cashPercentage: 0,
-              bankPercentage: 0,
-              creditPercentage: 0
-            },
-            businessMix: dailyResponse.data.data.analytics?.businessMix || {
-              hotelPercentage: 0,
-              restaurantPercentage: 0
-            }
-          }
-        });
-      } else {
-        throw new Error('Failed to fetch dashboard data');
-      }
-    } catch (err) {
-      console.error('Dashboard fetch error:', err);
-      setError(err.message);
-      
-      setDashboardData({
-        daily: {
-          hotel: { 
-            totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0, 
-            chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0, netSales: 0
-          },
-          restaurant: { 
-            totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
-            chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0, netSales: 0
-          },
-          combined: { 
-            totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
-            chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0, averageTicketSize: 0, netSales: 0
-          }
-        },
-        monthly: {
-          hotel: { 
-            totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
-            chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0, netSales: 0
-          },
-          restaurant: { 
-            totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
-            chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0, netSales: 0
-          },
-          combined: { 
-            totalSales: 0, cashReceipt: 0, bankReceipt: 0, upiAmount: 0,
-            chequeAmount: 0, creditAmount: 0, totalTax: 0, totalDiscount: 0,
-            expense: 0, balance: 0, transactionCount: 0, averageTicketSize: 0, netSales: 0
-          }
-        },
-        analytics: {
-          paymentMethodBreakdown: {
-            cashPercentage: 0,
-            bankPercentage: 0,
-            creditPercentage: 0
-          },
-          businessMix: {
-            hotelPercentage: 0,
-            restaurantPercentage: 0
-          }
-        }
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCompanyIndustry();
-  }, [cmp_id, selectedOrg]);
-
-  useEffect(() => {
-    if (companyIndustry !== null) {
-      fetchDashboardData();
-    }
-  }, [selectedDate, cmp_id, owner, companyIndustry]);
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
-  };
-
-  const formatSelectedDate = () => {
-    const date = new Date(selectedDate);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
-
-  const formatSelectedMonth = () => {
-    const date = new Date(selectedDate);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long'
-    });
-  };
-
-  const StatCard = ({ title, icon: Icon, data, gradient, mainIcon: MainIcon }) => (
-    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${gradient} p-4 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02] group`}>
-      <div className="absolute top-0 right-0 w-20 h-20 -mt-10 -mr-10 opacity-10 group-hover:opacity-20 transition-opacity">
-        <MainIcon size={80} />
-      </div>
-      
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-3">
-          <div className="p-2 rounded-lg bg-white/25 backdrop-blur-sm group-hover:bg-white/35 transition-colors">
-            <Icon size={18} className="text-white" />
-          </div>
-          <div className="text-right">
-            <h3 className="text-white/85 text-xs font-semibold uppercase tracking-wide">{title}</h3>
-            <p className="text-white/60 text-xs">{data?.transactionCount || 0} transactions</p>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <TrendingUp size={12} className="text-white/70" />
-              <span className="text-white/90 text-xs font-medium">Total Sales</span>
-            </div>
-            <span className="text-white font-bold text-sm">{formatCurrency(data?.totalSales)}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <Banknote size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Cash</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.cashReceipt)}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Bank</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.bankReceipt)}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Total Discount</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalDiscount)}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Total Tax</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalTax)}</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Net Sales</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.netSales)}</span>
-          </div>
-          
-          {/* <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <ArrowDownRight size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Expenses</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.expense)}</span>
-          </div> */}
-          
-          <div className="border-t border-white/25 pt-2 mt-2">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-1">
-                <PiggyBank size={12} className="text-white/70" />
-                <span className="text-white font-semibold text-xs">Balance</span>
-              </div>
-              <span className="text-white font-bold text-sm">{formatCurrency(data?.balance)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="absolute top-2 left-2 w-2 h-2 bg-white/40 rounded-full animate-pulse"></div>
-    </div>
+  const cmp_id = company?._id;
+  const primaryUserId = company?.owner;
+  const selectedDateParam = useMemo(
+    () => format(selectedDate, "yyyy-MM-dd"),
+    [selectedDate],
+  );
+  const selectedDateLabel = useMemo(
+    () => format(selectedDate, "dd MMM yyyy"),
+    [selectedDate],
+  );
+  const selectedDateLongLabel = useMemo(
+    () => format(selectedDate, "EEEE, dd MMMM yyyy"),
+    [selectedDate],
+  );
+  const dashboardRequestConfig = useMemo(
+    () => ({
+      withCredentials: true,
+      params: { date: selectedDateParam },
+    }),
+    [selectedDateParam],
   );
 
-  const CombinedCard = ({ title, icon: Icon, data, gradient, period, mainIcon: MainIcon }) => (
-    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${gradient} p-4 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02] group`}>
-      <div className="absolute top-0 right-0 w-24 h-24 -mt-12 -mr-12 opacity-10 group-hover:opacity-20 transition-opacity">
-        <MainIcon size={96} />
-      </div>
-      
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-4">
-          <div className="p-2 rounded-lg bg-white/25 backdrop-blur-sm group-hover:bg-white/35 transition-colors">
-            <Icon size={20} className="text-white" />
-          </div>
-          <div className="text-right">
-            <h3 className="text-white/85 text-xs font-semibold uppercase tracking-wide">{title}</h3>
-            <p className="text-white/60 text-xs">{period} SUMMARY</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          <div className="bg-white/15 backdrop-blur-sm rounded-lg p-2 group-hover:bg-white/20 transition-colors">
-            <div className="flex items-center gap-1 mb-1">
-              <DollarSign size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs font-medium">Revenue</span>
-            </div>
-            <span className="text-white font-bold text-sm">{formatCurrency(data?.totalSales)}</span>
-          </div>
-          
-          <div className="bg-white/15 backdrop-blur-sm rounded-lg p-2 group-hover:bg-white/20 transition-colors">
-            <div className="flex items-center gap-1 mb-1">
-              <Wallet size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs font-medium">Balance</span>
-            </div>
-            <span className="text-white font-bold text-sm">{formatCurrency(data?.balance)}</span>
-          </div>
-        </div>
-
-        <div className="space-y-1">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <Receipt size={10} className="text-white/70" />
-              <span className="text-white/90 text-xs">Cash</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.cashReceipt)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <Building2 size={10} className="text-white/70" />
-              <span className="text-white/90 text-xs">Bank</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.bankReceipt)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Total Discount</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalDiscount)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Total Tax</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.totalTax)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <CreditCard size={12} className="text-white/70" />
-              <span className="text-white/80 text-xs">Net Sales</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.netSales)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1">
-              <Target size={10} className="text-white/70" />
-              <span className="text-white/90 text-xs">Expenses</span>
-            </div>
-            <span className="text-white/95 font-semibold text-xs">0</span>
-          </div>
-          
-          <div className="border-t border-white/25 pt-1 mt-2">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-1">
-                <FileText size={10} className="text-white/70" />
-                <span className="text-white/90 text-xs">Avg Ticket</span>
-              </div>
-              <span className="text-white/95 font-semibold text-xs">{formatCurrency(data?.averageTicketSize)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="absolute bottom-2 left-2 flex gap-1">
-        <div className="w-1 h-1 bg-white/60 rounded-full"></div>
-        <div className="w-1 h-1 bg-white/40 rounded-full"></div>
-        <div className="w-1 h-1 bg-white/20 rounded-full"></div>
-      </div>
-    </div>
-  );
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="bg-white rounded-lg p-8 shadow-lg flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin text-blue-600" size={32} />
-          <p className="text-gray-600">Loading dashboard data...</p>
-        </div>
-      </div>
+  const fetchDashboardConsolidatedTotals = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardConsolidatedTotals/${cmp_id}/${primaryUserId}`,
+      dashboardRequestConfig,
     );
-  }
+    return response.data;
+  };
+
+  const fetchDashboardCompanyRevenueBreakdown = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardCompanyRevenueBreakdown/${cmp_id}/${primaryUserId}`,
+      dashboardRequestConfig,
+    );
+    return response.data;
+  };
+
+  const fetchDashboardCompanyDailyCollectionBreakdown = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardCompanyDailyCollectionBreakdown/${cmp_id}/${primaryUserId}`,
+      dashboardRequestConfig,
+    );
+    return response.data;
+  };
+
+  const fetchDashboardCompanyMonthlyCollectionBreakdown = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardCompanyMonthlyCollectionBreakdown/${cmp_id}/${primaryUserId}`,
+      dashboardRequestConfig,
+    );
+    return response.data;
+  };
+
+  const fetchDashboardRoomCountSummary = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardRoomCountSummary/${cmp_id}/${primaryUserId}`,
+      dashboardRequestConfig,
+    );
+    return response.data;
+  };
+
+  const fetchDashboardPropertySalesSummary = async () => {
+    const response = await api.get(
+      `/api/sUsers/fetchDashboardPropertySalesSummary/${cmp_id}/${primaryUserId}`,
+      dashboardRequestConfig,
+    );
+    return response.data;
+  };
+
+  const {
+    data,
+    isLoading: isTotalsLoading,
+    isError: isTotalsError,
+    error: totalsError,
+    refetch: refetchTotals,
+    isFetching: isTotalsFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "consolidatedTotals", cmp_id, selectedDateParam],
+    queryFn: fetchDashboardConsolidatedTotals,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const {
+    data: revenueBreakdownData,
+    isLoading: isRevenueBreakdownLoading,
+    isError: isRevenueBreakdownError,
+    error: revenueBreakdownError,
+    refetch: refetchRevenueBreakdown,
+    isFetching: isRevenueBreakdownFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "companyRevenueBreakdown", primaryUserId, selectedDateParam],
+    queryFn: fetchDashboardCompanyRevenueBreakdown,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const {
+    data: dailyCollectionBreakdownData,
+    isLoading: isDailyCollectionBreakdownLoading,
+    isError: isDailyCollectionBreakdownError,
+    error: dailyCollectionBreakdownError,
+    refetch: refetchDailyCollectionBreakdown,
+    isFetching: isDailyCollectionBreakdownFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "dailyCollectionBreakdown", primaryUserId, selectedDateParam],
+    queryFn: fetchDashboardCompanyDailyCollectionBreakdown,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const {
+    data: monthlyCollectionBreakdownData,
+    isLoading: isMonthlyCollectionBreakdownLoading,
+    isError: isMonthlyCollectionBreakdownError,
+    error: monthlyCollectionBreakdownError,
+    refetch: refetchMonthlyCollectionBreakdown,
+    isFetching: isMonthlyCollectionBreakdownFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "monthlyCollectionBreakdown", primaryUserId, selectedDateParam],
+    queryFn: fetchDashboardCompanyMonthlyCollectionBreakdown,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const {
+    data: roomCountSummaryData,
+    isLoading: isRoomCountSummaryLoading,
+    isError: isRoomCountSummaryError,
+    error: roomCountSummaryError,
+    refetch: refetchRoomCountSummary,
+    isFetching: isRoomCountSummaryFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "roomCountSummary", primaryUserId, selectedDateParam],
+    queryFn: fetchDashboardRoomCountSummary,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const {
+    data: propertySalesSummaryData,
+    isLoading: isPropertySalesSummaryLoading,
+    isError: isPropertySalesSummaryError,
+    error: propertySalesSummaryError,
+    refetch: refetchPropertySalesSummary,
+    isFetching: isPropertySalesSummaryFetching,
+  } = useQuery({
+    queryKey: ["dashboardSummary", "propertySalesSummary", primaryUserId, selectedDateParam],
+    queryFn: fetchDashboardPropertySalesSummary,
+    enabled: !!cmp_id && !!primaryUserId,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  const isLoading =
+    isTotalsLoading ||
+    isRevenueBreakdownLoading ||
+    isDailyCollectionBreakdownLoading ||
+    isMonthlyCollectionBreakdownLoading ||
+    isRoomCountSummaryLoading ||
+    isPropertySalesSummaryLoading;
+  const isError =
+    isTotalsError ||
+    isRevenueBreakdownError ||
+    isDailyCollectionBreakdownError ||
+    isMonthlyCollectionBreakdownError ||
+    isRoomCountSummaryError ||
+    isPropertySalesSummaryError;
+  const error =
+    totalsError ||
+    revenueBreakdownError ||
+    dailyCollectionBreakdownError ||
+    monthlyCollectionBreakdownError ||
+    roomCountSummaryError ||
+    propertySalesSummaryError;
+  const isFetching =
+    isTotalsFetching ||
+    isRevenueBreakdownFetching ||
+    isDailyCollectionBreakdownFetching ||
+    isMonthlyCollectionBreakdownFetching ||
+    isRoomCountSummaryFetching ||
+    isPropertySalesSummaryFetching;
+
+  const refetch = () => {
+    Promise.all([
+      refetchTotals(),
+      refetchRevenueBreakdown(),
+      refetchDailyCollectionBreakdown(),
+      refetchMonthlyCollectionBreakdown(),
+      refetchRoomCountSummary(),
+      refetchPropertySalesSummary(),
+    ]);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-white rounded-xl shadow-lg">
-              <BarChart3 className="text-indigo-600" size={24} />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Financial Dashboard</h1>
-              <p className="text-gray-600 text-sm">
-                {companyIndustry === 6 && "Hotel Financial Overview"}
-                {(companyIndustry === 3 || companyIndustry === 8) && "Restaurant Financial Overview"}
-                {companyIndustry === 7 && "Hotel & Restaurant Financial Overview"}
-              </p>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      <div>
+        <TitleDiv title="Summary Dashboard" />
+      </div>
+
+      <div className="px-3 py-4 sm:px-4 sm:py-5 md:px-5 md:py-6 max-w-7xl mx-auto">
+
+        {/* Header row */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-5 sm:mb-6 bg-slate-100 px-4 py-4 sm:px-5 sm:py-5 rounded-xl">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-700 leading-tight truncate">
+              Summary Dashboard
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Selected date: {selectedDateLongLabel}
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={16} />
-              <input
-                type="date"
-                className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-              />
-            </div>
-            <button
-              onClick={fetchDashboardData}
-              disabled={loading}
-              className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refetch}
+              disabled={isFetching}
+              className="flex items-center gap-2 rounded-xl border-gray-200 bg-white text-sm text-gray-700 hover:bg-gray-50"
             >
-              <RefreshCw className={`${loading ? 'animate-spin' : ''}`} size={16} />
-              Refresh
+              <RefreshCw size={14} className={isFetching ? "animate-spin" : ""} />
+              {isFetching ? "Refreshing..." : "Refresh Dashboard"}
+            </Button>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 rounded-xl border-gray-200 bg-white text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <CalendarIcon size={14} />
+                  <span>{selectedDateLabel}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+
+            <button className="flex items-center gap-2 px-3 py-2 sm:px-4 rounded-xl bg-[#0f172a] text-sm text-white font-medium hover:bg-[#1e293b] active:bg-[#0a101e] transition">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              <span className="hidden sm:inline">Export Report</span>
             </button>
           </div>
         </div>
-        
-        {error && (
-          <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
-            <AlertCircle className="text-red-600" size={16} />
-            <p className="text-red-700 text-sm">Error: {error}</p>
+
+      
+        {/* Loading */}
+        {isLoading && <SummaryCardsSkeleton />}
+
+        {/* Error */}
+        {isError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Failed to load summary</AlertTitle>
+            <AlertDescription className="flex flex-col gap-3 mt-1">
+              <span className="text-sm">
+                {error?.message ?? "Something went wrong. Please try again."}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refetch}
+                disabled={isFetching}
+                className="w-fit flex items-center gap-2"
+              >
+                <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} />
+                {isFetching ? "Retrying…" : "Retry"}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Success */}
+        {!isLoading && !isError && data && (
+          <div className="space-y-6">
+            <SummaryCards
+              totalRevenue={fmt(data.totalRevenue)}
+              revenueBreakdown={revenueBreakdownData?.companyWiseRevenue ?? []}
+              dailyCollection={fmt(data.dailyCollection)}
+              dailyCollectionBreakdown={
+                dailyCollectionBreakdownData?.companyWiseCollection ?? []
+              }
+              monthlyCollection={fmt(data.monthlyCollection)}
+              monthlyCollectionBreakdown={
+                monthlyCollectionBreakdownData?.companyWiseCollection ?? []
+              }
+              totalPropertySales={fmt(propertySalesSummaryData?.totalPropertySales)}
+              totalHotelSales={fmt(propertySalesSummaryData?.totalHotelSales)}
+              totalRestaurantSales={fmt(propertySalesSummaryData?.totalRestaurantSales)}
+              propertySalesBreakdown={
+                propertySalesSummaryData?.companyWisePropertySales ?? []
+              }
+              totalRooms={String(roomCountSummaryData?.totalRooms ?? 0)}
+              totalAvailableRooms={String(roomCountSummaryData?.totalAvailableRooms ?? 0)}
+              totalBlockedRooms={String(roomCountSummaryData?.totalBlockedRooms ?? 0)}
+              roomCountBreakdown={roomCountSummaryData?.companyWiseRoomCount ?? []}
+              dailyCash={fmt(data.cashCollection?.daily)}
+              dailyBank={fmt(data.bankCollection?.daily)}
+              monthlyCash={fmt(data.cashCollection?.monthly)}
+              monthlyBank={fmt(data.bankCollection?.monthly)}
+              selectedDateLabel={selectedDateLabel}
+            />
+
+            <RevenueTable
+              rows={revenueBreakdownData?.companyWiseRevenue ?? []}
+              selectedDateLabel={selectedDateLabel}
+            />
           </div>
         )}
       </div>
-
-      {dashboardData && (
-        <>
-          {/* Daily Summary Row */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full"></div>
-              <h2 className="text-xl font-bold text-gray-800">
-                Daily Summary - {formatSelectedDate()}
-              </h2>
-              <Clock size={16} className="text-gray-500" />
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              {shouldShowHotel() && !shouldShowRestaurant() && (
-                <StatCard
-                  title="Hotel Daily"
-                  icon={Bed}
-                  mainIcon={Hotel}
-                  data={dashboardData.daily.hotel}
-                  gradient="from-blue-600 via-blue-500 to-indigo-600"
-                />
-              )}
-              {shouldShowRestaurant() && !shouldShowHotel() && (
-                <StatCard
-                  title="Restaurant Daily"
-                  icon={ChefHat}
-                  mainIcon={UtensilsCrossed}
-                  data={dashboardData.daily.restaurant}
-                  gradient="from-green-600 via-emerald-500 to-teal-600"
-                />
-              )}
-              {shouldShowCombined() && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  <StatCard
-                    title="Hotel Daily"
-                    icon={Bed}
-                    mainIcon={Hotel}
-                    data={dashboardData.daily.hotel}
-                    gradient="from-blue-600 via-blue-500 to-indigo-600"
-                  />
-                  <StatCard
-                    title="Restaurant Daily"
-                    icon={ChefHat}
-                    mainIcon={UtensilsCrossed}
-                    data={dashboardData.daily.restaurant}
-                    gradient="from-green-600 via-emerald-500 to-teal-600"
-                  />
-                  <CombinedCard
-                    title="Combined Daily"
-                    icon={BarChart3}
-                    mainIcon={TrendingUp}
-                    data={dashboardData.daily.combined}
-                    gradient="from-purple-600 via-violet-500 to-indigo-600"
-                    period="DAILY"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Monthly Summary Row */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-600 rounded-full"></div>
-              <h2 className="text-xl font-bold text-gray-800">
-                Monthly Summary - {formatSelectedMonth()}
-              </h2>
-              <Calendar size={16} className="text-gray-500" />
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              {shouldShowHotel() && !shouldShowRestaurant() && (
-                <StatCard
-                  title="Hotel Monthly"
-                  icon={Building2}
-                  mainIcon={Hotel}
-                  data={dashboardData.monthly.hotel}
-                  gradient="from-orange-600 via-amber-500 to-yellow-600"
-                />
-              )}
-              {shouldShowRestaurant() && !shouldShowHotel() && (
-                <StatCard
-                  title="Restaurant Monthly"
-                  icon={UtensilsCrossed}
-                  mainIcon={ChefHat}
-                  data={dashboardData.monthly.restaurant}
-                  gradient="from-red-600 via-rose-500 to-pink-600"
-                />
-              )}
-              {shouldShowCombined() && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  <StatCard
-                    title="Hotel Monthly"
-                    icon={Building2}
-                    mainIcon={Hotel}
-                    data={dashboardData.monthly.hotel}
-                    gradient="from-orange-600 via-amber-500 to-yellow-600"
-                  />
-                  <StatCard
-                    title="Restaurant Monthly"
-                    icon={UtensilsCrossed}
-                    mainIcon={ChefHat}
-                    data={dashboardData.monthly.restaurant}
-                    gradient="from-red-600 via-rose-500 to-pink-600"
-                  />
-                  <CombinedCard
-                    title="Combined Monthly"
-                    icon={TrendingUp}
-                    mainIcon={BarChart3}
-                    data={dashboardData.monthly.combined}
-                    gradient="from-slate-700 via-gray-600 to-zinc-700"
-                    period="MONTHLY"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <TableSummary dashboardData={dashboardData} selectedDate={selectedDate} />
-          </div>
-          
-          <div className="mb-6">
-            <GraphHotelSummary dashboardData={dashboardData} selectedDate={selectedDate} />
-          </div>
-        </>
-      )}
     </div>
   );
 };

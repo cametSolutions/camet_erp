@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useMemo } from "react";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import TitleDiv from "@/components/common/TitleDiv";
+import RoomName from "@/pages/Hotel/Components/RoomName";
 
-/* ===================== Helpers ===================== */
+
+
 
 const formatDisplayDate = (dateStr) => {
   if (!dateStr) return "";
@@ -27,7 +29,10 @@ const computeKotBreakdown = (salesData) => {
 
 const round2 = (value) => Math.round(value || 0); // integer rounding
 
-/* ===================== PDF Export ===================== */
+
+
+
+
 
 export const generatePDF = (
   salesData,
@@ -459,6 +464,7 @@ const exportToExcel = (
       "Bill No",
       "Date",
       "Guest Name",
+         "Agent name",
       "Gross Amount",
       "CGST",
       "SGST",
@@ -473,7 +479,7 @@ const exportToExcel = (
       "Payment Mode",
       ...(businessType !== "hotel" ? ["Meal Period", "KOT Type"] : []),
       "Credit",
-      "Credit Description",
+   
     ],
     ...salesData.map((row) => {
       const isCreditSale =
@@ -642,6 +648,8 @@ const BillSummary = () => {
 
   const [kotTypeFilter, setKotTypeFilter] = useState("all");
   const [mealPeriodFilter, setMealPeriodFilter] = useState("all");
+const [searchTerm, setSearchTerm] = useState("");
+
 
   const [businessType, setBusinessType] = useState(null);
   const [summary, setSummary] = useState({
@@ -783,10 +791,38 @@ console.log(salesData);
       mealPeriodFilter === "all" || item.mealPeriod === mealPeriodFilter;
     return kotMatch && mealMatch;
   });
+ const searchedSalesData = useMemo(() => {
+    const keyword = searchTerm.trim().toLowerCase();
+
+    if (!keyword) return filteredSalesData;
+
+    return filteredSalesData.filter((item) =>
+      [
+        item.billNo,
+        item.partyName,
+        item.guestName,
+        item.creditDescription,
+        item.roomNumber,
+        item.kotType,
+        item.mealPeriod,
+        item.PaymentModeArray?.join(", "),
+        item.totalWithTax,
+        item.amount,
+        item.cash,
+        item.upi,
+        item.bank,
+        item.card,
+        item.credit,
+        item.disc,
+      ].some((value) =>
+        String(value ?? "").toLowerCase().includes(keyword)
+      )
+    );
+  }, [filteredSalesData, searchTerm]);
 
   const clearError = () => setError(null);
 
-  const totals = filteredSalesData.reduce(
+  const totals = searchedSalesData.reduce(
     (acc, item) => {
       const grossAmount = (item.amount || 0) - (item.igst || 0);
       return {
@@ -800,9 +836,9 @@ console.log(salesData);
         totalWithTax: acc.totalWithTax + (item.totalWithTax || 0),
         cash: acc.cash + Number(item.cash || 0),
         credit: acc.credit + Number(item.credit || 0),
-        upi: acc.upi + (Number(item.upi) ? Number(item.upi) || 0 : 0),
+        upi: acc.upi + Number(item.upi || 0),
         bank: acc.bank + Number(item.bank || 0),
-        card: acc.card + (Number(item.card) ? Number(item.card) || 0 : 0),
+        card: acc.card + Number(item.card || 0),
       };
     },
     {
@@ -819,7 +855,7 @@ console.log(salesData);
       upi: 0,
       bank: 0,
       card: 0,
-    },
+    }
   );
 
   const { kotTypes, mealPeriods } = getFilterOptions();
@@ -832,11 +868,11 @@ console.log(salesData);
     }
   }, []);
 
-  useEffect(() => {
-    if (cmp_id && owner && businessType && startDate && endDate) {
-      fetchSalesData(startDate, endDate);
-    }
-  }, [cmp_id, owner, businessType, startDate, endDate]);
+  // useEffect(() => {
+  //   if (cmp_id && owner && businessType && startDate && endDate) {
+  //     fetchSalesData(startDate, endDate);
+  //   }
+  // }, [cmp_id, owner, businessType, startDate, endDate]);
 
   const handlePDFExport = () => {
     if (filteredSalesData.length === 0) {
@@ -884,160 +920,167 @@ console.log(filteredSalesData);
       <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 p-6">
         <div className=" mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200">
           {/* Header */}
-          <div className="text-center border-b border-gray-300 pb-4 mb-6">
-            <div className="text-xl md:text-2xl font-semibold tracking-wide text-gray-900">
-              {owner?.companyName || owner?.name || "Sales Report"}
-            </div>
-            <div className="mt-1 text-xs md:text-sm text-gray-500">
-              {owner?.flat || owner?.road || "Sales Register of the Outlet"}
-            </div>
-            <div className="mt-3 inline-block px-4 py-1 rounded-full bg-gray-900 text-white text-xs md:text-sm font-semibold tracking-wide uppercase shadow-sm">
-              Sales Register -{" "}
-              {businessType === "hotel" ? "Hotel" : "Restaurant"}
-            </div>
-          </div>
+     {/* ── Report Header ── */}
+<div className="text-center border-b border-gray-200 pb-4 mb-5">
+  <div className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
+    {owner?.companyName || owner?.name || "Sales Report"}
+  </div>
+  <div className="mt-1 text-xs text-gray-400">
+    {owner?.flat || owner?.road || "Sales Register of the Outlet"}
+  </div>
+  <div className="mt-3 inline-block px-4 py-1 rounded-full bg-gray-900 text-white text-[11px] font-bold tracking-widest uppercase">
+    Sales Register — {businessType === "hotel" ? "Hotel" : "Restaurant"}
+  </div>
+</div>
 
-          {/* Filters */}
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              {/* Left: Dates + All */}
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <label className="font-semibold text-xs md:text-sm text-gray-700">
-                    From Date
-                  </label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => {
-                      setStartDate(e.target.value);
-                      clearError();
-                    }}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-xs md:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
-                    disabled={loading}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="font-semibold text-xs md:text-sm text-gray-700">
-                    To Date
-                  </label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => {
-                      setEndDate(e.target.value);
-                      clearError();
-                    }}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-xs md:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
-                    disabled={loading}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="font-semibold text-xs md:text-sm text-gray-700">
-                    All Types
-                  </label>
-                  <input
-                    type="checkbox"
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setBusinessType("all");
-                      } else {
-                        const urlParams = new URLSearchParams(location.search);
-                        const typeFromUrl = urlParams.get("type");
-                        if (typeFromUrl) {
-                          setBusinessType(typeFromUrl);
-                        }
-                      }
-                    }}
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    disabled={loading}
-                  />
-                </div>
-              </div>
+{/* ── Filter Bar ── */}
+<div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-5">
 
-              {/* Right: KOT / Meal filters */}
-              {businessType !== "hotel" && (
-                <div className="flex flex-wrap items-center gap-4 justify-start md:justify-end">
-                  <div className="flex items-center gap-2">
-                    <label className="font-semibold text-xs md:text-sm text-gray-700">
-                      KOT Type
-                    </label>
-                    <select
-                      value={kotTypeFilter}
-                      onChange={(e) => setKotTypeFilter(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-xs md:text-sm bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      disabled={loading}
-                    >
-                      {kotTypes.map((type) => (
-                        <option key={type} value={type}>
-                          {type === "all" ? "All KOT Types" : type}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+  {/* Single row of filters */}
+  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5">
 
-                  <div className="flex items-center gap-2">
-                    <label className="font-semibold text-xs md:text-sm text-gray-700">
-                      Meal Period
-                    </label>
-                    <select
-                      value={mealPeriodFilter}
-                      onChange={(e) => setMealPeriodFilter(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-xs md:text-sm bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      disabled={loading}
-                    >
-                      {mealPeriods.map((period) => (
-                        <option key={period} value={period}>
-                          {period === "all" ? "All Periods" : period}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
-            </div>
+    {/* From Date */}
+    <div className="flex items-center gap-1.5 shrink-0">
+      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">From</span>
+      <input
+        type="date"
+        value={startDate}
+        onChange={(e) => { setStartDate(e.target.value); clearError(); }}
+        disabled={loading}
+        className="h-8 px-2.5 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-800 focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 cursor-pointer"
+      />
+    </div>
 
-            {(kotTypeFilter !== "all" || mealPeriodFilter !== "all") && (
-              <div className="mt-3 flex flex-wrap gap-2 items-center">
-                <span className="text-xs md:text-sm font-semibold text-gray-600">
-                  Active Filters
-                </span>
-                {kotTypeFilter !== "all" && (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium flex items-center gap-1 shadow-sm">
-                    <span>KOT: {kotTypeFilter}</span>
-                    <button
-                      onClick={() => setKotTypeFilter("all")}
-                      className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-blue-200"
-                      title="Clear KOT filter"
-                    >
-                      ×
-                    </button>
-                  </span>
-                )}
-                {mealPeriodFilter !== "all" && (
-                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium flex items-center gap-1 shadow-sm">
-                    <span>Meal: {mealPeriodFilter}</span>
-                    <button
-                      onClick={() => setMealPeriodFilter("all")}
-                      className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-green-200"
-                      title="Clear meal filter"
-                    >
-                      ×
-                    </button>
-                  </span>
-                )}
-                <button
-                  onClick={() => {
-                    setKotTypeFilter("all");
-                    setMealPeriodFilter("all");
-                  }}
-                  className="ml-2 px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-xs font-medium hover:bg-gray-300 shadow-sm"
-                >
-                  Clear All
-                </button>
-              </div>
-            )}
-          </div>
+    {/* To Date */}
+    <div className="flex items-center gap-1.5 shrink-0">
+      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">To</span>
+      <input
+        type="date"
+        value={endDate}
+        onChange={(e) => { setEndDate(e.target.value); clearError(); }}
+        disabled={loading}
+        className="h-8 px-2.5 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-800 focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 cursor-pointer"
+      />
+    </div><div className="flex flex-col gap-1">
+ 
+  <input
+    type="text"
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    placeholder="Search room, guest, bill, amount..."
+    className="h-8 rounded-md border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
+  />
+</div>
+
+    {/* Separator */}
+    <div className="h-6 w-px bg-gray-200 shrink-0" />
+
+    {/* All Types */}
+    <label className="flex items-center gap-1.5 shrink-0 cursor-pointer">
+      <input
+        type="checkbox"
+        disabled={loading}
+        onChange={(e) => {
+          if (e.target.checked) {
+            setBusinessType("all");
+          } else {
+            const urlParams = new URLSearchParams(location.search);
+            const typeFromUrl = urlParams.get("type");
+            if (typeFromUrl) setBusinessType(typeFromUrl);
+          }
+        }}
+        className="w-3.5 h-3.5 accent-teal-700 cursor-pointer"
+      />
+      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">All Types</span>
+    </label>
+
+    {/* KOT & Meal Period — only when not hotel */}
+    {businessType !== "hotel" && (
+      <>
+        <div className="h-6 w-px bg-gray-200 shrink-0" />
+
+        {/* KOT Type */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">KOT</span>
+          <select
+            value={kotTypeFilter}
+            onChange={(e) => setKotTypeFilter(e.target.value)}
+            disabled={loading}
+            className="h-8 pl-2.5 pr-7 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-800 focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 cursor-pointer appearance-none"
+          >
+            {kotTypes.map((type) => (
+              <option key={type} value={type}>
+                {type === "all" ? "All KOT Types" : type}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Meal Period */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Meal</span>
+          <select
+            value={mealPeriodFilter}
+            onChange={(e) => setMealPeriodFilter(e.target.value)}
+            disabled={loading}
+            className="h-8 pl-2.5 pr-7 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-800 focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 cursor-pointer appearance-none"
+          >
+            {mealPeriods.map((period) => (
+              <option key={period} value={period}>
+                {period === "all" ? "All Periods" : period}
+              </option>
+            ))}
+          </select>
+        </div>
+      </>
+    )}
+
+    {/* Spacer */}
+    <div className="flex-1" />
+
+    {/* Fetch Button */}
+    <button
+      onClick={() => fetchSalesData(startDate, endDate)}
+      disabled={loading}
+      className="h-8 px-4 bg-teal-700 hover:bg-teal-800 active:scale-95 text-white text-xs font-semibold rounded-lg transition-all shrink-0 disabled:opacity-50 flex items-center gap-1.5"
+    >
+      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Fetch Report
+    </button>
+  </div>
+
+  {/* Active filter chips — only when a filter is active */}
+  {(kotTypeFilter !== "all" || mealPeriodFilter !== "all") && (
+    <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-t border-gray-100 bg-gray-50/70">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mr-1">Active</span>
+
+      {kotTypeFilter !== "all" && (
+        <span className="inline-flex items-center gap-1 h-[22px] px-2.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-semibold">
+          KOT: {kotTypeFilter}
+          <button onClick={() => setKotTypeFilter("all")} className="opacity-50 hover:opacity-100 text-sm leading-none">×</button>
+        </span>
+      )}
+
+      {mealPeriodFilter !== "all" && (
+        <span className="inline-flex items-center gap-1 h-[22px] px-2.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold">
+          Meal: {mealPeriodFilter}
+          <button onClick={() => setMealPeriodFilter("all")} className="opacity-50 hover:opacity-100 text-sm leading-none">×</button>
+        </span>
+      )}
+
+      <button
+        onClick={() => { setKotTypeFilter("all"); setMealPeriodFilter("all"); }}
+        className="h-[22px] px-2.5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-500 text-[11px] font-semibold transition-colors ml-1"
+      >
+        Clear All
+      </button>
+    </div>
+  )}
+</div>
 
           {/* Error / Loading / Period */}
           {error && (
@@ -1059,12 +1102,7 @@ console.log(filteredSalesData);
 
           {reportPeriod && (
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 text-xs md:text-sm text-gray-600">
-              <div>
-                Period:{" "}
-                <span className="font-semibold text-gray-900">
-                  {reportPeriod}
-                </span>
-              </div>
+             
               <div className="mt-1 md:mt-0">
                 Printed at{" "}
                 <span className="font-semibold text-blue-700">
@@ -1096,6 +1134,9 @@ console.log(filteredSalesData);
                   </th>
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Guest Name
+                  </th>
+                    <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
+                    Agent name
                   </th>
                     <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Room Name
@@ -1134,7 +1175,7 @@ console.log(filteredSalesData);
                     Card
                   </th>
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
-                    Mode
+                   Credit
                   </th>
                   {businessType !== "hotel" && (
                     <>
@@ -1147,15 +1188,13 @@ console.log(filteredSalesData);
                     </>
                   )}
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
-                    Credit
+                    Mode
                   </th>
-                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
-                    Credit Description
-                  </th>
+                
                 </tr>
               </thead>
               <tbody>
-                {!loading && filteredSalesData.length === 0 ? (
+                {!loading && searchedSalesData.length === 0 ? (
                   <tr>
                     <td
                       colSpan={businessType !== "hotel" ? 19 : 17}
@@ -1169,7 +1208,7 @@ console.log(filteredSalesData);
                     </td>
                   </tr>
                 ) : (
-                  filteredSalesData.map((row, index) => {
+                  searchedSalesData.map((row, index) => {
                     const isCreditSale =
                       row.partyAccount === "Sundry Debtors" ||
                       row.mode === "Credit" ||
@@ -1196,8 +1235,13 @@ console.log(filteredSalesData);
                         <td className="border border-gray-200 px-2 py-1 text-left">
                           {row.guestName || row.partyName}
                         </td>
+                           <td className="border border-gray-200 px-2 py-1 text-left">
+                          {isCreditSale
+                            ? row.creditDescription || row.partyName || "-"
+                            : "-"}
+                        </td>
 <td className="border border-gray-200 px-2 py-1 text-center">
-  {row.roomNumber || "-"}
+  <RoomName rooms={row.roomNumber} />
 </td>
                         <td className="border border-gray-200 px-2 py-1 text-right">
                           {Math.round(gross)}
@@ -1238,6 +1282,11 @@ console.log(filteredSalesData);
                             ? Math.round(Number(row.card))
                             : "-"}
                         </td>
+                         <td className="border border-gray-200 px-2 py-1 text-right">
+                          {isCreditSale
+                            ? Math.round(row.credit || 0)
+                            : "-"}
+                        </td>
                         <td className="border border-gray-200 px-2 py-1 text-center overflow-hidden">
                           {row.PaymentModeArray &&
                           row.PaymentModeArray.length > 0
@@ -1255,22 +1304,14 @@ console.log(filteredSalesData);
                             </td>
                           </>
                         )}
-                        <td className="border border-gray-200 px-2 py-1 text-right">
-                          {isCreditSale
-                            ? Math.round(row.totalWithTax || 0)
-                            : "-"}
-                        </td>
-                        <td className="border border-gray-200 px-2 py-1 text-left">
-                          {isCreditSale
-                            ? row.creditDescription || row.partyName || "-"
-                            : "-"}
-                        </td>
+                       
+                     
                       </tr>
                     );
                   })
                 )}
 
-                {filteredSalesData.length > 0 && (
+                {searchedSalesData.length > 0 && (
                   <tr className="bg-gray-900 text-white font-semibold">
                     <td className="border border-gray-800 px-2 py-2 text-left">
                       Total
@@ -1279,6 +1320,12 @@ console.log(filteredSalesData);
                       -
                     </td>
                     <td className="border border-gray-800 px-2 py-2 text-center">
+                      -
+                    </td>
+                        <td className="border border-gray-800 px-2 py-2 text-center">
+                      -
+                    </td>
+                        <td className="border border-gray-800 px-2 py-2 text-center">
                       -
                     </td>
                     <td className="border border-gray-800 px-2 py-2 text-right">
@@ -1314,6 +1361,9 @@ console.log(filteredSalesData);
                     <td className="border border-gray-800 px-2 py-2 text-right">
                       {Math.round(totals.card || 0)}
                     </td>
+                     <td className="border border-gray-800 px-2 py-2 text-right">
+                      {Math.round(totals.credit)}
+                    </td>
                     <td className="border border-gray-800 px-2 py-2 text-center">
                       -
                     </td>
@@ -1327,12 +1377,10 @@ console.log(filteredSalesData);
                         </td>
                       </>
                     )}
-                    <td className="border border-gray-800 px-2 py-2 text-right">
-                      {Math.round(totals.credit)}
-                    </td>
-                    <td className="border border-gray-800 px-2 py-2 text-center">
+               
+                    {/* <td className="border border-gray-800 px-2 py-2 text-center">
                       -
-                    </td>
+                    </td> */}
                   </tr>
                 )}
               </tbody>
@@ -1525,7 +1573,7 @@ console.log(filteredSalesData);
                         Total Transactions
                       </td>
                       <td className="text-right py-2 px-2 font-semibold text-sm text-gray-900">
-                        {filteredSalesData.length}
+                        {searchedSalesData.length}
                       </td>
                     </tr>
                   </tbody>
@@ -1555,7 +1603,7 @@ console.log(filteredSalesData);
             <div className="flex flex-wrap justify-center gap-3">
               <button
                 onClick={handlePDFExport}
-                disabled={filteredSalesData.length === 0}
+                disabled={searchedSalesData.length === 0}
                 className="px-5 py-2 rounded-full bg-red-600 text-white text-xs md:text-sm font-semibold shadow-md hover:bg-red-700 disabled:bg-gray-400 flex items-center gap-2"
               >
                 Export PDF

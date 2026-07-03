@@ -5,6 +5,7 @@ const foodPlanSchema = new mongoose.Schema({
   foodPlan: String,
   rate: Number,
   roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
+  isDefault: { type: Boolean, default: false },
   isComplimentary: {
     type: Boolean,
     default: false,
@@ -16,6 +17,7 @@ const paxDetailSchema = new mongoose.Schema({
   paxName: String,
   rate: Number,
   roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
+  isDefault: { type: Boolean, default: false },
 });
 
 const roomSwapHistorySchema = new mongoose.Schema({
@@ -62,6 +64,28 @@ const hsnDetailsSchema = new mongoose.Schema({
   ],
 });
 
+const idProofDocumentSchema = new mongoose.Schema(
+  {
+    url: { type: String, required: true },
+    publicId: { type: String, default: "" },
+    originalName: { type: String, default: "" },
+    mimeType: { type: String, default: "" },
+  },
+  { _id: false },
+);
+
+const idProofSchema = new mongoose.Schema(
+  {
+    idType: { type: String, default: "" },
+    idNumber: { type: String, default: "" },
+    documents: {
+      type: [idProofDocumentSchema],
+      default: [],
+    },
+  },
+  { _id: false },
+);
+
 const selectedRoomSchema = new mongoose.Schema({
   roomId: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
   roomName: String,
@@ -78,9 +102,9 @@ const selectedRoomSchema = new mongoose.Schema({
     Primary_user_id: mongoose.Schema.Types.ObjectId,
   },
   dateTariffs: {
-  type: Object,
-  default: {},
-},
+    type: Object,
+    default: {},
+  },
   pax: Number,
   priceLevelRate: String,
   stayDays: Number,
@@ -184,6 +208,7 @@ const bookingSchema = new mongoose.Schema(
     totalAmount: String,
     balanceToPay: String,
     addFoodPlanWithRate: { type: Boolean, default: false },
+    addPaxWithRate: { type: Boolean, default: false },
     guestName: String,
     guestId: { type: mongoose.Schema.Types.ObjectId, ref: "Party" },
     guestCountry: String,
@@ -199,6 +224,8 @@ const bookingSchema = new mongoose.Schema(
       credit: { type: Number, default: 0 },
       card: { type: Number, default: 0 },
     },
+
+    paymentMetaData:{type: Object},
     checkoutpaymenttypedetails: [
       {
         customerName: { type: String },
@@ -230,16 +257,30 @@ const bookingSchema = new mongoose.Schema(
     arrayCheckIn: [{ type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" }],
     arrayBookIn: [{ type: mongoose.Schema.Types.ObjectId, ref: "Booking" }],
     status: String,
+    cancelledAt: {
+      type: Date,
+    },
+    cancelledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SecondaryUser",
+    },
+    cancelledByName: {
+      type: String,
+      default: "",
+    },
     originalCheckInId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CheckIn",
     },
+
     idProof: {
-  idType:   { type: String, default: "" },
-  idNumber: { type: String, default: "" },
-  frontUrl: { type: String, default: "" },
-  backUrl:  { type: String, default: "" },
-},
+      type: idProofSchema,
+      default: () => ({
+        idType: "",
+        idNumber: "",
+        documents: [],
+      }),
+    },
     roomSwapHistory: [roomSwapHistorySchema],
     isPartiallyCheckedOut: {
       type: Boolean,
@@ -309,15 +350,14 @@ const bookingSchema = new mongoose.Schema(
     charge: {
       _id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Charge"
+        ref: "Charge",
       },
       cmp_id: mongoose.Schema.Types.ObjectId,
       Primary_user_id: mongoose.Schema.Types.ObjectId,
       name: String,
       hsn: String,
-      taxPercentage: Number
-    }
-    
+      taxPercentage: Number,
+    },
   },
   { timestamps: true },
 );

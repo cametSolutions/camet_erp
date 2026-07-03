@@ -61,7 +61,7 @@ function EditBooking() {
     }
   };
 
-  console.log(editData?.bookingId)
+  console.log(editData)
 
   return (
     <>
@@ -71,7 +71,7 @@ function EditBooking() {
         <div className="">
           <TitleDiv
             title="Edit Booking"
-            from="/sUsers/hotelDashBoard"
+            from="/sUsers/bookingList"
             dropdownContents={[
               {
                 title: "New Guest",

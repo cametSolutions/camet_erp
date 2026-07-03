@@ -87,6 +87,10 @@ export const defaultConfigurations = [
       saleOrder: false,
       sale: false,
     },
+    saveSaleBasedOn: {
+      agent: true,
+      guest: false,
+    },
     emailConfiguration: null,
     despatchTitles: [
       {

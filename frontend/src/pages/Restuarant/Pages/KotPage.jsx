@@ -54,7 +54,7 @@ const OrdersDashboard = () => {
   const [selectedDiscountCharge, setSelectedDiscountCharge] = useState(null);
   const [billFormat, setBillFormat] = useState("format1");
   const [note, setNote] = useState("");
-
+  const [selectedSaleDate,setSelectedSaleDate] = useState(new Date().toISOString().split("T")[0]);
   const [saveLoader, setSaveLoader] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
@@ -561,8 +561,10 @@ const complementaryWithTax =
       if (!selectedOrderForCancel) return;
 
       const response = await api.put(
-        `/api/kot/cancel/${selectedOrderForCancel._id}`,
+        `/api/sUsers/cancel/${selectedOrderForCancel._id}`,
         { reason: cancelReason },
+          { withCredentials: true }
+
       );
 
       if (response.data.success) {
@@ -860,6 +862,7 @@ const complementaryWithTax =
       }
       // ================= FINAL PAYMENT OBJECT =================
       const payment = {
+        selectedSaleDate,
         paymentMethod,
         paymentDetails: {
           ...paymentDetails,
@@ -1291,13 +1294,13 @@ const complementaryWithTax =
     ...(cashOrBank?.cashDetails?.map((c) => ({
       id: c._id,
       name: `${c.partyName} - ${c.under}`,
-      type: "cash",
+      type: c.under,
       subSource: c.partyName,
     })) || []),
     ...(cashOrBank?.bankDetails?.map((b) => ({
       id: b._id,
       name: `${b.partyName} - ${b.under}`,
-      type: "bank",
+      type: b.under,
       subSource: b.partyName,
     })) || []),
     {
@@ -1330,6 +1333,8 @@ const complementaryWithTax =
               isPreview={true}
               sendToParent={handleSaveSales}
               handlePrintData={handlePrint}
+              selectedSaleDate={selectedSaleDate}
+              setSelectedSaleDate={setSelectedSaleDate}
             />
           )}
         </div>

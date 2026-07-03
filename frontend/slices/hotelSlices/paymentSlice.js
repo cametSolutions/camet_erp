@@ -6,11 +6,13 @@ const initialState = {
     total: 0,
   },
   selectedParty: null,
+  selectedSaleDate: new Date(),
   paymentMode: "single",
   splitPayment: [],
   onlinePartyName:"",
   onlineType:"",
   printData: {},
+  setRestaurantTag:null
 };
 
 export const paymentSlice = createSlice({
@@ -23,6 +25,9 @@ export const paymentSlice = createSlice({
     setSelectedParty: (state, action) => {
       state.selectedParty = action.payload;
     },
+    setSelectedSaleDateForRedux: (state, action) => {
+      state.selectedSaleDate = action.payload;
+    },
     setSelectedPaymentMode: (state, action) => {
       state.paymentMode = action.payload;
     },
@@ -33,6 +38,9 @@ export const paymentSlice = createSlice({
       state.onlinePartyName = action.payload;
     },
     setOnlineType: (state, action) => {
+      state.onlineType = action.payload;
+    },
+     setRestaurantTag: (state, action) => {
       state.onlineType = action.payload;
     },
      setPrintDetails: (state, action) => {
@@ -50,7 +58,9 @@ export const {
   setOnlinepartyName,
   setOnlineType,
   removeAll,
-  setPrintDetails
+  setPrintDetails,
+  setRestaurantTag,
+  setSelectedSaleDateForRedux
 } = paymentSlice.actions;
 
 export default paymentSlice.reducer;

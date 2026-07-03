@@ -49,7 +49,7 @@ if(process.env.NODE_ENV==="production"){
   app.use(express.static(path.join(parentDir,'/frontend/dist')))
   app.get('*',(req,res)=>res.sendFile(path.resolve(parentDir,'frontend','dist','index.html')))
 }else{
-  
+   console.log(process.env.NODE_ENV); 
 app.get('/',(req,res)=>{
     res.send("Server is Ready")
 })

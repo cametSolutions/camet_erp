@@ -332,7 +332,7 @@ const drawChargesTable = async (doc, billData, startY, base64Logo, billStartPage
 };
 
 // ─── Summary + Payment tables ─────────────────────────────────────────────────
-const drawSummaryAndPayment = (doc, billData, startY, isForPreview, paymentModeDetails) => {
+const drawSummaryAndPayment = (doc, billData, startY, isForPreview, paymentModeDetails,selected) => {
   const pageWidth = doc.internal.pageSize.width;
   const contentW = pageWidth - 2 * MARGIN;
   const halfW = (contentW - 4) / 2;
@@ -352,16 +352,23 @@ const drawSummaryAndPayment = (doc, billData, startY, isForPreview, paymentModeD
     ]);
   }
 
+  if (Number(billData?.summary?.additionalPax || 0) > 0) {
+    summaryRows.push([
+      "Additional Pax Without Tax",
+      Number(billData.summary.additionalPax).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+    ]);
+  }
+
   if (Number(billData?.summary?.sgst || 0) > 0) {
     summaryRows.push([
-      "SGST on Rent",
+      "SGST",
       Number(billData.summary.sgst).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
     ]);
   }
 
   if (Number(billData?.summary?.cgst || 0) > 0) {
     summaryRows.push([
-      "CGST on Rent",
+      "CGST",
       Number(billData.summary.cgst).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
     ]);
   }
@@ -380,6 +387,13 @@ const drawSummaryAndPayment = (doc, billData, startY, isForPreview, paymentModeD
       Number(billData.summary.roomService).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
     ]);
   }
+  if (Number(billData?.summary?.restaurantSideDiscount || 0) > 0) {
+    summaryRows.push([
+      " Newly added restaurant discount",
+      Number(billData.summary.restaurantSideDiscount).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+    ]);
+  }
+
 
   if (Number(billData?.summary?.otherChargeAmount || 0) > 0) {
     summaryRows.push([
@@ -427,27 +441,36 @@ const drawSummaryAndPayment = (doc, billData, startY, isForPreview, paymentModeD
 
   // ── Payment rows ──────────────────────────────────────────────────────────
   const paymentBody = [];
-
+console.log(selected)
   // Header-like row inside body
   paymentBody.push([
     { content: "PAYMODE", styles: { fontStyle: "bold" } },
     { content: "AMOUNT", styles: { fontStyle: "bold", halign: "center" } },
   ]);
 
-  console.log(paymentModeDetails)
+
   // Payment mode details (array of { customerName, mode, amount })
   if (Array.isArray(paymentModeDetails) && paymentModeDetails.length > 0) {
-    
-    paymentModeDetails.forEach((item) => {
+  paymentModeDetails
+    .filter((item) => {
+      if (selected === "restaurant") return item.under === "food";
+      if (selected === "room") return item.under !== "food";
+      return true; // all
+    })
+    .forEach((item) => {
       paymentBody.push([
-        `${item.customerName || ""} (${(item.mode || "").toUpperCase()})`,
+        `${item.customerName || ""} (${(item.mode || "").toUpperCase()}) ${
+          item.under === "food" ? "Restaurant" : "Room"
+        }`,
         {
-          content: Number(item.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+          content: Number(item.amount || 0).toLocaleString("en-IN", {
+            minimumFractionDigits: 2,
+          }),
           styles: { halign: "right" },
         },
       ]);
     });
-  }
+}
 
   // Total words
   paymentBody.push([
@@ -565,7 +588,8 @@ const drawSingleBill = async (
   billData,
   isForPreview,
   paymentModeDetails,
-  base64Logo
+  base64Logo,
+  selected
 ) => {
   const pageHeight = doc.internal.pageSize.height;
   const billStartPage = doc.internal.getCurrentPageInfo().pageNumber;
@@ -587,7 +611,7 @@ const drawSingleBill = async (
   }
 
   // 5. Summary + Payment tables
-  drawSummaryAndPayment(doc, billData, y, isForPreview, paymentModeDetails);
+  drawSummaryAndPayment(doc, billData, y, isForPreview, paymentModeDetails , selected);
 
   if (isForPreview) {
   drawWatermark(doc);
@@ -610,7 +634,8 @@ export const generateBillPrintPDF = async (
   isPrint = false,
   organization,
   isForPreview = false,
-  paymentModeDetails = []
+  paymentModeDetails = [],
+  selected,
 ) => {
 
   console.log(paymentModeDetails);
@@ -636,7 +661,8 @@ export const generateBillPrintPDF = async (
       bills[i],
       isForPreview,
       paymentModeDetails,
-      base64Logo
+      base64Logo,
+      selected
     );
   }
 
@@ -666,6 +692,7 @@ export const handleBillPrintInvoice = async (
   organization,
   paymentModeDetails = [],
   isForPreview = false,
+  selected,
    
 ) => {
     console.log(paymentModeDetails);
@@ -674,7 +701,8 @@ export const handleBillPrintInvoice = async (
     true,
     organization,
     isForPreview,
-    paymentModeDetails
+    paymentModeDetails,
+    selected
   );
 };
 
@@ -683,6 +711,7 @@ export const handleBillDownloadPDF = async (
   organization,
   paymentModeDetails = [],
   isForPreview = false,
+  selected,
 ) => {
   console.log(paymentModeDetails);
   await generateBillPrintPDF(
@@ -690,7 +719,8 @@ export const handleBillDownloadPDF = async (
     false,
     organization,
     isForPreview,
-    paymentModeDetails
+    paymentModeDetails,
+    selected
   );
 };
 
@@ -699,7 +729,8 @@ export const generateBillPDFAsBase64 = async (
   billDataOrArray,
   organization,
   paymentModeDetails = [],
-  isForPreview = false
+  isForPreview = false,
+  selected
 ) => {
   const bills = Array.isArray(billDataOrArray) ? billDataOrArray : [billDataOrArray];
   if (!bills.length) return null;
@@ -715,7 +746,7 @@ export const generateBillPDFAsBase64 = async (
 
   for (let i = 0; i < bills.length; i++) {
     if (i > 0) doc.addPage();
-    await drawSingleBill(doc, bills[i], isForPreview, paymentModeDetails, base64Logo);
+    await drawSingleBill(doc, bills[i], isForPreview, paymentModeDetails, base64Logo,selected);
   }
 
   // Return raw base64 string (no data URI prefix)

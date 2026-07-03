@@ -703,6 +703,10 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
     navigate(-1, { replace: true });
   };
 
+
+  console.log(showDescription);
+  
+
   return (
     <div>
       <div className=" flex-1">
@@ -914,7 +918,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading }) {
                         )}
                     </div>
 
-                    {showDescription[normalizedVoucherType] && (
+                    {showDescription[normalizedVoucherType] && showDescription[normalizedVoucherType] && (
                       <div className="flex flex-col">
                         <label className="leading-loose">Description</label>
                         <input

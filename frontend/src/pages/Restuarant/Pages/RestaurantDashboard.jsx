@@ -245,13 +245,14 @@ const RestaurantPOS = () => {
   const config = configurations?.[0] || {};
   const orderTypesConfig = config.orderTypes || {};
 
-  const getDefaultOrderType = () => {
-    if (orderTypesConfig.dineIn !== false) return "dine-in";
-    if (orderTypesConfig.takeaway !== false) return "takeaway";
-    if (orderTypesConfig.delivery !== false) return "delivery";
-    if (orderTypesConfig.roomService !== false) return "roomService";
-    return "direct-sale";
-  };
+ const getDefaultOrderType = () => {
+  if (orderTypesConfig?.dineIn) return "dine-in";
+  if (orderTypesConfig?.takeaway) return "takeaway";
+  if (orderTypesConfig?.delivery) return "delivery";
+  if (orderTypesConfig?.roomService) return "roomService";
+  if (orderTypesConfig?.directSale) return "direct-sale";
+  return "";
+};
 
   const [orderType, setOrderType] = useState(getDefaultOrderType());
 
@@ -1670,6 +1671,30 @@ const RestaurantPOS = () => {
                                   group-hover:opacity-100 transition-opacity flex-shrink-0"
                               />
                             </button>
+                             <button
+                              onClick={() => {
+                                setShowOptions(false);
+                                navigate("/sUsers/Receiptreport");
+                              }}
+                              className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
+                     hover:bg-gray-50 transition-colors text-left"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                <BarChart2 className="w-3.5 h-3.5 text-blue-700" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-gray-800">
+                                 Receipt Report
+                                </p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                  Breakdown of Recipts{" "}
+                                </p>
+                              </div>
+                              <ChevronDown
+                                className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
+                                  group-hover:opacity-100 transition-opacity flex-shrink-0"
+                              />
+                            </button>
                             <button
           onClick={() => { setShowOptions(false); navigate("/sUsers/sales-register"); }}
           className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
@@ -2339,20 +2364,22 @@ const RestaurantPOS = () => {
                       </span>
                     </button>
                   )}
-                  <button
-                    onClick={() => {
-                      console.log("Direct Sale button clicked"); // Debug log
-                      setOrderType("direct-sale");
-                    }}
-                    className={`flex flex-col items-center justify-center  h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 col-span-2 ${
-                      orderType === "direct-sale"
-                        ? "border-transparent bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-emerald-500/25"
-                        : "border-gray-200 bg-white/80 text-gray-700 hover:border-green-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50"
-                    }`}
-                  >
-                    <Receipt className="w-4 h-4 mb-0.5" />
-                    <span className="font-semibold text-xs">Direct Sale</span>
-                  </button>
+                     {orderTypesConfig?.directSale !== false && (
+      <button
+        onClick={() => {
+          console.log("Direct Sale button clicked");
+          setOrderType("direct-sale");
+        }}
+        className={`flex flex-col items-center justify-center h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 col-span-2 ${
+          orderType === "direct-sale"
+            ? "border-transparent bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-emerald-500/25"
+            : "border-gray-200 bg-white/80 text-gray-700 hover:border-green-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50"
+        }`}
+      >
+        <Receipt className="w-4 h-4 mb-0.5" />
+        <span className="font-semibold text-xs">Direct Sale</span>
+      </button>
+    )}
                 </div>
               </div>
 

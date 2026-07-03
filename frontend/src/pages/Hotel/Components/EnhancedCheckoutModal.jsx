@@ -1,4 +1,16 @@
 /* eslint-disable react/prop-types */
+
+const formatInputTimeTo12Hour = (time24h = "") => {
+  if (!time24h) return "";
+
+  let [hours, minutes] = time24h.split(":");
+  hours = parseInt(hours, 10);
+
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 || 12;
+
+  return `${String(displayHours).padStart(2, "0")}:${minutes} ${ampm}`;
+};
 import { useState, useEffect } from "react";
 
 import { Users, X, DoorOpen, Trash2 } from "lucide-react";
@@ -140,11 +152,7 @@ export default function EnhancedCheckoutModal({
 
           const balanceToPay = totalAmount - Number(checkout.advanceAmount);
 
-          const time = new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          });
+          const time = "11:00 AM";
 
           return {
             ...checkout,
@@ -422,7 +430,18 @@ export default function EnhancedCheckoutModal({
         originalCustomer: checkIn.customerId,
       })),
   );
-
+const handleTimeChange = (id, newTime) => {
+  setCheckouts((prev) =>
+    prev.map((checkout) =>
+      checkout._id === id
+        ? {
+            ...checkout,
+            checkOutTime: formatInputTimeTo12Hour(newTime),
+          }
+        : checkout
+    )
+  );
+};
   const handleNewDateChange = (id, newDate) => {
     console.log(id, newDate);
     setCheckOutDateTracker(newDate);
@@ -431,11 +450,6 @@ export default function EnhancedCheckoutModal({
         if (checkout._id === id) {
           const arrival = new Date(checkout.arrivalDate);
           const checkoutDate = new Date(newDate);
-          const time = new Date(newDate).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true, // 12-hour format
-          });
           const diffTime = checkoutDate - arrival;
           const calculatedDays =
             diffTime === 0 ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -445,6 +459,8 @@ export default function EnhancedCheckoutModal({
           const originalCheckout = originalCheckouts.find(
             (oc) => oc._id === id,
           );
+          const time =
+            checkout.checkOutTime || originalCheckout?.checkOutTime || "11:00 AM";
           if (!originalCheckout) return checkout;
 
           const updatedRooms =
@@ -512,6 +528,10 @@ export default function EnhancedCheckoutModal({
               return {
                 ...room,
                 stayDays: calculatedDays,
+                totalAmount: Math.round(newBaseAmount * 100) / 100,
+                amountAfterTax:
+                  Math.round((newBaseAmount + newTaxAmount) * 100) / 100,
+                amountWithOutTax: Math.round(newBaseAmount * 100) / 100,
                 baseAmount: Math.round(newBaseAmount * 100) / 100,
                 taxAmount: Math.round(newTaxAmount * 100) / 100,
                 baseAmountWithTax:
@@ -530,7 +550,8 @@ export default function EnhancedCheckoutModal({
           return {
             ...checkout,
             checkOutDate: newDate,
-            checkOutTime: time,
+            checkOutTime:time,
+
             stayDays: calculatedDays,
             selectedRooms: updatedRooms,
             totalAmount: updatedRooms.reduce(
@@ -730,11 +751,10 @@ export default function EnhancedCheckoutModal({
               0,
             ),
             checkOutDate: newCheckoutDate.toISOString().split("T")[0],
-            checkOutTime: newCheckoutDate.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true, // 12-hour format
-            }),
+            checkOutTime:
+              checkout.checkOutTime ||
+              originalCheckout?.checkOutTime ||
+              "11:00 AM",
           };
         }
         return checkout;
@@ -900,6 +920,7 @@ export default function EnhancedCheckoutModal({
                 onDaysChange={handleStayDaysChange}
                 checkouts={checkouts}
                 onDateChange={handleNewDateChange}
+                 onTimeChange={handleTimeChange}
               />
             </div>
           </div>

@@ -1,480 +1,732 @@
-import React, { useState ,useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Document,
   Page,
   Text,
   View,
   StyleSheet,
-  Font,
   pdf,
 } from "@react-pdf/renderer";
 import * as XLSX from "xlsx";
+import TitleDiv from "@/components/common/TitleDiv";
 import api from "../../../api/api";
 import { useSelector } from "react-redux";
 
-Font.register({
-  family: "Roboto",
-  src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-light-webfont.ttf",
-});
-
-const pdfStyles = StyleSheet.create({
-  page: {
-    padding: 30,
-    fontSize: 10,
-    fontFamily: "Helvetica",
-  },
-  border: {
-    border: "1px solid black",
-    padding: 15,
-  },
-  header: {
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 12,
-    fontWeight: "bold",
-    textDecoration: "underline",
-  },
-  dateRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    fontSize: 9,
-    marginBottom: 10,
-    paddingBottom: 5,
-    borderBottom: "1px solid #ccc",
-  },
-  tableHeader: {
-    flexDirection: "row",
-    borderBottom: "1px solid black",
-    paddingBottom: 5,
-    marginBottom: 5,
-    fontWeight: "bold",
-  },
-  tableRow: {
-    flexDirection: "row",
-    paddingVertical: 2,
-    borderBottom: "0.5px solid #ddd",
-  },
-  col1: { width: "66%", paddingLeft: 5 },
-  col2: { width: "17%", textAlign: "right", paddingRight: 5 },
-  col3: { width: "17%", textAlign: "right", paddingRight: 5 },
-  sectionTitle: {
-    fontWeight: "bold",
-    marginTop: 8,
-    marginBottom: 4,
-    paddingLeft: 5,
-  },
-  totalRow: {
-    flexDirection: "row",
-    paddingVertical: 3,
-    borderTop: "1px solid #ccc",
-    marginTop: 2,
-    fontWeight: "bold",
-  },
-});
-
-const formatNumber = (v, isPercent = false) => {
-  const n = Number(v || 0);
-  if (isPercent) return `${n.toFixed(2)}%`;
-  return n.toLocaleString("en-IN", {
+const fmt = (n) =>
+  Number(n || 0).toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+
+// FIX: Use local date instead of toISOString() which is UTC
+const getLocalToday = () => {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
-const formatDate = (d) =>
-  new Date(d).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+const today = getLocalToday();
 
-const Row = ({ label, d, m, isPercent }) => (
-  <View style={pdfStyles.tableRow}>
-    <Text style={pdfStyles.col1}>{label}</Text>
-    <Text style={pdfStyles.col2}>{formatNumber(d, isPercent)}</Text>
-    <Text style={pdfStyles.col3}>{formatNumber(m, isPercent)}</Text>
-  </View>
+const getFiscalYearDays = (selectedYear) => {
+  const year = parseInt(selectedYear, 10);
+  const fiscalStart = new Date(year, 3, 1);       // Apr 1
+  const fiscalEnd = new Date(year + 1, 2, 31);    // Mar 31 next year
+  const todayDate = new Date();
+
+  if (todayDate < fiscalStart) return 1;
+
+  const effectiveEnd = todayDate >= fiscalEnd ? fiscalEnd : todayDate;
+  return (
+    Math.floor((effectiveEnd - fiscalStart) / (1000 * 60 * 60 * 24)) + 1
+  );
+};
+
+const getFiscalYearLabel = (selectedYear) => {
+  const year = parseInt(selectedYear, 10);
+  const fiscalStart = new Date(year, 3, 1);
+  const fiscalEnd = new Date(year + 1, 2, 31);
+  const todayDate = new Date();
+  const days = getFiscalYearDays(selectedYear);
+
+  const fmtDate = (d) =>
+    d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
+  const endLabel =
+    todayDate < fiscalEnd ? fmtDate(todayDate) : fmtDate(fiscalEnd);
+  return `FY ${year} (${fmtDate(fiscalStart)} – ${endLabel} · ${days} days)`;
+};
+
+// ─── Table Primitives ────────────────────────────────────────────────────────
+
+const TH = ({ children, right }) => (
+  <th
+    style={{
+      padding: "9px 10px",
+      textAlign: right ? "right" : "left",
+      background: "#1a3a5c",
+      color: "#fff",
+      fontSize: 12,
+      fontWeight: 600,
+      whiteSpace: "nowrap",
+      borderRight: "1px solid #2a4a6c",
+      position: "sticky",
+      top: 0,
+      zIndex: 1,
+    }}
+  >
+    {children}
+  </th>
 );
 
-const TotalRow = ({ label, d, m }) => (
-  <View style={pdfStyles.totalRow}>
-    <Text style={pdfStyles.col1}>{label}</Text>
-    <Text style={pdfStyles.col2}>{formatNumber(d)}</Text>
-    <Text style={pdfStyles.col3}>{formatNumber(m)}</Text>
-  </View>
+const TD = ({ children, right, bold, muted }) => (
+  <td
+    style={{
+      padding: "7px 10px",
+      textAlign: right ? "right" : "left",
+      fontWeight: bold ? 700 : 400,
+      color: muted ? "#666" : "#111",
+      whiteSpace: "nowrap",
+      fontSize: 12,
+    }}
+  >
+    {children}
+  </td>
 );
 
-const FlashReportPDF = ({ data }) => (
-  <Document>
-    <Page size="A4" style={pdfStyles.page}>
-      <View style={pdfStyles.border}>
-        <View style={pdfStyles.header}>
-          <Text style={pdfStyles.title}>{data?.companyName}</Text>
-          <Text style={pdfStyles.subtitle}>Hotel Flash Report</Text>
-        </View>
+// FIX: rowIndex passed as prop instead of module-level mutable var
+const TDRow = ({ label, d, m, y, isPercent = false, bold = false, rowIndex }) => {
+  const bg = rowIndex % 2 === 0 ? "#fff" : "#f9fafb";
+  return (
+    <tr style={{ background: bg, borderBottom: "1px solid #f0f0f0" }}>
+      <TD muted>{label}</TD>
+      <TD right bold={bold}>
+        {isPercent ? `${Number(d || 0).toFixed(2)}%` : fmt(d)}
+      </TD>
+      <TD right bold={bold}>
+        {isPercent ? `${Number(m || 0).toFixed(2)}%` : fmt(m)}
+      </TD>
+      <TD right bold={bold}>
+        {isPercent ? `${Number(y || 0).toFixed(2)}%` : fmt(y)}
+      </TD>
+    </tr>
+  );
+};
 
-        <View style={pdfStyles.dateRow}>
-          <Text>
-            Report From {formatDate(data?.fromDate)} To {formatDate(data?.toDate)}
-          </Text>
-        </View>
-
-        <View style={pdfStyles.tableHeader}>
-          <Text style={pdfStyles.col1}>Particulars</Text>
-          <Text style={pdfStyles.col2}>{data?.dayLabel}</Text>
-          <Text style={pdfStyles.col3}>{data?.monthLabel}</Text>
-        </View>
-
-        <Text style={pdfStyles.sectionTitle}>ROOM STATISTICS:-</Text>
-        <Row label="(A) Total Rooms" d={data?.totalRooms} m={data?.totalRooms} />
-        <Row label="(B) Blocked Rooms" d={data?.blockedRooms} m={data?.blockedRooms} />
-        <Row label="(C) Total Saleable (A-B)" d={data?.saleableRooms} m={data?.saleableRooms} />
-        <Row label="(D) Occupied Rooms (Paid)" d={data?.occupiedPaid} m={data?.occupiedPaid} />
-        <Row label="(E) Occupied Rooms (Comp/House Use)" d={data?.occupiedComp} m={data?.occupiedComp} />
-        <Row label="(F) Total Occupied Rooms (D+E)" d={data?.totalOccupied} m={data?.totalOccupied} />
-        <Row label="(G) No of Pax - Domestic" d={data?.paxDomestic} m={data?.paxDomestic} />
-        <Row label="(H) No of Pax - Foreigners" d={data?.paxForeign} m={data?.paxForeign} />
-        <Row label="(I) Total Pax (G+H)" d={data?.totalPax} m={data?.totalPax} />
-        <Row label="(J) No of Adults" d={data?.adults} m={data?.adults} />
-        <Row label="(K) No of Children" d={data?.children} m={data?.children} />
-        <Row label="(L) No of Males" d={data?.males} m={data?.males} />
-        <Row label="(M) No of Females" d={data?.females} m={data?.females} />
-        <Row label="(N) No Shows" d={data?.noShows} m={data?.noShows} />
-        <Row label="(O) % of Occupancy (D/A)%" d={data?.occPercent} m={data?.occPercent} isPercent />
-        <Row label="(P) ARR (Total Rooms)" d={data?.arrTotalRooms} m={data?.arrTotalRooms} />
-        <Row label="(Q) ARR (Saleable Rooms)" d={data?.arrSaleableRooms} m={data?.arrSaleableRooms} />
-        <Row label="(R) ARR (Occupied Rooms)" d={data?.arrOccupiedRooms} m={data?.arrOccupiedRooms} />
-
-        <Text style={pdfStyles.sectionTitle}>ROOM REVENUE</Text>
-        <Row label="Apartment Charges (Accrued)" d={data?.roomApartment} m={data?.roomApartment} />
-        <Row label="Extra Bed Charges (Accrued)" d={data?.roomExtraBed} m={data?.roomExtraBed} />
-        <TotalRow label="Total : ROOM REVENUE" d={data?.roomTotal} m={data?.roomTotal} />
-
-        <Text style={pdfStyles.sectionTitle}>F&B REVENUE</Text>
-        <Row label="Plan Rate (Accrued)" d={data?.fbPlanRate} m={data?.fbPlanRate} />
-        <Row label="Rustic Room Service" d={data?.fbRoomService} m={data?.fbRoomService} />
-        <Row label="Rustic Barn Restaurant" d={data?.fbRestaurant} m={data?.fbRestaurant} />
-        <TotalRow label="Total : F&B REVENUE" d={data?.fbTotal} m={data?.fbTotal} />
-
-        <Text style={pdfStyles.sectionTitle}>OTHER REVENUES</Text>
-        <Row label="MOD REVENUES" d={data?.modRevenues} m={data?.modRevenues} />
-        <TotalRow label="Grand Total" d={data?.grandTotal} m={data?.grandTotal} />
-      </View>
-    </Page>
-  </Document>
-);
-
-const DataRow = ({ label, d, m, isPercent = false, bold = false }) => (
-  <tr className="border-b border-gray-200">
-    <td className={`px-3 py-2 text-sm text-gray-800 ${bold ? "font-bold" : ""}`}>
-      {label}
-    </td>
-    <td className={`px-3 py-2 text-sm text-right text-gray-800 ${bold ? "font-bold" : ""}`}>
-      {formatNumber(d, isPercent)}
-    </td>
-    <td className={`px-3 py-2 text-sm text-right text-gray-800 ${bold ? "font-bold" : ""}`}>
-      {formatNumber(m, isPercent)}
+const SectionHeader = ({ title }) => (
+  <tr style={{ background: "#f0f9ff" }}>
+    <td
+      colSpan={4}
+      style={{
+        padding: "9px 10px",
+        fontWeight: 700,
+        fontSize: 12,
+        color: "#1a3a5c",
+      }}
+    >
+      {title}
     </td>
   </tr>
 );
 
-const HotelFlashReportPage = () => {
-  const { _id: cmp_id } =
-    useSelector((s) => s.secSelectedOrganization.secSelectedOrg) || {};
+// ─── PDF Component ────────────────────────────────────────────────────────────
 
- const today = new Date().toISOString().slice(0, 10);
+const FlashReportPDF = ({
+  dateData,
+  monthData,
+  yearData,
+  selectedYear,
+  fiscalYearDays,
+}) => {
 
-const get29DaysAgo = () => {
-  const date = new Date();
-  date.setDate(date.getDate() - 29);
-  return date.toISOString().slice(0, 10);
+  
+  const s = StyleSheet.create({
+    page: { padding: 30, fontSize: 10, fontFamily: "Helvetica" },
+    border: { border: "1px solid black", padding: 15 },
+    header: { textAlign: "center", marginBottom: 10 },
+    title: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
+    subtitle: {
+      fontSize: 12,
+      fontWeight: "bold",
+      textDecoration: "underline",
+    },
+    dateRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      fontSize: 9,
+      marginBottom: 10,
+      paddingBottom: 5,
+      borderBottom: "1px solid #ccc",
+    },
+    tableHeader: {
+      flexDirection: "row",
+      borderBottom: "1px solid black",
+      paddingBottom: 5,
+      marginBottom: 5,
+      fontWeight: "bold",
+    },
+    tableRow: {
+      flexDirection: "row",
+      paddingVertical: 2,
+      borderBottom: "0.5px solid #ddd",
+    },
+    col1: { width: "40%", paddingLeft: 5 },
+    col2: { width: "20%", textAlign: "right", paddingRight: 5 },
+    col3: { width: "20%", textAlign: "right", paddingRight: 5 },
+    col4: { width: "20%", textAlign: "right", paddingRight: 5 },
+    sectionTitle: {
+      fontWeight: "bold",
+      marginTop: 8,
+      marginBottom: 4,
+      paddingLeft: 5,
+    },
+    totalRow: {
+      flexDirection: "row",
+      paddingVertical: 3,
+      borderTop: "1px solid #ccc",
+      marginTop: 2,
+      fontWeight: "bold",
+    },
+  });
+
+  const fmtN = (v, isPercent = false) => {
+    const n = Number(v || 0);
+    return isPercent
+      ? `${n.toFixed(2)}%`
+      : n.toLocaleString("en-IN", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+  };
+
+  const fmtDate = (d) =>
+    new Date(d).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+
+  const R = ({ label, d, m, y, isPercent }) => (
+    <View style={s.tableRow}>
+      <Text style={s.col1}>{label}</Text>
+      <Text style={s.col2}>{fmtN(d, isPercent)}</Text>
+      <Text style={s.col3}>{fmtN(m, isPercent)}</Text>
+      <Text style={s.col4}>{fmtN(y, isPercent)}</Text>
+    </View>
+  );
+
+  const TR = ({ label, d, m, y }) => (
+    <View style={s.totalRow}>
+      <Text style={s.col1}>{label}</Text>
+      <Text style={s.col2}>{fmtN(d)}</Text>
+      <Text style={s.col3}>{fmtN(m)}</Text>
+      <Text style={s.col4}>{fmtN(y)}</Text>
+    </View>
+  );
+
+  return (
+    <Document>
+      <Page size="A4" style={s.page}>
+        <View style={s.border}>
+          <View style={s.header}>
+            <Text style={s.title}>{dateData?.companyName}</Text>
+            <Text style={s.subtitle}>Hotel Flash Report </Text>
+          </View>
+
+          <View style={s.dateRow}>
+            <Text>
+              Date: {fmtDate(dateData?.selectedDate)} | Month:{" "}
+              {monthData?.monthName} {monthData?.selectedYear} | FY{" "}
+              {selectedYear} ({fiscalYearDays} days)
+            </Text>
+          </View>
+
+          <View style={s.tableHeader}>
+            <Text style={s.col1}>Particulars</Text>
+            <Text style={s.col2}>Date</Text>
+            <Text style={s.col3}>Month</Text>
+            <Text style={s.col4}>Year</Text>
+          </View>
+
+          <Text style={s.sectionTitle}>ROOM STATISTICS</Text>
+          <R label="(A) Total Rooms" d={dateData?.totalRooms} m={monthData?.totalRooms} y={yearData?.totalRooms} />
+          <R label="(B) Blocked Rooms" d={dateData?.blockedRooms} m={monthData?.blockedRooms} y={yearData?.blockedRooms} />
+          <R label="(C) Saleable Rooms (A-B)" d={dateData?.saleableRooms} m={monthData?.saleableRooms} y={yearData?.saleableRooms} />
+          <R label="(D) Occupied Rooms (Paid)" d={dateData?.occupiedPaid} m={monthData?.occupiedPaid} y={yearData?.occupiedPaid} />
+          <R label="(E) Occupied Rooms (Comp/House Use)" d={dateData?.occupiedComp} m={monthData?.occupiedComp} y={yearData?.occupiedComp} />
+          <R label="(F) Total Occupied Rooms (D+E)" d={dateData?.totalOccupied} m={monthData?.totalOccupied} y={yearData?.totalOccupied} />
+          <R label="(N) No Shows" d={dateData?.noShows} m={monthData?.noShows} y={yearData?.noShows} />
+          <R label="(O) % of Occupancy (D/A)%" d={dateData?.occPercent} m={monthData?.occPercent} y={yearData?.occPercent} isPercent />
+          <R label="(P) ARR (Total Rooms)" d={dateData?.arrTotalRooms} m={monthData?.arrTotalRooms} y={yearData?.arrTotalRooms} />
+          <R label="(Q) ARR (Saleable Rooms)" d={dateData?.arrSaleableRooms} m={monthData?.arrSaleableRooms} y={yearData?.arrSaleableRooms} />
+          <R label="(R) ARR (Occupied Rooms)" d={dateData?.arrOccupiedRooms} m={monthData?.arrOccupiedRooms} y={yearData?.arrOccupiedRooms} />
+
+          <Text style={s.sectionTitle}>GUEST PROFILE</Text>
+          <R label="(G) No of Pax - Domestic" d={dateData?.paxDomestic} m={monthData?.paxDomestic} y={yearData?.paxDomestic} />
+          <R label="(H) No of Pax - Foreigners" d={dateData?.paxForeign} m={monthData?.paxForeign} y={yearData?.paxForeign} />
+          <R label="(I) Total Pax (G+H)" d={dateData?.totalPax} m={monthData?.totalPax} y={yearData?.totalPax} />
+          <R label="(J) No of Adults" d={dateData?.adults} m={monthData?.adults} y={yearData?.adults} />
+          <R label="(K) No of Children" d={dateData?.children} m={monthData?.children} y={yearData?.children} />
+          <R label="(L) No of Males" d={dateData?.males} m={monthData?.males} y={yearData?.males} />
+          <R label="(M) No of Females" d={dateData?.females} m={monthData?.females} y={yearData?.females} />
+
+          <Text style={s.sectionTitle}>ROOM REVENUE</Text>
+          <R label="Apartment Charges (Accrued)" d={dateData?.roomApartment} m={monthData?.roomApartment} y={yearData?.roomApartment} />
+          <R label="Extra Bed Charges (Accrued)" d={dateData?.roomExtraBed} m={monthData?.roomExtraBed} y={yearData?.roomExtraBed} />
+          <TR label="Total : ROOM REVENUE" d={dateData?.roomTotal} m={monthData?.roomTotal} y={yearData?.roomTotal} />
+
+          <Text style={s.sectionTitle}>F&B REVENUE</Text>
+          <R label="Plan Rate (Accrued)" d={dateData?.fbPlanRate} m={monthData?.fbPlanRate} y={yearData?.fbPlanRate} />
+          <R label="Room Service" d={dateData?.fbRoomService} m={monthData?.fbRoomService} y={yearData?.fbRoomService} />
+          <R label="Restaurant" d={dateData?.fbRestaurant} m={monthData?.fbRestaurant} y={yearData?.fbRestaurant} />
+          <TR label="Total : F&B REVENUE" d={dateData?.fbTotal} m={monthData?.fbTotal} y={yearData?.fbTotal} />
+
+          <Text style={s.sectionTitle}>OTHER REVENUES</Text>
+          <R label="MOD REVENUES" d={dateData?.modRevenues} m={monthData?.modRevenues} y={yearData?.modRevenues} />
+          <TR label="Grand Total" d={dateData?.grandTotal} m={monthData?.grandTotal} y={yearData?.grandTotal} />
+        </View>
+      </Page>
+    </Document>
+  );
 };
 
-// Update initial state:
-const [fromDate, setFromDate] = useState(get29DaysAgo()); // ✅ was today
-const [toDate, setToDate] = useState(today);
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
+export default function HotelFlashReportPage() {
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization?.secSelectedOrg?._id,
+  );
 
-  const [reportData, setReportData] = useState(null);
+  const getCurrentYear = () => new Date().getFullYear();
+  const getCurrentMonth = () => new Date().getMonth() + 1;
+
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
+  const [selectedYear, setSelectedYear] = useState(getCurrentYear());
+
+  const [dateData, setDateData] = useState(null);
+  const [monthData, setMonthData] = useState(null);
+  const [yearData, setYearData] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const requestIdRef = useRef(0);
 
-  
-  const fetchReport = async () => {
-    if (!cmp_id || !fromDate || !toDate) return;
+  const fiscalYearDays = getFiscalYearDays(selectedYear);
 
-    if (fromDate > toDate) {
-      setError("From Date cannot be greater than To Date");
-      return;
-    }
+  const loadReports = useCallback(async () => {
+    if (!cmp_id) return;
+
+    const currentRequestId = ++requestIdRef.current;
 
     try {
       setLoading(true);
       setError("");
-      setReportData(null);
 
-      const res = await api.get("/api/sUsers/flash-report", {
-        params: { cmp_id, fromDate, toDate },
-      });
+      // FIX: Send explicit params to avoid branch ambiguity on backend
+      const [dateRes, monthRes, yearRes] = await Promise.all([
+        api.get("/api/sUsers/flash-report", {
+          params: {
+            cmp_id,
+            reportDate: selectedDate,
+            // explicitly exclude reportMonth and reportYear
+          },
+        }),
+        api.get("/api/sUsers/flash-report", {
+          params: {
+            cmp_id,
+            reportMonth: String(selectedMonth),
+            reportYear: String(selectedYear),
+            // explicitly exclude reportDate
+          },
+        }),
+        api.get("/api/sUsers/flash-report", {
+          params: {
+            cmp_id,
+            reportYear: String(selectedYear),
+            // explicitly exclude reportDate and reportMonth
+          },
+        }),
+      ]);
 
-      if (res.data.success) {
-        setReportData(res.data.data);
-      } else {
-        setError(res.data.message || "Failed to load flash report");
+      if (currentRequestId !== requestIdRef.current) return;
+
+      if (dateRes?.data?.success) {
+        setDateData({ ...dateRes.data.data, selectedDate });
+      }
+
+      if (monthRes?.data?.success) {
+        const pad = (n) => String(n).padStart(2, "0");
+        const monthName = new Date(
+          selectedYear,
+          selectedMonth - 1,
+          1,
+        ).toLocaleString("en-GB", { month: "long" });
+        const monthLastDay = new Date(selectedYear, selectedMonth, 0).getDate();
+
+        setMonthData({
+          ...monthRes.data.data,
+          selectedMonth,
+          selectedYear,
+          monthName,
+          fullMonthDays: monthLastDay,
+        });
+      }
+
+      if (yearRes?.data?.success) {
+        setYearData({
+          ...yearRes.data.data,
+          selectedYear,
+        });
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Error loading flash report"
-      );
+      if (currentRequestId !== requestIdRef.current) return;
+      console.error("Flash report load error:", err);
+      setError("Failed to load flash report. Please try again.");
     } finally {
-      setLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  // FIX: removed loadReports from its own deps (was causing infinite loop)
+  }, [cmp_id, selectedDate, selectedMonth, selectedYear]);
+
   useEffect(() => {
-  fetchReport();
-}, []);
+    if (!cmp_id) return;
+    loadReports();
+  }, [loadReports]);
 
-  const handlePrint = async () => {
-    if (!reportData) return;
+  const exportToPDF = async () => {
+    if (!dateData || !monthData || !yearData) return;
 
-    const blob = await pdf(<FlashReportPDF data={reportData} />).toBlob();
+    const blob = await pdf(
+      <FlashReportPDF
+        dateData={dateData}
+        monthData={monthData}
+        yearData={yearData}
+        fiscalYearDays={fiscalYearDays}
+        selectedYear={selectedYear}
+      />,
+    ).toBlob();
+
     const url = URL.createObjectURL(blob);
-    const win = window.open(url, "_blank");
+    window.open(url, "_blank", "noopener,noreferrer");
 
-    if (win) {
-      win.onload = () => {
-        win.focus();
-        win.print();
-      };
-    }
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
   };
 
-  const handleExportExcel = () => {
-    if (!reportData) return;
+  const exportToExcel = () => {
+    if (!dateData || !monthData || !yearData) return;
 
-    const d = reportData;
+    const pad = (n) => String(n).padStart(2, "0");
+    const monthLabel = new Date(
+      selectedYear,
+      selectedMonth - 1,
+      1,
+    ).toLocaleString("en-GB", { month: "long" });
 
     const rows = [
-      [d.companyName || "Hotel"],
-      ["Hotel Flash Report"],
-      [`Report From ${formatDate(d.fromDate)} To ${formatDate(d.toDate)}`],
+      ["HOTEL FLASH REPORT - COMPARISON"],
+      [dateData.companyName],
       [],
-      ["Particulars", d.dayLabel, d.monthLabel],
-
-      ["ROOM STATISTICS:-"],
-      ["(A) Total Rooms", d.totalRooms, d.totalRooms],
-      ["(B) Blocked Rooms", d.blockedRooms, d.blockedRooms],
-      ["(C) Total Saleable(A-B)", d.saleableRooms, d.saleableRooms],
-      ["(D) Occupied Rooms(Paid)", d.occupiedPaid, d.occupiedPaid],
-      ["(E) Occupied Rooms(Comp/House Use)", d.occupiedComp, d.occupiedComp],
-      ["(F) Total Occupied Rooms(D+E)", d.totalOccupied, d.totalOccupied],
-      ["(G) No of Pax -Domestic", d.paxDomestic, d.paxDomestic],
-      ["(H) No of Pax -Foreigners", d.paxForeign, d.paxForeign],
-      ["(I) Total Pax(G+H)", d.totalPax, d.totalPax],
-      ["(J) No of Adults", d.adults, d.adults],
-      ["(K) No of Children", d.children, d.children],
-      ["(L) No of Males", d.males, d.males],
-      ["(M) No of Females", d.females, d.females],
-      ["(N) No Shows", d.noShows, d.noShows],
-      ["(O) % of Occupancy(D/A)%", d.occPercent, d.occPercent],
-      ["(P) ARR(Total Rooms)", d.arrTotalRooms, d.arrTotalRooms],
-      ["(Q) ARR(Saleable Rooms)", d.arrSaleableRooms, d.arrSaleableRooms],
-      ["(R) ARR(Occupied Rooms)", d.arrOccupiedRooms, d.arrOccupiedRooms],
-
+      [
+        "Particulars",
+        `Date: ${selectedDate}`,
+        `Month: ${monthLabel} ${selectedYear}`,
+        getFiscalYearLabel(selectedYear),
+      ],
+      [],
+      ["ROOM STATISTICS"],
+      ["(A) Total Rooms", dateData.totalRooms, monthData.totalRooms, yearData.totalRooms],
+      ["(B) Blocked Rooms", dateData.blockedRooms, monthData.blockedRooms, yearData.blockedRooms],
+      ["(C) Saleable Rooms (A-B)", dateData.saleableRooms, monthData.saleableRooms, yearData.saleableRooms],
+      ["(D) Occupied Rooms (Paid)", dateData.occupiedPaid, monthData.occupiedPaid, yearData.occupiedPaid],
+      ["(E) Occupied Rooms (Comp/House Use)", dateData.occupiedComp, monthData.occupiedComp, yearData.occupiedComp],
+      ["(F) Total Occupied Rooms (D+E)", dateData.totalOccupied, monthData.totalOccupied, yearData.totalOccupied],
+      ["(N) No Shows", dateData.noShows, monthData.noShows, yearData.noShows],
+      ["(O) % of Occupancy (D/A)%", dateData.occPercent, monthData.occPercent, yearData.occPercent],
+      ["(P) ARR (Total Rooms)", dateData.arrTotalRooms, monthData.arrTotalRooms, yearData.arrTotalRooms],
+      ["(Q) ARR (Saleable Rooms)", dateData.arrSaleableRooms, monthData.arrSaleableRooms, yearData.arrSaleableRooms],
+      ["(R) ARR (Occupied Rooms)", dateData.arrOccupiedRooms, monthData.arrOccupiedRooms, yearData.arrOccupiedRooms],
+      [],
+      ["GUEST PROFILE"],
+      ["(G) No of Pax - Domestic", dateData.paxDomestic, monthData.paxDomestic, yearData.paxDomestic],
+      ["(H) No of Pax - Foreigners", dateData.paxForeign, monthData.paxForeign, yearData.paxForeign],
+      ["(I) Total Pax (G+H)", dateData.totalPax, monthData.totalPax, yearData.totalPax],
+      ["(J) No of Adults", dateData.adults, monthData.adults, yearData.adults],
+      ["(K) No of Children", dateData.children, monthData.children, yearData.children],
+      ["(L) No of Males", dateData.males, monthData.males, yearData.males],
+      ["(M) No of Females", dateData.females, monthData.females, yearData.females],
       [],
       ["ROOM REVENUE"],
-      ["Apartment Charges (Accrued)", d.roomApartment, d.roomApartment],
-      ["Extra Bed Charges (Accrued)", d.roomExtraBed, d.roomExtraBed],
-      ["Total : ROOM REVENUE", d.roomTotal, d.roomTotal],
-
+      ["Apartment Charges (Accrued)", dateData.roomApartment, monthData.roomApartment, yearData.roomApartment],
+      ["Extra Bed Charges (Accrued)", dateData.roomExtraBed, monthData.roomExtraBed, yearData.roomExtraBed],
+      ["Total : ROOM REVENUE", dateData.roomTotal, monthData.roomTotal, yearData.roomTotal],
       [],
       ["F&B REVENUE"],
-      ["Plan Rate (Accrued)", d.fbPlanRate, d.fbPlanRate],
-      ["Rustic Room Service", d.fbRoomService, d.fbRoomService],
-      ["Rustic Barn Restaurant", d.fbRestaurant, d.fbRestaurant],
-      ["Total : F&B REVENUE", d.fbTotal, d.fbTotal],
-
+      ["Plan Rate (Accrued)", dateData.fbPlanRate, monthData.fbPlanRate, yearData.fbPlanRate],
+      ["Room Service", dateData.fbRoomService, monthData.fbRoomService, yearData.fbRoomService],
+      ["Restaurant", dateData.fbRestaurant, monthData.fbRestaurant, yearData.fbRestaurant],
+      ["Total : F&B REVENUE", dateData.fbTotal, monthData.fbTotal, yearData.fbTotal],
       [],
       ["OTHER REVENUES"],
-      ["MOD REVENUES", d.modRevenues, d.modRevenues],
-      ["Grand Total", d.grandTotal, d.grandTotal],
+      ["MOD REVENUES", dateData.modRevenues, monthData.modRevenues, yearData.modRevenues],
+      ["Grand Total", dateData.grandTotal, monthData.grandTotal, yearData.grandTotal],
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"] = [44, 20, 20, 28].map((w) => ({ wch: w }));
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Flash Report");
-    XLSX.writeFile(wb, `Hotel-Flash-Report-${d.fromDate}-to-${d.toDate}.xlsx`);
+    XLSX.writeFile(wb, `hotel-flash-report-${today}.xlsx`);
   };
 
-return (
-  <div className="min-h-screen bg-slate-100 p-3 md:p-6 print:bg-white print:p-0">
-    <div className="mx-auto max-w-7xl">
+  const formatDate = (d) =>
+    new Date(d).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
 
-      {/* Toolbar */}
-      <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:hidden md:p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+  const pad = (n) => String(n).padStart(2, "0");
+
+  const monthName = new Date(
+    selectedYear,
+    selectedMonth - 1,
+    1,
+  ).toLocaleString("en-GB", { month: "long" });
+
+  const yearOptions = Array.from(
+    { length: 5 },
+    (_, i) => getCurrentYear() - i,
+  );
+
+  const hasData = Boolean(dateData && monthData && yearData);
+
+  // FIX: rowIndex is now a local counter per render, not a module-level var
+  let rowIndex = 0;
+  const Row = (props) => <TDRow {...props} rowIndex={++rowIndex} />;
+
+  return (
+    <>
+      <TitleDiv title="HOTEL FLASH REPORT" />
+
+      <div
+        style={{
+          padding: 20,
+          fontFamily: "Segoe UI, sans-serif",
+          background: "#f5f6fa",
+          minHeight: "100vh",
+        }}
+      >
+        {/* Controls */}
+        <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h1 className="text-sm font-bold uppercase tracking-tight text-slate-800 md:text-base">
               Hotel Flash Report
             </h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Select date range and load the report
-            </p>
-          </div>
-
-          <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3 lg:w-auto">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                From Date
-              </label>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                className="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-teal-600"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                To Date
-              </label>
-              <input
-                type="date"
-                value={toDate}
-                min={fromDate}
-                onChange={(e) => setToDate(e.target.value)}
-                className="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-teal-600"
-              />
-            </div>
 
             <div className="flex flex-wrap items-end gap-2">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  max={today}
+                  onChange={(e) => {
+                    setError("");
+                    setSelectedDate(e.target.value);
+                  }}
+                  className="h-9 w-36 rounded-lg border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Month
+                </label>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => {
+                    setError("");
+                    setSelectedMonth(Number(e.target.value));
+                  }}
+                  className="h-9 w-36 rounded-lg border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
+                >
+                  {[
+                    "January","February","March","April","May","June",
+                    "July","August","September","October","November","December",
+                  ].map((m, i) => (
+                    <option key={i + 1} value={i + 1}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Financial Year
+                </label>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => {
+                    setError("");
+                    setSelectedYear(Number(e.target.value));
+                  }}
+                  className="h-9 w-32 rounded-lg border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
+                >
+                  {yearOptions.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <button
-                onClick={fetchReport}
+                onClick={loadReports}
                 disabled={loading}
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-teal-700 px-4 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-70"
+                className="h-9 rounded-lg bg-teal-700 px-4 text-xs font-semibold text-white hover:bg-teal-800 disabled:opacity-70"
               >
-                {loading ? "Loading..." : "Get Report"}
+                {loading ? "Loading…" : "Refresh"}
               </button>
 
               <button
-                onClick={handlePrint}
-                disabled={!reportData}
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-slate-200 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={exportToExcel}
+                disabled={!hasData}
+                className="h-9 rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Print
+                Excel
               </button>
 
               <button
-                onClick={handleExportExcel}
-                disabled={!reportData}
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={exportToPDF}
+                disabled={!hasData}
+                className="h-9 rounded-lg bg-rose-700 px-4 text-xs font-semibold text-white hover:bg-rose-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Export Excel
+                PDF
               </button>
             </div>
           </div>
         </div>
+
+        {/* Error */}
+        {error && (
+          <div
+            style={{
+              padding: 12,
+              background: "#fee2e2",
+              color: "#b91c1c",
+              borderRadius: 8,
+              marginBottom: 16,
+            }}
+          >
+            ⚠️ {error}
+          </div>
+        )}
+
+        {/* Loading Skeleton */}
+        {loading && !hasData && (
+          <div style={{ padding: 30, textAlign: "center", color: "#555" }}>
+            Loading flash report…
+          </div>
+        )}
+
+        {/* Report Table */}
+        {!error && hasData && (
+          <div
+            style={{
+              marginBottom: 28,
+              background: "#fff",
+              borderRadius: 10,
+              overflow: "hidden",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+            }}
+          >
+            {/* Table Header Info */}
+            <div
+              style={{
+                background: "#eef2f7",
+                padding: "10px 14px",
+                borderBottom: "1px solid #dde3ee",
+                display: "flex",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 8,
+              }}
+            >
+              <span style={{ fontWeight: 700, fontSize: 13, color: "#1a3a5c" }}>
+                {dateData.companyName}
+              </span>
+              <span style={{ fontSize: 12, color: "#666" }}>
+                Date: {formatDate(selectedDate)}&nbsp;|&nbsp;Month:{" "}
+                {monthName} {selectedYear} ({monthData.fullMonthDays ?? "—"} days)
+                &nbsp;|&nbsp;{getFiscalYearLabel(selectedYear)}
+              </span>
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr>
+                    <TH>Particulars</TH>
+                    <TH right>Date</TH>
+                    <TH right>Month ({monthData.fullMonthDays ?? "—"} days)</TH>
+                    <TH right>Year ({fiscalYearDays} days)</TH>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <SectionHeader title="ROOM STATISTICS" />
+                  <Row label="(A) Total Rooms" d={dateData.totalRooms} m={monthData.totalRooms} y={yearData.totalRooms} />
+                  <Row label="(B) Blocked Rooms" d={dateData.blockedRooms} m={monthData.blockedRooms} y={yearData.blockedRooms} />
+                  <Row label="(C) Saleable Rooms (A-B)" d={dateData.saleableRooms} m={monthData.saleableRooms} y={yearData.saleableRooms} />
+                  <Row label="(D) Occupied Rooms (Paid)" d={dateData.occupiedPaid} m={monthData.occupiedPaid} y={yearData.occupiedPaid} />
+                  <Row label="(E) Occupied Rooms (Comp/House Use)" d={dateData.occupiedComp} m={monthData.occupiedComp} y={yearData.occupiedComp} />
+                  <Row label="(F) Total Occupied Rooms (D+E)" d={dateData.totalOccupied} m={monthData.totalOccupied} y={yearData.totalOccupied} bold />
+                  <Row label="(N) No Shows" d={dateData.noShows} m={monthData.noShows} y={yearData.noShows} />
+                  <Row label="(O) % of Occupancy (D/A)%" d={dateData.occPercent} m={monthData.occPercent} y={yearData.occPercent} isPercent bold />
+                  <Row label="(P) ARR (Total Rooms)" d={dateData.arrTotalRooms} m={monthData.arrTotalRooms} y={yearData.arrTotalRooms} />
+                  <Row label="(Q) ARR (Saleable Rooms)" d={dateData.arrSaleableRooms} m={monthData.arrSaleableRooms} y={yearData.arrSaleableRooms} />
+                  <Row label="(R) ARR (Occupied Rooms)" d={dateData.arrOccupiedRooms} m={monthData.arrOccupiedRooms} y={yearData.arrOccupiedRooms} bold />
+
+                  <SectionHeader title="GUEST PROFILE" />
+                  <Row label="(G) No of Pax - Domestic" d={dateData.paxDomestic} m={monthData.paxDomestic} y={yearData.paxDomestic} />
+                  <Row label="(H) No of Pax - Foreigners" d={dateData.paxForeign} m={monthData.paxForeign} y={yearData.paxForeign} />
+                  <Row label="(I) Total Pax (G+H)" d={dateData.totalPax} m={monthData.totalPax} y={yearData.totalPax} bold />
+                  <Row label="(J) No of Adults" d={dateData.adults} m={monthData.adults} y={yearData.adults} />
+                  <Row label="(K) No of Children" d={dateData.children} m={monthData.children} y={yearData.children} />
+                  <Row label="(L) No of Males" d={dateData.males} m={monthData.males} y={yearData.males} />
+                  <Row label="(M) No of Females" d={dateData.females} m={monthData.females} y={yearData.females} />
+
+                  <SectionHeader title="ROOM REVENUE" />
+                  <Row label="Apartment Charges (Accrued)" d={dateData.roomApartment} m={monthData.roomApartment} y={yearData.roomApartment} />
+                  <Row label="Extra Bed Charges (Accrued)" d={dateData.roomExtraBed} m={monthData.roomExtraBed} y={yearData.roomExtraBed} />
+                  <Row label="Total : ROOM REVENUE" d={dateData.roomTotal} m={monthData.roomTotal} y={yearData.roomTotal} bold />
+
+                  <SectionHeader title="F&B REVENUE" />
+                  <Row label="Plan Rate (Accrued)" d={dateData.fbPlanRate} m={monthData.fbPlanRate} y={yearData.fbPlanRate} />
+                  <Row label="Room Service" d={dateData.fbRoomService} m={monthData.fbRoomService} y={yearData.fbRoomService} />
+                  <Row label="Restaurant" d={dateData.fbRestaurant} m={monthData.fbRestaurant} y={yearData.fbRestaurant} />
+                  <Row label="Total : F&B REVENUE" d={dateData.fbTotal} m={monthData.fbTotal} y={yearData.fbTotal} bold />
+
+                  <SectionHeader title="OTHER REVENUES" />
+                  <Row label="MOD REVENUES" d={dateData.modRevenues} m={monthData.modRevenues} y={yearData.modRevenues} />
+                  <Row label="Grand Total" d={dateData.grandTotal} m={monthData.grandTotal} y={yearData.grandTotal} bold />
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Error */}
-      {error && (
-        <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 print:hidden">
-          {error}
-        </div>
-      )}
-
-      {/* Empty state */}
-      {!reportData && !loading && !error && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-16 text-center text-slate-500 shadow-sm">
-          Select the date range and click Get Report
-        </div>
-      )}
-
-      {/* Report */}
-      {reportData && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:rounded-none print:border-0 print:p-4 print:shadow-none md:p-7">
-          <div className="text-center mb-4">
-            <h2 className="text-2xl font-bold uppercase text-slate-900 md:text-3xl">
-              {reportData.companyName}
-            </h2>
-            <p className="text-base font-semibold text-slate-700 underline">
-              Hotel Flash Report
-            </p>
-          </div>
-
-          <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between text-sm text-slate-700">
-            <div>
-              Report From {formatDate(reportData.fromDate)} To {formatDate(reportData.toDate)}
-            </div>
-            <div className="text-left md:text-right">
-              <p className="text-xs font-medium text-slate-500">Print Date & Time</p>
-              <p className="text-sm font-semibold text-slate-800">
-                {new Date().toLocaleDateString("en-GB")} {new Date().toLocaleTimeString("en-GB")}
-              </p>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-y-[3px] border-slate-800">
-                  <th className="px-3 py-2 text-left font-bold text-slate-900">Particulars</th>
-                  <th className="px-3 py-2 text-right font-bold text-slate-900">{reportData.dayLabel}</th>
-                  <th className="px-3 py-2 text-right font-bold text-slate-900">{reportData.monthLabel}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td colSpan="3" className="px-3 py-3 text-sm font-bold text-slate-900">ROOM STATISTICS:-</td></tr>
-                <DataRow label="(A) Total Rooms" d={reportData.totalRooms} m={reportData.totalRooms} />
-                <DataRow label="(B) Blocked Rooms" d={reportData.blockedRooms} m={reportData.blockedRooms} />
-                <DataRow label="(C) Total Saleable (A-B)" d={reportData.saleableRooms} m={reportData.saleableRooms} />
-                <DataRow label="(D) Occupied Rooms (Paid)" d={reportData.occupiedPaid} m={reportData.occupiedPaid} />
-                <DataRow label="(E) Occupied Rooms (Comp/House Use)" d={reportData.occupiedComp} m={reportData.occupiedComp} />
-                <DataRow label="(F) Total Occupied Rooms (D+E)" d={reportData.totalOccupied} m={reportData.totalOccupied} />
-                <DataRow label="(G) No of Pax - Domestic" d={reportData.paxDomestic} m={reportData.paxDomestic} />
-                <DataRow label="(H) No of Pax - Foreigners" d={reportData.paxForeign} m={reportData.paxForeign} />
-                <DataRow label="(I) Total Pax (G+H)" d={reportData.totalPax} m={reportData.totalPax} />
-                <DataRow label="(J) No of Adults" d={reportData.adults} m={reportData.adults} />
-                <DataRow label="(K) No of Children" d={reportData.children} m={reportData.children} />
-                <DataRow label="(L) No of Males" d={reportData.males} m={reportData.males} />
-                <DataRow label="(M) No of Females" d={reportData.females} m={reportData.females} />
-                <DataRow label="(N) No Shows" d={reportData.noShows} m={reportData.noShows} />
-                <DataRow label="(O) % of Occupancy (D/A)%" d={reportData.occPercent} m={reportData.occPercent} isPercent />
-                <DataRow label="(P) ARR (Total Rooms)" d={reportData.arrTotalRooms} m={reportData.arrTotalRooms} />
-                <DataRow label="(Q) ARR (Saleable Rooms)" d={reportData.arrSaleableRooms} m={reportData.arrSaleableRooms} />
-                <DataRow label="(R) ARR (Occupied Rooms)" d={reportData.arrOccupiedRooms} m={reportData.arrOccupiedRooms} />
-
-                <tr><td colSpan="3" className="px-3 py-3 text-sm font-bold text-slate-900">ROOM REVENUE</td></tr>
-                <DataRow label="Apartment Charges (Accrued)" d={reportData.roomApartment} m={reportData.roomApartment} />
-                <DataRow label="Extra Bed Charges (Accrued)" d={reportData.roomExtraBed} m={reportData.roomExtraBed} />
-                <DataRow label="Total : ROOM REVENUE" d={reportData.roomTotal} m={reportData.roomTotal} bold />
-
-                <tr><td colSpan="3" className="px-3 py-3 text-sm font-bold text-slate-900">F&B REVENUE</td></tr>
-                <DataRow label="Plan Rate (Accrued)" d={reportData.fbPlanRate} m={reportData.fbPlanRate} />
-                <DataRow label="Rustic Room Service" d={reportData.fbRoomService} m={reportData.fbRoomService} />
-                <DataRow label="Rustic Barn Restaurant" d={reportData.fbRestaurant} m={reportData.fbRestaurant} />
-                <DataRow label="Total : F&B REVENUE" d={reportData.fbTotal} m={reportData.fbTotal} bold />
-
-                <tr><td colSpan="3" className="px-3 py-3 text-sm font-bold text-slate-900">OTHER REVENUES</td></tr>
-                <DataRow label="MOD REVENUES" d={reportData.modRevenues} m={reportData.modRevenues} />
-                <DataRow label="Grand Total" d={reportData.grandTotal} m={reportData.grandTotal} bold />
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-    </div>
-  </div>
-);
-};
-
-export default HotelFlashReportPage;
+    </>
+  );
+}
