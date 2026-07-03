@@ -62,6 +62,46 @@ const isDateLockedByAudit = (date, lockedThroughDate) => {
   return normalizedDate <= normalizedLockedDate;
 };
 
+const LIST_DATE_FILTER_STORAGE_PREFIX = "hotelListDateFilter";
+const DATE_FILTER_PATHS = new Set([
+  "/sUsers/bookingList",
+  "/sUsers/checkInList",
+  "/sUsers/checkOutList",
+]);
+
+const getListDateFilterStorageKey = (pathname) => {
+  return `${LIST_DATE_FILTER_STORAGE_PREFIX}:${pathname}`;
+};
+
+const getDefaultListDates = () => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(new Date().getDate() - 30);
+
+  return {
+    fromDate: thirtyDaysAgo.toISOString().split("T")[0],
+    toDate: new Date().toISOString().split("T")[0],
+  };
+};
+
+const getStoredListDates = (pathname) => {
+  const defaultDates = getDefaultListDates();
+
+  if (!DATE_FILTER_PATHS.has(pathname)) return defaultDates;
+
+  try {
+    const savedDates = JSON.parse(
+      localStorage.getItem(getListDateFilterStorageKey(pathname)),
+    );
+
+    return {
+      fromDate: savedDates?.fromDate || defaultDates.fromDate,
+      toDate: savedDates?.toDate || defaultDates.toDate,
+    };
+  } catch {
+    return defaultDates;
+  }
+};
+
 function BookingList() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -138,15 +178,14 @@ function BookingList() {
 
   const [remarks, setRemarks] = useState("");
   const [transactionNumber, setTransactionNumber] = useState("");
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(new Date().getDate() - 30);
-  const [fromDate, setFromDate] = useState(
-    thirtyDaysAgo.toISOString().split("T")[0],
-  );
+  const initialDateFilter = useMemo(() => {
+    return getStoredListDates(location.pathname);
+  }, [location.pathname]);
+  const [fromDate, setFromDate] = useState(initialDateFilter.fromDate);
   const [restaurantSaleManageMent, setRestaurantSaleManageMent] =
     useState(false);
 
-  const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
+  const [toDate, setToDate] = useState(initialDateFilter.toDate);
   const [nightAuditStatus, setNightAuditStatus] = useState(null);
   const [nightAuditLoading, setNightAuditLoading] = useState(false);
   const [nightAuditActionLoading, setNightAuditActionLoading] = useState(false);
@@ -203,6 +242,25 @@ function BookingList() {
   const selectedAuditDate = isSingleAuditDateSelected ? fromDate : "";
   const isNightAuditLocked = Boolean(nightAuditStatus?.isLocked);
   const lockedThroughDate = nightAuditStatus?.lockedThroughDate || null;
+
+  useEffect(() => {
+    const nextDateFilter = getStoredListDates(location.pathname);
+
+    setFromDate(nextDateFilter.fromDate);
+    setToDate(nextDateFilter.toDate);
+  }, [location.pathname]);
+
+  const handleDateChange = ({ from, to }) => {
+    setFromDate(from);
+    setToDate(to);
+
+    if (DATE_FILTER_PATHS.has(location.pathname)) {
+      localStorage.setItem(
+        getListDateFilterStorageKey(location.pathname),
+        JSON.stringify({ fromDate: from, toDate: to }),
+      );
+    }
+  };
 
   const [expandedRows, setExpandedRows] = useState({});
 
@@ -280,8 +338,7 @@ function BookingList() {
       const checkoutTotal = rooms.reduce((sum, room) => {
         // if (room.dateTariffs) {
 
-        // }
-        console.log(room?.amountAfterTax);
+        // };
 
         if (!hasSwapping) {
           return sum + Number(room?.amountAfterTax || 0);
@@ -345,12 +402,14 @@ function BookingList() {
         const additionalPaxPerDay =
           Number(room?.additionalPaxAmountWithTax || 0) / totalStayDays;
 
+
+          console.log(additionalPaxPerDay)
         const foodPlanPerDay =
           Number(room?.foodPlanAmountWithTax || 0) / totalStayDays;
 
         const additionalPaxAmount = additionalPaxPerDay * stayDays;
         let foodPlanAmount = foodPlanPerDay * stayDays;
-
+  console.log(additionalPaxAmount)
         console.log(baseAmount, additionalPaxPerDay, foodPlanAmount);
 
         taxAmount = configurations[0]?.addRateWithTax?.hotelSale
@@ -359,10 +418,10 @@ function BookingList() {
         foodPlanAmount = configurations[0]?.addRateWithTax?.hotelSale
           ? 0
           : foodPlanAmount;
-        console.log(taxAmount);
+
 
         return (
-          sum + baseAmount + taxAmount + additionalPaxAmount + foodPlanAmount
+          sum + baseAmount + taxAmount  + foodPlanAmount
         );
       }, 0);
 
@@ -1548,9 +1607,10 @@ function BookingList() {
                 checkout,
                 room.roomId,
                 checkout?.addFoodPlanWithRate,
+                checkout?.addPaxWithRate,
               );
 
-              console.log(room.totalAmount);
+              console.log(room);
 
               return {
                 ...room,
@@ -1859,11 +1919,12 @@ function BookingList() {
       },
     });
   };
-  const calculateTotalPax = (addpax, rooms) => {
-    let count = addpax && addpax.length ? addpax.length : 0;
-    rooms.forEach((it) => (count += it.pax));
+  const calculateRoomPax = (rooms = []) => {
+    return rooms.reduce((count, room) => count + Number(room?.pax || 0), 0);
+  };
 
-    return count;
+  const calculateExtraPax = (addpax = []) => {
+    return addpax?.length || 0;
   };
 
   const isCheckoutList = location.pathname === "/sUsers/checkOutList";
@@ -1929,49 +1990,52 @@ function BookingList() {
         <div className="w-18 text-center">SL.NO</div>
         <div className="w-32 text-center">
           {location.pathname == "/sUsers/checkOutList"
-            ? "CHECKOUT DATE"
+            ? "CHO DATE"
             : location.pathname == "/sUsers/checkInList"
-              ? "ARRIVAL DATE"
-              : "BOOKING DATE"}
+              ? "ARR DATE"
+              : "BK DATE"}
         </div>
-        <div className="w-32 text-center">
+        <div className="w-28 text-center">
           {location.pathname == "/sUsers/checkOutList"
-            ? "CHECKOUT NO"
+            ? "CHO NO"
             : location.pathname == "/sUsers/checkInList"
-              ? "CHECK-IN NO"
-              : "BOOKING NO"}
+              ? "CHK-IN NO"
+              : "BK NO"}
         </div>
         <div className="w-32 text-center"> ACTIONS</div>
       </div>
 
       <div className="hidden md:flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider">
-        <div className="w-10 text-center">SL.NO</div>
+        <div className="w-10 text-center">NO</div>
         <div className="w-28 text-center">
           {location.pathname == "/sUsers/checkOutList"
-            ? "CHECKOUT DATE"
-            : "BOOKING DATE"}
+            ? "CHO DATE"
+            : "BK DATE"}
         </div>
         <div className="w-32 text-center">
           {location.pathname === "/sUsers/checkOutList"
-            ? "CHECKOUT NO"
+            ? "CHO NO"
             : location.pathname === "/sUsers/checkInList"
-              ? "CHECK-IN NO"
-              : "BOOKING NO"}
+              ? "CHK-IN NO"
+              : "BK NO"}
         </div>
-        <div className="w-40 text-center">GUEST NAME</div>
-        <div className="w-20 text-center">ROOM NO</div>
-        <div className="w-36 text-center">ARRIVAL DATE</div>
-        <div className="w-28 text-center">ROOM TARIFF</div>
-        <div className="w-20 text-center">PAX</div>
-        <div className="w-20 text-center">FOOD PLAN</div>
-        <div className="w-28 text-center">FOODPLAN AMOUNT</div>
-        <div className="w-28 text-center">TRAVEL AGENT</div>
+        <div className="w-20 text-center">GUEST</div>
+        <div className="w-20 text-center">ROOM</div>
+        <div className="w-28 text-center">ARR DATE</div>
+        <div className="w-28 text-center">TARIFF</div>
+        <div className="w-16 text-center">PAX</div>
+        <div className="w-16 text-center">EX.PAX</div>
+        <div className="w-20 text-center">FDP</div>
+        <div className="w-28 text-center">FDP.AMT</div>
+        <div className="w-28 text-center">AGENT</div>
 
         {isCheckoutList && (
-          <div className="w-28 text-center">PAYMENT STATUS</div>
+          <div className="w-28 text-center">PAY STATUS</div>
         )}
 
-        <div className="w-24 text-center">ADVANCE</div>
+        <div className="w-24 text-center">ADV</div>
+        <div className="w-24 text-center">RES.AMT</div>
+        <div className="w-24 text-center">ROOM.AMT</div>
         <div className="w-28 text-center">TOTAL</div>
         <div className="w-32 text-center">ACTIONS</div>
       </div>
@@ -2251,7 +2315,7 @@ function BookingList() {
             </div>
 
             {/* 🔹 ROOM CLICK */}
-            <div className="w-20 text-center text-gray-600 font-medium">
+            <div className="w-20 text-start text-gray-600 font-medium">
               <button
                 type="button"
                 onClick={(e) => {
@@ -2266,18 +2330,21 @@ function BookingList() {
               </button>
             </div>
 
-            <div className="w-36 text-center text-gray-600 text-xs">
-              {formatDate(el?.arrivalDate)}
-              <span>({el.arrivalTime})</span>
-            </div>
-
+           <div className="w-28 text-center text-gray-600 text-xs">
+  <div>{formatDate(el?.arrivalDate)}</div>
+  <div>({el.arrivalTime})</div>
+</div>
             <div className="w-28 text-center text-gray-600 text-xs">
               ₹{el?.selectedRooms?.[0]?.priceLevelRate || "0.00"}
               {el.selectedRooms.length > 1 && "....."}
             </div>
 
-            <div className="w-20 text-center text-gray-600 font-medium">
-              {calculateTotalPax(el?.additionalPaxDetails, el?.selectedRooms)}
+            <div className="w-16 text-center text-gray-600 font-medium">
+              {calculateRoomPax(el?.selectedRooms)}
+            </div>
+
+            <div className="w-16 text-center text-gray-600 font-medium">
+              {calculateExtraPax(el?.additionalPaxDetails)}
             </div>
 
             <div className="w-28 text-center text-gray-600 text-xs">
@@ -2313,12 +2380,28 @@ function BookingList() {
                 : "0.00"}
             </div>
 
-            <div className="w-28 text-center text-gray-800 font-semibold text-xs">
+            <div className="w-28 text-center text-gray-600 text-xs">
+              ₹
+              { el?.restaurantSubTotal
+                  ? formatCurrency(el.restaurantSubTotal).replace("₹", "")
+                  : "00.00"}
+            </div>
+
+              <div className="w-28 text-center text-gray-800 font-semibold text-xs">
               ₹
               {el?.displayTotal > 0
                 ? el?.displayTotal
                 : el?.grandTotal
                   ? formatCurrency(el.roomTotal).replace("₹", "")
+                  : "00.00"}
+            </div>
+
+            <div className="w-28 text-center text-gray-800 font-semibold text-xs">
+              ₹
+              {el?.displayTotal > 0
+                ? el?.displayTotal
+                : el?.grandTotal
+                  ? formatCurrency(el.roomTotal + el?.restaurantSubTotal).replace("₹", "")
                   : "00.00"}
             </div>
 
@@ -2793,10 +2876,9 @@ function BookingList() {
             onType={searchData}
             toggle={location.pathname === "/sUsers/bookingList"}
             from={location.pathname}
-            onDateChange={({ from, to }) => {
-              setFromDate(from);
-              setToDate(to);
-            }}
+            initialFromDate={fromDate}
+            initialToDate={toDate}
+            onDateChange={handleDateChange}
             extraActions={
               location.pathname === "/sUsers/checkInList" && (
                 <div className="flex flex-wrap items-center gap-2">

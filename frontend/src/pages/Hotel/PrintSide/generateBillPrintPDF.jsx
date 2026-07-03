@@ -352,6 +352,13 @@ const drawSummaryAndPayment = (doc, billData, startY, isForPreview, paymentModeD
     ]);
   }
 
+  if (Number(billData?.summary?.additionalPax || 0) > 0) {
+    summaryRows.push([
+      "Additional Pax Without Tax",
+      Number(billData.summary.additionalPax).toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+    ]);
+  }
+
   if (Number(billData?.summary?.sgst || 0) > 0) {
     summaryRows.push([
       "SGST",

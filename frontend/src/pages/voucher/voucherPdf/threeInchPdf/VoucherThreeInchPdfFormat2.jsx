@@ -27,7 +27,6 @@ function VoucherThreeInchPdfFormat2({
   selectedSaleDate,
   setSelectedSaleDate
 }) {
-
   const [subTotal, setSubTotal] = useState(0);
   const isConfirmingRef = useRef(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -74,6 +73,13 @@ function VoucherThreeInchPdfFormat2({
   const emailWindowWidth = isA5Mode ? 560 : 794;
   const emailMargin = isA5Mode ? 6 : 10;
 
+  const isCancelled =
+    data?.isCancelled === true ||
+    data?.cancelled === true ||
+    data?.status === "cancelled" ||
+    data?.dayBookStatus === "cancelled" ||
+    data?.saleStatus === "cancelled";
+
   const getVoucherNumber = () => {
     if (!voucherType) return "";
     if (voucherType === "sales" || voucherType === "vanSale")
@@ -112,25 +118,32 @@ function VoucherThreeInchPdfFormat2({
         data?.totalAdditionalCharges ||
           data?.additionalCharges?.[0]?.finalValue,
       ) || 0;
+
     const grossTaxable = data.items.reduce((acc, item) => {
       const lineTax = Number(item.totalIgstAmt || 0);
       return acc + (Number(item.total || 0) - lineTax);
     }, 0);
+
     const isInterState = !isSameState;
+
     const totalTax = data.items.reduce((acc, item) => {
       const taxableAfterDiscount = getItemTaxableAfterDiscount(
         item,
         totalDiscount,
         grossTaxable,
       );
-      if (isInterState)
+
+      if (isInterState) {
         return acc + (taxableAfterDiscount * Number(item.igst || 0)) / 100;
+      }
+
       return (
         acc +
         (taxableAfterDiscount * Number(item.cgst || 0)) / 100 +
         (taxableAfterDiscount * Number(item.sgst || 0)) / 100
       );
     }, 0);
+
     return Number(totalTax.toFixed(2));
   };
 
@@ -173,6 +186,7 @@ function VoucherThreeInchPdfFormat2({
       data?.voucherNumber?.[0]?.roomNumber ||
       data?.roomId?.roomno ||
       data?.roomId?.roomName;
+
     if (!hasCheckIn && !roomNo) return null;
     return `Room: ${roomNo}`;
   };
@@ -198,7 +212,6 @@ function VoucherThreeInchPdfFormat2({
   const sgstPercentage = data?.items?.find((el) => el.sgst > 0)?.sgst || 0;
   const igstPercentage = data?.items?.find((el) => el.igst > 0)?.igst || 0;
 
-  // ─── THERMAL PRINT ───────────────────────────────────────────────────────
   const handleThermalPrint = useReactToPrint({
     content: () => contentToPrint.current,
     pageStyle: `
@@ -208,7 +221,6 @@ function VoucherThreeInchPdfFormat2({
     `,
   });
 
-  // ─── A5 PRINT ────────────────────────────────────────────────────────────
   const handleA5Print = useReactToPrint({
     content: () => contentToPrint.current,
     pageStyle: `
@@ -220,7 +232,6 @@ function VoucherThreeInchPdfFormat2({
 
   const handlePrint = () => (isA5Mode ? handleA5Print() : handleThermalPrint());
 
-  // ─── PDF GENERATOR (email share only) ────────────────────────────────────
   const generateReceiptPDFAsBase64 = async () => {
     const element = contentToPrint.current;
     if (!element) throw new Error("Receipt element not found");
@@ -290,7 +301,6 @@ function VoucherThreeInchPdfFormat2({
     });
   };
 
-  // ─── Share ────────────────────────────────────────────────────────────────
   const handleShareBill = async (option, message, ccEmails, toEmail) => {
     if (option === "WhatsApp") {
       window.open(
@@ -363,7 +373,7 @@ function VoucherThreeInchPdfFormat2({
           <input id="swal-to" type="email" class="swal2-input" placeholder="customer@example.com" style="width:95%;margin:0 0 14px 0;"/>
           <label style="display:block;margin-bottom:6px;font-weight:bold;font-size:14px;">CC Emails <span style="color:gray;font-weight:normal;">(Optional)</span></label>
           <input id="swal-cc" type="text" class="swal2-input" placeholder="cc1@example.com, cc2@example.com" style="width:95%;margin:0;"/>
-          <small style="color:gray;display:block;margin-top:6px;">💡 Separate multiple CC emails with commas</small>
+          <small style="color:gray;display:block;margin-top:6px;">Separate multiple CC emails with commas</small>
         </div>`,
         showCancelButton: true,
         cancelButtonColor: "#dd3333",
@@ -460,7 +470,6 @@ function VoucherThreeInchPdfFormat2({
     }
   };
 
-  // ─── Styles ───────────────────────────────────────────────────────────────
   const thermalContainerStyle = {
     width: "72mm",
     margin: "0 auto",
@@ -472,6 +481,7 @@ function VoucherThreeInchPdfFormat2({
     textAlign: "left",
     boxSizing: "border-box",
   };
+
   const a5ContainerStyle = {
     width: "148mm",
     margin: "0 auto",
@@ -483,6 +493,7 @@ function VoucherThreeInchPdfFormat2({
     boxSizing: "border-box",
     background: "#fff",
   };
+
   const containerStyle = isA5Mode ? a5ContainerStyle : thermalContainerStyle;
 
   const flexRow = {
@@ -491,6 +502,7 @@ function VoucherThreeInchPdfFormat2({
     alignItems: "center",
     marginBottom: "2px",
   };
+
   const textRight = { textAlign: "right", paddingRight: "3px" };
   const textLeft = { textAlign: "left", paddingLeft: "3px" };
   const centerText = { textAlign: "center" };
@@ -505,6 +517,7 @@ function VoucherThreeInchPdfFormat2({
     borderBottom: "1px dotted #000",
     marginBottom: "4px",
   };
+
   const itemGrid = {
     display: "grid",
     gridTemplateColumns: "0.6fr 2.2fr 0.7fr 1fr 1.1fr",
@@ -514,29 +527,26 @@ function VoucherThreeInchPdfFormat2({
   };
 
   const paymentSplits = data?.paymentSplittingData || [];
+
   const getPaymentSummary = () => {
     if (!paymentSplits.length) return null;
     return paymentSplits
       .filter((p) => p.amount > 0)
       .map((p) => (
-        <>
-          <div key={p.type} style={{ fontSize: "10px", fontWeight: "bold" }}>
+        <div key={`${p.type}_${p.subsource}`}>
+          <div style={{ fontSize: "10px", fontWeight: "bold" }}>
             {p.subsource} : ₹ {Math.round(p.amount).toFixed(2)}
           </div>
           {p?.credit_reference_type && (
-            <div
-              key={p.type + "_credit"}
-              style={{ fontSize: "10px", fontWeight: "bold" }}
-            >
+            <div style={{ fontSize: "10px", fontWeight: "bold" }}>
               Party : {p?.credit_reference_type}{" "}
               {p?.creditor_gst && `(${p.creditor_gst})`}
             </div>
           )}
-        </>
+        </div>
       ));
   };
 
-  // ─── Dropdown ─────────────────────────────────────────────────────────────
   const PrintModeDropdown = () => (
     <div
       ref={dropdownRef}
@@ -642,7 +652,6 @@ function VoucherThreeInchPdfFormat2({
     </div>
   );
 
-  // ─── Header: A5+logo → logo left / info right | else → centered ──────────
   const ReceiptHeader = () => {
     const hasLogo = !!org?.logo;
 
@@ -722,328 +731,370 @@ function VoucherThreeInchPdfFormat2({
     );
   };
 
-  // ─── Receipt JSX ──────────────────────────────────────────────────────────
   const receiptJSX = (
     <div
       ref={contentToPrint}
       className="receipt-container"
-      style={containerStyle}
+      style={{
+        ...containerStyle,
+        position: "relative",
+        overflow: "hidden",
+      }}
     >
-      <ReceiptHeader />
-
-      {/* Title */}
-      <div
-        style={{
-          ...centerText,
-          marginBottom: "6px",
-          paddingBottom: "6px",
-          borderBottom: "1px dotted #000",
-        }}
-      >
+      {isCancelled && (
         <div
           style={{
-            fontSize: isA5Mode ? "16px" : "14px",
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%) rotate(-25deg)",
+            fontSize: isA5Mode ? "58px" : "34px",
             fontWeight: "bold",
-            fontStyle: "italic",
+            color: "rgba(220, 38, 38, 0.18)",
+            letterSpacing: "4px",
+            whiteSpace: "nowrap",
+            zIndex: 0,
+            pointerEvents: "none",
+            userSelect: "none",
           }}
         >
-          INVOICE
+          CANCELLED
         </div>
-      </div>
+      )}
 
-      {/* Bill Info */}
-      <div
-        style={{
-          marginBottom: "6px",
-          fontSize: isA5Mode ? "12px" : "11px",
-          fontWeight: "bold",
-          paddingBottom: "6px",
-          borderBottom: "1px dotted #000",
-        }}
-      >
-        <div style={{ display: "flex" }}>
-          <span style={{ minWidth: "170px" }}>Bill {getBillNumber()}</span>
-          <span>
-            Date:{" "}
-            {new Date(data?.Date || data?.createdAt).toLocaleDateString(
-              "en-GB",
-            )}
-          </span>
-        </div>
-        <div style={{ display: "flex" }}>
-          <span
-            style={{
-              minWidth: "170px",
-              visibility:
-                getTableNumber() && getTableNumber() !== "10"
-                  ? "visible"
-                  : "hidden",
-            }}
-          >
-            Table: {getTableNumber()}
-          </span>
-          <span>
-            Time:{" "}
-            {new Date(data?.Date || data?.createdAt).toLocaleTimeString(
-              "en-GB",
-              { hour: "2-digit", minute: "2-digit", hour12: false },
-            )}
-          </span>
-        </div>
-        {data?.orderType && (
-          <div style={{ marginTop: "2px" }}>
-            <span style={{ textTransform: "capitalize" }}>
-              {data.orderType.replace(/-/g, " ")}
-            </span>
-          </div>
-        )}
-        {data?.party?.partyName && (
-          <div style={{ marginTop: "2px" }}>
-            <span style={{ textTransform: "capitalize" }}>Guest : </span>
-            <span style={{ textTransform: "capitalize" }}>
-              {data?.party?.partyName}
-            </span>
-          </div>
-        )}
-      </div>
+      <div style={{ position: "relative", zIndex: 1 }}>
+        <ReceiptHeader />
 
-      {/* Items Header */}
-      <div style={headerGrid}>
-        <div style={textLeft}>No</div>
-        <div style={textLeft}>Item</div>
-        <div style={centerText}>Qty</div>
-        <div style={textRight}>Rate</div>
-        <div style={textRight}>Amount</div>
-      </div>
-
-      {/* Items */}
-      {data?.items?.map((el, index) => {
-        const IsComplimentary = data?.isComplimentary;
-        const total = Number(el?.total || 0);
-        const count = Number(el?.totalCount || 1);
-        const totalTax = IsComplimentary
-          ? 0
-          : el?.totalIgstAmt != null
-            ? Number(el.totalIgstAmt)
-            : Number(el?.totalCgstAmt || 0) + Number(el?.totalSgstAmt || 0);
-        const igst = IsComplimentary ? 0 : Number(el?.igst || 0);
-        const addRateWithTax =
-          org?.configurations?.[0]?.addRateWithTax?.restaurantSale;
-        const addRate = addRateWithTax
-          ? count > 0
-            ? ((total * 100) / (100 + igst) / count).toFixed(2)
-            : "0.00"
-          : count > 0
-            ? ((total - totalTax) / count).toFixed(2)
-            : "0.00";
-        const rate = includeTaxWithPrint
-          ? count > 0
-            ? (Number(addRate) + Number((totalTax / count).toFixed(2))).toFixed(
-                2,
-              )
-            : "0.00"
-          : addRate;
-        const amount = (Number(rate) * count).toFixed(2);
-        return (
-          <div key={index} style={itemGrid}>
-            <div style={textLeft}>{index + 1}</div>
-            <div style={{ ...textLeft, wordBreak: "break-word" }}>
-              {el.product_name}
+        <div
+          style={{
+            ...centerText,
+            marginBottom: "6px",
+            paddingBottom: "6px",
+            borderBottom: "1px dotted #000",
+          }}
+        >
+          {!isCancelled ? (
+            <div
+              style={{
+                fontSize: isA5Mode ? "16px" : "14px",
+                fontWeight: "bold",
+                fontStyle: "italic",
+              }}
+            >
+              INVOICE
             </div>
-            <div style={centerText}>{count}</div>
-            <div style={textRight}>{rate}</div>
-            <div style={textRight}>{amount}</div>
-          </div>
-        );
-      })}
-
-      <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
-
-      {/* Totals */}
-      <div
-        style={{
-          fontSize: "10px",
-          marginBottom: "4px",
-          display: "flex",
-          flexDirection: "row",
-        }}
-      >
-        <div style={{ flex: 1 }}>{getPaymentSummary()}</div>
-        <div style={{ flex: 1 }}>
-          {!discountBasedOnGrossAmount && Number(discount) > 0 && (
-            <>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  marginBottom: "2px",
-                  fontWeight: "bold",
-                }}
-              >
-                <div
-                  style={{ marginLeft: "auto", width: 60, textAlign: "right" }}
-                >
-                  SubTotal
-                </div>
-                <div style={{ width: 60, textAlign: "right" }}>
-                  {(Number(subTotal || 0) + Number(discount || 0)).toFixed(2)}
-                </div>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  marginBottom: "2px",
-                  fontWeight: "bold",
-                }}
-              >
-                <div
-                  style={{ marginLeft: "auto", width: 60, textAlign: "right" }}
-                >
-                  Discount
-                </div>
-                <div style={{ width: 60, textAlign: "right" }}>{discount}</div>
-              </div>
-            </>
+          ) : (
+            <div
+              style={{
+                fontSize: isA5Mode ? "16px" : "14px",
+                fontWeight: "bold",
+                color: "#dc2626",
+                letterSpacing: "2px",
+              }}
+            >
+              CANCELLED BILL
+            </div>
           )}
-          {!data?.isComplimentary && (
-            <>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  marginBottom: "2px",
-                  fontWeight: "bold",
-                }}
-              >
-                <div
-                  style={{ marginLeft: "auto", width: 80, textAlign: "right" }}
-                >
-                  Gross Amount
-                </div>
-                <div style={{ width: 60, textAlign: "right" }}>
-                  {subTotal?.toFixed(2)}
-                </div>
-              </div>
-              {(org?.industry == 7
-                ? calculateTotalTax() > 0
-                : isIndian && isSameState && calculateTotalTax() > 0) && (
-                <>
-                  <div style={flexRow}>
-                    <div
-                      style={{
-                        marginLeft: "auto",
-                        width: 70,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      CGST {cgstPercentage}%
-                    </div>
-                    <div style={textRight}>{cgst}</div>
-                  </div>
-                  <div style={flexRow}>
-                    <div
-                      style={{
-                        marginLeft: "auto",
-                        width: 70,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      SGST {sgstPercentage}%
-                    </div>
-                    <div style={textRight}>{sgst}</div>
-                  </div>
-                </>
+        </div>
+
+        <div
+          style={{
+            marginBottom: "6px",
+            fontSize: isA5Mode ? "12px" : "11px",
+            fontWeight: "bold",
+            paddingBottom: "6px",
+            borderBottom: "1px dotted #000",
+          }}
+        >
+          <div style={{ display: "flex" }}>
+            <span style={{ minWidth: "170px" }}>Bill {getBillNumber()}</span>
+            <span>
+              Date:{" "}
+              {new Date(data?.Date || data?.createdAt).toLocaleDateString(
+                "en-GB",
               )}
-            </>
+            </span>
+          </div>
+          <div style={{ display: "flex" }}>
+            <span
+              style={{
+                minWidth: "170px",
+                visibility:
+                  getTableNumber() && getTableNumber() !== "10"
+                    ? "visible"
+                    : "hidden",
+              }}
+            >
+              Table: {getTableNumber()}
+            </span>
+            <span>
+              Time:{" "}
+              {new Date(data?.Date || data?.createdAt).toLocaleTimeString(
+                "en-GB",
+                { hour: "2-digit", minute: "2-digit", hour12: false },
+              )}
+            </span>
+          </div>
+          {data?.orderType && (
+            <div style={{ marginTop: "2px" }}>
+              <span style={{ textTransform: "capitalize" }}>
+                {data.orderType.replace(/-/g, " ")}
+              </span>
+            </div>
           )}
-          {!org?.industry == 7 &&
-            isIndian &&
-            !isSameState &&
-            calculateTotalTax() > 0 && (
+          {data?.party?.partyName && (
+            <div style={{ marginTop: "2px" }}>
+              <span style={{ textTransform: "capitalize" }}>Guest : </span>
+              <span style={{ textTransform: "capitalize" }}>
+                {data?.party?.partyName}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div style={headerGrid}>
+          <div style={textLeft}>No</div>
+          <div style={textLeft}>Item</div>
+          <div style={centerText}>Qty</div>
+          <div style={textRight}>Rate</div>
+          <div style={textRight}>Amount</div>
+        </div>
+
+        {data?.items?.map((el, index) => {
+          const IsComplimentary = data?.isComplimentary;
+          const total = Number(el?.total || 0);
+          const count = Number(el?.totalCount || 1);
+          const totalTax = IsComplimentary
+            ? 0
+            : el?.totalIgstAmt != null
+              ? Number(el.totalIgstAmt)
+              : Number(el?.totalCgstAmt || 0) + Number(el?.totalSgstAmt || 0);
+          const igst = IsComplimentary ? 0 : Number(el?.igst || 0);
+          const addRateWithTax =
+            org?.configurations?.[0]?.addRateWithTax?.restaurantSale;
+
+          const addRate = addRateWithTax
+            ? count > 0
+              ? ((total * 100) / (100 + igst) / count).toFixed(2)
+              : "0.00"
+            : count > 0
+              ? ((total - totalTax) / count).toFixed(2)
+              : "0.00";
+
+          const rate = includeTaxWithPrint
+            ? count > 0
+              ? (Number(addRate) + Number((totalTax / count).toFixed(2))).toFixed(
+                  2,
+                )
+              : "0.00"
+            : addRate;
+
+          const amount = (Number(rate) * count).toFixed(2);
+
+          return (
+            <div key={index} style={itemGrid}>
+              <div style={textLeft}>{index + 1}</div>
+              <div style={{ ...textLeft, wordBreak: "break-word" }}>
+                {el.product_name}
+              </div>
+              <div style={centerText}>{count}</div>
+              <div style={textRight}>{rate}</div>
+              <div style={textRight}>{amount}</div>
+            </div>
+          );
+        })}
+
+        <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
+
+        <div
+          style={{
+            fontSize: "10px",
+            marginBottom: "4px",
+            display: "flex",
+            flexDirection: "row",
+          }}
+        >
+          <div style={{ flex: 1 }}>{getPaymentSummary()}</div>
+          <div style={{ flex: 1 }}>
+            {!discountBasedOnGrossAmount && Number(discount) > 0 && (
+              <>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    marginBottom: "2px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  <div
+                    style={{ marginLeft: "auto", width: 60, textAlign: "right" }}
+                  >
+                    SubTotal
+                  </div>
+                  <div style={{ width: 60, textAlign: "right" }}>
+                    {(Number(subTotal || 0) + Number(discount || 0)).toFixed(2)}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    marginBottom: "2px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  <div
+                    style={{ marginLeft: "auto", width: 60, textAlign: "right" }}
+                  >
+                    Discount
+                  </div>
+                  <div style={{ width: 60, textAlign: "right" }}>{discount}</div>
+                </div>
+              </>
+            )}
+
+            {!data?.isComplimentary && (
+              <>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    marginBottom: "2px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  <div
+                    style={{ marginLeft: "auto", width: 80, textAlign: "right" }}
+                  >
+                    Gross Amount
+                  </div>
+                  <div style={{ width: 60, textAlign: "right" }}>
+                    {subTotal?.toFixed(2)}
+                  </div>
+                </div>
+
+                {(org?.industry == 7
+                  ? calculateTotalTax() > 0
+                  : isIndian && isSameState && calculateTotalTax() > 0) && (
+                  <>
+                    <div style={flexRow}>
+                      <div
+                        style={{
+                          marginLeft: "auto",
+                          width: 70,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        CGST {cgstPercentage}%
+                      </div>
+                      <div style={textRight}>{cgst}</div>
+                    </div>
+                    <div style={flexRow}>
+                      <div
+                        style={{
+                          marginLeft: "auto",
+                          width: 70,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        SGST {sgstPercentage}%
+                      </div>
+                      <div style={textRight}>{sgst}</div>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+            {org?.industry != 7 &&
+              isIndian &&
+              !isSameState &&
+              calculateTotalTax() > 0 && (
+                <div style={flexRow}>
+                  <div
+                    style={{ marginLeft: "auto", width: 70, fontWeight: "bold" }}
+                  >
+                    IGST {igstPercentage}%
+                  </div>
+                  <div style={textRight}>{tax}</div>
+                </div>
+              )}
+
+            {!isIndian && calculateTotalTax() > 0 && (
               <div style={flexRow}>
                 <div
                   style={{ marginLeft: "auto", width: 70, fontWeight: "bold" }}
                 >
-                  IGST {igstPercentage}%
+                  Tax {igstPercentage}%
                 </div>
                 <div style={textRight}>{tax}</div>
               </div>
             )}
-          {!isIndian && calculateTotalTax() > 0 && (
-            <div style={flexRow}>
-              <div
-                style={{ marginLeft: "auto", width: 70, fontWeight: "bold" }}
-              >
-                Tax {igstPercentage}%
-              </div>
-              <div style={textRight}>{tax}</div>
-            </div>
-          )}
+          </div>
         </div>
-      </div>
 
-      <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
+        <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
 
-      {/* Final Details */}
-      <div style={{ fontSize: "10px", marginBottom: "6px" }}>
-        <div
-          style={{ display: "flex", fontWeight: "bold", marginBottom: "2px" }}
-        >
-          {getRoomNumber() && <div style={bold}>{getRoomNumber()}</div>}
+        <div style={{ fontSize: "10px", marginBottom: "6px" }}>
+          <div
+            style={{ display: "flex", fontWeight: "bold", marginBottom: "2px" }}
+          >
+            {getRoomNumber() && <div style={bold}>{getRoomNumber()}</div>}
+            <div
+              style={{
+                marginLeft: "auto",
+                paddingRight: "3px",
+                fontWeight: "bold",
+                color: isCancelled ? "#dc2626" : "inherit",
+              }}
+            >
+              {isCancelled ? `Cancelled Amount: ${netAmount}` : `Total: ${netAmount}`}
+            </div>
+          </div>
+          {getFoodPlan() && <div style={bold}>{getFoodPlan()}</div>}
           <div
             style={{
-              marginLeft: "auto",
+              ...flexRow,
+              justifyContent: "flex-end",
               paddingRight: "3px",
               fontWeight: "bold",
             }}
           >
-            Total: {netAmount}
+            {discountBasedOnGrossAmount && Number(discount) > 0 && (
+              <>
+                Discount: <span style={bold}>{discount || "0.00"}</span>
+              </>
+            )}
           </div>
         </div>
-        {getFoodPlan() && <div style={bold}>{getFoodPlan()}</div>}
+
+        <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
+
         <div
           style={{
-            ...flexRow,
-            justifyContent: "flex-end",
-            paddingRight: "3px",
+            ...centerText,
+            fontSize: isA5Mode ? "16px" : "14px",
             fontWeight: "bold",
+            marginBottom: "8px",
+            paddingBottom: "6px",
+            borderBottom: "1px dotted #000",
+            color: isCancelled ? "#dc2626" : "inherit",
           }}
         >
-          {discountBasedOnGrossAmount && Number(discount) && (
-            <>
-              Discount: <span style={bold}>{discount || "0.00"}</span>
-            </>
-          )}
+          {isCancelled ? `CANCELLED AMOUNT: ${netAmount}` : `Net Amount: ${netAmount}`}
         </div>
-      </div>
 
-      <div style={{ borderBottom: "1px dotted #000", margin: "6px 0" }} />
-
-      {/* Net Amount */}
-      <div
-        style={{
-          ...centerText,
-          fontSize: isA5Mode ? "16px" : "14px",
-          fontWeight: "bold",
-          marginBottom: "8px",
-          paddingBottom: "6px",
-          borderBottom: "1px dotted #000",
-        }}
-      >
-        Net Amount: {netAmount}
-      </div>
-
-      {/* Footer */}
-      <div
-        style={{
-          ...centerText,
-          fontSize: "11px",
-          fontWeight: "bold",
-          marginTop: "8px",
-        }}
-      >
-        Thank You Visit Again
+        <div
+          style={{
+            ...centerText,
+            fontSize: "11px",
+            fontWeight: "bold",
+            marginTop: "8px",
+            color: isCancelled ? "#dc2626" : "inherit",
+          }}
+        >
+          {isCancelled ? "THIS BILL IS CANCELLED" : "Thank You Visit Again"}
+        </div>
       </div>
     </div>
   );
@@ -1065,14 +1116,20 @@ function VoucherThreeInchPdfFormat2({
       </style>
 
       <TitleDiv title="Restaurant sale print" />
+
       <div className="flex justify-between items-center">
         {isPreview && (
-        <div className="my-3 mx-4">
-          <input type="date" 
-          value={selectedSaleDate} 
-          onChange={(e)=>{setSelectedSaleDate(e.target.value)}} />
-        </div>
-)}
+          <div className="my-3 mx-4">
+            <input
+              type="date"
+              value={selectedSaleDate}
+              onChange={(e) => {
+                setSelectedSaleDate(e.target.value);
+              }}
+            />
+          </div>
+        )}
+
         <div className="my-3 mx-4 ml-auto">
           <PrintModeDropdown />
         </div>
@@ -1133,6 +1190,7 @@ function VoucherThreeInchPdfFormat2({
               Print
             </button>
           )}
+
           {isFinalized && (
             <button
               className="px-3 py-1 rounded-lg bg-black text-white font-medium hover:bg-green-600 active:scale-95 transition"
@@ -1141,6 +1199,7 @@ function VoucherThreeInchPdfFormat2({
               Share
             </button>
           )}
+
           {isPreview && (
             <>
               <button
@@ -1181,6 +1240,7 @@ function VoucherThreeInchPdfFormat2({
                   "Confirm"
                 )}
               </button>
+
               <button
                 className="px-3 py-1 rounded-lg bg-red-400 text-gray-800 font-medium hover:bg-red-500 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isConfirming}

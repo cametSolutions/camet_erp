@@ -43,7 +43,7 @@ import { addEmailConfiguration, getConfiguration, getBarcodeList, addBarcodeData
 import { updateSecondaryUserConfiguration } from '../helpers/saleOrderHelper.js';
 import { addAccountGroupIdToOutstanding, addAccountGroupIdToParties, convertPrimaryToSecondary, createAccountGroups, updateDateFieldsByCompany, updateSalesItemUnitFields, updateUnitFields } from '../controllers/testingController.js';
 import { authPrimary } from '../middlewares/authPrimaryUsers.js';
-import { addSecondaryConfigurations, addSecUsers, allocateCompany, allocateSubDetails, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getSecUserDetails,updateTransactionAccess } from '../controllers/primaryUserController.js';
+import { addSecondaryConfigurations, addSecUsers, allocateCompany, allocateSubDetails, editSecUSer, fetchConfigurationCurrentNumber, fetchGodownsAndPriceLevels, fetchSecondaryUsers, getSecUserDetails,updateTransactionAccess, getUserPermissions,updateUserPermissions} from '../controllers/primaryUserController.js';
 
 import {
     fetchDashboardCompanyDailyCollectionBreakdown,
@@ -83,7 +83,8 @@ import {
     updateCheckout,
     getSalesByCheckInNumber,
     updateRestaurantSalePayments,
-    getRestaurantSales,getTravelAgentSalesReport,getAgentList,getFOSalesSummary,getCancellationReport,additionalPaxDefaultSetting
+    getRestaurantSales,getTravelAgentSalesReport,getAgentList,getFOSalesSummary,
+    getCancellationReport,additionalPaxDefaultSetting,getDefault,getDefaultPlan
 } from '../controllers/hotelController.js'
 
 import { convertCheckOutToSale } from '../controllers/hotelController2CheckOut.js';
@@ -293,6 +294,8 @@ router.get('/fetchSecondaryUsers', authPrimary, secondaryIsBlocked, fetchSeconda
 router.post('/addSecUsers', authPrimary, secondaryIsBlocked, addSecUsers);
 router.get('/getSecUserDetails/:id', authPrimary, secondaryIsBlocked, getSecUserDetails)
 router.put('/editSecUSer/:id', authPrimary, secondaryIsBlocked, editSecUSer)
+router.get("/getUserPermissions/:id", authPrimary,secondaryIsBlocked, getUserPermissions);
+router.put("/updateUserPermissions/:id", authPrimary,secondaryIsBlocked, updateUserPermissions);
 router.get("/fetchConfigurationCurrentNumber/:orgId/:_id", authPrimary, secondaryIsBlocked, fetchConfigurationCurrentNumber)
 router.get('/fetchGodownsAndPriceLevels/:cmp_id', authPrimary, secondaryIsBlocked, companyAuthentication, fetchGodownsAndPriceLevels)
 router.post('/addSecondaryConfigurations/:cmp_id/:userId', authPrimary, secondaryIsBlocked, companyAuthentication, addSecondaryConfigurations)
@@ -413,7 +416,7 @@ router.post('/fetchOutStandingAndFoodData/:cmp_id',authSecondary,fetchOutStandin
 router.post('/convertCheckOutToSale/:cmp_id',authSecondary,convertCheckOutToSale)
 router.put('/updateConfigurationForHotelAndRestaurant/:cmp_id',authSecondary,updateConfigurationForHotelAndRestaurant)
 router.put('/updateConfigurationForKotApproval/:cmp_id',authSecondary,updateConfigurationForKotApproval)
-router.put("/swapRoom/:checkInId", swapRoom);
+router.put("/swapRoom/:checkInId",authSecondary, swapRoom);
 router.get("/getRoomSwapHistory/:checkInId",getRoomSwapHistory);
 router.get("/getCheckedInGuests/:cmp_id", checkedInGuest);
 router.get('/summary', getSummaryDashboard);
@@ -460,7 +463,9 @@ router.get("/fetchDashboardPropertySalesSummary/:cmp_id/:primaryUserId", fetchDa
 router.get("/fetchDashboardRoomCountSummary/:cmp_id/:primaryUserId", fetchDashboardRoomCountSummary);
 router.get("/cancellation-report/:cmp_id", getCancellationReport);
 router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
-router.put("/additionalPaxDefaultSetting/:cmp_id/:id", authSecondary, additionalPaxDefaultSetting);
+router.put("/defaultSetting/:cmp_id/:id/:selectedModal", authSecondary, additionalPaxDefaultSetting);
+router.get("/getDefaultPax/:cmp_id", authSecondary, getDefault);
+router.get("/getDefaultPlan/:cmp_id", authSecondary, getDefaultPlan);
 // Route to get detailed booking information for a specific room and date
 
 export default router

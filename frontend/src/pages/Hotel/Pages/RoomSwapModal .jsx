@@ -12,6 +12,8 @@ import AvailableRooms from "../Components/AvailableRooms";
 import AdditionalPaxDetails from "../Components/AdditionalPaxDetails";
 import FoodPlanComponent from "../Components/FoodPlanComponent";
 import { toast } from "sonner";
+import useFetch from "@/customHook/useFetch";
+
 
 const RoomSwapModal = ({
   isOpen,
@@ -21,6 +23,8 @@ const RoomSwapModal = ({
   cmp_id,
   api,
 }) => {
+
+  console.log(selectedRoom)
   const [checkedInGuests, setCheckedInGuests] = useState([]);
   const [selectedGuest, setSelectedGuest] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -31,12 +35,38 @@ const RoomSwapModal = ({
   const [displayAdditionalPax, setDisplayAdditionalPax] = useState(false);
   const [displayFoodPlan, setDisplayFoodPlan] = useState(false);
   const [formData, setFormData] = useState({});
+  const [defaultPax,setDefaultPax] = useState({})
+  const [defaultFoodPlan,setDefaultFoodPlan] = useState({})
 
   useEffect(() => {
     if (isOpen) {
       fetchCheckedInGuests();
     }
   }, [isOpen]);
+
+  const {
+    data: defaultPaxResponse,
+  } = useFetch(`/api/sUsers/getDefaultPax/${cmp_id}`);
+  
+  useEffect(() => {
+    if (defaultPaxResponse) {
+      setDefaultPax(defaultPaxResponse.data);
+    }
+  }, [defaultPaxResponse]);
+  
+  
+  
+  const {
+    data: defaultPlanResponse,
+  } = useFetch(`/api/sUsers/getDefaultPlan/${cmp_id}`);
+  
+  useEffect(() => {
+    if (defaultPlanResponse) {
+      setDefaultFoodPlan(defaultPlanResponse.data);
+    }
+  }, [defaultPlanResponse]);
+
+  console.log(selectedGuest)
 
   const fetchCheckedInGuests = async () => {
     setLoading(true);
@@ -85,7 +115,7 @@ const RoomSwapModal = ({
       }
     } catch (error) {
       console.error("Error swapping room:", error);
-      alert(
+      toast.error(
         `Failed to swap room: ${
           error.response?.data?.message || error.message
         }`,
@@ -93,8 +123,16 @@ const RoomSwapModal = ({
     } finally {
       setLoading(false);
       setSelectedGuest(null);
+      setSelectedGuest(null);
+      setCheckedInGuests([]);
+      setDisplayAdditionalPax(false);
+      setDisplayFoodPlan(false);
+      setFormData({});
+      setSearchTerm("");
     }
   };
+
+  console.log(formData)
   const flattenedGuests = useMemo(() => {
     return (checkedInGuests || []).flatMap((guest) =>
       (guest?.selectedRooms || [])
@@ -109,15 +147,21 @@ const RoomSwapModal = ({
           checkInDate: guest?.arrivalDate,
           checkOutDate: guest?.checkOutDate,
           addTaxWithRate: guest?.addTaxWithRate,
-          includeFoodRateWithRoom: guest?.includeFoodRateWithRoom,
+          addFoodPlanWithRate: guest?.addFoodPlanWithRate,
+          addPaxWithRate: guest?.addPaxWithRate,
+          rate:room.priceLevelRate || 0,
           room: {
             _id: room?.roomId?._id || room?.roomId,
             roomName: room?.roomId?.roomName || room?.roomName,
             roomPrice: room?.roomId?.priceLevelRate || 0,
           },
+          foodPlanArray : guest?.foodPlan.filter((item) => item.roomId === room?.roomId?._id || item.roomId === room?.roomId),
+          additionalPaxDetails: guest?.additionalPaxDetails.filter((item) => item.roomId === room?.roomId?._id || item.roomId === room?.roomId),
         })),
     );
   }, [checkedInGuests]);
+
+  console.log(flattenedGuests)
 
   const filteredGuests = useMemo(() => {
     const term = searchTerm?.toString().toLowerCase().trim() || "";
@@ -134,6 +178,8 @@ const RoomSwapModal = ({
   }, [flattenedGuests, searchTerm]);
 
   if (!isOpen) return null;
+
+  console.log(selectedGuest)
 
   const selectedDetails = (_, to) => {
     if (to === "addPax") setDisplayAdditionalPax(true);
@@ -238,6 +284,11 @@ const RoomSwapModal = ({
                   <button
                     onClick={() => {
                       setSelectedGuest(null);
+                      setCheckedInGuests([]);
+                      setDisplayAdditionalPax(false);
+                      setDisplayFoodPlan(false);
+                      setFormData({});
+                      setSearchTerm("");
                       onClose(); // ← now it fires
                     }}
                     className="self-end rounded-full bg-slate-700 p-1.5 text-slate-300 transition hover:bg-red-500/20 hover:text-red-400 sm:self-auto"
@@ -400,9 +451,15 @@ const RoomSwapModal = ({
                         roomIdToUpdate={selectedRoom?._id}
                         addTaxWithRate={selectedGuest?.addTaxWithRate}
                         includeFoodRateWithRoom={
-                          selectedGuest?.includeFoodRateWithRoom
+                          selectedGuest?.addFoodPlanWithRate
                         }
+                        includePaxRateWithRoom={selectedGuest?.addPaxWithRate}
+                        defaultFoodPlan ={selectedGuest?.foodPlanArray[0]||{}}
+                        defaultPax={defaultPax}
                         showRooms={false}
+                        selectedGuest={selectedGuest}
+                        setFormData={setFormData}
+                        forSwap={true}
                       />
                     )}
                   </div>
@@ -413,6 +470,11 @@ const RoomSwapModal = ({
                     <button
                       onClick={() => {
                         setSelectedGuest(null);
+                        setCheckedInGuests([]);
+                        setDisplayAdditionalPax(false);
+                        setDisplayFoodPlan(false);
+                        setFormData({});
+                        setSearchTerm("");
                         onClose(); // ← now it fires
                       }}
                       className="w-full rounded-lg bg-slate-600 px-4 py-2.5 text-xs font-medium text-white transition hover:bg-slate-700 sm:w-auto sm:text-sm"
@@ -454,6 +516,7 @@ const RoomSwapModal = ({
               setDisplayAdditionalPax={setDisplayAdditionalPax}
               selectedRoomId={selectedRoom?._id}
               formData={formData}
+              includePaxRateWithRoom={selectedGuest?.addPaxWithRate}
             />
           </div>
         </div>
@@ -468,7 +531,7 @@ const RoomSwapModal = ({
               setDisplayFoodPlan={setDisplayFoodPlan}
               selectedRoomId={selectedRoom?._id}
               formData={formData}
-              includeFoodRateWithRoom={selectedGuest?.includeFoodRateWithRoom}
+              includeFoodRateWithRoom={selectedGuest?.addFoodPlanWithRate}
             />
           </div>
         </div>

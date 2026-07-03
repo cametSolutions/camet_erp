@@ -1001,7 +1001,7 @@ const createReceipt = async (sale, count, orgId, session) => {
   }
 };
 
-const calculateStayDays = async (doc, room) => {
+export const calculateStayDays = async (doc, room) => {
   let fullDaysAre = doc.stayDays;
   const normalizeToDate = (d) => {
     const nd = new Date(d);

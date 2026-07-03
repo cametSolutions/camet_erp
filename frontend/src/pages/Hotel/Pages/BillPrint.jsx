@@ -21,7 +21,7 @@ import {
   handleBillDownloadPDF,
   generateBillPDFAsBase64,
 } from "../PrintSide/generateBillPrintPDF";
-
+import {calculateStayDays} from "../Helper/hotelHelper";
 import Swal from "sweetalert2";
 import { constructNow } from "date-fns";
 const HotelBillPrint = () => {
@@ -232,13 +232,14 @@ console.log(merged);
 
       const dateTariffs = room.dateTariffs || {};
       let activePrice = room?.priceLevelRate;
+      console.log(room?.additionalPaxAmountWithTax)
+      activePrice = doc?.addPaxWithRate ?  room?.priceLevelRate - (room?.additionalPaxAmountWithTax / room.stayDays) : room?.priceLevelRate
 
       // Build per-day prices/taxes keyed by ISO date (YYYY-MM-DD)
       for (let i = 0; i < stayDays; i++) {
         const d = new Date(roomStartDate);
         d.setDate(roomStartDate.getDate() + i);
         const key = d.toISOString().split("T")[0];
-
         if (dateTariffs[key] !== undefined) {
           activePrice = Number(dateTariffs[key]);
         }
@@ -330,7 +331,7 @@ console.log(merged);
           }
         }
       }
-      console.log(fullDaysAre);
+  
 
       // Add full days (respect swap base date, read tariff via ISO key)
       for (let i = 0; i < fullDaysAre; i++) {
@@ -356,7 +357,7 @@ console.log(merged);
         const addArray = room?.otherChargeDetails.filter(
           (item) => item.action === "add",
         );
-
+      console.log(doc?.addPaxWithRate)
         result.push({
           date: formattedDate,
           description: `Room Rent - Room ${room.roomName}`,
@@ -602,48 +603,42 @@ console.log(merged);
       : dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0) -
         (planAmount );
 
-    const additionalPaxAmount = (doc.selectedRooms || []).reduce(
-      (total, room) => {
-        const originalStayDays = Number(room?.stayDays || 1);
-        const originalFullDays = Math.floor(originalStayDays);
 
-        let effectiveFullDays = originalFullDays;
+//   const arrivalDate = normalizeDate(doc?.arrivalDate);
+//   const checkoutDate = normalizeDate(doc?.checkOutDate);
 
-        // Old room before swap
-        if (room?.isSwapped && room?.swappingDateFrom) {
-          const swappingDate = new Date(room.swappingDateFrom);
-          const arrivalDate = new Date(doc?.arrivalDate);
+//   if (!room?.swappingDateFrom) {
+//     return Math.max(Number(room?.stayDays || 0), 0);
+//   }
 
-          effectiveFullDays = Math.floor(
-            (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
-          );
+//   const swappingDate = normalizeDate(room.swappingDateFrom);
 
-          if (effectiveFullDays <= 0) effectiveFullDays = 1;
-        }
-        // New room after swap
-        else if (!room?.isSwapped && room?.swappingDateFrom) {
-          const swappingDate = new Date(room.swappingDateFrom);
-          const checkoutDate = new Date(doc?.checkOutDate);
+//   // Old room before swap
+//   if (room?.isSwapped) {
+//     return Math.max(
+//       Math.floor((swappingDate - arrivalDate) / (1000 * 60 * 60 * 24)),
+//       0,
+//     );
+//   }
 
-          effectiveFullDays = Math.floor(
-            (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
-          );
+//   // New room after swap
+//   return Math.max(
+//     Math.floor((checkoutDate - swappingDate) / (1000 * 60 * 60 * 24)),
+//     0,
+//   );
+// };
 
-          if (effectiveFullDays <= 0) effectiveFullDays = 1;
-        }
+const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
+  const originalStayDays = Math.max(Number(room?.stayDays || 0), 0);
+  const effectiveStayDays = calculateStayDays(doc, room, doc?.arrivalDate, doc?.checkOutDate, originalStayDays);
 
-        const totalPaxWithoutTax = Number(
-          room?.additionalPaxAmountWithOutTax || 0,
-        );
+  const totalPaxWithoutTax = Number(room?.additionalPaxAmountWithOutTax || 0);
 
-        // Per-day pax charge based on original room stay
-        const paxPerDay =
-          originalFullDays > 0 ? totalPaxWithoutTax / originalFullDays : 0;
+  const paxPerDay =
+    originalStayDays > 0 ? totalPaxWithoutTax / originalStayDays : 0;
 
-        return total + paxPerDay * effectiveFullDays;
-      },
-      0,
-    );
+  return total + paxPerDay * effectiveStayDays;
+}, 0);
     console.log(dateWiseLines);
     console.log(roomTariffTotal);
     console.log(additionalPaxAmount);
@@ -871,13 +866,20 @@ console.log(merged);
           0,
         );
 
+        const totalAdditionalPaxWithTax = roomDays.reduce(
+          (sum, i) => sum + (i.additionalPaxDataWithTax || 0),
+          0,
+        );
+
+        console.log(totalAdditionalPaxWithTax - totalAdditionalPaxWithoutTax);
+
         if (totalAdditionalPaxWithoutTax > 0) {
           charges.push({
             date: roomArrivalDate,
             description: `Extra Person`,
             docNo: "-",
             amount: totalAdditionalPaxWithoutTax,
-            taxes: 0,
+            taxes: totalAdditionalPaxWithTax - totalAdditionalPaxWithoutTax,
             advance: "",
             roomName,
           });
@@ -901,6 +903,7 @@ console.log(merged);
                   totalAdditionalPaxWithoutTax) *
                 100
               : 0;
+              
           const halfAdditionalPaxTaxPercentage = additionalPaxTaxPercentage / 2;
 
           const paxCGST = roomAdditionalPaxTax / 2;
@@ -1206,7 +1209,7 @@ console.log(merged);
       summary: {
         roomRent: (
           Number(roomTariffTotal || 0) +
-          Number(additionalPaxAmount || 0) +
+          // Number(additionalPaxAmount || 0) +
           Number(otherChargesAmount || 0) -
           Number(roomWiseDiscount || 0)
         ).toFixed(2),
@@ -2291,6 +2294,29 @@ ${hotelName}`;
                           </td>
                         </tr>
                       )}
+                    {activeMode !== "restaurant" &&
+                      billData?.summary?.additionalPax > 0 && (
+                        <tr>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                            Additional Pax 
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {Number(
+                              billData?.summary?.additionalPax || 0,
+                            ).toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                        </tr>
+                      )}
                     {activeMode !== "restaurant" && billData?.summary?.sgst && (
                       <tr>
                         <td
@@ -2385,7 +2411,7 @@ ${hotelName}`;
                           <td
                             style={{ border: "1px solid #000", padding: "4px" }}
                           >
-                            Newly added restaurant discount
+                            Restaurant Side Discount
                           </td>
                           <td
                             style={{

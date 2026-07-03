@@ -151,8 +151,6 @@ function EditChecking() {
   const handleSubmit = async (payload, paymentData,paymenttypeDetails) => {
     console.log(payload,paymentData,paymenttypeDetails)
     try {
-
-
       const response = await api.put(
         `/api/sUsers/updateRoomBooking/${editData._id}`,
         {
@@ -193,7 +191,7 @@ function EditChecking() {
         <div>
           <TitleDiv
             title={isTariffRateChange ? "Edit Tariff Rate" : "Edit Checking"}
-            from="/sUsers/hotelDashBoard"
+            from="/sUsers/checkInList"
             dropdownContents={
               !isTariffRateChange
                 ? [

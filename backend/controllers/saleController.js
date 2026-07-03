@@ -440,6 +440,7 @@ export const cancelSale = async (req, res) => {
 
       if (checkout && !checkout.isCancelled) {
         checkout.isCancelled = true;
+         checkout.status = "cancelled";
         checkout.cancelledAt = new Date();
         checkout.cancelledBy = req.sUserId;
         checkout.cancelledByName = req.suser?.name || "";

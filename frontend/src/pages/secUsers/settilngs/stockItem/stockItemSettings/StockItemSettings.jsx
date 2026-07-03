@@ -118,6 +118,16 @@ const StockItemSettings = () => {
             toggleValue: configurations[0]?.foodPlaWithRoomRate,
             dbField: "foodPlaWithRoomRate",
           },
+            {
+            title: "Add Additional pax with room rate",
+            description: "Add additional pax with room rate for better organization",
+            icon: <LiaMoneyCheckAltSolid />,
+            to: "sec",
+            active: true,
+            toggle: true,
+            toggleValue: configurations[0]?.additionalPaxWithRoomRate,
+            dbField: "additionalPaxWithRoomRate",
+          },
           {
             title: "addRateWithTax",
             description: "Better tax calculations for better organization",

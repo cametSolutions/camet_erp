@@ -21,7 +21,13 @@ const Settings = () => {
       to: "/sUsers/StockItem",
       active: true,
     },
-   
+    {
+      title: industry === 6 || industry === 7 || industry === 8 ? "PERMISSION SETTINGS" : "SECURITY",
+      description: "make you permisiion settings",
+      icon: <HiTemplate />,
+      to: "/sUsers/MenuRightsSettingsPage",
+      active: true,
+    },
     {
       title: "PARTIES",
       description: "Configure your Parties",

@@ -5,7 +5,8 @@ export const taxCalculator = (
   inclusive = false,
   formData = null,
   taxCalculationRoomId = null,
-  includeFoodRateWithRoom
+  includeFoodRateWithRoom,
+  includePaxRateWithRoom,
 ) => {
   try {
     if (!data || typeof data !== "object") {
@@ -19,14 +20,14 @@ export const taxCalculator = (
     console.log("inclusive", inclusive);
     console.log("formData", formData);
     console.log("taxCalculationRoomId", taxCalculationRoomId);
-    console.log("includeFoodRateWithRoom", includeFoodRateWithRoom);
+    console.log("includeFoodRateWithRoom", includePaxRateWithRoom);
 
     const reducedAdditionalPaxAmount = Math.round(
       taxCalculationRoomId
         ? formData?.additionalPaxDetails?.reduce(
             (acc, item) =>
               item.roomId === taxCalculationRoomId
-                ? acc + (Number(item.rate) || 0) * Number(data?.stayDays || 1)
+                ? acc + (Number(item.rate) || 0) * Number(data?.stayDays )
                 : acc,
             0,
           ) || 0
@@ -38,7 +39,7 @@ export const taxCalculator = (
         ? formData?.foodPlan?.reduce(
             (acc, item) =>
               item.roomId === taxCalculationRoomId
-                ? acc + (Number(item.rate) || 0) * Number(data?.stayDays || 1)
+                ? acc + (Number(item.rate) || 0) * Number(data?.stayDays )
                 : acc,
             0,
           ) || 0
@@ -49,26 +50,27 @@ export const taxCalculator = (
     const otherChargeAmt = Number(data?.otherChargeAmount || 0);
 
     const baseAmount = Number(data?.totalAmount || 0);
-    console.log("baseAmount",baseAmount);
+    console.log("baseAmount",includePaxRateWithRoom);
     const isOffline = formData?.bookingType === "offline";
 
+    console.log(baseAmount)
     // totalAmount for tax slab detection
     // includeFoodRateWithRoom = true  → food already inside baseAmount, don't add again
     // includeFoodRateWithRoom = false → food is separate, add for correct slab detection
-    let totalAmount = Math.round(baseAmount + reducedAdditionalPaxAmount ) 
-    
+    let totalAmount = Math.round(baseAmount + (includePaxRateWithRoom ? 0 : reducedAdditionalPaxAmount ) )
     if (!includeFoodRateWithRoom && !isOffline) {
       totalAmount += reducedFoodPlanAmount;
     }
-
-    console.log( data.priceLevelRate)
+    let rate = includePaxRateWithRoom ? (data.priceLevelRate - (reducedAdditionalPaxAmount/data.stayDays)) : data.priceLevelRate;
+     rate = includeFoodRateWithRoom ? (rate - reducedFoodPlanAmount/data.stayDays) : rate;
+     console.log("rate", rate);
     // Tax slab detection
     let taxRate = 0;
     let applicableSlab = null;
 
     if (Array.isArray(hsnDetails?.rows)) {
       for (const row of hsnDetails.rows) {
-        const slab = getApplicableTaxSlab(row, data.priceLevelRate);
+        const slab = getApplicableTaxSlab(row, rate);
         if (slab) {
           applicableSlab = slab;
           taxRate = Number(slab.igstRate || 0);
@@ -92,15 +94,21 @@ export const taxCalculator = (
       inclusive ? totalAmount : totalAmount + taxAmount
     );
 
+
     // Food plan tax rate: offline always 5%, online same slab as room
     const foodPlanTaxRate = isOffline ? 5 : taxRate;
-
     // Additional pax with tax
     const additionalPaxAmountWithTax = Math.round(
       inclusive
         ? reducedAdditionalPaxAmount
         : reducedAdditionalPaxAmount +
             (reducedAdditionalPaxAmount * taxRate) / 100
+    );
+
+    let additionalPaxAmountWithOutTax = Math.round(
+      inclusive
+        ? reducedAdditionalPaxAmount / (1 + taxRate / 100)
+        : reducedAdditionalPaxAmount
     );
 
     // Food plan tax handling
@@ -135,8 +143,7 @@ export const taxCalculator = (
       );
     }
  amountWithTax = Math.round((amountWithTax + (otherChargeAmt || 0 ) ) - (discountAmt || 0 ));
- console.log("amountWithTax", amountWithTax);
- console.log("amountWithTax", foodPlanAmountWithTax ,includeFoodRateWithRoom);
+
     // Offline: food tax always added on top separately
     if (isOffline && !includeFoodRateWithRoom) {
       amountWithTax = Math.round(amountWithTax + foodPlanAmountWithTax);
@@ -184,7 +191,7 @@ export const taxCalculator = (
       totalSgstAmt:    Math.round(totalTaxForSplit / 2),
       totalIgstAmt:    Math.round(totalTaxForSplit),
       additionalPaxAmountWithTax,
-      additionalPaxAmountWithOutTax: Math.round(reducedAdditionalPaxAmount),
+      additionalPaxAmountWithOutTax,
       foodPlanAmountWithTax,
       foodPlanAmountWithOutTax,
       foodPlanTaxAmount,

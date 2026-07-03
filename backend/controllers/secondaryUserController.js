@@ -114,7 +114,10 @@ export const login = async (req, res) => {
     return res.status(200).json({
       message: "Login successful",
       token,
-      data: { email, name, _id, mobile, role: secUser.role || "user" },
+      data: { email, name, _id, mobile, role: secUser.role || "user", userType: secUser.userType || secUser.role || "user",
+        permissions: secUser.permissions || {},
+        primaryUser: secUser.primaryUser || null,
+        organization: secUser.organization || [], },
     });
   } catch (error) {
     return res.status(500).json({ status: false, message: "Failed to login!" });

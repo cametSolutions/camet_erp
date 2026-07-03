@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useMemo } from "react";
 import api from "@/api/api";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -6,7 +6,7 @@ import TitleDiv from "@/components/common/TitleDiv";
 import RoomName from "@/pages/Hotel/Components/RoomName";
 
 
-/* ===================== Helpers ===================== */
+
 
 const formatDisplayDate = (dateStr) => {
   if (!dateStr) return "";
@@ -29,7 +29,10 @@ const computeKotBreakdown = (salesData) => {
 
 const round2 = (value) => Math.round(value || 0); // integer rounding
 
-/* ===================== PDF Export ===================== */
+
+
+
+
 
 export const generatePDF = (
   salesData,
@@ -645,6 +648,8 @@ const BillSummary = () => {
 
   const [kotTypeFilter, setKotTypeFilter] = useState("all");
   const [mealPeriodFilter, setMealPeriodFilter] = useState("all");
+const [searchTerm, setSearchTerm] = useState("");
+
 
   const [businessType, setBusinessType] = useState(null);
   const [summary, setSummary] = useState({
@@ -786,10 +791,38 @@ console.log(salesData);
       mealPeriodFilter === "all" || item.mealPeriod === mealPeriodFilter;
     return kotMatch && mealMatch;
   });
+ const searchedSalesData = useMemo(() => {
+    const keyword = searchTerm.trim().toLowerCase();
+
+    if (!keyword) return filteredSalesData;
+
+    return filteredSalesData.filter((item) =>
+      [
+        item.billNo,
+        item.partyName,
+        item.guestName,
+        item.creditDescription,
+        item.roomNumber,
+        item.kotType,
+        item.mealPeriod,
+        item.PaymentModeArray?.join(", "),
+        item.totalWithTax,
+        item.amount,
+        item.cash,
+        item.upi,
+        item.bank,
+        item.card,
+        item.credit,
+        item.disc,
+      ].some((value) =>
+        String(value ?? "").toLowerCase().includes(keyword)
+      )
+    );
+  }, [filteredSalesData, searchTerm]);
 
   const clearError = () => setError(null);
 
-  const totals = filteredSalesData.reduce(
+  const totals = searchedSalesData.reduce(
     (acc, item) => {
       const grossAmount = (item.amount || 0) - (item.igst || 0);
       return {
@@ -803,9 +836,9 @@ console.log(salesData);
         totalWithTax: acc.totalWithTax + (item.totalWithTax || 0),
         cash: acc.cash + Number(item.cash || 0),
         credit: acc.credit + Number(item.credit || 0),
-        upi: acc.upi + (Number(item.upi) ? Number(item.upi) || 0 : 0),
+        upi: acc.upi + Number(item.upi || 0),
         bank: acc.bank + Number(item.bank || 0),
-        card: acc.card + (Number(item.card) ? Number(item.card) || 0 : 0),
+        card: acc.card + Number(item.card || 0),
       };
     },
     {
@@ -822,7 +855,7 @@ console.log(salesData);
       upi: 0,
       bank: 0,
       card: 0,
-    },
+    }
   );
 
   const { kotTypes, mealPeriods } = getFilterOptions();
@@ -928,7 +961,16 @@ console.log(filteredSalesData);
         disabled={loading}
         className="h-8 px-2.5 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-800 focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 cursor-pointer"
       />
-    </div>
+    </div><div className="flex flex-col gap-1">
+ 
+  <input
+    type="text"
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    placeholder="Search room, guest, bill, amount..."
+    className="h-8 rounded-md border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
+  />
+</div>
 
     {/* Separator */}
     <div className="h-6 w-px bg-gray-200 shrink-0" />
@@ -1060,12 +1102,7 @@ console.log(filteredSalesData);
 
           {reportPeriod && (
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 text-xs md:text-sm text-gray-600">
-              <div>
-                Period:{" "}
-                <span className="font-semibold text-gray-900">
-                  {reportPeriod}
-                </span>
-              </div>
+             
               <div className="mt-1 md:mt-0">
                 Printed at{" "}
                 <span className="font-semibold text-blue-700">
@@ -1157,7 +1194,7 @@ console.log(filteredSalesData);
                 </tr>
               </thead>
               <tbody>
-                {!loading && filteredSalesData.length === 0 ? (
+                {!loading && searchedSalesData.length === 0 ? (
                   <tr>
                     <td
                       colSpan={businessType !== "hotel" ? 19 : 17}
@@ -1171,7 +1208,7 @@ console.log(filteredSalesData);
                     </td>
                   </tr>
                 ) : (
-                  filteredSalesData.map((row, index) => {
+                  searchedSalesData.map((row, index) => {
                     const isCreditSale =
                       row.partyAccount === "Sundry Debtors" ||
                       row.mode === "Credit" ||
@@ -1274,7 +1311,7 @@ console.log(filteredSalesData);
                   })
                 )}
 
-                {filteredSalesData.length > 0 && (
+                {searchedSalesData.length > 0 && (
                   <tr className="bg-gray-900 text-white font-semibold">
                     <td className="border border-gray-800 px-2 py-2 text-left">
                       Total
@@ -1536,7 +1573,7 @@ console.log(filteredSalesData);
                         Total Transactions
                       </td>
                       <td className="text-right py-2 px-2 font-semibold text-sm text-gray-900">
-                        {filteredSalesData.length}
+                        {searchedSalesData.length}
                       </td>
                     </tr>
                   </tbody>
@@ -1566,7 +1603,7 @@ console.log(filteredSalesData);
             <div className="flex flex-wrap justify-center gap-3">
               <button
                 onClick={handlePDFExport}
-                disabled={filteredSalesData.length === 0}
+                disabled={searchedSalesData.length === 0}
                 className="px-5 py-2 rounded-full bg-red-600 text-white text-xs md:text-sm font-semibold shadow-md hover:bg-red-700 disabled:bg-gray-400 flex items-center gap-2"
               >
                 Export PDF

@@ -394,6 +394,9 @@ export const createSaleRecord = async (
       note,
     } = req.body;
 
+    console.log(party);
+    
+
     const Primary_user_id = req.owner;
     const Secondary_user_id = req.sUserId;
 
@@ -425,7 +428,7 @@ export const createSaleRecord = async (
     if (lastUserSale && !isNaN(lastUserSale.userLevelSerialNumber)) {
       newUserLevelSerial = lastUserSale.userLevelSerialNumber + 1;
     }
-console.log("line 428 saleshelper")
+
     const sales = new model({
       selectedGodownDetails,
       serialNumber: newSerialNumber,
@@ -1282,7 +1285,6 @@ export const changeConversionStatusOfOrder = async (convertedFrom, session) => {
     throw error;
   }
 };
-
 
 export const reverseConversionStatusOfOrder = async (
   convertedFrom,

@@ -1069,3 +1069,68 @@ if (subDetail === "selectedVoucherSeries" && voucherType) {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
+// @desc get user permissions by id
+// route GET /api/sUsers/getUserPermissions/:id
+export const getUserPermissions = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await SecondaryUser.findById(userId).select(
+      "name email mobile role permissions organization primaryUser"
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    console.error("getUserPermissions error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
+
+
+// @desc update user permissions
+// route PATCH /api/sUsers/updateUserPermissions/:id
+export const updateUserPermissions = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { permissions } = req.body;
+
+    const user = await SecondaryUser.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    user.permissions = permissions || {};
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Permissions updated successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("updateUserPermissions error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error, try again!",
+    });
+  }
+};
