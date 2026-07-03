@@ -603,48 +603,48 @@ console.log(merged);
       : dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0) -
         (planAmount );
 
-    const additionalPaxAmount = (doc.selectedRooms || []).reduce(
-      (total, room) => {
-        const originalStayDays = Number(room?.stayDays || 1);
-        const originalFullDays = Math.floor(originalStayDays);
+   const normalizeDate = (value) => {
+  const d = new Date(value);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
 
-        let effectiveFullDays = originalFullDays;
+const getEffectiveStayDays = (doc, room) => {
+  const arrivalDate = normalizeDate(doc?.arrivalDate);
+  const checkoutDate = normalizeDate(doc?.checkOutDate);
 
-        // Old room before swap
-        if (room?.isSwapped && room?.swappingDateFrom) {
-          const swappingDate = new Date(room.swappingDateFrom);
-          const arrivalDate = new Date(doc?.arrivalDate);
+  if (!room?.swappingDateFrom) {
+    return Math.max(Number(room?.stayDays || 0), 0);
+  }
 
-          effectiveFullDays = Math.floor(
-            (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
-          );
+  const swappingDate = normalizeDate(room.swappingDateFrom);
 
-          if (effectiveFullDays <= 0) effectiveFullDays = 1;
-        }
-        // New room after swap
-        else if (!room?.isSwapped && room?.swappingDateFrom) {
-          const swappingDate = new Date(room.swappingDateFrom);
-          const checkoutDate = new Date(doc?.checkOutDate);
-
-          effectiveFullDays = Math.floor(
-            (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
-          );
-
-          if (effectiveFullDays <= 0) effectiveFullDays = 1;
-        }
-
-        const totalPaxWithoutTax = Number(
-          room?.additionalPaxAmountWithOutTax || 0,
-        );
-
-        // Per-day pax charge based on original room stay
-        const paxPerDay =
-          originalFullDays > 0 ? totalPaxWithoutTax / originalFullDays : 0;
-
-        return total + paxPerDay * effectiveFullDays;
-      },
+  // Old room before swap
+  if (room?.isSwapped) {
+    return Math.max(
+      Math.floor((swappingDate - arrivalDate) / (1000 * 60 * 60 * 24)),
       0,
     );
+  }
+
+  // New room after swap
+  return Math.max(
+    Math.floor((checkoutDate - swappingDate) / (1000 * 60 * 60 * 24)),
+    0,
+  );
+};
+
+const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
+  const originalStayDays = Math.max(Number(room?.stayDays || 0), 0);
+  const effectiveStayDays = getEffectiveStayDays(doc, room);
+
+  const totalPaxWithoutTax = Number(room?.additionalPaxAmountWithOutTax || 0);
+
+  const paxPerDay =
+    originalStayDays > 0 ? totalPaxWithoutTax / originalStayDays : 0;
+
+  return total + paxPerDay * effectiveStayDays;
+}, 0);
     console.log(dateWiseLines);
     console.log(roomTariffTotal);
     console.log(additionalPaxAmount);

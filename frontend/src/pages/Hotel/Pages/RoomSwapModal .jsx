@@ -131,6 +131,8 @@ const RoomSwapModal = ({
       setSearchTerm("");
     }
   };
+
+  console.log(formData)
   const flattenedGuests = useMemo(() => {
     return (checkedInGuests || []).flatMap((guest) =>
       (guest?.selectedRooms || [])

@@ -416,7 +416,7 @@ router.post('/fetchOutStandingAndFoodData/:cmp_id',authSecondary,fetchOutStandin
 router.post('/convertCheckOutToSale/:cmp_id',authSecondary,convertCheckOutToSale)
 router.put('/updateConfigurationForHotelAndRestaurant/:cmp_id',authSecondary,updateConfigurationForHotelAndRestaurant)
 router.put('/updateConfigurationForKotApproval/:cmp_id',authSecondary,updateConfigurationForKotApproval)
-router.put("/swapRoom/:checkInId", swapRoom);
+router.put("/swapRoom/:checkInId",authSecondary, swapRoom);
 router.get("/getRoomSwapHistory/:checkInId",getRoomSwapHistory);
 router.get("/getCheckedInGuests/:cmp_id", checkedInGuest);
 router.get('/summary', getSummaryDashboard);
