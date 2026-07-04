@@ -21,7 +21,7 @@ import {
   handleBillDownloadPDF,
   generateBillPDFAsBase64,
 } from "../PrintSide/generateBillPrintPDF";
-
+import {calculateStayDays} from "../Helper/hotelHelper";
 import Swal from "sweetalert2";
 import { constructNow } from "date-fns";
 const HotelBillPrint = () => {
@@ -603,40 +603,34 @@ console.log(merged);
       : dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0) -
         (planAmount );
 
-   const normalizeDate = (value) => {
-  const d = new Date(value);
-  d.setHours(0, 0, 0, 0);
-  return d;
-};
 
-const getEffectiveStayDays = (doc, room) => {
-  const arrivalDate = normalizeDate(doc?.arrivalDate);
-  const checkoutDate = normalizeDate(doc?.checkOutDate);
+//   const arrivalDate = normalizeDate(doc?.arrivalDate);
+//   const checkoutDate = normalizeDate(doc?.checkOutDate);
 
-  if (!room?.swappingDateFrom) {
-    return Math.max(Number(room?.stayDays || 0), 0);
-  }
+//   if (!room?.swappingDateFrom) {
+//     return Math.max(Number(room?.stayDays || 0), 0);
+//   }
 
-  const swappingDate = normalizeDate(room.swappingDateFrom);
+//   const swappingDate = normalizeDate(room.swappingDateFrom);
 
-  // Old room before swap
-  if (room?.isSwapped) {
-    return Math.max(
-      Math.floor((swappingDate - arrivalDate) / (1000 * 60 * 60 * 24)),
-      0,
-    );
-  }
+//   // Old room before swap
+//   if (room?.isSwapped) {
+//     return Math.max(
+//       Math.floor((swappingDate - arrivalDate) / (1000 * 60 * 60 * 24)),
+//       0,
+//     );
+//   }
 
-  // New room after swap
-  return Math.max(
-    Math.floor((checkoutDate - swappingDate) / (1000 * 60 * 60 * 24)),
-    0,
-  );
-};
+//   // New room after swap
+//   return Math.max(
+//     Math.floor((checkoutDate - swappingDate) / (1000 * 60 * 60 * 24)),
+//     0,
+//   );
+// };
 
 const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
   const originalStayDays = Math.max(Number(room?.stayDays || 0), 0);
-  const effectiveStayDays = getEffectiveStayDays(doc, room);
+  const effectiveStayDays = calculateStayDays(doc, room, doc?.arrivalDate, doc?.checkOutDate, originalStayDays);
 
   const totalPaxWithoutTax = Number(room?.additionalPaxAmountWithOutTax || 0);
 

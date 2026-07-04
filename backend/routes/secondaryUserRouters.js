@@ -351,7 +351,7 @@ router.post('/addAccountGroupIdToOutstanding', addAccountGroupIdToOutstanding)
 //// Hostel routes
 router.post('/saveAdditionalPax/:cmp_id', authSecondary, saveAdditionalPax)
 router.get('/getAdditionalPax/:cmp_id', authSecondary, getAdditionalPax)
-router.put('/updateAdditionalPax', authSecondary, updateAdditionalPax)
+router.put('/updateAdditionalPax/:cmp_id', authSecondary, updateAdditionalPax)
 router.delete('/deleteAdditionalPax/:cmp_id/:id', authSecondary, deleteAdditionalPax)
 router.post('/saveVisitOfPurpose/:cmp_id', authSecondary, saveVisitOfPurpose)
 router.get('/getVisitOfPurpose/:cmp_id', authSecondary, getVisitOfPurpose)

@@ -140,6 +140,7 @@ export const updateAdditionalPax = async (req, res) => {
     let nameAlreadyExists = await AdditionalPax.findOne({
       additionalPaxName,
       Primary_user_id: req.pUserId || req.owner,
+      cmp_id: req.params.cmp_id,
       _id: { $ne: id },
     });
 
@@ -8884,7 +8885,7 @@ export const getCancellationReport = async (req, res) => {
       })
         .populate("Secondary_user_id", "name")
         .select(
-          "voucherNumber updatedAt Secondary_user_id cancelReason bookingDate status cancelledAt cancelledBy",
+          "voucherNumber updatedAt Secondary_user_id cancelReason bookingDate status cancelledAt cancelledBy createdAt",
         );
 
       bookingCancels.forEach((b) => {
@@ -8897,6 +8898,7 @@ export const getCancellationReport = async (req, res) => {
           reason: b.cancelReason || "-",
           referenceNumber: b.voucherNumber || "-",
           bookingDate: b.bookingDate || "-",
+          date: b.createdAt || "-",
         });
       });
 
@@ -8911,7 +8913,7 @@ export const getCancellationReport = async (req, res) => {
       })
         .populate("Secondary_user_id", "name")
         .select(
-          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy",
+          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy createdAt",
         );
 
       checkinCancels.forEach((c) => {
@@ -8924,6 +8926,7 @@ export const getCancellationReport = async (req, res) => {
           reason: c.cancelReason || "-",
           referenceNumber: c.voucherNumber || "-",
           guestName: c.guestName || "-",
+          date: c.createdAt || "-",
         });
       });
 
@@ -8938,7 +8941,7 @@ export const getCancellationReport = async (req, res) => {
       })
         .populate("Secondary_user_id", "name")
         .select(
-          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy",
+          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy createdAt",
         );
 
       checkoutCancels.forEach((c) => {
@@ -8951,6 +8954,7 @@ export const getCancellationReport = async (req, res) => {
           reason: c.cancelReason || "-",
           referenceNumber: c.voucherNumber || "-",
           guestName: c.guestName || "-",
+          date: c.createdAt || "-",
         });
       });
 
@@ -8966,7 +8970,7 @@ export const getCancellationReport = async (req, res) => {
         .populate("secondary_user_id", "name")
          .populate("cancelledBy", "name")
         .select(
-          "voucherNumber cancelledAt cancelledBy secondary_user_id cancelReason tableNumber",
+          "voucherNumber cancelledAt cancelledBy secondary_user_id cancelReason tableNumber createdAt",
         );
 
       kotCancels.forEach((k) => {
@@ -8979,6 +8983,7 @@ export const getCancellationReport = async (req, res) => {
           reason: k.cancelReason || "-",
           referenceNumber: k.voucherNumber || "-",
           tableNumber: k.tableNumber || "-",
+          date: k.createdAt || "-",
         });
       });
 
@@ -9005,6 +9010,7 @@ export const getCancellationReport = async (req, res) => {
           reason: r.cancelReason || "-",
           referenceNumber: r.voucherNumber || "-",
           tableNumber: r.tableNumber || "-",
+          date: r.createdAt || "-",
         });
       });
 
@@ -9020,7 +9026,7 @@ export const getCancellationReport = async (req, res) => {
   })  .populate("Secondary_user_id", "name")
   .populate("cancelledBy", "name")
  .select(
-  "salesNumber updatedAt cancelledAt cancelledBy cancelledByName cancelReason partyName Secondary_user_id"
+  "salesNumber updatedAt cancelledAt cancelledBy cancelledByName cancelReason partyName Secondary_user_id date"
 );
 
   saleCancels.forEach((s) => {
@@ -9033,6 +9039,7 @@ export const getCancellationReport = async (req, res) => {
       reason: s.cancelReason || "-",
       referenceNumber: s.salesNumber || "-",
       partyName: s.partyName || "-",
+      date: s.date || "-",
     });
   });
 
