@@ -1225,7 +1225,7 @@ useEffect(() => {
   };
 
   const submitHandler = async () => {
-    console.log("ahiasi")
+       if (isSubmittingRef.current) return;
     if (isFormReadOnly || isSubmittingRef.current) return;
     if (!formData.customerName || formData.customerName.trim() === "") {
       toast.error("Please enter a customer name");
@@ -1237,7 +1237,7 @@ useEffect(() => {
     try {
 
 
-      isSubmittingRef.current = true;
+      // isSubmittingRef.current = true;
     setSaveLoader(true);
       const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
         params: {
@@ -1488,8 +1488,8 @@ useEffect(() => {
       // (Number(formData.advanceAmount) + Number(formData.deletedAmount) ) ==
       //   Number(editData?.advanceAmount)
     ) {
-      if (isSubmittingRef.current) return;
-      isSubmittingRef.current = true;
+      // if (isSubmittingRef.current) return;
+      // isSubmittingRef.current = true;
       console.log(payload);
       let paymenttypeDetails = {}
       handleSubmit(payload, null, paymenttypeDetails);
