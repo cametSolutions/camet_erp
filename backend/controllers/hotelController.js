@@ -5212,6 +5212,7 @@ export const cancelBooking = async (req, res) => {
       record.cancelledAt = new Date();
       record.cancelledBy = req.sUserId;
       record.cancelledByName = req.suser?.name || "";
+      record.cancelReason = req.body.cancelReason;
 
       await record.save({ session });
 
