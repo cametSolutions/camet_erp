@@ -48,6 +48,7 @@ import PrintModal from "../Components/PrintModal";
 import { calculateDiscountValues } from "../Helper/hotelHelper.js";
 import BookingListEditModal from "./BookingListEditModal";
 
+
 const normalizeAuditDate = (value) => {
   if (!value || typeof value !== "string") return "";
   return value.includes("T") ? value.split("T")[0] : value;
@@ -993,56 +994,251 @@ function BookingList() {
     setSelectedCustomer(selectcustomer);
   };
   console.log(selectedCheckOut);
-  const handleCancelBooking = async (id, voucherNumber) => {
-    const confirmation = await Swal.fire({
-      title: "Cancel Booking?",
-      html: `
-      <p>Are you sure you want to cancel booking <strong>${voucherNumber}</strong>?</p>
-      <p class="text-sm text-gray-600 mt-2">This will mark the booking as cancelled but keep it in the system for records.</p>
-    `,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#f59e0b",
-      cancelButtonColor: "#6b7280",
-      confirmButtonText: "Yes, cancel it!",
-      cancelButtonText: "No, keep it",
-    });
+const handleCancelBooking = async (id, voucherNumber) => {
+  const styleId = "cancel-booking-swal-style";
 
-    if (confirmation.isConfirmed) {
-      setLoader(true);
-      try {
-        const res = await api.put(
-          `/api/sUsers/cancelBooking/${id}`,
-          { status: "cancelled" },
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-            withCredentials: true,
-          },
-        );
-
-        await Swal.fire({
-          title: "Cancelled!",
-          text: res.data.message || "Booking has been cancelled successfully.",
-          icon: "success",
-          timer: 2000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-        });
-
-        fetchBookings(1, searchTerm);
-      } catch (error) {
-        toast.error(
-          error.response?.data?.message || "Failed to cancel booking",
-        );
-        console.log(error);
-      } finally {
-        setLoader(false);
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.innerHTML = `
+      .cancel-booking-popup {
+        border-radius: 14px !important;
+        box-shadow: 0 16px 45px rgba(0, 0, 0, 0.38) !important;
+        border: 1px solid rgba(255, 255, 255, 0.06) !important;
       }
-    }
-  };
 
+      .cancel-booking-html,
+      .cancel-success-html {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      .cancel-booking-body,
+      .cancel-success-body {
+        text-align: left;
+      }
+
+      .cancel-booking-title,
+      .cancel-success-title {
+        margin: 0 0 10px 0 !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        color: #ffffff !important;
+      }
+
+      .cancel-booking-text,
+      .cancel-success-text {
+        margin: 0 0 18px 0;
+        font-size: 13px;
+        line-height: 1.5;
+        color: #cbd5e1;
+      }
+
+      .cancel-booking-label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #ffffff;
+      }
+
+      .cancel-booking-label span {
+        color: #f87171;
+      }
+
+      .cancel-booking-textarea {
+        width: 100%;
+        min-height: 110px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        border: 1px solid #475569;
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 13px;
+        line-height: 1.5;
+        outline: none;
+        resize: vertical;
+        box-sizing: border-box;
+      }
+
+      .cancel-booking-textarea::placeholder {
+        color: #94a3b8;
+      }
+
+      .cancel-booking-textarea:focus {
+        border-color: #64748b;
+        box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.10);
+      }
+
+      .cancel-booking-actions {
+        margin-top: 18px !important;
+        display: flex !important;
+        justify-content: flex-end !important;
+        gap: 10px !important;
+      }
+
+      .cancel-booking-cancel {
+        height: 40px !important;
+        min-width: 110px !important;
+        padding: 0 18px !important;
+        border-radius: 8px !important;
+        border: 1px solid #cbd5e1 !important;
+        background: transparent !important;
+        color: #ffffff !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        margin: 0 !important;
+      }
+
+      .cancel-booking-cancel:hover {
+        background: rgba(255, 255, 255, 0.06) !important;
+      }
+
+      .cancel-booking-confirm {
+        height: 40px !important;
+        min-width: 118px !important;
+        padding: 0 18px !important;
+        border-radius: 8px !important;
+        border: none !important;
+        background: #ef4444 !important;
+        color: #ffffff !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        cursor: pointer !important;
+        margin: 0 !important;
+      }
+
+      .cancel-booking-confirm:hover {
+        background: #dc2626 !important;
+      }
+
+      .cancel-booking-validation {
+        margin: 8px 0 0 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        color: #fca5a5 !important;
+        font-size: 12px !important;
+        text-align: left !important;
+      }
+
+      .cancel-success-icon {
+        border-color: #22c55e !important;
+        color: #22c55e !important;
+        transform: scale(0.9);
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  const confirmation = await Swal.fire({
+    title: "",
+    html: `
+      <div class="cancel-booking-body">
+        <h2 class="cancel-booking-title">Are you sure?</h2>
+
+        <p class="cancel-booking-text">
+          You won't be able to revert this. Please enter a cancellation reason.
+        </p>
+
+        <label class="cancel-booking-label">
+          Reason <span>*</span>
+        </label>
+
+        <textarea
+          id="cancelReason"
+          class="cancel-booking-textarea"
+          placeholder="Enter cancellation reason..."
+        ></textarea>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: "Cancel it!",
+    cancelButtonText: "Go Back",
+    reverseButtons: true,
+    focusConfirm: false,
+    background: "#071633",
+    color: "#ffffff",
+    width: 620,
+    padding: "22px",
+    customClass: {
+      popup: "cancel-booking-popup",
+      htmlContainer: "cancel-booking-html",
+      actions: "cancel-booking-actions",
+      confirmButton: "cancel-booking-confirm",
+      cancelButton: "cancel-booking-cancel",
+      validationMessage: "cancel-booking-validation",
+    },
+    buttonsStyling: false,
+    preConfirm: () => {
+      const reason = document.getElementById("cancelReason")?.value?.trim();
+
+      if (!reason) {
+        Swal.showValidationMessage("Cancellation reason is required");
+        return false;
+      }
+
+      return { reason };
+    },
+    didOpen: () => {
+      const textarea = document.getElementById("cancelReason");
+      if (textarea) textarea.focus();
+    },
+  });
+
+  if (confirmation.isConfirmed) {
+    setLoader(true);
+    try {
+      const res = await api.put(
+        `/api/sUsers/cancelBooking/${id}`,
+        {
+          status: "cancelled",
+          cancelReason: confirmation.value.reason,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      await Swal.fire({
+        title: "Cancelled!",
+        html: `
+          <div class="cancel-success-body">
+            <p class="cancel-success-text">
+              ${res.data.message || "Booking has been cancelled successfully."}
+            </p>
+          </div>
+        `,
+        icon: "success",
+        background: "#071633",
+        color: "#ffffff",
+        width: 620,
+        padding: "22px",
+        confirmButtonText: "OK",
+        customClass: {
+          popup: "cancel-booking-popup",
+          title: "cancel-success-title",
+          htmlContainer: "cancel-success-html",
+          icon: "cancel-success-icon",
+          confirmButton: "cancel-booking-confirm",
+        },
+        buttonsStyling: false,
+      });
+
+      fetchBookings(1, searchTerm);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to cancel booking"
+      );
+      console.log(error);
+    } finally {
+      setLoader(false);
+    }
+  }
+};
   const handleDelete = async (id) => {
     const confirmation = await Swal.fire({
       title: "Are you sure?",

@@ -353,6 +353,10 @@ const salesSchema = new Schema(
       type: String,
       default: "",
     },
+    cancelReason: {
+      type: String,
+      default: "",
+    },
     checkInId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckIn" },
     checkOutId: { type: mongoose.Schema.Types.ObjectId, ref: "CheckOut" },
   },

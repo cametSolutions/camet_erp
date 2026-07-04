@@ -12,7 +12,7 @@ function AdditionalPaxDetails({
   includePaxRateWithRoom,
   setIncludePaxRateWithRoom
 }) {
-console.log(formData)
+
   const [additionalPax, setAdditionalPax] = useState([
     { paxID: "", paxName: 0, rate: "" }
   ])
