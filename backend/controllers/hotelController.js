@@ -140,6 +140,7 @@ export const updateAdditionalPax = async (req, res) => {
     let nameAlreadyExists = await AdditionalPax.findOne({
       additionalPaxName,
       Primary_user_id: req.pUserId || req.owner,
+      cmp_id: req.params.cmp_id,
       _id: { $ne: id },
     });
 
