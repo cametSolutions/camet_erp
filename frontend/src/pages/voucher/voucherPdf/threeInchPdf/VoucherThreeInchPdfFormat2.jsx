@@ -25,7 +25,7 @@ function VoucherThreeInchPdfFormat2({
   isPreview,
   sendToParent,
   selectedSaleDate,
-  setSelectedSaleDate
+  setSelectedSaleDate,
 }) {
   const [subTotal, setSubTotal] = useState(0);
   const isConfirmingRef = useRef(false);
@@ -200,10 +200,15 @@ function VoucherThreeInchPdfFormat2({
   };
 
   const netAmount = Math.round(Number(data?.finalAmount || 0)).toFixed(2);
-  const discount = Number(
-    data?.totalAdditionalCharges ||
-      data?.additionalCharges?.[0]?.finalValue ||
-      0,
+  const discount = Math.abs(
+    Number(
+      data?.totalAdditionalCharges ??
+        data?.additionalCharges?.[0]?.finalValue ??
+        0,
+    ),
+  ).toFixed(2);
+  let amountWithDiscount = Math.round(
+    Number(data?.finalAmount || 0) + Number(discount || 0),
   ).toFixed(2);
   const tax = Math.round(calculateTotalTax()).toFixed(2);
   const cgst = (calculateTotalTax() / 2).toFixed(2);
@@ -883,9 +888,9 @@ function VoucherThreeInchPdfFormat2({
 
           const rate = includeTaxWithPrint
             ? count > 0
-              ? (Number(addRate) + Number((totalTax / count).toFixed(2))).toFixed(
-                  2,
-                )
+              ? (
+                  Number(addRate) + Number((totalTax / count).toFixed(2))
+                ).toFixed(2)
               : "0.00"
             : addRate;
 
@@ -927,7 +932,11 @@ function VoucherThreeInchPdfFormat2({
                   }}
                 >
                   <div
-                    style={{ marginLeft: "auto", width: 60, textAlign: "right" }}
+                    style={{
+                      marginLeft: "auto",
+                      width: 60,
+                      textAlign: "right",
+                    }}
                   >
                     SubTotal
                   </div>
@@ -944,17 +953,69 @@ function VoucherThreeInchPdfFormat2({
                   }}
                 >
                   <div
-                    style={{ marginLeft: "auto", width: 60, textAlign: "right" }}
+                    style={{
+                      marginLeft: "auto",
+                      width: 60,
+                      textAlign: "right",
+                    }}
                   >
                     Discount
                   </div>
-                  <div style={{ width: 60, textAlign: "right" }}>{discount}</div>
+                  <div style={{ width: 60, textAlign: "right" }}>
+                    {discount}
+                  </div>
                 </div>
               </>
             )}
 
             {!data?.isComplimentary && (
               <>
+                {discountBasedOnGrossAmount && Number(discount) > 0 && (
+                  <>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        marginBottom: "2px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      <div
+                        style={{
+                          marginLeft: "auto",
+                          width: 80,
+                          textAlign: "right",
+                        }}
+                      >
+                        Total Amount
+                      </div>
+                      <div style={{ width: 60, textAlign: "right" }}>
+                        {amountWithDiscount}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        marginBottom: "2px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      <div
+                        style={{
+                          marginLeft: "auto",
+                          width: 80,
+                          textAlign: "right",
+                        }}
+                      >
+                        Discount
+                      </div>
+                      <div style={{ width: 60, textAlign: "right" }}>
+                        {discount}
+                      </div>
+                    </div>
+                  </>
+                )}
                 <div
                   style={{
                     display: "flex",
@@ -964,7 +1025,11 @@ function VoucherThreeInchPdfFormat2({
                   }}
                 >
                   <div
-                    style={{ marginLeft: "auto", width: 80, textAlign: "right" }}
+                    style={{
+                      marginLeft: "auto",
+                      width: 80,
+                      textAlign: "right",
+                    }}
                   >
                     Gross Amount
                   </div>
@@ -1012,7 +1077,11 @@ function VoucherThreeInchPdfFormat2({
               calculateTotalTax() > 0 && (
                 <div style={flexRow}>
                   <div
-                    style={{ marginLeft: "auto", width: 70, fontWeight: "bold" }}
+                    style={{
+                      marginLeft: "auto",
+                      width: 70,
+                      fontWeight: "bold",
+                    }}
                   >
                     IGST {igstPercentage}%
                   </div>
@@ -1048,7 +1117,9 @@ function VoucherThreeInchPdfFormat2({
                 color: isCancelled ? "#dc2626" : "inherit",
               }}
             >
-              {isCancelled ? `Cancelled Amount: ${netAmount}` : `Total: ${netAmount}`}
+              {isCancelled
+                ? `Cancelled Amount: ${netAmount}`
+                : `Total: ${netAmount}`}
             </div>
           </div>
           {getFoodPlan() && <div style={bold}>{getFoodPlan()}</div>}
@@ -1060,11 +1131,13 @@ function VoucherThreeInchPdfFormat2({
               fontWeight: "bold",
             }}
           >
-            {discountBasedOnGrossAmount && Number(discount) > 0 && (
-              <>
-                Discount: <span style={bold}>{discount || "0.00"}</span>
-              </>
-            )}
+            {discountBasedOnGrossAmount &&
+              data?.isComplimentary &&
+              Number(discount) > 0 && (
+                <>
+                  Discount: <span style={bold}>{discount || "0.00"}</span>
+                </>
+              )}
           </div>
         </div>
 
@@ -1081,7 +1154,9 @@ function VoucherThreeInchPdfFormat2({
             color: isCancelled ? "#dc2626" : "inherit",
           }}
         >
-          {isCancelled ? `CANCELLED AMOUNT: ${netAmount}` : `Net Amount: ${netAmount}`}
+          {isCancelled
+            ? `CANCELLED AMOUNT: ${netAmount}`
+            : `Net Amount: ${netAmount}`}
         </div>
 
         <div
