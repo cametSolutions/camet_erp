@@ -8032,6 +8032,7 @@ export const getFOSalesSummary = async (req, res) => {
         agentName: checkout.customerName,
         guestName: checkout.guestName,
         room: checkout.selectedRooms?.map((r) => r.roomName).join(", ") || "",
+        totalRoom: checkout.selectedRooms?.length || 0,
         days: checkout.stayDays || 0,
         extraPerson: extraPersonCount,
         plan: checkout.foodPlan?.[0]?.foodPlan || "",
