@@ -740,7 +740,7 @@ export default function FOSalesSummaryReport() {
                           <TD right>{formatNumber(row.planSaleAmount)}</TD>
                           <TD right>{formatNumber(row.cgst)}</TD>
                           <TD right>{formatNumber(row.sgst)}</TD>
-                          <TD>{row.rtBillNo}</TD>
+                          <TD >{row.rtBillNo}</TD>
                           <TD right>{formatNumber(row.restaurantSale)}</TD>
                           <TD right>{formatNumber(row.modSale)}</TD>
                           <TD right bold>
