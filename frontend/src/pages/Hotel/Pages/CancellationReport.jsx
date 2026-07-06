@@ -244,75 +244,10 @@ const CancellationReport = () => {
   };
 
   const handlePrintRow = (row) => {
-    const printWindow = window.open("", "_blank", "width=900,height=700");
-
-    if (!printWindow) return;
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Cancellation Record</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              padding: 24px;
-              color: #222;
-            }
-            h2 {
-              margin-bottom: 4px;
-              color: #1a3a5c;
-            }
-            .sub {
-              margin-bottom: 18px;
-              color: #555;
-              font-size: 13px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 12px;
-            }
-            th, td {
-              border: 1px solid #ccc;
-              padding: 10px;
-              text-align: left;
-              font-size: 13px;
-            }
-            th {
-              background: #f3f4f6;
-              width: 180px;
-            }
-            @media print {
-              body {
-                padding: 0;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <h2>Cancellation Record</h2>
-          <div class="sub">${owner?.companyName || owner?.name || ""}</div>
-          <table>
-            <tr><th>Type</th><td>${row.cancelType || "-"}</td></tr>
-            <tr><th>Voucher No</th><td>${row.voucherNumber || "-"}</td></tr>
-            <tr><th>Date</th><td>${row.date ? formatDisplayDate(row.date) : "-"}</td></tr>
-            <tr><th>Cancelled By</th><td>${row.cancelledByName || "-"}</td></tr>
-            <tr><th>Cancelled Date</th><td>${row.cancelledAt ? formatDisplayDate(row.cancelledAt) : "-"}</td></tr>
-            <tr><th>Reason</th><td>${row.reason || "-"}</td></tr>
-          </table>
-          <script>
-            window.onload = function() {
-              window.print();
-              window.onafterprint = function() {
-                window.close();
-              };
-            };
-          </script>
-        </body>
-      </html>
-    `);
-
-    printWindow.document.close();
+    console.log(row)
+    if(row.cancelType == "checkout"){
+      console.log("hia")
+    }
   };
 
   return (
