@@ -1151,14 +1151,13 @@ export const roomBooking = async (req, res) => {
 
       const isHotelAgent = customerData?.isHotelAgent || false;
 
-      
       // 🔹 Save Booking
       const newBooking = new selectedModal({
         cmp_id: orgId,
         Primary_user_id: req.pUserId || req.owner,
         Secondary_user_id: req.sUserId,
         paymenttypeDetails,
-        paymentMetaData:req?.body?.paymentData?.payments|| [],
+        paymentMetaData: req?.body?.paymentData?.payments || [],
 
         isHotelAgent,
         currentDate: new Date().toISOString().split("T")[0],
@@ -2135,7 +2134,7 @@ export const updateBooking = async (req, res) => {
       });
     }
 
-        // Remove paymenttypeDetails from bookingData to avoid $set overwriting it
+    // Remove paymenttypeDetails from bookingData to avoid $set overwriting it
     delete bookingData.paymenttypeDetails;
 
     // ✅ Build checkoutpaymenttypedetails from paymentData.payments
@@ -4240,7 +4239,6 @@ export const swapRoom = async (req, res) => {
       ? formData.additionalPaxDetails
       : [];
 
-      
     const newFoodPlan = Array.isArray(formData.foodPlan)
       ? formData.foodPlan
       : [];
@@ -5979,8 +5977,8 @@ export const getOtherCharges = async (req, res) => {
 export const getTouristReport = async (req, res) => {
   try {
     let { fromDate, toDate } = req.query;
-    let {cmp_id} = req.params
-    console.log("cmp_id",cmp_id)
+    let { cmp_id } = req.params;
+    console.log("cmp_id", cmp_id);
     const todayStr = new Date().toISOString().slice(0, 10);
     fromDate = fromDate || todayStr;
     toDate = toDate || todayStr;
@@ -5990,125 +5988,125 @@ export const getTouristReport = async (req, res) => {
         $gte: fromDate,
         $lte: toDate,
       },
-  cmp_id: new mongoose.Types.ObjectId(cmp_id),
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
     };
 
- const report = await CheckIn.aggregate([
-  { $match: match },
+    const report = await CheckIn.aggregate([
+      { $match: match },
 
-  {
-    $addFields: {
-      selectedRooms: { $ifNull: ["$selectedRooms", []] },
-      additionalPaxDetails: { $ifNull: ["$additionalPaxDetails", []] },
-    },
-  },
+      {
+        $addFields: {
+          selectedRooms: { $ifNull: ["$selectedRooms", []] },
+          additionalPaxDetails: { $ifNull: ["$additionalPaxDetails", []] },
+        },
+      },
 
-  {
-    $addFields: {
-      roomPaxTotal: {
-        $sum: {
-          $map: {
-            input: "$selectedRooms",
-            as: "room",
-            in: { $ifNull: ["$$room.pax", 0] },
+      {
+        $addFields: {
+          roomPaxTotal: {
+            $sum: {
+              $map: {
+                input: "$selectedRooms",
+                as: "room",
+                in: { $ifNull: ["$$room.pax", 0] },
+              },
+            },
+          },
+          additionalPaxCount: {
+            $size: "$additionalPaxDetails",
           },
         },
       },
-      additionalPaxCount: {
-        $size: "$additionalPaxDetails",
-      },
-    },
-  },
 
-  {
-    $addFields: {
-      totalPax: {
-        $add: ["$roomPaxTotal", "$additionalPaxCount"],
-      },
-      normalizedCountry: {
-        $trim: {
-          input: { $ifNull: ["$guestCountry", ""] },
+      {
+        $addFields: {
+          totalPax: {
+            $add: ["$roomPaxTotal", "$additionalPaxCount"],
+          },
+          normalizedCountry: {
+            $trim: {
+              input: { $ifNull: ["$guestCountry", ""] },
+            },
+          },
         },
       },
-    },
-  },
 
-  {
-    $addFields: {
-      groupedCountry: {
-        $cond: [
-          { $eq: ["$normalizedCountry", ""] },
-          "UNKNOWN",
-          { $toUpper: "$normalizedCountry" },
-        ],
-      },
-    },
-  },
-
-  {
-    $group: {
-      _id: "$groupedCountry",
-      pax: { $sum: "$totalPax" },
-      bookings: { $sum: 1 },
-    },
-  },
-
-  {
-    $project: {
-      _id: 0,
-      nation: "$_id",
-      pax: 1,
-      bookings: 1,
-    },
-  },
-
-  { $sort: { pax: -1, nation: 1 } },
-]);
-const unknownCountryDocs = await CheckIn.aggregate([
-  { $match: match },
-
-  {
-    $addFields: {
-      normalizedCountry: {
-        $trim: {
-          input: { $ifNull: ["$guestCountry", ""] },
+      {
+        $addFields: {
+          groupedCountry: {
+            $cond: [
+              { $eq: ["$normalizedCountry", ""] },
+              "UNKNOWN",
+              { $toUpper: "$normalizedCountry" },
+            ],
+          },
         },
       },
-    },
-  },
 
-  {
-    $addFields: {
-      groupedCountry: {
-        $cond: [
-          { $eq: ["$normalizedCountry", ""] },
-          "UNKNOWN",
-          { $toUpper: "$normalizedCountry" },
-        ],
+      {
+        $group: {
+          _id: "$groupedCountry",
+          pax: { $sum: "$totalPax" },
+          bookings: { $sum: 1 },
+        },
       },
-    },
-  },
 
-  {
-    $match: {
-      groupedCountry: "UNKNOWN",
-    },
-  },
+      {
+        $project: {
+          _id: 0,
+          nation: "$_id",
+          pax: 1,
+          bookings: 1,
+        },
+      },
 
-  {
-    $project: {
-      _id: 1,
-      guestName: 1,
-      guestCountry: 1,
-      normalizedCountry: 1,
-      checkInDate: 1,
-      selectedRooms: 1,
-      additionalPaxDetails: 1,
-    },
-  },
-]);
+      { $sort: { pax: -1, nation: 1 } },
+    ]);
+    const unknownCountryDocs = await CheckIn.aggregate([
+      { $match: match },
 
-console.log("UNKNOWN COUNTRY DOCS:", unknownCountryDocs);
+      {
+        $addFields: {
+          normalizedCountry: {
+            $trim: {
+              input: { $ifNull: ["$guestCountry", ""] },
+            },
+          },
+        },
+      },
+
+      {
+        $addFields: {
+          groupedCountry: {
+            $cond: [
+              { $eq: ["$normalizedCountry", ""] },
+              "UNKNOWN",
+              { $toUpper: "$normalizedCountry" },
+            ],
+          },
+        },
+      },
+
+      {
+        $match: {
+          groupedCountry: "UNKNOWN",
+        },
+      },
+
+      {
+        $project: {
+          _id: 1,
+          guestName: 1,
+          guestCountry: 1,
+          normalizedCountry: 1,
+          checkInDate: 1,
+          selectedRooms: 1,
+          additionalPaxDetails: 1,
+        },
+      },
+    ]);
+
+    console.log("UNKNOWN COUNTRY DOCS:", unknownCountryDocs);
     const totalPax = report.reduce(
       (sum, item) => sum + Number(item.pax || 0),
       0,
@@ -8050,12 +8048,8 @@ export const getFOSalesSummary = async (req, res) => {
         checkout.selectedRooms || [],
         checkout,
       );
-
-      const extraPersonCount =
-        checkout.selectedRooms?.reduce((total, room) => {
-          const pax = Number(room?.pax || 0);
-          return total + (pax > 2 ? pax - 2 : 0);
-        }, 0) || 0;
+      console.log(checkout);
+      const extraPersonCount = roomDetails?.additionalPaxCount
 
       const roomSaleAmount = Number(roomDetails?.taxableAmount || 0);
 
@@ -8120,14 +8114,18 @@ export const getFOSalesSummary = async (req, res) => {
         agentName: checkout?.customerName,
         guestName: checkout?.guestName,
         room:
-          checkout?.selectedRooms?.map((r) => r?.roomName).filter(Boolean).join(", ") ||
-          "",
+          checkout?.selectedRooms
+            ?.map((r) => r?.roomName)
+            .filter(Boolean)
+            .join(", ") || "",
         totalRoom: checkout?.selectedRooms?.length || 0,
         days: checkout?.stayDays || 0,
         extraPerson: extraPersonCount,
         plan: checkout?.foodPlan?.[0]?.foodPlan || "",
         roomSaleAmount,
         planSaleAmount: Number(roomDetails?.taxableSpecificFoodPlan || 0),
+        additionalPaxTaxAmount: Number(roomDetails?.additionalPaxTaxAmount || 0),
+        additionalPaxWithOutTax: Number(roomDetails?.additionalPaxWithoutTax || 0),
         cgst,
         sgst,
         totalTax: roundedTotalTax,
@@ -9063,7 +9061,7 @@ export const getCancellationReport = async (req, res) => {
         cancelledAt: { $gte: start, $lte: end },
       })
         .populate("secondary_user_id", "name")
-         .populate("cancelledBy", "name")
+        .populate("cancelledBy", "name")
         .select(
           "voucherNumber cancelledAt cancelledBy secondary_user_id cancelReason tableNumber createdAt _id",
         );
@@ -9075,7 +9073,8 @@ export const getCancellationReport = async (req, res) => {
           voucherId: k._id,
           cancelledAt: k.cancelledAt || null,
           cancelledBy: k.cancelledBy || "-",
-          cancelledByName: k.secondary_user_id?.name || k.cancelledBy?.name || "-",
+          cancelledByName:
+            k.secondary_user_id?.name || k.cancelledBy?.name || "-",
           reason: k.cancelReason || "-",
           referenceNumber: k.voucherNumber || "-",
           tableNumber: k.tableNumber || "-",
@@ -9115,31 +9114,34 @@ export const getCancellationReport = async (req, res) => {
       summary.total += receiptCancels.length;
     }
 
-   if (typesToFetch.includes("sale")) {
-  const saleCancels = await salesModel.find({
-    cmp_id: cmpObjectId,
-    isCancelled: true,
-    updatedAt: { $gte: start, $lte: end },
-  })  .populate("Secondary_user_id", "name")
-  .populate("cancelledBy", "name")
- .select(
-  "salesNumber updatedAt cancelledAt cancelledBy cancelledByName cancelReason partyName Secondary_user_id date _id"
-);
+    if (typesToFetch.includes("sale")) {
+      const saleCancels = await salesModel
+        .find({
+          cmp_id: cmpObjectId,
+          isCancelled: true,
+          updatedAt: { $gte: start, $lte: end },
+        })
+        .populate("Secondary_user_id", "name")
+        .populate("cancelledBy", "name")
+        .select(
+          "salesNumber updatedAt cancelledAt cancelledBy cancelledByName cancelReason partyName Secondary_user_id date _id",
+        );
 
-  saleCancels.forEach((s) => {
-    results.push({
-      cancelType: "sale",
-      voucherNumber: s.salesNumber || "-",
-      voucherId: s._id,
-      cancelledAt: s.cancelledAt || null,
-      cancelledBy: s.cancelledBy || "-",
-      cancelledByName: s.Secondary_user_id?.name ||  s.cancelledBy?.name || "-",
-      reason: s.cancelReason || "-",
-      referenceNumber: s.salesNumber || "-",
-      partyName: s.partyName || "-",
-      date: s.date || "-",
-    });
-  });
+      saleCancels.forEach((s) => {
+        results.push({
+          cancelType: "sale",
+          voucherNumber: s.salesNumber || "-",
+          voucherId: s._id,
+          cancelledAt: s.cancelledAt || null,
+          cancelledBy: s.cancelledBy || "-",
+          cancelledByName:
+            s.Secondary_user_id?.name || s.cancelledBy?.name || "-",
+          reason: s.cancelReason || "-",
+          referenceNumber: s.salesNumber || "-",
+          partyName: s.partyName || "-",
+          date: s.date || "-",
+        });
+      });
 
       summary.sale += saleCancels.length;
       summary.total += saleCancels.length;
@@ -9178,10 +9180,10 @@ export const getCancellationReport = async (req, res) => {
 
 export const additionalPaxDefaultSetting = async (req, res) => {
   try {
-    const { cmp_id, id ,selectedModal } = req.params;
+    const { cmp_id, id, selectedModal } = req.params;
     let modal = AdditionalPax;
-    if(selectedModal == "FoodPlan"){
-modal = FoodPlan
+    if (selectedModal == "FoodPlan") {
+      modal = FoodPlan;
     }
 
     await modal.updateMany({ cmp_id }, { $set: { isDefault: false } });
@@ -9244,14 +9246,14 @@ export const getDefaultPlan = async (req, res) => {
   try {
     const { cmp_id } = req.params;
 
-let defaultPlan = await FoodPlan.findOne({
-  cmp_id,
-  isDefault: true,
-});
+    let defaultPlan = await FoodPlan.findOne({
+      cmp_id,
+      isDefault: true,
+    });
 
-if (!defaultPlan) {
-  defaultPlan = await FoodPlan.findOne({ cmp_id });
-}
+    if (!defaultPlan) {
+      defaultPlan = await FoodPlan.findOne({ cmp_id });
+    }
     if (!defaultPlan) {
       return res.status(404).json({
         success: false,
@@ -9272,7 +9274,6 @@ if (!defaultPlan) {
     });
   }
 };
-
 
 export const getSpecificDataForPrint = async (req, res) => {
   try {
@@ -9296,7 +9297,7 @@ export const getSpecificDataForPrint = async (req, res) => {
       "checkInId",
     ];
 
-    if(under !== "kot"){
+    if (under !== "kot") {
     }
 
     const currentConfig = queryConfig[under];
@@ -9310,11 +9311,10 @@ export const getSpecificDataForPrint = async (req, res) => {
 
     let query = currentConfig.model.find(currentConfig.filter);
 
-
-     if(under !== "kot"){
-    populateFields.forEach((field) => {
-      query = query.populate(field);
-    });
+    if (under !== "kot") {
+      populateFields.forEach((field) => {
+        query = query.populate(field);
+      });
     }
     const data = await query;
 
