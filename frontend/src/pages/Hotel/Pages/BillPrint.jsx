@@ -1239,6 +1239,7 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
         advance: advanceTotal,
         netPay,
       },
+      isCancelled : doc?.status == "cancelled" ? true : false
     };
   };
 
@@ -1258,7 +1259,7 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
       const owns = docOwnsAdvances(doc);
       const useAdvances = owns ? true : idx === firstPrimaryIdx;
       const bill = prepareBillDataForDoc(doc, useAdvances);
-      console.log(bill.summary);
+      console.log(bill.isCancelled);
       // ── SPLIT MODE FILTERING ──────────────────────────────────────────────
       if (activeMode === "restaurant") {
         // Keep only restaurant / dine-in / room-service charges — NO advance
@@ -1767,7 +1768,7 @@ ${hotelName}`;
             }}
           >
             {/* Watermark */}
-            {isForPreview && (
+            {isForPreview && !billData.isCancelled && (
               <div
                 style={{
                   position: "absolute",
@@ -1787,6 +1788,28 @@ ${hotelName}`;
                 }}
               >
                 PROFORMA INVOICE
+              </div>
+            )}
+              { billData.isCancelled &&  (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%) rotate(-45deg)",
+                  fontSize: "80px",
+                  fontWeight: "bold",
+                  color: "rgba(255, 0, 0, 0.18)",
+                  whiteSpace: "nowrap",
+                  pointerEvents: "none",
+                  zIndex: 0,
+                  userSelect: "none",
+                  letterSpacing: "8px",
+                  width: "200%",
+                  textAlign: "center",
+                }}
+              >
+                CANCELLED INVOICE
               </div>
             )}
             {/* Header */}

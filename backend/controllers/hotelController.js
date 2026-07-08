@@ -5979,7 +5979,8 @@ export const getOtherCharges = async (req, res) => {
 export const getTouristReport = async (req, res) => {
   try {
     let { fromDate, toDate } = req.query;
-
+    let {cmp_id} = req.params
+    console.log("cmp_id",cmp_id)
     const todayStr = new Date().toISOString().slice(0, 10);
     fromDate = fromDate || todayStr;
     toDate = toDate || todayStr;
@@ -5989,69 +5990,125 @@ export const getTouristReport = async (req, res) => {
         $gte: fromDate,
         $lte: toDate,
       },
+  cmp_id: new mongoose.Types.ObjectId(cmp_id),
     };
 
-    const report = await CheckIn.aggregate([
-      { $match: match },
-      {
-        $addFields: {
-          selectedRooms: { $ifNull: ["$selectedRooms", []] },
-          additionalPaxDetails: { $ifNull: ["$additionalPaxDetails", []] },
-        },
-      },
-      {
-        $addFields: {
-          roomPaxTotal: {
-            $sum: {
-              $map: {
-                input: "$selectedRooms",
-                as: "room",
-                in: { $ifNull: ["$$room.pax", 0] },
-              },
-            },
-          },
-          additionalPaxCount: {
-            $size: "$additionalPaxDetails",
-          },
-        },
-      },
-      {
-        $addFields: {
-          totalPax: {
-            $add: ["$roomPaxTotal", "$additionalPaxCount"],
-          },
-          groupedCountry: {
-            $cond: [
-              {
-                $or: [
-                  { $eq: ["$guestCountry", null] },
-                  { $eq: ["$guestCountry", ""] },
-                ],
-              },
-              "UNKNOWN",
-              { $toUpper: "$guestCountry" },
-            ],
-          },
-        },
-      },
-      {
-        $group: {
-          _id: "$groupedCountry",
-          pax: { $sum: "$totalPax" },
-          bookings: { $sum: 1 },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          nation: "$_id",
-          pax: 1,
-          bookings: 1,
-        },
-      },
-      { $sort: { pax: -1, nation: 1 } },
-    ]);
+ const report = await CheckIn.aggregate([
+  { $match: match },
 
+  {
+    $addFields: {
+      selectedRooms: { $ifNull: ["$selectedRooms", []] },
+      additionalPaxDetails: { $ifNull: ["$additionalPaxDetails", []] },
+    },
+  },
+
+  {
+    $addFields: {
+      roomPaxTotal: {
+        $sum: {
+          $map: {
+            input: "$selectedRooms",
+            as: "room",
+            in: { $ifNull: ["$$room.pax", 0] },
+          },
+        },
+      },
+      additionalPaxCount: {
+        $size: "$additionalPaxDetails",
+      },
+    },
+  },
+
+  {
+    $addFields: {
+      totalPax: {
+        $add: ["$roomPaxTotal", "$additionalPaxCount"],
+      },
+      normalizedCountry: {
+        $trim: {
+          input: { $ifNull: ["$guestCountry", ""] },
+        },
+      },
+    },
+  },
+
+  {
+    $addFields: {
+      groupedCountry: {
+        $cond: [
+          { $eq: ["$normalizedCountry", ""] },
+          "UNKNOWN",
+          { $toUpper: "$normalizedCountry" },
+        ],
+      },
+    },
+  },
+
+  {
+    $group: {
+      _id: "$groupedCountry",
+      pax: { $sum: "$totalPax" },
+      bookings: { $sum: 1 },
+    },
+  },
+
+  {
+    $project: {
+      _id: 0,
+      nation: "$_id",
+      pax: 1,
+      bookings: 1,
+    },
+  },
+
+  { $sort: { pax: -1, nation: 1 } },
+]);
+const unknownCountryDocs = await CheckIn.aggregate([
+  { $match: match },
+
+  {
+    $addFields: {
+      normalizedCountry: {
+        $trim: {
+          input: { $ifNull: ["$guestCountry", ""] },
+        },
+      },
+    },
+  },
+
+  {
+    $addFields: {
+      groupedCountry: {
+        $cond: [
+          { $eq: ["$normalizedCountry", ""] },
+          "UNKNOWN",
+          { $toUpper: "$normalizedCountry" },
+        ],
+      },
+    },
+  },
+
+  {
+    $match: {
+      groupedCountry: "UNKNOWN",
+    },
+  },
+
+  {
+    $project: {
+      _id: 1,
+      guestName: 1,
+      guestCountry: 1,
+      normalizedCountry: 1,
+      checkInDate: 1,
+      selectedRooms: 1,
+      additionalPaxDetails: 1,
+    },
+  },
+]);
+
+console.log("UNKNOWN COUNTRY DOCS:", unknownCountryDocs);
     const totalPax = report.reduce(
       (sum, item) => sum + Number(item.pax || 0),
       0,
@@ -8920,13 +8977,14 @@ export const getCancellationReport = async (req, res) => {
       })
         .populate("Secondary_user_id", "name")
         .select(
-          "voucherNumber updatedAt Secondary_user_id cancelReason bookingDate status cancelledAt cancelledBy createdAt",
+          "voucherNumber updatedAt Secondary_user_id cancelReason bookingDate status cancelledAt cancelledBy createdAt _id",
         );
 
       bookingCancels.forEach((b) => {
         results.push({
           cancelType: "booking",
           voucherNumber: b.voucherNumber || "-",
+          voucherId: b._id,
           cancelledAt: b.cancelledAt || null,
           cancelledBy: b.cancelledBy || "-",
           cancelledByName: b.Secondary_user_id?.name || "-",
@@ -8948,13 +9006,14 @@ export const getCancellationReport = async (req, res) => {
       })
         .populate("Secondary_user_id", "name")
         .select(
-          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy createdAt",
+          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy createdAt _id",
         );
 
       checkinCancels.forEach((c) => {
         results.push({
           cancelType: "checkin",
           voucherNumber: c.voucherNumber || "-",
+          voucherId: c._id,
           cancelledAt: c.cancelledAt || null,
           cancelledBy: c.cancelledBy || "-",
           cancelledByName: c.Secondary_user_id?.name || "-",
@@ -8976,13 +9035,14 @@ export const getCancellationReport = async (req, res) => {
       })
         .populate("Secondary_user_id", "name")
         .select(
-          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy createdAt",
+          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy createdAt _id",
         );
 
       checkoutCancels.forEach((c) => {
         results.push({
           cancelType: "checkout",
           voucherNumber: c.voucherNumber || "-",
+          voucherId: c._id,
           cancelledAt: c.cancelledAt || null,
           cancelledBy: c.ScancelledBy || "-",
           cancelledByName: c.Secondary_user_id?.name || "-",
@@ -9005,13 +9065,14 @@ export const getCancellationReport = async (req, res) => {
         .populate("secondary_user_id", "name")
          .populate("cancelledBy", "name")
         .select(
-          "voucherNumber cancelledAt cancelledBy secondary_user_id cancelReason tableNumber createdAt",
+          "voucherNumber cancelledAt cancelledBy secondary_user_id cancelReason tableNumber createdAt _id",
         );
 
       kotCancels.forEach((k) => {
         results.push({
           cancelType: "kot",
           voucherNumber: k.voucherNumber || "-",
+          voucherId: k._id,
           cancelledAt: k.cancelledAt || null,
           cancelledBy: k.cancelledBy || "-",
           cancelledByName: k.secondary_user_id?.name || k.cancelledBy?.name || "-",
@@ -9039,6 +9100,7 @@ export const getCancellationReport = async (req, res) => {
         results.push({
           cancelType: "receipt",
           voucherNumber: r.receiptNumber || "-",
+          voucherId: r._id,
           cancelledAt: r.cancelledAt || null,
           cancelledBy: r.cancelledBy || "-",
           cancelledByName: r.Secondary_user_id?.name || "-",
@@ -9061,13 +9123,14 @@ export const getCancellationReport = async (req, res) => {
   })  .populate("Secondary_user_id", "name")
   .populate("cancelledBy", "name")
  .select(
-  "salesNumber updatedAt cancelledAt cancelledBy cancelledByName cancelReason partyName Secondary_user_id date"
+  "salesNumber updatedAt cancelledAt cancelledBy cancelledByName cancelReason partyName Secondary_user_id date _id"
 );
 
   saleCancels.forEach((s) => {
     results.push({
       cancelType: "sale",
       voucherNumber: s.salesNumber || "-",
+      voucherId: s._id,
       cancelledAt: s.cancelledAt || null,
       cancelledBy: s.cancelledBy || "-",
       cancelledByName: s.Secondary_user_id?.name ||  s.cancelledBy?.name || "-",
@@ -9206,6 +9269,71 @@ if (!defaultPlan) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
+    });
+  }
+};
+
+
+export const getSpecificDataForPrint = async (req, res) => {
+  try {
+    const { cmp_id, id, under } = req.params;
+
+    const queryConfig = {
+      checkout: { model: CheckOut, filter: { cmp_id, _id: id } },
+      sale: { model: CheckOut, filter: { cmp_id, voucherNumber: id } },
+      kot: { model: Kot, filter: { cmp_id, _id: id } },
+      booking: { model: Booking, filter: { cmp_id, _id: id } },
+      checkin: { model: CheckIn, filter: { cmp_id, _id: id } },
+    };
+
+    const populateFields = [
+      "customerId",
+      "guestId",
+      "agentId",
+      "isHotelAgent",
+      "selectedRooms.selectedPriceLevel",
+      "bookingId",
+      "checkInId",
+    ];
+
+    if(under !== "kot"){
+    }
+
+    const currentConfig = queryConfig[under];
+
+    if (!currentConfig) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid print type",
+      });
+    }
+
+    let query = currentConfig.model.find(currentConfig.filter);
+
+
+     if(under !== "kot"){
+    populateFields.forEach((field) => {
+      query = query.populate(field);
+    });
+    }
+    const data = await query;
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `${under} data not found`,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
     });
   }
 };

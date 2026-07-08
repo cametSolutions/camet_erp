@@ -84,7 +84,7 @@ import {
     getSalesByCheckInNumber,
     updateRestaurantSalePayments,
     getRestaurantSales,getTravelAgentSalesReport,getAgentList,getFOSalesSummary,
-    getCancellationReport,additionalPaxDefaultSetting,getDefault,getDefaultPlan
+    getCancellationReport,additionalPaxDefaultSetting,getDefault,getDefaultPlan,getSpecificDataForPrint
 } from '../controllers/hotelController.js'
 
 import { convertCheckOutToSale } from '../controllers/hotelController2CheckOut.js';
@@ -437,7 +437,7 @@ router.get('/otherCharges/:cmp_id', authSecondary, secondaryIsBlocked, companyAu
 router.get("/flash-report", getFlashReportForDate);
 router.get("/restaurant-category-wise-sales", getRestaurantCategoryWiseSalesReport);
 router.get("/restaurant-date-wise-item-report", getRestaurantDateWiseItemReport);
-router.get("/tourist-report", getTouristReport);
+router.get("/tourist-report/:cmp_id",authSecondary, getTouristReport);
 router.get("/travel-agent-sales", getTravelAgentSalesReport);
 router.get("/travel-agent-sales/agents", getAgentList);
 router.get("/foodplan-report", getFoodPlanReport);
@@ -466,6 +466,7 @@ router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
 router.put("/defaultSetting/:cmp_id/:id/:selectedModal", authSecondary, additionalPaxDefaultSetting);
 router.get("/getDefaultPax/:cmp_id", authSecondary, getDefault);
 router.get("/getDefaultPlan/:cmp_id", authSecondary, getDefaultPlan);
+router.get("/specificDataForPrint/:cmp_id/:id/:under", authSecondary, getSpecificDataForPrint);
 // Route to get detailed booking information for a specific room and date
 
 export default router

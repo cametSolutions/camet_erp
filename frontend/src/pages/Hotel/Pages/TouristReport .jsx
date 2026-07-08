@@ -14,14 +14,13 @@ const get29DaysAgo = () => {
 };
 
 const TouristReport = () => {
- const [filters, setFilters] = useState({
-  fromDate: get29DaysAgo(),  // ✅ 29 days ago
-  toDate: getToday(),
-});
- const cmp_id = useSelector(
-         (state) => state.secSelectedOrganization.secSelectedOrg._id
-       );
-
+  const [filters, setFilters] = useState({
+    fromDate: get29DaysAgo(), // ✅ 29 days ago
+    toDate: getToday(),
+  });
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id,
+  );
 
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState({
@@ -40,29 +39,18 @@ const TouristReport = () => {
     };
   }, []);
 
-  const formatDisplayDate = (value) => {
-    if (!value) return "";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
   const fetchReport = async () => {
     try {
       setLoading(true);
       setError("");
 
       // replace with your existing API endpoint
-      const response = await api.get("/api/sUsers/tourist-report", {
+      const response = await api.get(`/api/sUsers/tourist-report/${cmp_id}`, {
         params: {
           fromDate: filters.fromDate,
           toDate: filters.toDate,
-          cmp_id: cmp_id,
         },
+        withCredentials: true,
       });
 
       const result = response?.data;
@@ -73,14 +61,16 @@ const TouristReport = () => {
           totalPax:
             result?.summary?.totalPax ??
             result.data.reduce((sum, item) => sum + Number(item.pax || 0), 0),
-          totalNations:
-            result?.summary?.totalNations ?? result.data.length,
+          totalNations: result?.summary?.totalNations ?? result.data.length,
           totalBookings: result?.summary?.totalBookings ?? 0,
         });
       } else if (Array.isArray(result)) {
         setRows(result);
         setSummary({
-          totalPax: result.reduce((sum, item) => sum + Number(item.pax || 0), 0),
+          totalPax: result.reduce(
+            (sum, item) => sum + Number(item.pax || 0),
+            0,
+          ),
           totalNations: result.length,
           totalBookings: 0,
         });
@@ -105,9 +95,9 @@ const TouristReport = () => {
     }
   };
 
- useEffect(() => {
-  fetchReport();
-}, [filters.fromDate, filters.toDate]);
+  useEffect(() => {
+    fetchReport();
+  }, [filters.fromDate, filters.toDate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -148,17 +138,13 @@ const TouristReport = () => {
       worksheet,
       [
         ["Tourist Report"],
-       
+
         [`Generated On ${printMeta.date} ${printMeta.time}`],
       ],
-      { origin: "A1" }
+      { origin: "A1" },
     );
 
-    worksheet["!cols"] = [
-      { wch: 10 },
-      { wch: 35 },
-      { wch: 15 },
-    ];
+    worksheet["!cols"] = [{ wch: 10 }, { wch: 35 }, { wch: 15 }];
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Tourist Report");
@@ -175,36 +161,30 @@ const TouristReport = () => {
     // ✅ this actually starts the download
     saveAs(
       fileData,
-      `tourist-report-${filters.fromDate}-to-${filters.toDate}.xlsx`
+      `tourist-report-${filters.fromDate}-to-${filters.toDate}.xlsx`,
     );
   };
- return (
+  return (
     <>
       <TitleDiv title="Tourist Pax Report" />
-      <div className="min-h-screen bg-slate-100 p-3 md:p-6 print:bg-white print:p-0">
-        {/* ✅ Removed max-w-7xl — now full width */}
+      <div className="min-h-screen bg-slate-100 p-3 md:p-5 print:bg-white print:p-0">
         <div className="w-full print:max-w-full">
-
-          {/* ✅ Filter Card — full width, compact date inputs */}
-          <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm print:hidden md:p-4">
+          {/* Filter Card */}
+          <div className="mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm print:hidden md:p-4">
             <form
               onSubmit={handleSubmit}
-              className="flex flex-wrap items-end gap-3 w-full"
+              className="flex flex-wrap items-end gap-3"
             >
-              {/* Title — left aligned, shrinks if needed */}
-              <div className="flex-shrink-0">
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 md:text-2xl">
+              <div className="min-w-[160px]">
+                <h1 className="text-lg font-bold tracking-tight text-slate-900 md:text-xl">
                   Tourist Report
                 </h1>
-                <p className="text-xs text-slate-500">Nation wise pax report</p>
               </div>
 
-              {/* Spacer */}
               <div className="flex-1" />
 
-              {/* From Date — compact width */}
-              <div className="flex flex-col gap-1 w-36">
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <div className="w-32">
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   From Date
                 </label>
                 <input
@@ -212,13 +192,12 @@ const TouristReport = () => {
                   name="fromDate"
                   value={filters.fromDate}
                   onChange={handleChange}
-                  className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none transition focus:border-teal-600"
+                  className="h-8 w-full rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-700 outline-none transition focus:border-teal-600"
                 />
               </div>
 
-              {/* To Date — compact width */}
-              <div className="flex flex-col gap-1 w-36">
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <div className="w-32">
+                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   To Date
                 </label>
                 <input
@@ -226,16 +205,15 @@ const TouristReport = () => {
                   name="toDate"
                   value={filters.toDate}
                   onChange={handleChange}
-                  className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none transition focus:border-teal-600"
+                  className="h-8 w-full rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-700 outline-none transition focus:border-teal-600"
                 />
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-end gap-2">
+              <div className="flex flex-wrap items-end gap-2">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="inline-flex h-9 items-center justify-center rounded-lg bg-teal-700 px-4 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="inline-flex h-8 items-center justify-center rounded-md bg-teal-700 px-3 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {loading ? "Loading..." : "Get Report"}
                 </button>
@@ -243,7 +221,7 @@ const TouristReport = () => {
                 <button
                   type="button"
                   onClick={handlePrint}
-                  className="inline-flex h-9 items-center justify-center rounded-lg bg-slate-200 px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-300"
+                  className="inline-flex h-8 items-center justify-center rounded-md bg-slate-200 px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-300"
                 >
                   Print
                 </button>
@@ -252,7 +230,7 @@ const TouristReport = () => {
                   type="button"
                   onClick={handleExportExcel}
                   disabled={!rows.length}
-                  className="inline-flex h-9 items-center justify-center rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-8 items-center justify-center rounded-md bg-emerald-600 px-3 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Export Excel
                 </button>
@@ -261,37 +239,42 @@ const TouristReport = () => {
           </div>
 
           {error && (
-            <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 print:hidden">
+            <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 print:hidden">
               {error}
             </div>
           )}
 
-          {/* Report Card — full width */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:rounded-none print:border-0 print:p-0 print:shadow-none md:p-7">
-           
+          {/* Report Card */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm print:rounded-none print:border-0 print:p-0 print:shadow-none md:p-5">
+            <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-green-700 md:text-2xl">
+                  Tourist Report
+                </h2>
+                <p className="text-[11px] text-slate-500">
+                  Nation wise pax report
+                </p>
+              </div>
 
-            <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <h2 className="text-2xl font-bold text-green-700 md:text-3xl">
-                Tourist Report
-              </h2>
               <div className="text-left md:text-right">
-                <p className="text-xs font-medium text-slate-500">
+                <p className="text-[11px] font-medium text-slate-500">
                   Print Date & Time
                 </p>
-                <p className="text-sm font-semibold text-slate-800">
+                <p className="text-xs font-semibold text-slate-800">
                   {printMeta.date} {printMeta.time}
                 </p>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
+            {/* Table */}
+            <div className="w-full overflow-hidden">
+              <table className="w-full table-fixed border-collapse text-xs md:text-sm">
                 <thead>
-                  <tr className="border-y-[3px] border-[#7b1e1e]">
-                    <th className="px-2 py-2 text-left text-sm font-bold tracking-wide text-slate-800 md:text-base">
+                  <tr className="border-y-2 border-[#7b1e1e]">
+                    <th className="px-2 py-2 text-left font-semibold tracking-wide text-slate-800">
                       NATION
                     </th>
-                    <th className="w-28 px-2 py-2 text-right text-sm font-bold tracking-wide text-slate-800 md:text-base">
+                    <th className="w-20 px-2 py-2 text-right font-semibold tracking-wide text-slate-800 md:w-24">
                       PAX
                     </th>
                   </tr>
@@ -300,24 +283,33 @@ const TouristReport = () => {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="2" className="px-2 py-8 text-center text-sm text-slate-500">
+                      <td
+                        colSpan="2"
+                        className="px-2 py-6 text-center text-xs text-slate-500"
+                      >
                         Loading report...
                       </td>
                     </tr>
                   ) : rows.length > 0 ? (
                     rows.map((item, index) => (
-                      <tr key={index} className="border-b border-dashed border-slate-300">
-                        <td className="px-2 py-2 text-slate-800">
+                      <tr
+                        key={index}
+                        className="border-b border-dashed border-slate-300"
+                      >
+                        <td className="px-2 py-2 text-slate-800 break-words whitespace-normal">
                           {item.nation || item.country || "UNKNOWN"}
                         </td>
-                        <td className="px-2 py-2 text-right font-medium text-slate-900">
+                        <td className="px-2 py-2 text-right font-medium text-slate-900 whitespace-nowrap">
                           {item.pax || 0}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="2" className="px-2 py-8 text-center text-sm text-slate-500">
+                      <td
+                        colSpan="2"
+                        className="px-2 py-6 text-center text-xs text-slate-500"
+                      >
                         No data found
                       </td>
                     </tr>
@@ -327,8 +319,10 @@ const TouristReport = () => {
                 {!loading && rows.length > 0 && (
                   <tfoot>
                     <tr className="border-t-2 border-slate-900">
-                      <td className="px-2 py-3 text-sm font-bold text-slate-900">TOTAL</td>
-                      <td className="px-2 py-3 text-right text-sm font-bold text-slate-900">
+                      <td className="px-2 py-2.5 text-xs font-bold text-slate-900 md:text-sm">
+                        TOTAL
+                      </td>
+                      <td className="px-2 py-2.5 text-right text-xs font-bold text-slate-900 whitespace-nowrap md:text-sm">
                         {summary.totalPax}
                       </td>
                     </tr>

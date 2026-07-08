@@ -1,6 +1,6 @@
 /* eslint-disable react/no-unknown-property */
-import { useMemo, useState,useEffect  } from "react";
-import { useSelector,useDispatch  } from "react-redux";
+import { useMemo, useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { useLocation } from "react-router-dom";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -11,54 +11,60 @@ import TransactionTable from "../../../components/common/List/TranscationTable";
 import TitleDiv from "../../../components/common/TitleDiv";
 import { BarLoader } from "react-spinners";
 import SecondaryUserFilter from "@/components/Filters/SecondaryUserFilter";
-
+import { Search } from "lucide-react";
 
 function Transaction() {
   const [netCashInHands, setNetCashInHands] = useState(0);
 
-  const [effectiveDates, setEffectiveDates] = useState({ start: null, end: null });
+  const [effectiveDates, setEffectiveDates] = useState({
+    start: null,
+    end: null,
+  });
+
+  const [searchTerm, setSearchTerm] = useState("");
   const location = useLocation(); // Hook to access passed state
   const dispatch = useDispatch();
   const org = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+    (state) => state.secSelectedOrganization.secSelectedOrg,
   );
-    const { start: reduxStart, end: reduxEnd } = useSelector((state) => state.date);
+  const { start: reduxStart, end: reduxEnd } = useSelector(
+    (state) => state.date,
+  );
   const selectedVoucher = useSelector(
-    (state) => state?.voucherType?.selectedVoucher
+    (state) => state?.voucherType?.selectedVoucher,
   );
   const selectedSecondaryUser = useSelector(
-    (state) => state?.userFilter?.selectedUser
+    (state) => state?.userFilter?.selectedUser,
   );
 
   console.log(selectedSecondaryUser);
-  
 
- useEffect(() => {
-    if (location.state?.fromSummary && location.state?.startDate && location.state?.endDate) {
+  useEffect(() => {
+    if (
+      location.state?.fromSummary &&
+      location.state?.startDate &&
+      location.state?.endDate
+    ) {
       // Coming from Summary Report - use month-specific dates
       setEffectiveDates({
         start: location.state.startDate,
-        end: location.state.endDate
+        end: location.state.endDate,
       });
     } else {
       // Normal view - use Redux dates
       setEffectiveDates({
         start: reduxStart,
-        end: reduxEnd
+        end: reduxEnd,
       });
     }
   }, [location.state, reduxStart, reduxEnd]);
-
 
   const isAdmin =
     JSON.parse(localStorage.getItem("sUserData")).role === "admin"
       ? true
       : false;
 
-
-
-      
-   const transactionsUrl = useMemo(
+  const transactionsUrl = useMemo(
     () =>
       effectiveDates.start && effectiveDates.end
         ? `/api/sUsers/transactions/${
@@ -67,9 +73,17 @@ function Transaction() {
             selectedVoucher?.value
           }&isAdmin=${isAdmin}&selectedSecondaryUser=${
             selectedSecondaryUser?._id || ""
-          }`
+          } &searchTerm=${encodeURIComponent(searchTerm || "")}`
         : null,
-    [org?._id, effectiveDates.start, effectiveDates.end, selectedVoucher, selectedSecondaryUser, isAdmin]
+    [
+      org?._id,
+      effectiveDates.start,
+      effectiveDates.end,
+      selectedVoucher,
+      selectedSecondaryUser,
+      isAdmin,
+      searchTerm,
+    ],
   );
   // Fetch data using custom hook
   const { data: transactionData, loading: transactionLoading } =
@@ -79,8 +93,6 @@ function Transaction() {
     setNetCashInHands(difference);
   };
 
-
-  
   return (
     <div className="flex-1">
       <div className=" flex-1   ">
@@ -95,12 +107,30 @@ function Transaction() {
             <VoucherTypeFilter />
           </section>
 
-          <section className="shadow-lg p-3 text-xs font-bold text-gray-500 flex items-center gap-5">
+          <section className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm">
             {isAdmin && <SecondaryUserFilter />}
-            <p>
-              Net Cash In Hand :{" "}
-              {transactionLoading ? "Loading..." : netCashInHands || 0}
+
+            <p className="text-sm font-medium text-gray-600 whitespace-nowrap">
+              Net Cash In Hand :
+              <span className="ml-2 font-semibold text-gray-900">
+                {transactionLoading ? "Loading..." : netCashInHands || 0}
+              </span>
             </p>
+
+            <div className="ml-auto">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="h-10 w-64 rounded-md border border-gray-300 bg-gray-50 pl-10 pr-3 text-sm font-medium text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+                />
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Search />
+                </span>
+              </div>
+            </div>
           </section>
 
           {transactionLoading && (
