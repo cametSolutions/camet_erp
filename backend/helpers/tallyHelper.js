@@ -301,12 +301,15 @@ const additionalPaxTaxableAmount =
 const additionalPaxTaxAmount =
   Number(specificAdditionalPaxDetails) - additionalPaxTaxableAmount;
 
+  console.log(doc.addFoodPlanWithRate)
+   console.log(doc.addPaxWithRate)
+
   
   let originalRoomPrice = roomPrice * Number(stayDays || 1);
   // Room amount including tax
   let amountWithTax = Math.max(
     0,
-    Number(originalRoomPrice || 0) - (Number(specificFoodPlanTotal || 0) + Number(specificAdditionalPaxDetails || 0)),
+    Number(originalRoomPrice || 0) - ((doc.addFoodPlanWithRate ? Number(specificFoodPlanTotal || 0) : 0) + (doc.addPaxWithRate ? Number(specificAdditionalPaxDetails || 0): 0)),
   );
 
   // Room taxable amount

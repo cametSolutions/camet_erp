@@ -447,6 +447,277 @@ export const printDirectHTML = (
   };
 };
 
+export const printCancelDirectHTML = (
+  orderData,
+  restaurantName = "ABC RESTAURANT",
+  isKOT = true
+) => {
+  console.log(orderData);
+  if (!orderData) return;
+
+  const { date, time } = formatDateTime(orderData.createdAt);
+
+  let loggedUser = {};
+  try {
+    loggedUser = JSON.parse(localStorage.getItem("sUserData") || "{}");
+  } catch (error) {
+    loggedUser = {};
+  }
+
+  const isCancelled =
+    orderData?.status === "cancelled" ||
+    orderData?.orderStatus === "cancelled" ||
+    orderData?.isCancelled === true;
+
+  const styles = `
+    <style>
+      @media print {
+        @page { size: 58mm auto; margin: 0; }
+        body { margin: 0; padding: 2mm; }
+      }
+
+      body {
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        line-height: 1.1;
+        width: 54mm;
+        margin: 0 auto;
+        padding: 2mm;
+        border: 1px dashed #000;
+        font-weight: bold;
+        position: relative;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .print-container {
+        position: relative;
+      }
+
+      .content-layer {
+        position: relative;
+        z-index: 1;
+      }
+
+      .cancel-watermark {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-35deg);
+        font-size: 28px;
+        color: rgba(220, 0, 0, 0.18);
+        font-weight: bold;
+        letter-spacing: 2px;
+        z-index: 0;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      .cancel-text {
+        color: #c62828;
+        text-align: center;
+        font-weight: bold;
+        letter-spacing: 1px;
+      }
+
+      .header { text-align: center; margin-bottom: 4px; }
+      .restaurant-name { font-size: 20px; font-weight: bold; margin-bottom: 2px; }
+      .ticket-type { font-size: 16px; margin-bottom: 4px; }
+      .divider { border-bottom: 1px dashed #000; margin: 3px 0; }
+      .order-info { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 12px; }
+      .items-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 2px; font-size: 12px; }
+      .item-row { display: flex; justify-content: space-between; margin-bottom: 1px; font-size: 12px; }
+      .footer { text-align: center; margin-top: 6px; font-weight: bold; font-size: 12px; }
+      .totals { margin-top: 4px; }
+      .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 12px; }
+      .grid-header, .grid-row { display: grid; grid-template-columns: 3fr 1fr 1fr 1fr; gap: 1px; font-size: 12px; }
+    </style>
+  `;
+
+  let content = "";
+
+  if (isKOT) {
+    content = `
+      ${styles}
+      <div class="print-container">
+        ${isCancelled ? `<div class="cancel-watermark">CANCELLED</div>` : ""}
+        <div class="content-layer">
+          <div class="header">
+            <div class="restaurant-name">${restaurantName}</div>
+            <div class="ticket-type">KOT</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="order-info">
+            <div>KOT: ${orderData.kotNo || ""}</div>
+            <div>${date}</div>
+          </div>
+
+          ${
+            orderData.customerName
+              ? `<div class="order-info"><div>Name: ${orderData.customerName}</div><div>Type: ${orderData.type || ""}</div></div>`
+              : ""
+          }
+
+          ${
+            loggedUser.name
+              ? `<div class="order-info"><div>Staff: ${loggedUser.name}</div></div>`
+              : ""
+          }
+
+          <div class="order-info">
+            <div>${time}</div>
+            ${orderData.tableNo ? `<div>T:${orderData.tableNo}</div>` : "<div></div>"}
+          </div>
+
+          <div class="order-info">
+            ${orderData.roomName ? `<div>Room:${orderData.roomName}</div>` : "<div></div>"}
+          </div>
+
+          <div class="order-info">
+            ${orderData.guestName ? `<div>Guest:${orderData.guestName}</div>` : "<div></div>"}
+          </div>
+
+          <div class="order-info">
+            <div>Food Plan :</div>
+            <div>
+              ${
+                orderData?.foodPlan?.length > 0
+                  ? orderData.foodPlan.map((plan) => `${plan?.planType || ""}`).join(", ")
+                  : ""
+              }
+            </div>
+          </div>
+
+          ${isCancelled ? `<div class="cancel-text">CANCELLED</div>` : ""}
+
+          <div class="items-header"><span>SL ITEM</span><span>QTY</span></div>
+          <div class="divider"></div>
+
+          ${
+            orderData.items?.map((item, index) =>
+              item?.product_name || item?.name
+                ? `<div class="item-row"><span>${index + 1} ${(item.product_name || item.name).substring(0, 15)}</span><span>${item.quantity || 1}</span></div>`
+                : ""
+            ).join("") || ""
+          }
+
+          <div class="divider"></div>
+
+          <div class="footer">
+            ${
+              isCancelled
+                ? `** CANCELLED KITCHEN COPY **<br><span class="cancel-text">THIS KOT IS CANCELLED</span>`
+                : `** KITCHEN COPY **<br>Prepare items as per order`
+            }
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    const subtotal = (orderData.items || []).reduce(
+      (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
+      0
+    );
+    const taxAmount = subtotal * TAX_RATE;
+    const grandTotal = subtotal + taxAmount;
+
+    content = `
+      ${styles}
+      <div class="print-container">
+        ${isCancelled ? `<div class="cancel-watermark">CANCELLED</div>` : ""}
+        <div class="content-layer">
+          <div class="header">
+            <div class="restaurant-name">${restaurantName}</div>
+            <div style="font-size: 4px;">123 Main Street, City</div>
+            <div style="font-size: 4px;">Tel: +91 98765 43210</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="order-info">
+            <div>Bill: ${orderData.kotNo || ""}</div>
+            <div>${date}</div>
+          </div>
+
+          <div class="order-info">
+            <div>${orderData.tableNo ? `T:${orderData.tableNo}` : ""}</div>
+            <div>${time}</div>
+          </div>
+
+          ${isCancelled ? `<div class="cancel-text">CANCELLED BILL</div>` : ""}
+
+          <div class="divider"></div>
+          <div class="grid-header"><span>ITEM</span><span>Q</span><span>RT</span><span>AMT</span></div>
+          <div class="divider"></div>
+
+          ${
+            orderData.items?.map((item) =>
+              item?.name || item?.product_name
+                ? `<div class="grid-row">
+                    <span>${(item.name || item.product_name).substring(0, 10)}</span>
+                    <span>${item.quantity || 1}</span>
+                    <span>₹${item.price || 0}</span>
+                    <span>₹${((item.price || 0) * (item.quantity || 1)).toFixed(0)}</span>
+                  </div>`
+                : ""
+            ).join("") || ""
+          }
+
+          <div class="divider"></div>
+
+          <div class="totals">
+            <div class="total-row"><span>SUBTOTAL:</span><span>₹${subtotal.toFixed(0)}</span></div>
+            <div class="total-row"><span>GST (5%):</span><span>₹${taxAmount.toFixed(0)}</span></div>
+            <div class="total-row"><strong><span>TOTAL:</span><span>₹${grandTotal.toFixed(0)}</span></strong></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="footer">
+            ${
+              isCancelled
+                ? `<span class="cancel-text">THIS BILL IS CANCELLED</span>`
+                : `Thank you for dining!<br>Please visit again`
+            }
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const iframe = document.createElement("iframe");
+  iframe.style.cssText =
+    "position:fixed;right:0;bottom:0;width:0;height:0;border:none;";
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>${isKOT ? "KOT" : "Bill"}</title>
+      </head>
+      <body>
+        ${content}
+      </body>
+    </html>
+  `);
+  doc.close();
+
+  iframe.onload = () => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(() => {
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe);
+      }
+    }, 1000);
+  };
+}
+
 // Main Export Functions
 export const generateAndPrintKOT = (
   orderData,
@@ -455,10 +726,14 @@ export const generateAndPrintKOT = (
   restaurantName = "ABC RESTAURANT",
   useHTML = true
 ) => {
-
+console.log(orderData);
   try {
     validateOrderData(orderData);
 
+    if (useHTML && autoPrint && orderData.isCancelled) {
+      printCancelDirectHTML(orderData, restaurantName, true);
+      return null;
+    }
     if (useHTML && autoPrint) {
       printDirectHTML(orderData, restaurantName, true);
       return null;
