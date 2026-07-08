@@ -6455,113 +6455,251 @@ export const getOccupancyCheckoutReport = async (req, res) => {
 
       additionalPaxTotal += additionalPaxCount;
 
-      (doc?.selectedRooms || []).forEach((room) => {
-        if (room.isSwapped) return;
-        const pax = Number(room?.pax || 0);
-        const tariff = Number(
-          Math.round(room.priceLevelRate) ||
-            room?.baseAmount ||
-            room?.amountAfterTax ||
-            room?.totalAmount ||
-            room?.baseAmountWithTax ||
-            0,
-        );
+      const normalizeDate = (value) => {
+  const d = new Date(value);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
 
-        roomRevenue += tariff;
-        occupiedRoomNames.add(room?.roomName);
+const addOneDay = (value) => {
+  const d = new Date(value);
+  d.setDate(d.getDate() + 1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
 
-        const roomTypeName =
-          room?.roomType?.roomTypeName || room?.roomType?.name || "";
+const overlaps = (start1, end1, start2, end2) => {
+  return start1 < end2 && start2 < end1;
+};
+  // (doc?.selectedRooms || []).forEach((room) => {
+  //       if (room.isSwapped ) return;
+  //       const pax = Number(room?.pax || 0);
+  //       const tariff = Number(
+  //         Math.round(room.priceLevelRate) ||
+  //           room?.baseAmount ||
+  //           room?.amountAfterTax ||
+  //           room?.totalAmount ||
+  //           room?.baseAmountWithTax ||
+  //           0,
+  //       );
 
-        const type = roomTypeName.toLowerCase();
-        let single = 0;
-        let doubleRoom = 0;
-        let triple = 0;
-        let other = 0;
+  //       roomRevenue += tariff;
+  //       occupiedRoomNames.add(room?.roomName);
 
-        if (type.includes("single")) single += 1;
-        else if (type.includes("double")) doubleRoom += 1;
-        else if (type.includes("triple")) triple += 1;
-        else other += 1;
+  //       const roomTypeName =
+  //         room?.roomType?.roomTypeName || room?.roomType?.name || "";
 
-        let planName = "";
-        if (Array.isArray(doc?.foodPlan) && doc.foodPlan.length > 0) {
-          const foundPlan = doc.foodPlan.filter(
-            (plan) => plan?.roomId?.toString() === room?.roomId?.toString(),
-          );
-          const getPlanNames = (plans = []) =>
-            plans
-              .map((p) => p?.foodPlan)
-              .filter(Boolean)
-              .join(", ") || "";
+  //       const type = roomTypeName.toLowerCase();
+  //       let single = 0;
+  //       let doubleRoom = 0;
+  //       let triple = 0;
+  //       let other = 0;
 
-          if (foundPlan.length >= 0) {
-            foundPlan.map((plan) => {
-              planName = plan.foodPlan;
-              if (!planMap[plan.foodPlan]) {
-                planMap[plan.foodPlan] = {
-                  plan: plan.foodPlan,
-                  rms: 0,
-                  pax: 0,
-                  addnl: 0,
-                  total: 0,
-                };
-              }
+  //       if (type.includes("single")) single += 1;
+  //       else if (type.includes("double")) doubleRoom += 1;
+  //       else if (type.includes("triple")) triple += 1;
+  //       else other += 1;
 
-              planMap[plan.foodPlan].rms += 1;
-              planMap[plan.foodPlan].pax += pax;
-              planMap[plan.foodPlan].addnl += additionalPaxCount;
-              planMap[plan.foodPlan].total += pax + additionalPaxCount;
-            });
-            if (!planMap[planName]) {
-              planMap[planName] = {
-                plan: planName,
-                rms: 0,
-                pax: 0,
-                addnl: 0,
-                total: 0,
-              };
-            }
+  //       let planName = "";
+  //       if (Array.isArray(doc?.foodPlan) && doc.foodPlan.length > 0) {
+  //         const foundPlan = doc.foodPlan.filter(
+  //           (plan) => plan?.roomId?.toString() === room?.roomId?.toString(),
+  //         );
+  //         const getPlanNames = (plans = []) =>
+  //           plans
+  //             .map((p) => p?.foodPlan)
+  //             .filter(Boolean)
+  //             .join(", ") || "";
 
-            planMap[planName].rms += 1;
-            planMap[planName].pax += pax;
-            planMap[planName].addnl += additionalPaxCount;
-            planMap[planName].total += pax + additionalPaxCount;
-          }
+  //         if (foundPlan.length >= 0) {
+  //           foundPlan.map((plan) => {
+  //             planName = plan.foodPlan;
+  //             if (!planMap[plan.foodPlan]) {
+  //               planMap[plan.foodPlan] = {
+  //                 plan: plan.foodPlan,
+  //                 rms: 0,
+  //                 pax: 0,
+  //                 addnl: 0,
+  //                 total: 0,
+  //               };
+  //             }
+
+  //             planMap[plan.foodPlan].rms += 1;
+  //             planMap[plan.foodPlan].pax += pax;
+  //             planMap[plan.foodPlan].addnl += additionalPaxCount;
+  //             planMap[plan.foodPlan].total += pax + additionalPaxCount;
+  //           });
+  //           if (!planMap[planName]) {
+  //             planMap[planName] = {
+  //               plan: planName,
+  //               rms: 0,
+  //               pax: 0,
+  //               addnl: 0,
+  //               total: 0,
+  //             };
+  //           }
+
+  //           planMap[planName].rms += 1;
+  //           planMap[planName].pax += pax;
+  //           planMap[planName].addnl += additionalPaxCount;
+  //           planMap[planName].total += pax + additionalPaxCount;
+  //         }
+  //       }
+
+  //       let extraPersonTariff =
+  //         doc?.additionalPaxDetails?.reduce((acc, item) => {
+  //           return item?.roomId?.toString() === room?.roomId?.toString()
+  //             ? acc + (item?.rate || 0)
+  //             : acc;
+  //         }, 0) || 0;
+
+  //       let additionalPax =
+  //         doc?.additionalPaxDetails?.filter(
+  //           (item) => item?.roomId.toString() == room?.roomId.toString(),
+  //         ).length || 0;
+
+  //       rows.push({
+  //         slNo: rows.length + 1,
+  //         room: room?.roomName || "",
+  //         grcNo: doc?.grcno || "",
+  //         guestName: doc?.guestName || doc?.customerName || "",
+  //         company: doc?.company || "",
+  //         pax,
+  //         additionalPax,
+  //         arrivalDate: doc?.arrivalDate || "",
+  //         arrivalTime: doc?.arrivalTime || "",
+  //         departureDate: doc?.newChecoutDate || doc?.checkOutDate || "",
+  //         departureTime: doc?.newCheckoutTime || doc?.checkOutTime || "",
+  //         plan: planName,
+  //         tariff,
+  //         extraPersonTariff,
+  //         totalTariffWithPax: extraPersonTariff + tariff,
+  //         discountPercent: 0,
+  //         discountAmount: 0,
+  //       });
+  //     });
+
+    (doc?.selectedRooms || []).forEach((room) => {
+  const bookingStart = normalizeDate(doc?.arrivalDateObj || doc?.arrivalDate);
+  const bookingEnd = normalizeDate(doc?.newChecoutDate || doc?.checkOutDate);
+
+  const filterStart = fromDate ? normalizeDate(fromDate) : null;
+  const filterEnd = toDate ? addOneDay(toDate) : null;
+
+  let roomStart = bookingStart;
+  let roomEnd = bookingEnd;
+
+  const currentRoomId = room?.roomId?.toString();
+
+  if (Array.isArray(doc?.roomSwapHistory) && doc.roomSwapHistory.length > 0) {
+    doc.roomSwapHistory.forEach((swap) => {
+      const fromRoomId = swap?.fromRoomId?.toString();
+      const toRoomId = swap?.toRoomId?.toString();
+      const swapDate = swap?.swapDate ? normalizeDate(swap.swapDate) : null;
+
+      if (!swapDate) return;
+
+      if (currentRoomId === fromRoomId) {
+        roomEnd = swapDate;
+      }
+
+      if (currentRoomId === toRoomId) {
+        roomStart = swapDate;
+      }
+    });
+  }
+
+  if (filterStart && filterEnd && !overlaps(roomStart, roomEnd, filterStart, filterEnd)) {
+    return;
+  }
+
+  const pax = Number(room?.pax || 0);
+  const tariff = Number(
+    Math.round(room.priceLevelRate) ||
+      room?.baseAmount ||
+      room?.amountAfterTax ||
+      room?.totalAmount ||
+      room?.baseAmountWithTax ||
+      0
+  );
+
+  roomRevenue += tariff;
+  occupiedRoomNames.add(room?.roomName);
+
+  const roomTypeName =
+    room?.roomType?.roomTypeName || room?.roomType?.name || "";
+
+  const type = roomTypeName.toLowerCase();
+  let single = 0;
+  let doubleRoom = 0;
+  let triple = 0;
+  let other = 0;
+
+  if (type.includes("single")) single += 1;
+  else if (type.includes("double")) doubleRoom += 1;
+  else if (type.includes("triple")) triple += 1;
+  else other += 1;
+
+  let planName = "";
+  if (Array.isArray(doc?.foodPlan) && doc.foodPlan.length > 0) {
+    const foundPlan = doc.foodPlan.filter(
+      (plan) => plan?.roomId?.toString() === room?.roomId?.toString()
+    );
+
+    if (foundPlan.length > 0) {
+      foundPlan.forEach((plan) => {
+        planName = plan.foodPlan;
+
+        if (!planMap[plan.foodPlan]) {
+          planMap[plan.foodPlan] = {
+            plan: plan.foodPlan,
+            rms: 0,
+            pax: 0,
+            addnl: 0,
+            total: 0,
+          };
         }
 
-        let extraPersonTariff =
-          doc?.additionalPaxDetails?.reduce((acc, item) => {
-            return item?.roomId?.toString() === room?.roomId?.toString()
-              ? acc + (item?.rate || 0)
-              : acc;
-          }, 0) || 0;
-
-        let additionalPax =
-          doc?.additionalPaxDetails?.filter(
-            (item) => item?.roomId.toString() == room?.roomId.toString(),
-          ).length || 0;
-
-        rows.push({
-          slNo: rows.length + 1,
-          room: room?.roomName || "",
-          grcNo: doc?.grcno || "",
-          guestName: doc?.guestName || doc?.customerName || "",
-          company: doc?.company || "",
-          pax,
-          additionalPax,
-          arrivalDate: doc?.arrivalDate || "",
-          arrivalTime: doc?.arrivalTime || "",
-          departureDate: doc?.newChecoutDate || doc?.checkOutDate || "",
-          departureTime: doc?.newCheckoutTime || doc?.checkOutTime || "",
-          plan: planName,
-          tariff,
-          extraPersonTariff,
-          totalTariffWithPax: extraPersonTariff + tariff,
-          discountPercent: 0,
-          discountAmount: 0,
-        });
+        planMap[plan.foodPlan].rms += 1;
+        planMap[plan.foodPlan].pax += pax;
+        planMap[plan.foodPlan].addnl += additionalPaxCount;
+        planMap[plan.foodPlan].total += pax + additionalPaxCount;
       });
+    }
+  }
+
+  const extraPersonTariff =
+    doc?.additionalPaxDetails?.reduce((acc, item) => {
+      return item?.roomId?.toString() === room?.roomId?.toString()
+        ? acc + Number(item?.rate || 0)
+        : acc;
+    }, 0) || 0;
+
+  const additionalPax =
+    doc?.additionalPaxDetails?.filter(
+      (item) => item?.roomId?.toString() === room?.roomId?.toString()
+    ).length || 0;
+
+  rows.push({
+    slNo: rows.length + 1,
+    room: room?.roomName || "",
+    grcNo: doc?.grcno || "",
+    guestName: doc?.guestName || doc?.customerName || "",
+    company: doc?.company || "",
+    pax,
+    additionalPax,
+    arrivalDate: doc?.arrivalDate || "",
+    arrivalTime: doc?.arrivalTime || "",
+    departureDate: doc?.newChecoutDate || doc?.checkOutDate || "",
+    departureTime: doc?.newCheckoutTime || doc?.checkOutTime || "",
+    plan: planName,
+    tariff,
+    extraPersonTariff,
+    totalTariffWithPax: extraPersonTariff + tariff,
+    discountPercent: 0,
+    discountAmount: 0,
+  });
+});
     });
 
     const totalRooms = allRooms.length;
@@ -8083,9 +8221,9 @@ export const getFOSalesSummary = async (req, res) => {
       const billTotal =
         restaurantSaleAmount +
         Number(roomDetails?.taxableAmount || 0) +
-        Number(roomDetails?.roomTaxAmount || 0) +
+        Number(roomDetails?.roomTaxAmount || 0) + 
         Number(roomDetails?.specificFoodPlanTotal || 0) +
-        Number(roomDetails?.taxableAadditionalPaxWithTaxmount || 0) -
+        Number(roomDetails?.additionalPaxWithTax || 0) -
         advance;
 
       const totals = {
@@ -8162,87 +8300,6 @@ export const getFOSalesSummary = async (req, res) => {
   }
 };
 
-// export const fetchRestaurantDetails = async (hotelId, fromDate, toDate) => {
-//   try {
-//     const startDate = new Date(fromDate);
-//     const endDate = new Date(toDate);
-//     endDate.setDate(endDate.getDate() + 1);
-
-//     const result = await salesModel.aggregate([
-//       {
-//         $match: {
-//           hotel: new mongoose.Types.ObjectId(hotelId),
-//           billDate: {
-//             $gte: startDate,
-//             $lt: endDate,
-//           },
-//         },
-//       },
-//       {
-//         $lookup: {
-//           from: "series",
-//           localField: "seriesId",
-//           foreignField: "_id",
-//           as: "seriesData",
-//         },
-//       },
-//       {
-//         $match: {
-//           "seriesData.under": "restaurant",
-//         },
-//       },
-//       {
-//         $group: {
-//           _id: null,
-//           restaurantServiceTotal: {
-//             $sum: {
-//               $cond: [
-//                 { $eq: ["$postToRoom", true] },
-//                 { $ifNull: ["$totalAmount", 0] },
-//                 0,
-//               ],
-//             },
-//           },
-//           restaurantTotal: {
-//             $sum: {
-//               $cond: [
-//                 { $eq: ["$postToRoom", false] },
-//                 { $ifNull: ["$totalAmount", 0] },
-//                 0,
-//               ],
-//             },
-//           },
-//           totalRestaurantSales: {
-//             $sum: { $ifNull: ["$totalAmount", 0] },
-//           },
-//         },
-//       },
-//       {
-//         $project: {
-//           _id: 0,
-//           restaurantServiceTotal: 1,
-//           restaurantTotal: 1,
-//           totalRestaurantSales: 1,
-//         },
-//       },
-//     ]);
-
-//     return (
-//       result[0] || {
-//         restaurantServiceTotal: 0,
-//         restaurantTotal: 0,
-//         totalRestaurantSales: 0,
-//       }
-//     );
-//   } catch (error) {
-//     console.error("fetchRestaurantDetails error:", error);
-//     return {
-//       restaurantServiceTotal: 0,
-//       restaurantTotal: 0,
-//       totalRestaurantSales: 0,
-//     };
-//   }
-// };
 
 export const getFlashReportForDate = async (req, res) => {
   try {
