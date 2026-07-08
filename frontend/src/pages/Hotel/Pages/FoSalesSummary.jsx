@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import api from "@/api/api";
-import { Card } from "@/components/ui/card";
 
 const formatNumber = (value) =>
   Number(value || 0).toLocaleString("en-IN", {
@@ -153,9 +152,16 @@ export default function FOSalesSummaryReport() {
     return filteredData.reduce(
       (acc, row) => {
         acc.roomSaleAmount += toNumber(row.roomSaleAmount);
+        acc.additionalPaxWithOutTax += toNumber(row.additionalPaxWithOutTax);
+        acc.additionalPaxTaxAmount += toNumber(row.additionalPaxTaxAmount);
         acc.planSaleAmount += toNumber(row.planSaleAmount);
-        acc.cgst += toNumber(row.cgst);
-        acc.sgst += toNumber(row.sgst);
+
+        acc.cgst += toNumber(
+          Number(row.cgst || 0) + Number(row.additionalPaxTaxAmount / 2 || 0),
+        );
+        acc.sgst += toNumber(
+          Number(row.sgst || 0) + Number(row.additionalPaxTaxAmount / 2 || 0),
+        );
         acc.restaurantSale += toNumber(row.restaurantSale);
         acc.modSale += toNumber(row.modSale);
         acc.billTotal += toNumber(row.billTotal);
@@ -169,7 +175,10 @@ export default function FOSalesSummaryReport() {
       },
       {
         roomSaleAmount: 0,
+        additionalPaxTaxAmount: 0,
+        additionalPaxWithOutTax: 0,
         planSaleAmount: 0,
+
         cgst: 0,
         sgst: 0,
         restaurantSale: 0,
@@ -197,10 +206,15 @@ export default function FOSalesSummaryReport() {
       Days: toNumber(row.days),
       "Extra Person": toNumber(row.extraPerson),
       Plan: row.plan || "",
-      "Room Sale":toNumber(row.roomSaleAmount),
+      "Room Sale": toNumber(row.roomSaleAmount),
+      "Additional Pax": toNumber(row.additionalPaxWithOutTax),
       "Plan Sale": toNumber(row.planSaleAmount),
-      CGST: toNumber(row.cgst),
-      SGST: toNumber(row.sgst),
+      CGST: toNumber(
+        Number(row.cgst || 0) + Number(row.additionalPaxTaxAmount / 2 || 0),
+      ),
+      SGST: toNumber(
+        Number(row.cgst || 0) + Number(row.additionalPaxTaxAmount / 2 || 0),
+      ),
       "RT Bill No": row.rtBillNo || "",
       "Rest. Sale": toNumber(row.restaurantSale),
       "MOD Sale": toNumber(row.modSale),
@@ -225,6 +239,7 @@ export default function FOSalesSummaryReport() {
       "Extra Person": "",
       Plan: "",
       "Room Sale": totals.roomSaleAmount,
+      "Additional Pax": totals.additionalPaxWithOutTax,
       "Plan Sale": totals.planSaleAmount,
       CGST: totals.cgst,
       SGST: totals.sgst,
@@ -656,11 +671,7 @@ export default function FOSalesSummaryReport() {
                 gap: 8,
                 flexWrap: "wrap",
               }}
-            >
-              
-
-           
-            </div>
+            ></div>
 
             {loading ? (
               <div
@@ -695,12 +706,13 @@ export default function FOSalesSummaryReport() {
                       <TH>Agent</TH>
                       <TH>Guest</TH>
                       <TH>Room</TH>
-                      <TH right >TotalRoom</TH>
+                      <TH right>TotalRoom</TH>
                       <TH right>Days</TH>
                       <TH right>Extra</TH>
                       <TH>Plan</TH>
                       <TH right>Room Sale</TH>
-                      <TH right>Plan Sale</TH>
+                      <TH right>Extra Pax</TH>
+                                            <TH right>Plan Sale</TH>
                       <TH right>CGST</TH>
                       <TH right>SGST</TH>
                       <TH>RT Bill</TH>
@@ -737,10 +749,21 @@ export default function FOSalesSummaryReport() {
                           <TD right>{row.extraPerson}</TD>
                           <TD>{row.plan}</TD>
                           <TD right>{formatNumber(row.roomSaleAmount)}</TD>
+                          <TD right>
+                            {formatNumber(row.additionalPaxWithOutTax)}
+                          </TD>
                           <TD right>{formatNumber(row.planSaleAmount)}</TD>
-                          <TD right>{formatNumber(row.cgst)}</TD>
-                          <TD right>{formatNumber(row.sgst)}</TD>
-                          <TD >{row.rtBillNo}</TD>
+                          <TD right>
+                            {formatNumber(
+                              row.cgst + Number(row.additionalPaxTaxAmount / 2),
+                            )}
+                          </TD>
+                          <TD right>
+                            {formatNumber(
+                              row.sgst + Number(row.additionalPaxTaxAmount / 2),
+                            )}
+                          </TD>
+                          <TD>{row.rtBillNo}</TD>
                           <TD right>{formatNumber(row.restaurantSale)}</TD>
                           <TD right>{formatNumber(row.modSale)}</TD>
                           <TD right bold>
@@ -790,6 +813,7 @@ export default function FOSalesSummaryReport() {
 
                       {[
                         totals.roomSaleAmount,
+                        totals.additionalPaxWithOutTax,
                         totals.planSaleAmount,
                         totals.cgst,
                         totals.sgst,
