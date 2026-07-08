@@ -2769,8 +2769,7 @@ const handleCancelBooking = async (id, voucherNumber) => {
                   </div>
                 </div>
               ) : null}
-              {location.pathname === "/sUsers/bookingList" &&
-                el?.status !== "checkIn" &&
+              {(location.pathname === "/sUsers/bookingList" || location.pathname === "/sUsers/checkInList") &&
                 el?.status !== "cancelled" && (
                   <button
                     onClick={(e) => {

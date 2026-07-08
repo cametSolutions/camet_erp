@@ -4,7 +4,11 @@ import { useSelector } from "react-redux";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
+import { useNavigate } from "react-router-dom";
+import useFetch from "@/customHook/useFetch";
+import { toast } from "sonner";
+import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
+import TitleDiv from "../../../components/common/TitleDiv";
 const formatDisplayDate = (dateStr) => {
   if (!dateStr) return "-";
 
@@ -24,13 +28,15 @@ const formatDisplayDate = (dateStr) => {
 };
 
 const CancellationReport = () => {
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id,
-  );
+  const {
+    _id: cmp_id,
+    configurations,
+    name,
+  } = useSelector((state) => state.secSelectedOrganization.secSelectedOrg);
   const owner = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
-
+  const navigate = useNavigate();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [cancelType, setCancelType] = useState("all");
@@ -174,7 +180,9 @@ const CancellationReport = () => {
       "Voucher No": row.voucherNumber || "-",
       Date: row.date ? formatDisplayDate(row.date) : "-",
       "Cancelled By": row.cancelledByName || "-",
-      "Cancelled Date": row.cancelledAt ? formatDisplayDate(row.cancelledAt) : "-",
+      "Cancelled Date": row.cancelledAt
+        ? formatDisplayDate(row.cancelledAt)
+        : "-",
       Reason: row.reason || "-",
     }));
   };
@@ -211,15 +219,17 @@ const CancellationReport = () => {
 
     autoTable(doc, {
       startY: 38,
-      head: [[
-        "Sl No",
-        "Type",
-        "Voucher No",
-        "Date",
-        "Cancelled By",
-        "Cancelled Date",
-        "Reason",
-      ]],
+      head: [
+        [
+          "Sl No",
+          "Type",
+          "Voucher No",
+          "Date",
+          "Cancelled By",
+          "Cancelled Date",
+          "Reason",
+        ],
+      ],
       body: reportData.map((row, index) => [
         index + 1,
         row.cancelType || "-",
@@ -243,14 +253,110 @@ const CancellationReport = () => {
     doc.save("Cancellation_Report.pdf");
   };
 
-  const handlePrintRow = (row) => {
-    console.log(row)
-    if(row.cancelType == "checkout"){
-      console.log("hia")
+  const handlePrintRow = async (row) => {
+    if (row.cancelType === "checkout") {
+      const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+
+      if (!row.voucherId) {
+        toast.error("Voucher not found");
+        return;
+      }
+
+      const response = await api.get(
+        `/api/sUsers/specificDataForPrint/${cmp_id}/${row.voucherId}/checkout`,
+        { withCredentials: true },
+      );
+
+      const checkoutData = response?.data?.data;
+      navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+        state: {
+          selectedCheckOut: checkoutData,
+          customerId: checkoutData?.customerId?._id,
+          isForPreview: false,
+        },
+      });
+    }
+    if (row.cancelType === "sale") {
+      const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+
+      if (!row.voucherId) {
+        toast.error("Voucher not found");
+        return;
+      }
+
+      const response = await api.get(
+        `/api/sUsers/specificDataForPrint/${cmp_id}/${row.voucherNumber}/sale`,
+        { withCredentials: true },
+      );
+
+      const checkoutData = response?.data?.data;
+      navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+        state: {
+          selectedCheckOut: checkoutData,
+          customerId: checkoutData?.customerId?._id,
+          isForPreview: false,
+        },
+      });
+    }
+    if (row.cancelType === "checkin" || row.cancelType === "booking") {
+      if (!row.voucherId) {
+        toast.error("Voucher not found");
+        return;
+      }
+      let route = row.cancelType === "checkin" ? "checkin" : "booking";
+
+      const response = await api.get(
+        `/api/sUsers/specificDataForPrint/${cmp_id}/${row.voucherId}/${route}`,
+        { withCredentials: true },
+      );
+
+      const checkoutData = response?.data?.data;
+      navigate("/sUsers/CheckInPrint", {
+        state: {
+          selectedCheckOut: checkoutData,
+          customerId: checkoutData?.customerId?._id,
+          isForPreview: false,
+        },
+      });
+    }
+    if (row.cancelType === "receipt") {
+      if (!row.voucherId) {
+        toast.error("Voucher not found");
+        return;
+      }
+       navigate(`/sUsers/recietpprint/${row.voucherId}`)
+    }
+
+
+    if (row.cancelType === "kot") {
+      if (!row.voucherId) {
+        toast.error("Voucher not found");
+        return;
+      }
+      const response = await api.get(
+        `/api/sUsers/specificDataForPrint/${cmp_id}/${row.voucherId}/kot`,
+        { withCredentials: true },
+      );
+
+      const data = response?.data?.data[0];
+      const orderData = {
+        kotNo: data?.voucherNumber,
+        tableNo: data?.tableNumber,
+        items: data?.items,
+        createdAt: data?.createdAt,
+        customerName: data?.customer?.name,
+        guestName: data?.customer?.guestName,
+        type: data?.type,
+        roomName: data?.roomId?.roomName,
+        isCancelled: true,
+      };
+      generateAndPrintKOT(orderData, true, false, name);
     }
   };
 
   return (
+    <>
+     <TitleDiv title="Cancellation Report" />
     <div
       ref={pageRef}
       style={{
@@ -595,12 +701,22 @@ const CancellationReport = () => {
                 }}
               >
                 <th style={{ padding: "8px 10px", textAlign: "left" }}>Type</th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>Voucher No</th>
+                <th style={{ padding: "8px 10px", textAlign: "left" }}>
+                  Voucher No
+                </th>
                 <th style={{ padding: "8px 10px", textAlign: "left" }}>Date</th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>Cancelled By</th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>Cancelled Date</th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>Reason</th>
-                <th style={{ padding: "8px 10px", textAlign: "center" }}>Action</th>
+                <th style={{ padding: "8px 10px", textAlign: "left" }}>
+                  Cancelled By
+                </th>
+                <th style={{ padding: "8px 10px", textAlign: "left" }}>
+                  Cancelled Date
+                </th>
+                <th style={{ padding: "8px 10px", textAlign: "left" }}>
+                  Reason
+                </th>
+                <th style={{ padding: "8px 10px", textAlign: "center" }}>
+                  Action
+                </th>
               </tr>
             </thead>
 
@@ -630,33 +746,41 @@ const CancellationReport = () => {
                       borderBottom: "1px solid #e5e7eb",
                     }}
                   >
-                    <td style={{ padding: "7px 10px" }}>{row.cancelType || "-"}</td>
-                    <td style={{ padding: "7px 10px" }}>{row.voucherNumber || "-"}</td>
+                    <td style={{ padding: "7px 10px" }}>
+                      {row.cancelType || "-"}
+                    </td>
+                    <td style={{ padding: "7px 10px" }}>
+                      {row.voucherNumber || "-"}
+                    </td>
                     <td style={{ padding: "7px 10px" }}>
                       {row.date ? formatDisplayDate(row.date) : "-"}
                     </td>
-                    <td style={{ padding: "7px 10px" }}>{row.cancelledByName || "-"}</td>
                     <td style={{ padding: "7px 10px" }}>
-                      {row.cancelledAt ? formatDisplayDate(row.cancelledAt) : "-"}
+                      {row.cancelledByName || "-"}
+                    </td>
+                    <td style={{ padding: "7px 10px" }}>
+                      {row.cancelledAt
+                        ? formatDisplayDate(row.cancelledAt)
+                        : "-"}
                     </td>
                     <td style={{ padding: "7px 10px" }}>{row.reason || "-"}</td>
                     <td style={{ padding: "7px 10px", textAlign: "center" }}>
-                      <button
-                        onClick={() => handlePrintRow(row)}
-                        style={{
-                          height: 26,
-                          background: "#2563eb",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: 5,
-                          padding: "0 10px",
-                          fontWeight: 600,
-                          fontSize: 10,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Print
-                      </button>
+                        <button
+                          onClick={() => handlePrintRow(row)}
+                          style={{
+                            height: 26,
+                            background: "#2563eb",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 5,
+                            padding: "0 10px",
+                            fontWeight: 600,
+                            fontSize: 10,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Print
+                        </button>
                     </td>
                   </tr>
                 ))
@@ -666,6 +790,7 @@ const CancellationReport = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
