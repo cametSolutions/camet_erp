@@ -266,7 +266,8 @@ const calculateTaxAmount = (
   doc,
 ) => {
   let foodPlanTax = 5;
-
+  //  addFoodPlanWithRate
+  //         addPaxWithRate
   if (bookingType === "offline") {
     foodPlanTax = taxPercentage;
   }
@@ -292,23 +293,30 @@ const calculateTaxAmount = (
 
   // Food plan taxable amount
   let taxableSpecificFoodPlan = specificFoodPlanTotal / (1 + foodPlanTax / 100);
-
+const additionalPaxTaxableAmount =
+  Number(specificAdditionalPaxDetails) /
+  (1 + Number(taxPercentage) / 100);
   // additionalPax  taxable amount
-  let additionalPaxTaxAmount =
-    (Number(specificAdditionalPaxDetails) * Number(taxPercentage)) / 100;
 
+const additionalPaxTaxAmount =
+  Number(specificAdditionalPaxDetails) - additionalPaxTaxableAmount;
+
+  console.log(doc.addFoodPlanWithRate)
+   console.log(doc.addPaxWithRate)
+
+  
   let originalRoomPrice = roomPrice * Number(stayDays || 1);
   // Room amount including tax
   let amountWithTax = Math.max(
     0,
-    Number(originalRoomPrice || 0) - Number(specificFoodPlanTotal || 0),
+    Number(originalRoomPrice || 0) - ((doc.addFoodPlanWithRate ? Number(specificFoodPlanTotal || 0) : 0) + (doc.addPaxWithRate ? Number(specificAdditionalPaxDetails || 0): 0)),
   );
 
   // Room taxable amount
   let taxableAmount = amountWithTax / (1 + taxPercentage / 100);
 
   // Room tax amount
-  let roomTaxAmount = amountWithTax - taxableAmount;
+  let roomTaxAmount = (amountWithTax - taxableAmount ) + (additionalPaxTaxAmount)
 
   // Food plan tax amount
   let foodPlanTaxAmount = specificFoodPlanTotal - taxableSpecificFoodPlan;
@@ -321,8 +329,8 @@ const calculateTaxAmount = (
     taxableSpecificFoodPlan,
     foodPlanTaxAmount,
     foodPlanTaxPercentage: foodPlanTax,
-    additionalPaxWithTax: specificAdditionalPaxDetails + additionalPaxTaxAmount,
-    additionalPaxWithoutTax: specificAdditionalPaxDetails,
+    additionalPaxWithTax: additionalPaxTaxableAmount + additionalPaxTaxAmount,
+    additionalPaxWithoutTax: additionalPaxTaxableAmount,
     additionalPaxTaxAmount: additionalPaxTaxAmount,
   };
 };
@@ -490,11 +498,15 @@ export const fetchDataHotel = async (
           arrivalDate
           checkOutDate
           addTaxWithRate
-        `,
+          addTax
+          addFoodPlanWithRate
+          addPaxWithRate
+          `,
         )
         .lean();
       await Promise.all(
         checkout.map(async (doc) => {
+          console.log(doc)
           if (!doc?.voucherNumber) return;
 
           const selectedRooms = Array.isArray(doc.selectedRooms)

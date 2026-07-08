@@ -5212,6 +5212,7 @@ export const cancelBooking = async (req, res) => {
       record.cancelledAt = new Date();
       record.cancelledBy = req.sUserId;
       record.cancelledByName = req.suser?.name || "";
+      record.cancelReason = req.body.cancelReason;
 
       await record.save({ session });
 
@@ -5978,7 +5979,8 @@ export const getOtherCharges = async (req, res) => {
 export const getTouristReport = async (req, res) => {
   try {
     let { fromDate, toDate } = req.query;
-
+    let {cmp_id} = req.params
+    console.log("cmp_id",cmp_id)
     const todayStr = new Date().toISOString().slice(0, 10);
     fromDate = fromDate || todayStr;
     toDate = toDate || todayStr;
@@ -5988,69 +5990,125 @@ export const getTouristReport = async (req, res) => {
         $gte: fromDate,
         $lte: toDate,
       },
+  cmp_id: new mongoose.Types.ObjectId(cmp_id),
     };
 
-    const report = await CheckIn.aggregate([
-      { $match: match },
-      {
-        $addFields: {
-          selectedRooms: { $ifNull: ["$selectedRooms", []] },
-          additionalPaxDetails: { $ifNull: ["$additionalPaxDetails", []] },
-        },
-      },
-      {
-        $addFields: {
-          roomPaxTotal: {
-            $sum: {
-              $map: {
-                input: "$selectedRooms",
-                as: "room",
-                in: { $ifNull: ["$$room.pax", 0] },
-              },
-            },
-          },
-          additionalPaxCount: {
-            $size: "$additionalPaxDetails",
-          },
-        },
-      },
-      {
-        $addFields: {
-          totalPax: {
-            $add: ["$roomPaxTotal", "$additionalPaxCount"],
-          },
-          groupedCountry: {
-            $cond: [
-              {
-                $or: [
-                  { $eq: ["$guestCountry", null] },
-                  { $eq: ["$guestCountry", ""] },
-                ],
-              },
-              "UNKNOWN",
-              { $toUpper: "$guestCountry" },
-            ],
-          },
-        },
-      },
-      {
-        $group: {
-          _id: "$groupedCountry",
-          pax: { $sum: "$totalPax" },
-          bookings: { $sum: 1 },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          nation: "$_id",
-          pax: 1,
-          bookings: 1,
-        },
-      },
-      { $sort: { pax: -1, nation: 1 } },
-    ]);
+ const report = await CheckIn.aggregate([
+  { $match: match },
 
+  {
+    $addFields: {
+      selectedRooms: { $ifNull: ["$selectedRooms", []] },
+      additionalPaxDetails: { $ifNull: ["$additionalPaxDetails", []] },
+    },
+  },
+
+  {
+    $addFields: {
+      roomPaxTotal: {
+        $sum: {
+          $map: {
+            input: "$selectedRooms",
+            as: "room",
+            in: { $ifNull: ["$$room.pax", 0] },
+          },
+        },
+      },
+      additionalPaxCount: {
+        $size: "$additionalPaxDetails",
+      },
+    },
+  },
+
+  {
+    $addFields: {
+      totalPax: {
+        $add: ["$roomPaxTotal", "$additionalPaxCount"],
+      },
+      normalizedCountry: {
+        $trim: {
+          input: { $ifNull: ["$guestCountry", ""] },
+        },
+      },
+    },
+  },
+
+  {
+    $addFields: {
+      groupedCountry: {
+        $cond: [
+          { $eq: ["$normalizedCountry", ""] },
+          "UNKNOWN",
+          { $toUpper: "$normalizedCountry" },
+        ],
+      },
+    },
+  },
+
+  {
+    $group: {
+      _id: "$groupedCountry",
+      pax: { $sum: "$totalPax" },
+      bookings: { $sum: 1 },
+    },
+  },
+
+  {
+    $project: {
+      _id: 0,
+      nation: "$_id",
+      pax: 1,
+      bookings: 1,
+    },
+  },
+
+  { $sort: { pax: -1, nation: 1 } },
+]);
+const unknownCountryDocs = await CheckIn.aggregate([
+  { $match: match },
+
+  {
+    $addFields: {
+      normalizedCountry: {
+        $trim: {
+          input: { $ifNull: ["$guestCountry", ""] },
+        },
+      },
+    },
+  },
+
+  {
+    $addFields: {
+      groupedCountry: {
+        $cond: [
+          { $eq: ["$normalizedCountry", ""] },
+          "UNKNOWN",
+          { $toUpper: "$normalizedCountry" },
+        ],
+      },
+    },
+  },
+
+  {
+    $match: {
+      groupedCountry: "UNKNOWN",
+    },
+  },
+
+  {
+    $project: {
+      _id: 1,
+      guestName: 1,
+      guestCountry: 1,
+      normalizedCountry: 1,
+      checkInDate: 1,
+      selectedRooms: 1,
+      additionalPaxDetails: 1,
+    },
+  },
+]);
+
+console.log("UNKNOWN COUNTRY DOCS:", unknownCountryDocs);
     const totalPax = report.reduce(
       (sum, item) => sum + Number(item.pax || 0),
       0,
@@ -7851,21 +7909,33 @@ export const getAgentList = async (req, res) => {
 export const getFOSalesSummary = async (req, res) => {
   try {
     const { cmp_id, fromDate, toDate } = req.query;
-    // ✅ Wrap in new Date() — proper Date objects with IST offset
+
+    if (!cmp_id || !fromDate || !toDate) {
+      return res.status(400).json({
+        success: false,
+        message: "cmp_id, fromDate and toDate are required",
+      });
+    }
+
     const startDate = new Date(`${fromDate}T00:00:00.000+05:30`);
     const endDate = new Date(`${toDate}T23:59:59.999+05:30`);
 
     const getSaleCheckInNumbers = (sale) => {
       if (!Array.isArray(sale?.convertedFrom)) return [];
-      return sale.convertedFrom
-        .map((item) => item?.checkInNumber)
-        .filter(Boolean);
+
+      return [
+        ...new Set(
+          sale.convertedFrom
+            .map((item) => item?.checkInNumber?.toString().trim())
+            .filter(Boolean),
+        ),
+      ];
     };
 
     const processPayments = (paymentSplittingData = [], totals) => {
       for (const split of paymentSplittingData) {
         const splitAmount = Number(
-          split?.amount || split?.paidAmount || split?.value || 0,
+          split?.amount ?? split?.paidAmount ?? split?.value ?? 0,
         );
 
         const splitType = String(
@@ -7874,7 +7944,9 @@ export const getFOSalesSummary = async (req, res) => {
             split?.mode ||
             split?.paymentMode ||
             "",
-        ).toLowerCase();
+        )
+          .trim()
+          .toLowerCase();
 
         if (splitType === "cash") totals.cash += splitAmount;
         else if (splitType === "bank") totals.bank += splitAmount;
@@ -7884,20 +7956,16 @@ export const getFOSalesSummary = async (req, res) => {
       }
     };
 
-    console.log("xxxxxxxxx", startDate, endDate);
-
     const dateRangeSales = await salesModel
       .find({
         cmp_id,
         date: {
           $gte: startDate,
-          $lte: endDate, // ✅ Inclusive end
+          $lte: endDate,
         },
         isCancelled: false,
       })
       .lean();
-
-    console.log(dateRangeSales.length);
 
     const checkInNumbers = [
       ...new Set(dateRangeSales.flatMap((sale) => getSaleCheckInNumbers(sale))),
@@ -7927,44 +7995,67 @@ export const getFOSalesSummary = async (req, res) => {
         if (!checkInNumbers.includes(checkInNumber)) continue;
 
         if (!salesByCheckIn.has(checkInNumber)) {
-          salesByCheckIn.set(checkInNumber, []);
+          salesByCheckIn.set(checkInNumber, new Map());
         }
 
-        salesByCheckIn.get(checkInNumber).push(sale);
+        salesByCheckIn.get(checkInNumber).set(String(sale._id), sale);
       }
     }
 
-    const reportMap = new Map();
+    const checkIns = await CheckIn.find({
+      cmp_id,
+      voucherNumber: { $in: checkInNumbers },
+    }).lean();
+
+    const checkInMap = new Map(
+      checkIns.map((item) => [String(item.voucherNumber), item]),
+    );
+
+    const checkInIds = checkIns.map((item) => item._id);
+
+    const checkouts = await CheckOut.find({
+      $or: [
+        { checkInId: { $in: checkInIds } },
+        { originalCheckInId: { $in: checkInIds } },
+      ],
+      checkOutDate: { $gte: fromDate, $lte: toDate },
+    }).lean();
+
+    const checkoutMap = new Map();
+
+    for (const checkout of checkouts) {
+      if (checkout?.checkInId) {
+        checkoutMap.set(String(checkout.checkInId), checkout);
+      }
+
+      if (checkout?.originalCheckInId) {
+        checkoutMap.set(String(checkout.originalCheckInId), checkout);
+      }
+    }
+
+    const report = [];
 
     for (const checkInNumber of checkInNumbers) {
-      const salesForCheckIn = salesByCheckIn.get(checkInNumber) || [];
-
-      const checkIn = await CheckIn.findOne({
-        voucherNumber: checkInNumber,
-        cmp_id,
-      }).lean();
-
+      const checkIn = checkInMap.get(String(checkInNumber));
       if (!checkIn) continue;
 
-      const checkout = await CheckOut.findOne({
-        $or: [{ checkInId: checkIn._id }, { originalCheckInId: checkIn._id }],
-        checkOutDate: { $gte: fromDate, $lte: toDate },
-      }).lean();
-
+      const checkout = checkoutMap.get(String(checkIn._id));
       if (!checkout) continue;
 
+      const salesForCheckIn = Array.from(
+        (salesByCheckIn.get(checkInNumber) || new Map()).values(),
+      );
+
       const roomDetails = await getFullRoomDetails(
-        checkout.selectedRooms,
+        checkout.selectedRooms || [],
         checkout,
       );
 
       const extraPersonCount =
         checkout.selectedRooms?.reduce((total, room) => {
-          const pax = Number(room.pax || 0);
+          const pax = Number(room?.pax || 0);
           return total + (pax > 2 ? pax - 2 : 0);
         }, 0) || 0;
-
-      console.log(roomDetails, "roomDetails");
 
       const roomSaleAmount = Number(roomDetails?.taxableAmount || 0);
 
@@ -7973,27 +8064,27 @@ export const getFOSalesSummary = async (req, res) => {
         Number(roomDetails?.foodPlanTaxAmount || 0);
 
       const roundedTotalTax = Number(totalTax.toFixed(2));
-      const cgst = roundedTotalTax / 2;
-      const sgst = roundedTotalTax / 2;
+      const cgst = Number((roundedTotalTax / 2).toFixed(2));
+      const sgst = Number((roundedTotalTax / 2).toFixed(2));
 
       const restaurantSales = salesForCheckIn.filter(
-        (sale) => sale.isPostToRoom === true,
+        (sale) => sale?.isPostToRoom === true,
       );
 
       const rtBillNo = restaurantSales
-        .map((sale) => sale.salesNumber)
+        .map((sale) => sale?.salesNumber)
         .filter(Boolean)
         .join(", ");
 
       const restaurantSaleAmount = restaurantSales.reduce((sum, sale) => {
-        return sum + Number(sale.finalAmount || 0);
+        return sum + Number(sale?.finalAmount || 0);
       }, 0);
 
       const modSale = Number(
-        checkout.otherChargeAmount || checkout.otherChargeWithOutTax || 0,
+        checkout?.otherChargeAmount || checkout?.otherChargeWithOutTax || 0,
       );
 
-      const advance = Number(checkout.totalAdvance || 0);
+      const advance = Number(checkout?.totalAdvance || 0);
 
       const billTotal =
         restaurantSaleAmount +
@@ -8021,24 +8112,25 @@ export const getFOSalesSummary = async (req, res) => {
         processPayments(checkout.paymentSplittingData, totals);
       }
 
-      // console.log("checkOutDate",checkout)
-
-      reportMap.set(checkInNumber, {
+      report.push({
         checkInNumber,
-        date: checkout.checkOutDate,
-        billNo: checkout.voucherNumber,
-        grcNo: checkout.grcno,
-        agentName: checkout.customerName,
-        guestName: checkout.guestName,
-        room: checkout.selectedRooms?.map((r) => r.roomName).join(", ") || "",
-        days: checkout.stayDays || 0,
+        date: checkout?.checkOutDate,
+        billNo: checkout?.voucherNumber,
+        grcNo: checkout?.grcno,
+        agentName: checkout?.customerName,
+        guestName: checkout?.guestName,
+        room:
+          checkout?.selectedRooms?.map((r) => r?.roomName).filter(Boolean).join(", ") ||
+          "",
+        totalRoom: checkout?.selectedRooms?.length || 0,
+        days: checkout?.stayDays || 0,
         extraPerson: extraPersonCount,
-        plan: checkout.foodPlan?.[0]?.foodPlan || "",
+        plan: checkout?.foodPlan?.[0]?.foodPlan || "",
         roomSaleAmount,
-        planSaleAmount: roomDetails?.taxableSpecificFoodPlan || 0,
+        planSaleAmount: Number(roomDetails?.taxableSpecificFoodPlan || 0),
         cgst,
         sgst,
-        totalTax,
+        totalTax: roundedTotalTax,
         rtBillNo,
         restaurantSale: restaurantSaleAmount,
         modSale,
@@ -8052,7 +8144,7 @@ export const getFOSalesSummary = async (req, res) => {
       });
     }
 
-    const report = Array.from(reportMap.values()).sort((a, b) =>
+    report.sort((a, b) =>
       String(b.grcNo || "").localeCompare(String(a.grcNo || ""), undefined, {
         numeric: true,
         sensitivity: "base",
@@ -8885,13 +8977,14 @@ export const getCancellationReport = async (req, res) => {
       })
         .populate("Secondary_user_id", "name")
         .select(
-          "voucherNumber updatedAt Secondary_user_id cancelReason bookingDate status cancelledAt cancelledBy createdAt",
+          "voucherNumber updatedAt Secondary_user_id cancelReason bookingDate status cancelledAt cancelledBy createdAt _id",
         );
 
       bookingCancels.forEach((b) => {
         results.push({
           cancelType: "booking",
           voucherNumber: b.voucherNumber || "-",
+          voucherId: b._id,
           cancelledAt: b.cancelledAt || null,
           cancelledBy: b.cancelledBy || "-",
           cancelledByName: b.Secondary_user_id?.name || "-",
@@ -8913,13 +9006,14 @@ export const getCancellationReport = async (req, res) => {
       })
         .populate("Secondary_user_id", "name")
         .select(
-          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy createdAt",
+          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy createdAt _id",
         );
 
       checkinCancels.forEach((c) => {
         results.push({
           cancelType: "checkin",
           voucherNumber: c.voucherNumber || "-",
+          voucherId: c._id,
           cancelledAt: c.cancelledAt || null,
           cancelledBy: c.cancelledBy || "-",
           cancelledByName: c.Secondary_user_id?.name || "-",
@@ -8941,13 +9035,14 @@ export const getCancellationReport = async (req, res) => {
       })
         .populate("Secondary_user_id", "name")
         .select(
-          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy createdAt",
+          "voucherNumber updatedAt Secondary_user_id cancelReason guestName status cancelledAt cancelledBy createdAt _id",
         );
 
       checkoutCancels.forEach((c) => {
         results.push({
           cancelType: "checkout",
           voucherNumber: c.voucherNumber || "-",
+          voucherId: c._id,
           cancelledAt: c.cancelledAt || null,
           cancelledBy: c.ScancelledBy || "-",
           cancelledByName: c.Secondary_user_id?.name || "-",
@@ -8970,13 +9065,14 @@ export const getCancellationReport = async (req, res) => {
         .populate("secondary_user_id", "name")
          .populate("cancelledBy", "name")
         .select(
-          "voucherNumber cancelledAt cancelledBy secondary_user_id cancelReason tableNumber createdAt",
+          "voucherNumber cancelledAt cancelledBy secondary_user_id cancelReason tableNumber createdAt _id",
         );
 
       kotCancels.forEach((k) => {
         results.push({
           cancelType: "kot",
           voucherNumber: k.voucherNumber || "-",
+          voucherId: k._id,
           cancelledAt: k.cancelledAt || null,
           cancelledBy: k.cancelledBy || "-",
           cancelledByName: k.secondary_user_id?.name || k.cancelledBy?.name || "-",
@@ -9004,6 +9100,7 @@ export const getCancellationReport = async (req, res) => {
         results.push({
           cancelType: "receipt",
           voucherNumber: r.receiptNumber || "-",
+          voucherId: r._id,
           cancelledAt: r.cancelledAt || null,
           cancelledBy: r.cancelledBy || "-",
           cancelledByName: r.Secondary_user_id?.name || "-",
@@ -9026,13 +9123,14 @@ export const getCancellationReport = async (req, res) => {
   })  .populate("Secondary_user_id", "name")
   .populate("cancelledBy", "name")
  .select(
-  "salesNumber updatedAt cancelledAt cancelledBy cancelledByName cancelReason partyName Secondary_user_id date"
+  "salesNumber updatedAt cancelledAt cancelledBy cancelledByName cancelReason partyName Secondary_user_id date _id"
 );
 
   saleCancels.forEach((s) => {
     results.push({
       cancelType: "sale",
       voucherNumber: s.salesNumber || "-",
+      voucherId: s._id,
       cancelledAt: s.cancelledAt || null,
       cancelledBy: s.cancelledBy || "-",
       cancelledByName: s.Secondary_user_id?.name ||  s.cancelledBy?.name || "-",
@@ -9171,6 +9269,71 @@ if (!defaultPlan) {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
+    });
+  }
+};
+
+
+export const getSpecificDataForPrint = async (req, res) => {
+  try {
+    const { cmp_id, id, under } = req.params;
+
+    const queryConfig = {
+      checkout: { model: CheckOut, filter: { cmp_id, _id: id } },
+      sale: { model: CheckOut, filter: { cmp_id, voucherNumber: id } },
+      kot: { model: Kot, filter: { cmp_id, _id: id } },
+      booking: { model: Booking, filter: { cmp_id, _id: id } },
+      checkin: { model: CheckIn, filter: { cmp_id, _id: id } },
+    };
+
+    const populateFields = [
+      "customerId",
+      "guestId",
+      "agentId",
+      "isHotelAgent",
+      "selectedRooms.selectedPriceLevel",
+      "bookingId",
+      "checkInId",
+    ];
+
+    if(under !== "kot"){
+    }
+
+    const currentConfig = queryConfig[under];
+
+    if (!currentConfig) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid print type",
+      });
+    }
+
+    let query = currentConfig.model.find(currentConfig.filter);
+
+
+     if(under !== "kot"){
+    populateFields.forEach((field) => {
+      query = query.populate(field);
+    });
+    }
+    const data = await query;
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `${under} data not found`,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
     });
   }
 };

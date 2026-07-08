@@ -1010,22 +1010,21 @@ useEffect(() => {
   };
 
   const handleAdditionalPaxDetails = (details, room) => {
-
-    console.log(details,room)
-
+  let filteredDetails =  details.filter((i) => i.paxID !== "" );
+  console.log(filteredDetails,formData?.additionalPaxDetails)
     const existingDetails = Array.isArray(formData?.additionalPaxDetails)
       ? formData.additionalPaxDetails
       : [];
       
     const filterData = existingDetails.filter((i) => i.roomId !== room);
-    const totalAmount = [...filterData, ...details].reduce(
+    const totalAmount = [...filterData, ...filteredDetails].reduce(
       (acc, item) => acc + Number(item.rate),
       0,
     );
 
     setFormData((prev) => ({
       ...prev,
-      additionalPaxDetails: [...filterData, ...details],
+      additionalPaxDetails: [...filterData, ...filteredDetails],
       paxTotal: totalAmount,
       updatedDate: currentDateDefault,
     }));

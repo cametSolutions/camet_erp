@@ -1,7 +1,14 @@
 import api from "@/api/api";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { useNavigate } from "react-router-dom";
+import useFetch from "@/customHook/useFetch";
+import { toast } from "sonner";
+import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
+import TitleDiv from "../../../components/common/TitleDiv";
 const formatDisplayDate = (dateStr) => {
   if (!dateStr) return "-";
 
@@ -21,13 +28,15 @@ const formatDisplayDate = (dateStr) => {
 };
 
 const CancellationReport = () => {
-  const cmp_id = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg._id,
-  );
+  const {
+    _id: cmp_id,
+    configurations,
+    name,
+  } = useSelector((state) => state.secSelectedOrganization.secSelectedOrg);
   const owner = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
-
+  const navigate = useNavigate();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [cancelType, setCancelType] = useState("all");
@@ -149,17 +158,205 @@ const CancellationReport = () => {
         ? formatDisplayDate(row.cancelledAt).toLowerCase()
         : "";
 
+      const bookingDate = row.date
+        ? formatDisplayDate(row.date).toLowerCase()
+        : "";
+
       return (
         (row.cancelType || "").toLowerCase().includes(search) ||
         (row.voucherNumber || "").toLowerCase().includes(search) ||
         (row.cancelledByName || "").toLowerCase().includes(search) ||
         (row.reason || "").toLowerCase().includes(search) ||
-        formattedDate.includes(search)
+        formattedDate.includes(search) ||
+        bookingDate.includes(search)
       );
     });
   }, [reportData, searchTerm]);
 
+  const getExportData = () => {
+    return reportData.map((row, index) => ({
+      "Sl No": index + 1,
+      Type: row.cancelType || "-",
+      "Voucher No": row.voucherNumber || "-",
+      Date: row.date ? formatDisplayDate(row.date) : "-",
+      "Cancelled By": row.cancelledByName || "-",
+      "Cancelled Date": row.cancelledAt
+        ? formatDisplayDate(row.cancelledAt)
+        : "-",
+      Reason: row.reason || "-",
+    }));
+  };
+
+  const exportToExcel = () => {
+    if (!reportData.length) {
+      setError("No data available to export.");
+      return;
+    }
+
+    const exportData = getExportData();
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Cancellation Report");
+    XLSX.writeFile(workbook, "Cancellation_Report.xlsx");
+  };
+
+  const exportToPDF = () => {
+    if (!reportData.length) {
+      setError("No data available to export.");
+      return;
+    }
+
+    const doc = new jsPDF("l", "mm", "a4");
+
+    doc.setFontSize(14);
+    doc.text("Cancellation Report", 14, 15);
+
+    doc.setFontSize(10);
+    doc.text(`${owner?.companyName || owner?.name || ""}`, 14, 21);
+    doc.text(`From: ${startDate || "-"}   To: ${endDate || "-"}`, 14, 27);
+    doc.text(`Type: ${cancelType}`, 14, 33);
+
+    autoTable(doc, {
+      startY: 38,
+      head: [
+        [
+          "Sl No",
+          "Type",
+          "Voucher No",
+          "Date",
+          "Cancelled By",
+          "Cancelled Date",
+          "Reason",
+        ],
+      ],
+      body: reportData.map((row, index) => [
+        index + 1,
+        row.cancelType || "-",
+        row.voucherNumber || "-",
+        row.date ? formatDisplayDate(row.date) : "-",
+        row.cancelledByName || "-",
+        row.cancelledAt ? formatDisplayDate(row.cancelledAt) : "-",
+        row.reason || "-",
+      ]),
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: [26, 58, 92],
+        textColor: 255,
+      },
+      theme: "grid",
+    });
+
+    doc.save("Cancellation_Report.pdf");
+  };
+
+  const handlePrintRow = async (row) => {
+    if (row.cancelType === "checkout") {
+      const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+
+      if (!row.voucherId) {
+        toast.error("Voucher not found");
+        return;
+      }
+
+      const response = await api.get(
+        `/api/sUsers/specificDataForPrint/${cmp_id}/${row.voucherId}/checkout`,
+        { withCredentials: true },
+      );
+
+      const checkoutData = response?.data?.data;
+      navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+        state: {
+          selectedCheckOut: checkoutData,
+          customerId: checkoutData?.customerId?._id,
+          isForPreview: false,
+        },
+      });
+    }
+    if (row.cancelType === "sale") {
+      const hasPrint1 = configurations[0]?.defaultPrint?.print1;
+
+      if (!row.voucherId) {
+        toast.error("Voucher not found");
+        return;
+      }
+
+      const response = await api.get(
+        `/api/sUsers/specificDataForPrint/${cmp_id}/${row.voucherNumber}/sale`,
+        { withCredentials: true },
+      );
+
+      const checkoutData = response?.data?.data;
+      navigate(hasPrint1 ? "/sUsers/CheckOutPrint" : "/sUsers/BillPrint", {
+        state: {
+          selectedCheckOut: checkoutData,
+          customerId: checkoutData?.customerId?._id,
+          isForPreview: false,
+        },
+      });
+    }
+    if (row.cancelType === "checkin" || row.cancelType === "booking") {
+      if (!row.voucherId) {
+        toast.error("Voucher not found");
+        return;
+      }
+      let route = row.cancelType === "checkin" ? "checkin" : "booking";
+
+      const response = await api.get(
+        `/api/sUsers/specificDataForPrint/${cmp_id}/${row.voucherId}/${route}`,
+        { withCredentials: true },
+      );
+
+      const checkoutData = response?.data?.data;
+      navigate("/sUsers/CheckInPrint", {
+        state: {
+          selectedCheckOut: checkoutData,
+          customerId: checkoutData?.customerId?._id,
+          isForPreview: false,
+        },
+      });
+    }
+    if (row.cancelType === "receipt") {
+      if (!row.voucherId) {
+        toast.error("Voucher not found");
+        return;
+      }
+       navigate(`/sUsers/recietpprint/${row.voucherId}`)
+    }
+
+
+    if (row.cancelType === "kot") {
+      if (!row.voucherId) {
+        toast.error("Voucher not found");
+        return;
+      }
+      const response = await api.get(
+        `/api/sUsers/specificDataForPrint/${cmp_id}/${row.voucherId}/kot`,
+        { withCredentials: true },
+      );
+
+      const data = response?.data?.data[0];
+      const orderData = {
+        kotNo: data?.voucherNumber,
+        tableNo: data?.tableNumber,
+        items: data?.items,
+        createdAt: data?.createdAt,
+        customerName: data?.customer?.name,
+        guestName: data?.customer?.guestName,
+        type: data?.type,
+        roomName: data?.roomId?.roomName,
+        isCancelled: true,
+      };
+      generateAndPrintKOT(orderData, true, false, name);
+    }
+  };
+
   return (
+    <>
+     <TitleDiv title="Cancellation Report" />
     <div
       ref={pageRef}
       style={{
@@ -340,6 +537,40 @@ const CancellationReport = () => {
             Clear
           </button>
 
+          <button
+            onClick={exportToExcel}
+            style={{
+              height: 30,
+              background: "#15803d",
+              color: "#fff",
+              border: "none",
+              borderRadius: 5,
+              padding: "0 12px",
+              fontWeight: 600,
+              fontSize: 11,
+              cursor: "pointer",
+            }}
+          >
+            Excel
+          </button>
+
+          <button
+            onClick={exportToPDF}
+            style={{
+              height: 30,
+              background: "#b91c1c",
+              color: "#fff",
+              border: "none",
+              borderRadius: 5,
+              padding: "0 12px",
+              fontWeight: 600,
+              fontSize: 11,
+              cursor: "pointer",
+            }}
+          >
+            PDF
+          </button>
+
           <div style={{ minWidth: 180, flex: "1 1 220px" }}>
             <label
               style={{
@@ -454,7 +685,7 @@ const CancellationReport = () => {
           <table
             style={{
               width: "100%",
-              minWidth: 700,
+              minWidth: 900,
               borderCollapse: "collapse",
               fontSize: 11,
             }}
@@ -470,11 +701,22 @@ const CancellationReport = () => {
                 }}
               >
                 <th style={{ padding: "8px 10px", textAlign: "left" }}>Type</th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>Voucher No</th>
+                <th style={{ padding: "8px 10px", textAlign: "left" }}>
+                  Voucher No
+                </th>
                 <th style={{ padding: "8px 10px", textAlign: "left" }}>Date</th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>Cancelled By</th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>Cancelled Date</th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>Reason</th>
+                <th style={{ padding: "8px 10px", textAlign: "left" }}>
+                  Cancelled By
+                </th>
+                <th style={{ padding: "8px 10px", textAlign: "left" }}>
+                  Cancelled Date
+                </th>
+                <th style={{ padding: "8px 10px", textAlign: "left" }}>
+                  Reason
+                </th>
+                <th style={{ padding: "8px 10px", textAlign: "center" }}>
+                  Action
+                </th>
               </tr>
             </thead>
 
@@ -482,7 +724,7 @@ const CancellationReport = () => {
               {!loading && filteredReportData.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={7}
                     style={{
                       textAlign: "center",
                       padding: 20,
@@ -504,16 +746,42 @@ const CancellationReport = () => {
                       borderBottom: "1px solid #e5e7eb",
                     }}
                   >
-                    <td style={{ padding: "7px 10px" }}>{row.cancelType || "-"}</td>
-                    <td style={{ padding: "7px 10px" }}>{row.voucherNumber || "-"}</td>
-                     <td style={{ padding: "7px 10px" }}>
+                    <td style={{ padding: "7px 10px" }}>
+                      {row.cancelType || "-"}
+                    </td>
+                    <td style={{ padding: "7px 10px" }}>
+                      {row.voucherNumber || "-"}
+                    </td>
+                    <td style={{ padding: "7px 10px" }}>
                       {row.date ? formatDisplayDate(row.date) : "-"}
                     </td>
-                    <td style={{ padding: "7px 10px" }}>{row.cancelledByName || "-"}</td>
                     <td style={{ padding: "7px 10px" }}>
-                      {row.cancelledAt ? formatDisplayDate(row.cancelledAt) : "-"}
+                      {row.cancelledByName || "-"}
+                    </td>
+                    <td style={{ padding: "7px 10px" }}>
+                      {row.cancelledAt
+                        ? formatDisplayDate(row.cancelledAt)
+                        : "-"}
                     </td>
                     <td style={{ padding: "7px 10px" }}>{row.reason || "-"}</td>
+                    <td style={{ padding: "7px 10px", textAlign: "center" }}>
+                        <button
+                          onClick={() => handlePrintRow(row)}
+                          style={{
+                            height: 26,
+                            background: "#2563eb",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 5,
+                            padding: "0 10px",
+                            fontWeight: 600,
+                            fontSize: 10,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Print
+                        </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -522,6 +790,7 @@ const CancellationReport = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

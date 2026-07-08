@@ -268,6 +268,10 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    cancelReason: {
+      type: String,
+      default: "",
+    },
     originalCheckInId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CheckIn",
