@@ -66,6 +66,7 @@ export const calculateTaxAmount = (
       additionalPaxWithTax: 0,
       additionalPaxWithoutTax: 0,
       additionalPaxTaxAmount: 0,
+      additionalPaxCount: 0,
     };
   }
 
@@ -94,7 +95,7 @@ export const calculateTaxAmount = (
   const specificAdditionalPaxDetails = round2(additionalPaxPerNight * nights);
 
   const additionalPaxCount =
-    (additionalPaxDetails.filter(
+    ((additionalPaxDetails || []).filter(
       (item) => item.roomId?.toString() === roomId?.toString(),
     ).length || 0) * nights;
 
@@ -107,7 +108,7 @@ export const calculateTaxAmount = (
     specificFoodPlanTotal - taxableSpecificFoodPlan,
   );
 
-  const originalRoomPrice = round2(Number(roomPrice || 0) * nights);
+  const originalRoomPrice = round2(Number(roomPrice || 0));
 
   const amountWithTax = round2(
     Math.max(
@@ -126,6 +127,7 @@ export const calculateTaxAmount = (
       : 0;
 
   const roomTaxAmount = round2(amountWithTax - taxableAmount);
+
   const additionalPaxWithoutTax =
     specificAdditionalPaxDetails > 0
       ? round2(
@@ -156,7 +158,7 @@ export const calculateTaxAmount = (
   };
 };
 
-export const getFullRoomDetails = async (roomData, doc) => {
+export const getFullRoomDetails = (roomData, doc) => {
   const finalData = {
     taxableAmount: 0,
     roomTaxAmount: 0,
@@ -168,6 +170,8 @@ export const getFullRoomDetails = async (roomData, doc) => {
     additionalPaxTaxAmount: 0,
     additionalPaxCount: 0,
   };
+
+  const updatedRooms = [];
 
   for (const room of roomData || []) {
     const roomStayDays = calculateStayDays(doc, room);
@@ -186,6 +190,18 @@ export const getFullRoomDetails = async (roomData, doc) => {
       doc?.additionalPaxDetails,
       doc,
     );
+
+    const roomNetAmount = round2(
+      taxDetails.taxableAmount + taxDetails.roomTaxAmount,
+    );
+
+    updatedRooms.push({
+      ...room,
+      stayDays: roomStayDays,
+      amountWithOutTax: taxDetails.taxableAmount,
+      amountAfterTax: roomNetAmount,
+      taxAmount: taxDetails.roomTaxAmount,
+    });
 
     finalData.taxableAmount = round2(
       finalData.taxableAmount + taxDetails.taxableAmount,
@@ -216,5 +232,51 @@ export const getFullRoomDetails = async (roomData, doc) => {
     );
   }
 
-  return finalData;
+  return {
+    ...finalData,
+    updatedRooms,
+  };
+};
+
+
+export const handleRecalculateCheckOut = async (selectedCheckOut, cmp_id, session) => {
+  const updatedItems = [];
+
+  for (const checkout of selectedCheckOut) {
+    const roomDetails = getFullRoomDetails(checkout.selectedRooms, checkout);
+
+    console.log("roomsedf",roomDetails);
+    const roomTotal = round2(
+      roomDetails.taxableAmount + roomDetails.roomTaxAmount 
+    );
+
+    const grandTotal = round2(
+      roomTotal +
+      roomDetails.specificFoodPlanTotal +
+      roomDetails.additionalPaxWithTax
+    );
+
+
+    console.log("roomTotal",roomTotal,grandTotal);
+
+    updatedItems.push({
+      ...checkout,
+      taxableAmount: roomDetails.taxableAmount,
+      roomTaxAmount: roomDetails.roomTaxAmount,
+      specificFoodPlanTotal: roomDetails.specificFoodPlanTotal,
+      taxableSpecificFoodPlan: roomDetails.taxableSpecificFoodPlan,
+      foodPlanTaxAmount: roomDetails.foodPlanTaxAmount,
+      additionalPaxWithTax: roomDetails.additionalPaxWithTax,
+      additionalPaxWithoutTax: roomDetails.additionalPaxWithoutTax,
+      additionalPaxTaxAmount: roomDetails.additionalPaxTaxAmount,
+      additionalPaxCount: roomDetails.additionalPaxCount,
+      selectedRooms: roomDetails.updatedRooms,
+      roomTotal,
+      grandTotal,
+      totalAmount: grandTotal,
+      balanceToPay: grandTotal - Number(checkout.totalAdvance || 0),
+    });
+  }
+
+  return updatedItems;
 };
