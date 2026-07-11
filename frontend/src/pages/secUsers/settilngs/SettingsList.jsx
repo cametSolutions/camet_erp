@@ -7,11 +7,14 @@ import { TbMoneybag } from "react-icons/tb";
 import { MdHomeRepairService } from "react-icons/md";
 import SettingsCard from "../../../components/common/SettingsCard";
 import { useSelector } from "react-redux";
+import { isAdminUser } from "@/utils/permissions";
 
 const Settings = () => {
     const { industry } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg
   );
+  const secUserData = JSON.parse(localStorage.getItem("sUserData"));
+  const isAdmin = isAdminUser(secUserData);
 
   const settingsOptions = [
     {
@@ -26,7 +29,8 @@ const Settings = () => {
       description: "make you permisiion settings",
       icon: <HiTemplate />,
       to: "/sUsers/MenuRightsSettingsPage",
-      active: true,
+      active: isAdmin,
+      adminOnly: true,
     },
     {
       title: "PARTIES",

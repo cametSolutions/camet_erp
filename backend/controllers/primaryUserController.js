@@ -34,6 +34,52 @@ import ReceiptModel from "../models/receiptModel.js";
 import partyModel from "../models/partyModel.js";
 import subGroup from "../models/subGroup.js";
 
+const allowedPermissionKeys = new Set([
+  "hotelManagement",
+  "restaurantManagement",
+  "voucher",
+  "reports",
+  "hotelDashboard",
+  "bookingList",
+  "checkinList",
+  "checkoutList",
+  "editTariffRate",
+  "swapRoom",
+  "roomShift",
+  "guestLedger",
+  "restaurantDashboard",
+  "kotPage",
+  "restaurantPayment",
+  "restaurantDailySales",
+  "categoryWiseSales",
+  "itemWiseSales",
+  "kotRegister",
+  "restaurantReceiptReport",
+  "saleRegister",
+  "hotelReports",
+  "restaurantReports",
+  "voucherReports",
+  "dailySalesReport",
+  "foDailyStatement",
+  "flashReport",
+  "paxReport",
+  "foodPlanReport",
+  "occupancyReport",
+  "roomSummaryReport",
+  "receiptReport",
+  "travelAgentReport",
+  "foBillSummary",
+  "cancellationReport",
+]);
+
+const sanitizePermissions = (permissions = {}) =>
+  Object.keys(permissions).reduce((acc, key) => {
+    if (allowedPermissionKeys.has(key)) {
+      acc[key] = permissions[key] === true;
+    }
+    return acc;
+  }, {});
+
 // @desc Register Primary user
 // route POST/api/pUsers/register
 
@@ -1077,9 +1123,10 @@ export const getUserPermissions = async (req, res) => {
   try {
     const userId = req.params.id;
 
-    const user = await SecondaryUser.findById(userId).select(
-      "name email mobile role permissions organization primaryUser"
-    );
+    const user = await SecondaryUser.findOne({
+      _id: userId,
+      primaryUser: req.owner,
+    }).select("name email mobile role permissions organization primaryUser");
 
     if (!user) {
       return res.status(404).json({
@@ -1104,33 +1151,31 @@ export const getUserPermissions = async (req, res) => {
 
 // @desc update user permissions
 // route PATCH /api/sUsers/updateUserPermissions/:id
-export const updateUserPermissions = async (req, res) => {
-  try {
-    const userId = req.params.id;
-    const { permissions } = req.body;
+export const updateUserPermissions = async(req,res)=>{
 
-    const user = await SecondaryUser.findById(userId);
+    const admin = await SecondaryUser.findById(req.userId);
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+    if(admin?.role!=="admin"){
+        return res.status(403).json({
+            message:"Only admin can update permissions"
+        });
     }
 
-    user.permissions = permissions || {};
+    const user = await SecondaryUser.findById(req.params.id);
+
+    if(!user){
+        return res.status(404).json({
+            message:"User not found"
+        });
+    }
+
+    user.permissions = req.body.permissions;
+
     await user.save();
 
-    return res.status(200).json({
-      success: true,
-      message: "Permissions updated successfully",
-      user,
+    res.json({
+        success:true,
+        message:"Permissions updated"
     });
-  } catch (error) {
-    console.error("updateUserPermissions error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error, try again!",
-    });
-  }
-};
+
+}
