@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import api from "@/api/api";
-
+import { setFoSalesReportDate } from "../../../../slices/dateSlice";
 const formatNumber = (value) =>
   Number(value || 0).toLocaleString("en-IN", {
     minimumFractionDigits: 2,
@@ -94,17 +94,36 @@ const buttonStyle = (variant = "primary") => {
 };
 
 export default function FOSalesSummaryReport() {
+  const dispatch = useDispatch();
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
+  const foSalesSummaryDate = useSelector(
+    (state) => state.selectedDate.foSalesSummaryDate,
+  );
 
+  const { start, end, autoFetch } = foSalesSummaryDate;
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState([]);
   const [search, setSearch] = useState("");
 
   const today = new Date().toISOString().split("T")[0];
-  const [fromDate, setFromDate] = useState(today);
-  const [toDate, setToDate] = useState(today);
+  const [fromDate, setFromDate] = useState(start || today);
+  const [toDate, setToDate] = useState(end || today);
+
+  useEffect(() => {
+      if (autoFetch && cmp_id) {
+        fetchReport(start, end);
+  
+        dispatch(
+          setFoSalesReportDate({
+            autoFetch: true,
+            start: start,
+            end: end,
+          }),
+        );
+      }
+    }, [autoFetch, cmp_id]);
 
   const fetchReport = async () => {
     try {
@@ -113,6 +132,14 @@ export default function FOSalesSummaryReport() {
         alert("From date cannot be greater than To date");
         return;
       }
+
+      dispatch(
+        setFoSalesReportDate({
+          start: fromDate,
+          end: toDate,
+          autoFetch: false,
+        }),
+      );
 
       setLoading(true);
       const res = await api.get("/api/sUsers/fo-sales-summary", {
@@ -712,7 +739,7 @@ export default function FOSalesSummaryReport() {
                       <TH>Plan</TH>
                       <TH right>Room Sale</TH>
                       <TH right>Extra Pax</TH>
-                                            <TH right>Plan Sale</TH>
+                      <TH right>Plan Sale</TH>
                       <TH right>CGST</TH>
                       <TH right>SGST</TH>
                       <TH>RT Bill</TH>

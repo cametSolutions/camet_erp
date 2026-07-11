@@ -10,8 +10,8 @@ import {
 import * as XLSX from "xlsx";
 import TitleDiv from "@/components/common/TitleDiv";
 import api from "../../../api/api";
-import { useSelector } from "react-redux";
-
+import { useSelector, useDispatch } from "react-redux";
+import { setFlashReportDate } from "../../../../slices/dateSlice";
 const fmt = (n) =>
   Number(n || 0).toLocaleString("en-IN", {
     minimumFractionDigits: 2,
@@ -29,16 +29,14 @@ const today = getLocalToday();
 
 const getFiscalYearDays = (selectedYear) => {
   const year = parseInt(selectedYear, 10);
-  const fiscalStart = new Date(year, 3, 1);       // Apr 1
-  const fiscalEnd = new Date(year + 1, 2, 31);    // Mar 31 next year
+  const fiscalStart = new Date(year, 3, 1); // Apr 1
+  const fiscalEnd = new Date(year + 1, 2, 31); // Mar 31 next year
   const todayDate = new Date();
 
   if (todayDate < fiscalStart) return 1;
 
   const effectiveEnd = todayDate >= fiscalEnd ? fiscalEnd : todayDate;
-  return (
-    Math.floor((effectiveEnd - fiscalStart) / (1000 * 60 * 60 * 24)) + 1
-  );
+  return Math.floor((effectiveEnd - fiscalStart) / (1000 * 60 * 60 * 24)) + 1;
 };
 
 const getFiscalYearLabel = (selectedYear) => {
@@ -98,7 +96,15 @@ const TD = ({ children, right, bold, muted }) => (
 );
 
 // FIX: rowIndex passed as prop instead of module-level mutable var
-const TDRow = ({ label, d, m, y, isPercent = false, bold = false, rowIndex }) => {
+const TDRow = ({
+  label,
+  d,
+  m,
+  y,
+  isPercent = false,
+  bold = false,
+  rowIndex,
+}) => {
   const bg = rowIndex % 2 === 0 ? "#fff" : "#f9fafb";
   return (
     <tr style={{ background: bg, borderBottom: "1px solid #f0f0f0" }}>
@@ -141,8 +147,6 @@ const FlashReportPDF = ({
   selectedYear,
   fiscalYearDays,
 }) => {
-
-  
   const s = StyleSheet.create({
     page: { padding: 30, fontSize: 10, fontFamily: "Helvetica" },
     border: { border: "1px solid black", padding: 15 },
@@ -252,41 +256,177 @@ const FlashReportPDF = ({
           </View>
 
           <Text style={s.sectionTitle}>ROOM STATISTICS</Text>
-          <R label="(A) Total Rooms" d={dateData?.totalRooms} m={monthData?.totalRooms} y={yearData?.totalRooms} />
-          <R label="(B) Blocked Rooms" d={dateData?.blockedRooms} m={monthData?.blockedRooms} y={yearData?.blockedRooms} />
-          <R label="(C) Saleable Rooms (A-B)" d={dateData?.saleableRooms} m={monthData?.saleableRooms} y={yearData?.saleableRooms} />
-          <R label="(D) Occupied Rooms (Paid)" d={dateData?.occupiedPaid} m={monthData?.occupiedPaid} y={yearData?.occupiedPaid} />
-          <R label="(E) Occupied Rooms (Comp/House Use)" d={dateData?.occupiedComp} m={monthData?.occupiedComp} y={yearData?.occupiedComp} />
-          <R label="(F) Total Occupied Rooms (D+E)" d={dateData?.totalOccupied} m={monthData?.totalOccupied} y={yearData?.totalOccupied} />
-          <R label="(N) No Shows" d={dateData?.noShows} m={monthData?.noShows} y={yearData?.noShows} />
-          <R label="(O) % of Occupancy (D/A)%" d={dateData?.occPercent} m={monthData?.occPercent} y={yearData?.occPercent} isPercent />
-          <R label="(P) ARR (Total Rooms)" d={dateData?.arrTotalRooms} m={monthData?.arrTotalRooms} y={yearData?.arrTotalRooms} />
-          <R label="(Q) ARR (Saleable Rooms)" d={dateData?.arrSaleableRooms} m={monthData?.arrSaleableRooms} y={yearData?.arrSaleableRooms} />
-          <R label="(R) ARR (Occupied Rooms)" d={dateData?.arrOccupiedRooms} m={monthData?.arrOccupiedRooms} y={yearData?.arrOccupiedRooms} />
+          <R
+            label="(A) Total Rooms"
+            d={dateData?.totalRooms}
+            m={monthData?.totalRooms}
+            y={yearData?.totalRooms}
+          />
+          <R
+            label="(B) Blocked Rooms"
+            d={dateData?.blockedRooms}
+            m={monthData?.blockedRooms}
+            y={yearData?.blockedRooms}
+          />
+          <R
+            label="(C) Saleable Rooms (A-B)"
+            d={dateData?.saleableRooms}
+            m={monthData?.saleableRooms}
+            y={yearData?.saleableRooms}
+          />
+          <R
+            label="(D) Occupied Rooms (Paid)"
+            d={dateData?.occupiedPaid}
+            m={monthData?.occupiedPaid}
+            y={yearData?.occupiedPaid}
+          />
+          <R
+            label="(E) Occupied Rooms (Comp/House Use)"
+            d={dateData?.occupiedComp}
+            m={monthData?.occupiedComp}
+            y={yearData?.occupiedComp}
+          />
+          <R
+            label="(F) Total Occupied Rooms (D+E)"
+            d={dateData?.totalOccupied}
+            m={monthData?.totalOccupied}
+            y={yearData?.totalOccupied}
+          />
+          <R
+            label="(N) No Shows"
+            d={dateData?.noShows}
+            m={monthData?.noShows}
+            y={yearData?.noShows}
+          />
+          <R
+            label="(O) % of Occupancy (D/A)%"
+            d={dateData?.occPercent}
+            m={monthData?.occPercent}
+            y={yearData?.occPercent}
+            isPercent
+          />
+          <R
+            label="(P) ARR (Total Rooms)"
+            d={dateData?.arrTotalRooms}
+            m={monthData?.arrTotalRooms}
+            y={yearData?.arrTotalRooms}
+          />
+          <R
+            label="(Q) ARR (Saleable Rooms)"
+            d={dateData?.arrSaleableRooms}
+            m={monthData?.arrSaleableRooms}
+            y={yearData?.arrSaleableRooms}
+          />
+          <R
+            label="(R) ARR (Occupied Rooms)"
+            d={dateData?.arrOccupiedRooms}
+            m={monthData?.arrOccupiedRooms}
+            y={yearData?.arrOccupiedRooms}
+          />
 
           <Text style={s.sectionTitle}>GUEST PROFILE</Text>
-          <R label="(G) No of Pax - Domestic" d={dateData?.paxDomestic} m={monthData?.paxDomestic} y={yearData?.paxDomestic} />
-          <R label="(H) No of Pax - Foreigners" d={dateData?.paxForeign} m={monthData?.paxForeign} y={yearData?.paxForeign} />
-          <R label="(I) Total Pax (G+H)" d={dateData?.totalPax} m={monthData?.totalPax} y={yearData?.totalPax} />
-          <R label="(J) No of Adults" d={dateData?.adults} m={monthData?.adults} y={yearData?.adults} />
-          <R label="(K) No of Children" d={dateData?.children} m={monthData?.children} y={yearData?.children} />
-          <R label="(L) No of Males" d={dateData?.males} m={monthData?.males} y={yearData?.males} />
-          <R label="(M) No of Females" d={dateData?.females} m={monthData?.females} y={yearData?.females} />
+          <R
+            label="(G) No of Pax - Domestic"
+            d={dateData?.paxDomestic}
+            m={monthData?.paxDomestic}
+            y={yearData?.paxDomestic}
+          />
+          <R
+            label="(H) No of Pax - Foreigners"
+            d={dateData?.paxForeign}
+            m={monthData?.paxForeign}
+            y={yearData?.paxForeign}
+          />
+          <R
+            label="(I) Total Pax (G+H)"
+            d={dateData?.totalPax}
+            m={monthData?.totalPax}
+            y={yearData?.totalPax}
+          />
+          <R
+            label="(J) No of Adults"
+            d={dateData?.adults}
+            m={monthData?.adults}
+            y={yearData?.adults}
+          />
+          <R
+            label="(K) No of Children"
+            d={dateData?.children}
+            m={monthData?.children}
+            y={yearData?.children}
+          />
+          <R
+            label="(L) No of Males"
+            d={dateData?.males}
+            m={monthData?.males}
+            y={yearData?.males}
+          />
+          <R
+            label="(M) No of Females"
+            d={dateData?.females}
+            m={monthData?.females}
+            y={yearData?.females}
+          />
 
           <Text style={s.sectionTitle}>ROOM REVENUE</Text>
-          <R label="Apartment Charges (Accrued)" d={dateData?.roomApartment} m={monthData?.roomApartment} y={yearData?.roomApartment} />
-          <R label="Extra Bed Charges (Accrued)" d={dateData?.roomExtraBed} m={monthData?.roomExtraBed} y={yearData?.roomExtraBed} />
-          <TR label="Total : ROOM REVENUE" d={dateData?.roomTotal} m={monthData?.roomTotal} y={yearData?.roomTotal} />
+          <R
+            label="Apartment Charges (Accrued)"
+            d={dateData?.roomApartment}
+            m={monthData?.roomApartment}
+            y={yearData?.roomApartment}
+          />
+          <R
+            label="Extra Bed Charges (Accrued)"
+            d={dateData?.roomExtraBed}
+            m={monthData?.roomExtraBed}
+            y={yearData?.roomExtraBed}
+          />
+          <TR
+            label="Total : ROOM REVENUE"
+            d={dateData?.roomTotal}
+            m={monthData?.roomTotal}
+            y={yearData?.roomTotal}
+          />
 
           <Text style={s.sectionTitle}>F&B REVENUE</Text>
-          <R label="Plan Rate (Accrued)" d={dateData?.fbPlanRate} m={monthData?.fbPlanRate} y={yearData?.fbPlanRate} />
-          <R label="Room Service" d={dateData?.fbRoomService} m={monthData?.fbRoomService} y={yearData?.fbRoomService} />
-          <R label="Restaurant" d={dateData?.fbRestaurant} m={monthData?.fbRestaurant} y={yearData?.fbRestaurant} />
-          <TR label="Total : F&B REVENUE" d={dateData?.fbTotal} m={monthData?.fbTotal} y={yearData?.fbTotal} />
+          <R
+            label="Plan Rate (Accrued)"
+            d={dateData?.fbPlanRate}
+            m={monthData?.fbPlanRate}
+            y={yearData?.fbPlanRate}
+          />
+          <R
+            label="Room Service"
+            d={dateData?.fbRoomService}
+            m={monthData?.fbRoomService}
+            y={yearData?.fbRoomService}
+          />
+          <R
+            label="Restaurant"
+            d={dateData?.fbRestaurant}
+            m={monthData?.fbRestaurant}
+            y={yearData?.fbRestaurant}
+          />
+          <TR
+            label="Total : F&B REVENUE"
+            d={dateData?.fbTotal}
+            m={monthData?.fbTotal}
+            y={yearData?.fbTotal}
+          />
 
           <Text style={s.sectionTitle}>OTHER REVENUES</Text>
-          <R label="MOD REVENUES" d={dateData?.modRevenues} m={monthData?.modRevenues} y={yearData?.modRevenues} />
-          <TR label="Grand Total" d={dateData?.grandTotal} m={monthData?.grandTotal} y={yearData?.grandTotal} />
+          <R
+            label="MOD REVENUES"
+            d={dateData?.modRevenues}
+            m={monthData?.modRevenues}
+            y={yearData?.modRevenues}
+          />
+          <TR
+            label="Grand Total"
+            d={dateData?.grandTotal}
+            m={monthData?.grandTotal}
+            y={yearData?.grandTotal}
+          />
         </View>
       </Page>
     </Document>
@@ -300,12 +440,22 @@ export default function HotelFlashReportPage() {
     (state) => state.secSelectedOrganization?.secSelectedOrg?._id,
   );
 
+  const flashReportDate = useSelector(
+    (state) => state.selectedDate.flashReportDate,
+  );
+
+  const { date, month, year, autoFetch } = flashReportDate;
+
+  const dispatch = useDispatch();
+
   const getCurrentYear = () => new Date().getFullYear();
   const getCurrentMonth = () => new Date().getMonth() + 1;
 
-  const [selectedDate, setSelectedDate] = useState(today);
-  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
-  const [selectedYear, setSelectedYear] = useState(getCurrentYear());
+  const [selectedDate, setSelectedDate] = useState(date || today);
+  const [selectedMonth, setSelectedMonth] = useState(
+    month || getCurrentMonth(),
+  );
+  const [selectedYear, setSelectedYear] = useState(year || getCurrentYear());
 
   const [dateData, setDateData] = useState(null);
   const [monthData, setMonthData] = useState(null);
@@ -314,11 +464,34 @@ export default function HotelFlashReportPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if ((autoFetch && cmp_id, selectedDate, selectedMonth, selectedYear)) {
+      loadReports();
+
+      dispatch(
+        setFlashReportDate({
+          autoFetch: true,
+          date: date,
+          month: month,
+          year: year,
+        }),
+      );
+    }
+  }, [autoFetch, cmp_id, selectedDate, selectedMonth, selectedYear]);
+
   const requestIdRef = useRef(0);
 
   const fiscalYearDays = getFiscalYearDays(selectedYear);
 
   const loadReports = useCallback(async () => {
+    dispatch(
+      setFlashReportDate({
+        autoFetch: false,
+        date: selectedDate,
+        month: selectedMonth,
+        year: selectedYear,
+      }),
+    );
     if (!cmp_id) return;
 
     const currentRequestId = ++requestIdRef.current;
@@ -392,7 +565,7 @@ export default function HotelFlashReportPage() {
         setLoading(false);
       }
     }
-  // FIX: removed loadReports from its own deps (was causing infinite loop)
+    // FIX: removed loadReports from its own deps (was causing infinite loop)
   }, [cmp_id, selectedDate, selectedMonth, selectedYear]);
 
   useEffect(() => {
@@ -441,41 +614,161 @@ export default function HotelFlashReportPage() {
       ],
       [],
       ["ROOM STATISTICS"],
-      ["(A) Total Rooms", dateData.totalRooms, monthData.totalRooms, yearData.totalRooms],
-      ["(B) Blocked Rooms", dateData.blockedRooms, monthData.blockedRooms, yearData.blockedRooms],
-      ["(C) Saleable Rooms (A-B)", dateData.saleableRooms, monthData.saleableRooms, yearData.saleableRooms],
-      ["(D) Occupied Rooms (Paid)", dateData.occupiedPaid, monthData.occupiedPaid, yearData.occupiedPaid],
-      ["(E) Occupied Rooms (Comp/House Use)", dateData.occupiedComp, monthData.occupiedComp, yearData.occupiedComp],
-      ["(F) Total Occupied Rooms (D+E)", dateData.totalOccupied, monthData.totalOccupied, yearData.totalOccupied],
+      [
+        "(A) Total Rooms",
+        dateData.totalRooms,
+        monthData.totalRooms,
+        yearData.totalRooms,
+      ],
+      [
+        "(B) Blocked Rooms",
+        dateData.blockedRooms,
+        monthData.blockedRooms,
+        yearData.blockedRooms,
+      ],
+      [
+        "(C) Saleable Rooms (A-B)",
+        dateData.saleableRooms,
+        monthData.saleableRooms,
+        yearData.saleableRooms,
+      ],
+      [
+        "(D) Occupied Rooms (Paid)",
+        dateData.occupiedPaid,
+        monthData.occupiedPaid,
+        yearData.occupiedPaid,
+      ],
+      [
+        "(E) Occupied Rooms (Comp/House Use)",
+        dateData.occupiedComp,
+        monthData.occupiedComp,
+        yearData.occupiedComp,
+      ],
+      [
+        "(F) Total Occupied Rooms (D+E)",
+        dateData.totalOccupied,
+        monthData.totalOccupied,
+        yearData.totalOccupied,
+      ],
       ["(N) No Shows", dateData.noShows, monthData.noShows, yearData.noShows],
-      ["(O) % of Occupancy (D/A)%", dateData.occPercent, monthData.occPercent, yearData.occPercent],
-      ["(P) ARR (Total Rooms)", dateData.arrTotalRooms, monthData.arrTotalRooms, yearData.arrTotalRooms],
-      ["(Q) ARR (Saleable Rooms)", dateData.arrSaleableRooms, monthData.arrSaleableRooms, yearData.arrSaleableRooms],
-      ["(R) ARR (Occupied Rooms)", dateData.arrOccupiedRooms, monthData.arrOccupiedRooms, yearData.arrOccupiedRooms],
+      [
+        "(O) % of Occupancy (D/A)%",
+        dateData.occPercent,
+        monthData.occPercent,
+        yearData.occPercent,
+      ],
+      [
+        "(P) ARR (Total Rooms)",
+        dateData.arrTotalRooms,
+        monthData.arrTotalRooms,
+        yearData.arrTotalRooms,
+      ],
+      [
+        "(Q) ARR (Saleable Rooms)",
+        dateData.arrSaleableRooms,
+        monthData.arrSaleableRooms,
+        yearData.arrSaleableRooms,
+      ],
+      [
+        "(R) ARR (Occupied Rooms)",
+        dateData.arrOccupiedRooms,
+        monthData.arrOccupiedRooms,
+        yearData.arrOccupiedRooms,
+      ],
       [],
       ["GUEST PROFILE"],
-      ["(G) No of Pax - Domestic", dateData.paxDomestic, monthData.paxDomestic, yearData.paxDomestic],
-      ["(H) No of Pax - Foreigners", dateData.paxForeign, monthData.paxForeign, yearData.paxForeign],
-      ["(I) Total Pax (G+H)", dateData.totalPax, monthData.totalPax, yearData.totalPax],
+      [
+        "(G) No of Pax - Domestic",
+        dateData.paxDomestic,
+        monthData.paxDomestic,
+        yearData.paxDomestic,
+      ],
+      [
+        "(H) No of Pax - Foreigners",
+        dateData.paxForeign,
+        monthData.paxForeign,
+        yearData.paxForeign,
+      ],
+      [
+        "(I) Total Pax (G+H)",
+        dateData.totalPax,
+        monthData.totalPax,
+        yearData.totalPax,
+      ],
       ["(J) No of Adults", dateData.adults, monthData.adults, yearData.adults],
-      ["(K) No of Children", dateData.children, monthData.children, yearData.children],
+      [
+        "(K) No of Children",
+        dateData.children,
+        monthData.children,
+        yearData.children,
+      ],
       ["(L) No of Males", dateData.males, monthData.males, yearData.males],
-      ["(M) No of Females", dateData.females, monthData.females, yearData.females],
+      [
+        "(M) No of Females",
+        dateData.females,
+        monthData.females,
+        yearData.females,
+      ],
       [],
       ["ROOM REVENUE"],
-      ["Apartment Charges (Accrued)", dateData.roomApartment, monthData.roomApartment, yearData.roomApartment],
-      ["Extra Bed Charges (Accrued)", dateData.roomExtraBed, monthData.roomExtraBed, yearData.roomExtraBed],
-      ["Total : ROOM REVENUE", dateData.roomTotal, monthData.roomTotal, yearData.roomTotal],
+      [
+        "Apartment Charges (Accrued)",
+        dateData.roomApartment,
+        monthData.roomApartment,
+        yearData.roomApartment,
+      ],
+      [
+        "Extra Bed Charges (Accrued)",
+        dateData.roomExtraBed,
+        monthData.roomExtraBed,
+        yearData.roomExtraBed,
+      ],
+      [
+        "Total : ROOM REVENUE",
+        dateData.roomTotal,
+        monthData.roomTotal,
+        yearData.roomTotal,
+      ],
       [],
       ["F&B REVENUE"],
-      ["Plan Rate (Accrued)", dateData.fbPlanRate, monthData.fbPlanRate, yearData.fbPlanRate],
-      ["Room Service", dateData.fbRoomService, monthData.fbRoomService, yearData.fbRoomService],
-      ["Restaurant", dateData.fbRestaurant, monthData.fbRestaurant, yearData.fbRestaurant],
-      ["Total : F&B REVENUE", dateData.fbTotal, monthData.fbTotal, yearData.fbTotal],
+      [
+        "Plan Rate (Accrued)",
+        dateData.fbPlanRate,
+        monthData.fbPlanRate,
+        yearData.fbPlanRate,
+      ],
+      [
+        "Room Service",
+        dateData.fbRoomService,
+        monthData.fbRoomService,
+        yearData.fbRoomService,
+      ],
+      [
+        "Restaurant",
+        dateData.fbRestaurant,
+        monthData.fbRestaurant,
+        yearData.fbRestaurant,
+      ],
+      [
+        "Total : F&B REVENUE",
+        dateData.fbTotal,
+        monthData.fbTotal,
+        yearData.fbTotal,
+      ],
       [],
       ["OTHER REVENUES"],
-      ["MOD REVENUES", dateData.modRevenues, monthData.modRevenues, yearData.modRevenues],
-      ["Grand Total", dateData.grandTotal, monthData.grandTotal, yearData.grandTotal],
+      [
+        "MOD REVENUES",
+        dateData.modRevenues,
+        monthData.modRevenues,
+        yearData.modRevenues,
+      ],
+      [
+        "Grand Total",
+        dateData.grandTotal,
+        monthData.grandTotal,
+        yearData.grandTotal,
+      ],
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
@@ -495,16 +788,12 @@ export default function HotelFlashReportPage() {
 
   const pad = (n) => String(n).padStart(2, "0");
 
-  const monthName = new Date(
-    selectedYear,
-    selectedMonth - 1,
-    1,
-  ).toLocaleString("en-GB", { month: "long" });
-
-  const yearOptions = Array.from(
-    { length: 5 },
-    (_, i) => getCurrentYear() - i,
+  const monthName = new Date(selectedYear, selectedMonth - 1, 1).toLocaleString(
+    "en-GB",
+    { month: "long" },
   );
+
+  const yearOptions = Array.from({ length: 5 }, (_, i) => getCurrentYear() - i);
 
   const hasData = Boolean(dateData && monthData && yearData);
 
@@ -542,6 +831,13 @@ export default function HotelFlashReportPage() {
                   max={today}
                   onChange={(e) => {
                     setError("");
+                    dispatch(
+                      setFlashReportDate({
+                        date: e.target.value,
+                        month: selectedMonth,
+                        year: selectedYear,
+                      }),
+                    );
                     setSelectedDate(e.target.value);
                   }}
                   className="h-9 w-36 rounded-lg border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
@@ -556,13 +852,30 @@ export default function HotelFlashReportPage() {
                   value={selectedMonth}
                   onChange={(e) => {
                     setError("");
+                    dispatch(
+                      setFlashReportDate({
+                        date: selectedDate,
+                        month: Number(e.target.value),
+                        year: selectedYear,
+                      }),
+                    );
                     setSelectedMonth(Number(e.target.value));
                   }}
                   className="h-9 w-36 rounded-lg border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
                 >
                   {[
-                    "January","February","March","April","May","June",
-                    "July","August","September","October","November","December",
+                    "January",
+                    "February",
+                    "March",
+                    "April",
+                    "May",
+                    "June",
+                    "July",
+                    "August",
+                    "September",
+                    "October",
+                    "November",
+                    "December",
                   ].map((m, i) => (
                     <option key={i + 1} value={i + 1}>
                       {m}
@@ -579,6 +892,13 @@ export default function HotelFlashReportPage() {
                   value={selectedYear}
                   onChange={(e) => {
                     setError("");
+                    dispatch(
+                      setFlashReportDate({
+                        date: selectedDate,
+                        month: selectedMonth,
+                        year: Number(e.target.value),
+                      }),
+                    );
                     setSelectedYear(Number(e.target.value));
                   }}
                   className="h-9 w-32 rounded-lg border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
@@ -667,14 +987,20 @@ export default function HotelFlashReportPage() {
                 {dateData.companyName}
               </span>
               <span style={{ fontSize: 12, color: "#666" }}>
-                Date: {formatDate(selectedDate)}&nbsp;|&nbsp;Month:{" "}
-                {monthName} {selectedYear} ({monthData.fullMonthDays ?? "—"} days)
+                Date: {formatDate(selectedDate)}&nbsp;|&nbsp;Month: {monthName}{" "}
+                {selectedYear} ({monthData.fullMonthDays ?? "—"} days)
                 &nbsp;|&nbsp;{getFiscalYearLabel(selectedYear)}
               </span>
             </div>
 
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: 12,
+                }}
+              >
                 <thead>
                   <tr>
                     <TH>Particulars</TH>
@@ -686,41 +1012,184 @@ export default function HotelFlashReportPage() {
 
                 <tbody>
                   <SectionHeader title="ROOM STATISTICS" />
-                  <Row label="(A) Total Rooms" d={dateData.totalRooms} m={monthData.totalRooms} y={yearData.totalRooms} />
-                  <Row label="(B) Blocked Rooms" d={dateData.blockedRooms} m={monthData.blockedRooms} y={yearData.blockedRooms} />
-                  <Row label="(C) Saleable Rooms (A-B)" d={dateData.saleableRooms} m={monthData.saleableRooms} y={yearData.saleableRooms} />
-                  <Row label="(D) Occupied Rooms (Paid)" d={dateData.occupiedPaid} m={monthData.occupiedPaid} y={yearData.occupiedPaid} />
-                  <Row label="(E) Occupied Rooms (Comp/House Use)" d={dateData.occupiedComp} m={monthData.occupiedComp} y={yearData.occupiedComp} />
-                  <Row label="(F) Total Occupied Rooms (D+E)" d={dateData.totalOccupied} m={monthData.totalOccupied} y={yearData.totalOccupied} bold />
-                  <Row label="(N) No Shows" d={dateData.noShows} m={monthData.noShows} y={yearData.noShows} />
-                  <Row label="(O) % of Occupancy (D/A)%" d={dateData.occPercent} m={monthData.occPercent} y={yearData.occPercent} isPercent bold />
-                  <Row label="(P) ARR (Total Rooms)" d={dateData.arrTotalRooms} m={monthData.arrTotalRooms} y={yearData.arrTotalRooms} />
-                  <Row label="(Q) ARR (Saleable Rooms)" d={dateData.arrSaleableRooms} m={monthData.arrSaleableRooms} y={yearData.arrSaleableRooms} />
-                  <Row label="(R) ARR (Occupied Rooms)" d={dateData.arrOccupiedRooms} m={monthData.arrOccupiedRooms} y={yearData.arrOccupiedRooms} bold />
+                  <Row
+                    label="(A) Total Rooms"
+                    d={dateData.totalRooms}
+                    m={monthData.totalRooms}
+                    y={yearData.totalRooms}
+                  />
+                  <Row
+                    label="(B) Blocked Rooms"
+                    d={dateData.blockedRooms}
+                    m={monthData.blockedRooms}
+                    y={yearData.blockedRooms}
+                  />
+                  <Row
+                    label="(C) Saleable Rooms (A-B)"
+                    d={dateData.saleableRooms}
+                    m={monthData.saleableRooms}
+                    y={yearData.saleableRooms}
+                  />
+                  <Row
+                    label="(D) Occupied Rooms (Paid)"
+                    d={dateData.occupiedPaid}
+                    m={monthData.occupiedPaid}
+                    y={yearData.occupiedPaid}
+                  />
+                  <Row
+                    label="(E) Occupied Rooms (Comp/House Use)"
+                    d={dateData.occupiedComp}
+                    m={monthData.occupiedComp}
+                    y={yearData.occupiedComp}
+                  />
+                  <Row
+                    label="(F) Total Occupied Rooms (D+E)"
+                    d={dateData.totalOccupied}
+                    m={monthData.totalOccupied}
+                    y={yearData.totalOccupied}
+                    bold
+                  />
+                  <Row
+                    label="(N) No Shows"
+                    d={dateData.noShows}
+                    m={monthData.noShows}
+                    y={yearData.noShows}
+                  />
+                  <Row
+                    label="(O) % of Occupancy (D/A)%"
+                    d={dateData.occPercent}
+                    m={monthData.occPercent}
+                    y={yearData.occPercent}
+                    isPercent
+                    bold
+                  />
+                  <Row
+                    label="(P) ARR (Total Rooms)"
+                    d={dateData.arrTotalRooms}
+                    m={monthData.arrTotalRooms}
+                    y={yearData.arrTotalRooms}
+                  />
+                  <Row
+                    label="(Q) ARR (Saleable Rooms)"
+                    d={dateData.arrSaleableRooms}
+                    m={monthData.arrSaleableRooms}
+                    y={yearData.arrSaleableRooms}
+                  />
+                  <Row
+                    label="(R) ARR (Occupied Rooms)"
+                    d={dateData.arrOccupiedRooms}
+                    m={monthData.arrOccupiedRooms}
+                    y={yearData.arrOccupiedRooms}
+                    bold
+                  />
 
                   <SectionHeader title="GUEST PROFILE" />
-                  <Row label="(G) No of Pax - Domestic" d={dateData.paxDomestic} m={monthData.paxDomestic} y={yearData.paxDomestic} />
-                  <Row label="(H) No of Pax - Foreigners" d={dateData.paxForeign} m={monthData.paxForeign} y={yearData.paxForeign} />
-                  <Row label="(I) Total Pax (G+H)" d={dateData.totalPax} m={monthData.totalPax} y={yearData.totalPax} bold />
-                  <Row label="(J) No of Adults" d={dateData.adults} m={monthData.adults} y={yearData.adults} />
-                  <Row label="(K) No of Children" d={dateData.children} m={monthData.children} y={yearData.children} />
-                  <Row label="(L) No of Males" d={dateData.males} m={monthData.males} y={yearData.males} />
-                  <Row label="(M) No of Females" d={dateData.females} m={monthData.females} y={yearData.females} />
+                  <Row
+                    label="(G) No of Pax - Domestic"
+                    d={dateData.paxDomestic}
+                    m={monthData.paxDomestic}
+                    y={yearData.paxDomestic}
+                  />
+                  <Row
+                    label="(H) No of Pax - Foreigners"
+                    d={dateData.paxForeign}
+                    m={monthData.paxForeign}
+                    y={yearData.paxForeign}
+                  />
+                  <Row
+                    label="(I) Total Pax (G+H)"
+                    d={dateData.totalPax}
+                    m={monthData.totalPax}
+                    y={yearData.totalPax}
+                    bold
+                  />
+                  <Row
+                    label="(J) No of Adults"
+                    d={dateData.adults}
+                    m={monthData.adults}
+                    y={yearData.adults}
+                  />
+                  <Row
+                    label="(K) No of Children"
+                    d={dateData.children}
+                    m={monthData.children}
+                    y={yearData.children}
+                  />
+                  <Row
+                    label="(L) No of Males"
+                    d={dateData.males}
+                    m={monthData.males}
+                    y={yearData.males}
+                  />
+                  <Row
+                    label="(M) No of Females"
+                    d={dateData.females}
+                    m={monthData.females}
+                    y={yearData.females}
+                  />
 
                   <SectionHeader title="ROOM REVENUE" />
-                  <Row label="Apartment Charges (Accrued)" d={dateData.roomApartment} m={monthData.roomApartment} y={yearData.roomApartment} />
-                  <Row label="Extra Bed Charges (Accrued)" d={dateData.roomExtraBed} m={monthData.roomExtraBed} y={yearData.roomExtraBed} />
-                  <Row label="Total : ROOM REVENUE" d={dateData.roomTotal} m={monthData.roomTotal} y={yearData.roomTotal} bold />
+                  <Row
+                    label="Apartment Charges (Accrued)"
+                    d={dateData.roomApartment}
+                    m={monthData.roomApartment}
+                    y={yearData.roomApartment}
+                  />
+                  <Row
+                    label="Extra Bed Charges (Accrued)"
+                    d={dateData.roomExtraBed}
+                    m={monthData.roomExtraBed}
+                    y={yearData.roomExtraBed}
+                  />
+                  <Row
+                    label="Total : ROOM REVENUE"
+                    d={dateData.roomTotal}
+                    m={monthData.roomTotal}
+                    y={yearData.roomTotal}
+                    bold
+                  />
 
                   <SectionHeader title="F&B REVENUE" />
-                  <Row label="Plan Rate (Accrued)" d={dateData.fbPlanRate} m={monthData.fbPlanRate} y={yearData.fbPlanRate} />
-                  <Row label="Room Service" d={dateData.fbRoomService} m={monthData.fbRoomService} y={yearData.fbRoomService} />
-                  <Row label="Restaurant" d={dateData.fbRestaurant} m={monthData.fbRestaurant} y={yearData.fbRestaurant} />
-                  <Row label="Total : F&B REVENUE" d={dateData.fbTotal} m={monthData.fbTotal} y={yearData.fbTotal} bold />
+                  <Row
+                    label="Plan Rate (Accrued)"
+                    d={dateData.fbPlanRate}
+                    m={monthData.fbPlanRate}
+                    y={yearData.fbPlanRate}
+                  />
+                  <Row
+                    label="Room Service"
+                    d={dateData.fbRoomService}
+                    m={monthData.fbRoomService}
+                    y={yearData.fbRoomService}
+                  />
+                  <Row
+                    label="Restaurant"
+                    d={dateData.fbRestaurant}
+                    m={monthData.fbRestaurant}
+                    y={yearData.fbRestaurant}
+                  />
+                  <Row
+                    label="Total : F&B REVENUE"
+                    d={dateData.fbTotal}
+                    m={monthData.fbTotal}
+                    y={yearData.fbTotal}
+                    bold
+                  />
 
                   <SectionHeader title="OTHER REVENUES" />
-                  <Row label="MOD REVENUES" d={dateData.modRevenues} m={monthData.modRevenues} y={yearData.modRevenues} />
-                  <Row label="Grand Total" d={dateData.grandTotal} m={monthData.grandTotal} y={yearData.grandTotal} bold />
+                  <Row
+                    label="MOD REVENUES"
+                    d={dateData.modRevenues}
+                    m={monthData.modRevenues}
+                    y={yearData.modRevenues}
+                  />
+                  <Row
+                    label="Grand Total"
+                    d={dateData.grandTotal}
+                    m={monthData.grandTotal}
+                    y={yearData.grandTotal}
+                    bold
+                  />
                 </tbody>
               </table>
             </div>

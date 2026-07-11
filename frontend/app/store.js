@@ -30,6 +30,7 @@ import commonVoucherSlice from "../slices/voucherSlices/commonVoucherSlice";
 import commonAccountingVoucherSlice from "../slices/voucherSlices/commonAccountingVoucherSlice";
 import paymentSlice from  "../slices/hotelSlices/paymentSlice"
 import permissionReducer from "../slices/permissionSlice";
+import dateSlice from "../slices/dateSlice";
 
 export const store = configureStore({
   reducer: {
@@ -63,6 +64,7 @@ export const store = configureStore({
     commonVoucherSlice,
     commonAccountingVoucherSlice,
     paymentSlice,
-     permissionData: permissionReducer,
+    permissionData: permissionReducer,
+    selectedDate: dateSlice
   },
 });

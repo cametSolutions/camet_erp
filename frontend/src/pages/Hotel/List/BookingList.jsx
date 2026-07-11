@@ -48,7 +48,6 @@ import PrintModal from "../Components/PrintModal";
 import { calculateDiscountValues } from "../Helper/hotelHelper.js";
 import BookingListEditModal from "./BookingListEditModal";
 
-
 const normalizeAuditDate = (value) => {
   if (!value || typeof value !== "string") return "";
   return value.includes("T") ? value.split("T")[0] : value;
@@ -61,46 +60,6 @@ const isDateLockedByAudit = (date, lockedThroughDate) => {
   if (!normalizedDate || !normalizedLockedDate) return false;
 
   return normalizedDate <= normalizedLockedDate;
-};
-
-const LIST_DATE_FILTER_STORAGE_PREFIX = "hotelListDateFilter";
-const DATE_FILTER_PATHS = new Set([
-  "/sUsers/bookingList",
-  "/sUsers/checkInList",
-  "/sUsers/checkOutList",
-]);
-
-const getListDateFilterStorageKey = (pathname) => {
-  return `${LIST_DATE_FILTER_STORAGE_PREFIX}:${pathname}`;
-};
-
-const getDefaultListDates = () => {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(new Date().getDate() - 30);
-
-  return {
-    fromDate: thirtyDaysAgo.toISOString().split("T")[0],
-    toDate: new Date().toISOString().split("T")[0],
-  };
-};
-
-const getStoredListDates = (pathname) => {
-  const defaultDates = getDefaultListDates();
-
-  if (!DATE_FILTER_PATHS.has(pathname)) return defaultDates;
-
-  try {
-    const savedDates = JSON.parse(
-      localStorage.getItem(getListDateFilterStorageKey(pathname)),
-    );
-
-    return {
-      fromDate: savedDates?.fromDate || defaultDates.fromDate,
-      toDate: savedDates?.toDate || defaultDates.toDate,
-    };
-  } catch {
-    return defaultDates;
-  }
 };
 
 function BookingList() {
@@ -177,16 +136,16 @@ function BookingList() {
 
   console.log(additionalChargeDataBasedOnSelection);
 
-  const [remarks, setRemarks] = useState("");
+  const [remarks, setRemarks] = new Date().toISOString().split("T")[0];
   const [transactionNumber, setTransactionNumber] = useState("");
-  const initialDateFilter = useMemo(() => {
-    return getStoredListDates(location.pathname);
-  }, [location.pathname]);
-  const [fromDate, setFromDate] = useState(initialDateFilter.fromDate);
   const [restaurantSaleManageMent, setRestaurantSaleManageMent] =
     useState(false);
 
-  const [toDate, setToDate] = useState(initialDateFilter.toDate);
+  const selectedDate = useSelector((state) => state.selectedDate.bookingDate);
+  const today = new Date().toISOString().split("T")[0];
+
+  const [fromDate, setFromDate] = useState(selectedDate?.start || today);
+  const [toDate, setToDate] = useState(selectedDate?.end || today);
   const [nightAuditStatus, setNightAuditStatus] = useState(null);
   const [nightAuditLoading, setNightAuditLoading] = useState(false);
   const [nightAuditActionLoading, setNightAuditActionLoading] = useState(false);
@@ -233,7 +192,6 @@ function BookingList() {
 
   const paymentDetails = useSelector((state) => state.paymentSlice);
 
-  console.log(paymentDetails)
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
@@ -245,22 +203,16 @@ function BookingList() {
   const lockedThroughDate = nightAuditStatus?.lockedThroughDate || null;
 
   useEffect(() => {
-    const nextDateFilter = getStoredListDates(location.pathname);
-
-    setFromDate(nextDateFilter.fromDate);
-    setToDate(nextDateFilter.toDate);
-  }, [location.pathname]);
+    if (selectedDate) {
+      setFromDate(selectedDate.start);
+      setToDate(selectedDate.end);
+      fetchBookings(1, searchTerm);
+    }
+  }, [selectedDate]);
 
   const handleDateChange = ({ from, to }) => {
     setFromDate(from);
     setToDate(to);
-
-    if (DATE_FILTER_PATHS.has(location.pathname)) {
-      localStorage.setItem(
-        getListDateFilterStorageKey(location.pathname),
-        JSON.stringify({ fromDate: from, toDate: to }),
-      );
-    }
   };
 
   const [expandedRows, setExpandedRows] = useState({});
@@ -403,14 +355,13 @@ function BookingList() {
         const additionalPaxPerDay =
           Number(room?.additionalPaxAmountWithTax || 0) / totalStayDays;
 
-
-          console.log(additionalPaxPerDay)
+        console.log(additionalPaxPerDay);
         const foodPlanPerDay =
           Number(room?.foodPlanAmountWithTax || 0) / totalStayDays;
 
         const additionalPaxAmount = additionalPaxPerDay * stayDays;
         let foodPlanAmount = foodPlanPerDay * stayDays;
-  console.log(additionalPaxAmount)
+        console.log(additionalPaxAmount);
         console.log(baseAmount, additionalPaxPerDay, foodPlanAmount);
 
         taxAmount = configurations[0]?.addRateWithTax?.hotelSale
@@ -420,10 +371,7 @@ function BookingList() {
           ? 0
           : foodPlanAmount;
 
-
-        return (
-          sum + baseAmount + taxAmount  + foodPlanAmount
-        );
+        return sum + baseAmount + taxAmount + foodPlanAmount;
       }, 0);
 
       console.log("checkoutTotal", checkoutTotal);
@@ -535,7 +483,7 @@ function BookingList() {
       location?.state?.selectedCheckOut &&
       paymentDetails?.printData?.selectedCheckOut?.length > 0
     ) {
-      console.log(paymentDetails?.selectedSaleDate );
+      console.log(paymentDetails?.selectedSaleDate);
       setSelectedSaleDate(paymentDetails?.selectedSaleDate || new Date());
       setSelectedAdditionalCharge(
         paymentDetails?.paymentDetails?.additionalChargeArray[0]?._id,
@@ -994,13 +942,13 @@ function BookingList() {
     setSelectedCustomer(selectcustomer);
   };
   console.log(selectedCheckOut);
-const handleCancelBooking = async (id, voucherNumber) => {
-  const styleId = "cancel-booking-swal-style";
+  const handleCancelBooking = async (id, voucherNumber) => {
+    const styleId = "cancel-booking-swal-style";
 
-  if (!document.getElementById(styleId)) {
-    const style = document.createElement("style");
-    style.id = styleId;
-    style.innerHTML = `
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.innerHTML = `
       .cancel-booking-popup {
         border-radius: 14px !important;
         box-shadow: 0 16px 45px rgba(0, 0, 0, 0.38) !important;
@@ -1128,12 +1076,12 @@ const handleCancelBooking = async (id, voucherNumber) => {
         transform: scale(0.9);
       }
     `;
-    document.head.appendChild(style);
-  }
+      document.head.appendChild(style);
+    }
 
-  const confirmation = await Swal.fire({
-    title: "",
-    html: `
+    const confirmation = await Swal.fire({
+      title: "",
+      html: `
       <div class="cancel-booking-body">
         <h2 class="cancel-booking-title">Are you sure?</h2>
 
@@ -1152,93 +1100,93 @@ const handleCancelBooking = async (id, voucherNumber) => {
         ></textarea>
       </div>
     `,
-    showCancelButton: true,
-    confirmButtonText: "Cancel it!",
-    cancelButtonText: "Go Back",
-    reverseButtons: true,
-    focusConfirm: false,
-    background: "#071633",
-    color: "#ffffff",
-    width: 620,
-    padding: "22px",
-    customClass: {
-      popup: "cancel-booking-popup",
-      htmlContainer: "cancel-booking-html",
-      actions: "cancel-booking-actions",
-      confirmButton: "cancel-booking-confirm",
-      cancelButton: "cancel-booking-cancel",
-      validationMessage: "cancel-booking-validation",
-    },
-    buttonsStyling: false,
-    preConfirm: () => {
-      const reason = document.getElementById("cancelReason")?.value?.trim();
+      showCancelButton: true,
+      confirmButtonText: "Cancel it!",
+      cancelButtonText: "Go Back",
+      reverseButtons: true,
+      focusConfirm: false,
+      background: "#071633",
+      color: "#ffffff",
+      width: 620,
+      padding: "22px",
+      customClass: {
+        popup: "cancel-booking-popup",
+        htmlContainer: "cancel-booking-html",
+        actions: "cancel-booking-actions",
+        confirmButton: "cancel-booking-confirm",
+        cancelButton: "cancel-booking-cancel",
+        validationMessage: "cancel-booking-validation",
+      },
+      buttonsStyling: false,
+      preConfirm: () => {
+        const reason = document.getElementById("cancelReason")?.value?.trim();
 
-      if (!reason) {
-        Swal.showValidationMessage("Cancellation reason is required");
-        return false;
-      }
-
-      return { reason };
-    },
-    didOpen: () => {
-      const textarea = document.getElementById("cancelReason");
-      if (textarea) textarea.focus();
-    },
-  });
-
-  if (confirmation.isConfirmed) {
-    setLoader(true);
-    try {
-      const res = await api.put(
-        `/api/sUsers/cancelBooking/${id}`,
-        {
-          status: "cancelled",
-          cancelReason: confirmation.value.reason,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
+        if (!reason) {
+          Swal.showValidationMessage("Cancellation reason is required");
+          return false;
         }
-      );
 
-      await Swal.fire({
-        title: "Cancelled!",
-        html: `
+        return { reason };
+      },
+      didOpen: () => {
+        const textarea = document.getElementById("cancelReason");
+        if (textarea) textarea.focus();
+      },
+    });
+
+    if (confirmation.isConfirmed) {
+      setLoader(true);
+      try {
+        const res = await api.put(
+          `/api/sUsers/cancelBooking/${id}`,
+          {
+            status: "cancelled",
+            cancelReason: confirmation.value.reason,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            withCredentials: true,
+          },
+        );
+
+        await Swal.fire({
+          title: "Cancelled!",
+          html: `
           <div class="cancel-success-body">
             <p class="cancel-success-text">
               ${res.data.message || "Booking has been cancelled successfully."}
             </p>
           </div>
         `,
-        icon: "success",
-        background: "#071633",
-        color: "#ffffff",
-        width: 620,
-        padding: "22px",
-        confirmButtonText: "OK",
-        customClass: {
-          popup: "cancel-booking-popup",
-          title: "cancel-success-title",
-          htmlContainer: "cancel-success-html",
-          icon: "cancel-success-icon",
-          confirmButton: "cancel-booking-confirm",
-        },
-        buttonsStyling: false,
-      });
+          icon: "success",
+          background: "#071633",
+          color: "#ffffff",
+          width: 620,
+          padding: "22px",
+          confirmButtonText: "OK",
+          customClass: {
+            popup: "cancel-booking-popup",
+            title: "cancel-success-title",
+            htmlContainer: "cancel-success-html",
+            icon: "cancel-success-icon",
+            confirmButton: "cancel-booking-confirm",
+          },
+          buttonsStyling: false,
+        });
 
-      fetchBookings(1, searchTerm);
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to cancel booking"
-      );
-      console.log(error);
-    } finally {
-      setLoader(false);
+        fetchBookings(1, searchTerm);
+      } catch (error) {
+        toast.error(
+          error.response?.data?.message || "Failed to cancel booking",
+        );
+        console.log(error);
+      } finally {
+        setLoader(false);
+      }
     }
-  }
-};
+  };
   const handleDelete = async (id) => {
     const confirmation = await Swal.fire({
       title: "Are you sure?",
@@ -1735,7 +1683,7 @@ const handleCancelBooking = async (id, voucherNumber) => {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
           {
-            selectedSaleDate:selectedSaleDate,
+            selectedSaleDate: selectedSaleDate,
             paymentMethod: paymentMethod,
             paymentDetails: paymentDetails,
             selectedCheckOut: selectedCheckOut,
@@ -2204,9 +2152,7 @@ const handleCancelBooking = async (id, voucherNumber) => {
       <div className="hidden md:flex items-center px-4 py-3 text-xs font-bold text-gray-800 uppercase tracking-wider">
         <div className="w-10 text-center">NO</div>
         <div className="w-28 text-center">
-          {location.pathname == "/sUsers/checkOutList"
-            ? "CHO DATE"
-            : "BK DATE"}
+          {location.pathname == "/sUsers/checkOutList" ? "CHO DATE" : "BK DATE"}
         </div>
         <div className="w-32 text-center">
           {location.pathname === "/sUsers/checkOutList"
@@ -2225,9 +2171,7 @@ const handleCancelBooking = async (id, voucherNumber) => {
         <div className="w-28 text-center">FDP.AMT</div>
         <div className="w-28 text-center">AGENT</div>
 
-        {isCheckoutList && (
-          <div className="w-28 text-center">PAY STATUS</div>
-        )}
+        {isCheckoutList && <div className="w-28 text-center">PAY STATUS</div>}
 
         <div className="w-24 text-center">ADV</div>
         <div className="w-24 text-center">RES.AMT</div>
@@ -2526,10 +2470,10 @@ const handleCancelBooking = async (id, voucherNumber) => {
               </button>
             </div>
 
-           <div className="w-28 text-center text-gray-600 text-xs">
-  <div>{formatDate(el?.arrivalDate)}</div>
-  <div>({el.arrivalTime})</div>
-</div>
+            <div className="w-28 text-center text-gray-600 text-xs">
+              <div>{formatDate(el?.arrivalDate)}</div>
+              <div>({el.arrivalTime})</div>
+            </div>
             <div className="w-28 text-center text-gray-600 text-xs">
               ₹{el?.selectedRooms?.[0]?.priceLevelRate || "0.00"}
               {el.selectedRooms.length > 1 && "....."}
@@ -2578,12 +2522,12 @@ const handleCancelBooking = async (id, voucherNumber) => {
 
             <div className="w-28 text-center text-gray-600 text-xs">
               ₹
-              { el?.restaurantSubTotal
-                  ? formatCurrency(el.restaurantSubTotal).replace("₹", "")
-                  : "00.00"}
+              {el?.restaurantSubTotal
+                ? formatCurrency(el.restaurantSubTotal).replace("₹", "")
+                : "00.00"}
             </div>
 
-              <div className="w-28 text-center text-gray-800 font-semibold text-xs">
+            <div className="w-28 text-center text-gray-800 font-semibold text-xs">
               ₹
               {el?.displayTotal > 0
                 ? el?.displayTotal
@@ -2597,7 +2541,9 @@ const handleCancelBooking = async (id, voucherNumber) => {
               {el?.displayTotal > 0
                 ? el?.displayTotal
                 : el?.grandTotal
-                  ? formatCurrency(el.roomTotal + el?.restaurantSubTotal).replace("₹", "")
+                  ? formatCurrency(
+                      el.roomTotal + el?.restaurantSubTotal,
+                    ).replace("₹", "")
                   : "00.00"}
             </div>
 
@@ -2769,7 +2715,8 @@ const handleCancelBooking = async (id, voucherNumber) => {
                   </div>
                 </div>
               ) : null}
-              {(location.pathname === "/sUsers/bookingList" || location.pathname === "/sUsers/checkInList") &&
+              {(location.pathname === "/sUsers/bookingList" ||
+                location.pathname === "/sUsers/checkInList") &&
                 el?.status !== "cancelled" && (
                   <button
                     onClick={(e) => {
@@ -3112,70 +3059,6 @@ const handleCancelBooking = async (id, voucherNumber) => {
               )
             }
           />
-
-          {/* {location.pathname === "/sUsers/checkInList" && (
-            <div className="bg-white border-b border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-col gap-1">
-                <span className="text-sm font-semibold text-slate-800">
-                  Night Audit
-                </span>
-                {!isSingleAuditDateSelected ? (
-                  <span className="text-xs text-amber-700">
-                    Select the same From and To date to audit one exact check-in date.
-                  </span>
-                ) : nightAuditLoading ? (
-                  <span className="text-xs text-slate-500">
-                    Checking audit status for {selectedAuditDate}...
-                  </span>
-                ) : isNightAuditLocked ? (
-                  <span className="text-xs text-emerald-700">
-                    Check-ins up to {lockedThroughDate} are night audited. Edit is locked through that date.
-                  </span>
-                ) : nightAuditStatus?.status === "reopened" ? (
-                  <span className="text-xs text-blue-700">
-                    {selectedAuditDate} was reopened. Editing is enabled again.
-                  </span>
-                ) : (
-                  <span className="text-xs text-slate-500">
-                    No completed night audit for {selectedAuditDate}.
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                {isNightAuditLocked && (
-                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                    Locked Through {lockedThroughDate}
-                  </span>
-                )}
-
-                {secondaryUserRole === "admin" && nightAuditStatus?.status === "completed" && (
-                  <button
-                    type="button"
-                    onClick={handleReopenNightAudit}
-                    disabled={nightAuditActionLoading || nightAuditLoading}
-                    className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Reopen Audit
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={handleCompleteNightAudit}
-                  disabled={
-                    !isSingleAuditDateSelected ||
-                    isNightAuditLocked ||
-                    nightAuditLoading ||
-                    nightAuditActionLoading
-                  }
-                  className="rounded-md bg-[#0f766e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#115e59] disabled:cursor-not-allowed disabled:bg-slate-300"
-                >
-                  {nightAuditActionLoading ? "Processing..." : "Night Audit"}
-                </button>
-              </div>
-            </div>
-          )} */}
         </div>
 
         {!loader && !isLoading && bookings?.length === 0 && (

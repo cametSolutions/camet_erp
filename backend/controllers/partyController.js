@@ -414,6 +414,7 @@ export const addParty = async (req, res) => {
       country,
       state,
       pin,
+      isHotelAgent,
       party_master_id, // Check if provided
     } = req.body;
 
@@ -447,6 +448,7 @@ export const addParty = async (req, res) => {
       country,
       state,
       pin,
+      isHotelAgent,
       party_master_id: generatedId,
     });
 

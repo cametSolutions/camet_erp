@@ -1,6 +1,6 @@
 import api from "@/api/api";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -9,6 +9,7 @@ import useFetch from "@/customHook/useFetch";
 import { toast } from "sonner";
 import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
 import TitleDiv from "../../../components/common/TitleDiv";
+import { setCancellationReportDate } from "../../../../slices/dateSlice";
 const formatDisplayDate = (dateStr) => {
   if (!dateStr) return "-";
 
@@ -36,10 +37,16 @@ const CancellationReport = () => {
   const owner = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
+  const cancellationDate = useSelector(
+    (state) => state.selectedDate.cancellationDate,
+  );
+  const today = new Date().toISOString().split("T")[0];
+  const { start, end, under, autoFetch } = cancellationDate;
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [cancelType, setCancelType] = useState("all");
+  const [startDate, setStartDate] = useState(start || today);
+  const [endDate, setEndDate] = useState(end || today);
+  const [cancelType, setCancelType] = useState(under || "all");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -60,10 +67,18 @@ const CancellationReport = () => {
   });
 
   useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    setStartDate(today);
-    setEndDate(today);
-  }, []);
+    if (autoFetch && cmp_id) {
+      fetchReport(start, end);
+
+      dispatch(
+        setCancellationReportDate({
+          autoFetch: true,
+          start: start,
+          end: end,
+        }),
+      );
+    }
+  }, [autoFetch, cmp_id]);
 
   useEffect(() => {
     const calculateTableHeight = () => {
@@ -90,6 +105,15 @@ const CancellationReport = () => {
       setError("Start date cannot be later than end date.");
       return;
     }
+
+    dispatch(
+      setCancellationReportDate({
+        start: startDate,
+        end: endDate,
+        under: cancelType,
+        autoFetch: true,
+      }),
+    );
 
     setLoading(true);
     setError("");
@@ -324,9 +348,8 @@ const CancellationReport = () => {
         toast.error("Voucher not found");
         return;
       }
-       navigate(`/sUsers/recietpprint/${row.voucherId}`)
+      navigate(`/sUsers/recietpprint/${row.voucherId}`);
     }
-
 
     if (row.cancelType === "kot") {
       if (!row.voucherId) {
@@ -356,415 +379,421 @@ const CancellationReport = () => {
 
   return (
     <>
-     <TitleDiv title="Cancellation Report" />
-    <div
-      ref={pageRef}
-      style={{
-        padding: 12,
-        fontFamily: "Segoe UI, sans-serif",
-        background: "#f5f6fa",
-        minHeight: "100vh",
-        boxSizing: "border-box",
-      }}
-    >
+      <TitleDiv title="Cancellation Report" />
       <div
+        ref={pageRef}
         style={{
-          background: "#fff",
-          borderRadius: 8,
-          padding: "10px 14px",
-          marginBottom: 10,
-          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-        }}
-      >
-        <h2
-          style={{
-            margin: 0,
-            color: "#1a3a5c",
-            fontSize: 15,
-            fontWeight: 700,
-            lineHeight: 1.2,
-          }}
-        >
-          CANCELLATION REPORT
-        </h2>
-
-        <div
-          style={{
-            marginTop: 2,
-            fontSize: 11,
-            color: "#666",
-          }}
-        >
-          {owner?.companyName || owner?.name || ""}
-        </div>
-      </div>
-
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: 8,
           padding: 12,
-          marginBottom: 10,
-          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+          fontFamily: "Segoe UI, sans-serif",
+          background: "#f5f6fa",
+          minHeight: "100vh",
+          boxSizing: "border-box",
         }}
       >
         <div
           style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 10,
-            alignItems: "end",
-          }}
-        >
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: 10,
-                marginBottom: 3,
-                color: "#666",
-                fontWeight: 600,
-              }}
-            >
-              FROM DATE
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              style={{
-                height: 30,
-                padding: "0 8px",
-                border: "1px solid #d1d5db",
-                borderRadius: 5,
-                fontSize: 11,
-              }}
-            />
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: 10,
-                marginBottom: 3,
-                color: "#666",
-                fontWeight: 600,
-              }}
-            >
-              TO DATE
-            </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              style={{
-                height: 30,
-                padding: "0 8px",
-                border: "1px solid #d1d5db",
-                borderRadius: 5,
-                fontSize: 11,
-              }}
-            />
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: 10,
-                marginBottom: 3,
-                color: "#666",
-                fontWeight: 600,
-              }}
-            >
-              TYPE
-            </label>
-            <select
-              value={cancelType}
-              onChange={(e) => setCancelType(e.target.value)}
-              style={{
-                height: 30,
-                padding: "0 8px",
-                border: "1px solid #d1d5db",
-                borderRadius: 5,
-                minWidth: 130,
-                fontSize: 11,
-              }}
-            >
-              <option value="all">All</option>
-              <option value="booking">Booking</option>
-              <option value="checkin">Check In</option>
-              <option value="checkout">Check Out</option>
-              <option value="kot">KOT</option>
-              <option value="sale">Sale</option>
-              <option value="receipt">Receipt</option>
-            </select>
-          </div>
-
-          <button
-            onClick={fetchReport}
-            disabled={loading}
-            style={{
-              height: 30,
-              background: "#0f766e",
-              color: "#fff",
-              border: "none",
-              borderRadius: 5,
-              padding: "0 12px",
-              fontWeight: 600,
-              fontSize: 11,
-              cursor: "pointer",
-            }}
-          >
-            {loading ? "Loading..." : "Fetch"}
-          </button>
-
-          <button
-            onClick={clearFilters}
-            style={{
-              height: 30,
-              background: "#e5e7eb",
-              color: "#111",
-              border: "none",
-              borderRadius: 5,
-              padding: "0 12px",
-              fontWeight: 600,
-              fontSize: 11,
-              cursor: "pointer",
-            }}
-          >
-            Clear
-          </button>
-
-          <button
-            onClick={exportToExcel}
-            style={{
-              height: 30,
-              background: "#15803d",
-              color: "#fff",
-              border: "none",
-              borderRadius: 5,
-              padding: "0 12px",
-              fontWeight: 600,
-              fontSize: 11,
-              cursor: "pointer",
-            }}
-          >
-            Excel
-          </button>
-
-          <button
-            onClick={exportToPDF}
-            style={{
-              height: 30,
-              background: "#b91c1c",
-              color: "#fff",
-              border: "none",
-              borderRadius: 5,
-              padding: "0 12px",
-              fontWeight: 600,
-              fontSize: 11,
-              cursor: "pointer",
-            }}
-          >
-            PDF
-          </button>
-
-          <div style={{ minWidth: 180, flex: "1 1 220px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 10,
-                marginBottom: 3,
-                color: "#666",
-                fontWeight: 600,
-              }}
-            >
-              SEARCH
-            </label>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Voucher / type / reason..."
-              style={{
-                width: "100%",
-                height: 30,
-                padding: "0 8px",
-                border: "1px solid #d1d5db",
-                borderRadius: 5,
-                fontSize: 11,
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))",
-          gap: 8,
-          marginBottom: 10,
-        }}
-      >
-        {[
-          ["Total", summary.total],
-          ["Booking", summary.booking],
-          ["Check In", summary.checkin],
-          ["Check Out", summary.checkout],
-          ["KOT", summary.kot],
-          ["Sale", summary.sale],
-          ["Receipt", summary.receipt],
-        ].map(([title, value]) => (
-          <div
-            key={title}
-            style={{
-              background: "#fff",
-              padding: 10,
-              borderRadius: 8,
-              boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 10,
-                color: "#666",
-                marginBottom: 3,
-              }}
-            >
-              {title}
-            </div>
-
-            <div
-              style={{
-                fontSize: 18,
-                fontWeight: 700,
-                color: "#1a3a5c",
-                lineHeight: 1.1,
-              }}
-            >
-              {value}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {error && (
-        <div
-          style={{
-            background: "#fee2e2",
-            color: "#b91c1c",
-            padding: 8,
-            borderRadius: 6,
+            background: "#fff",
+            borderRadius: 8,
+            padding: "10px 14px",
             marginBottom: 10,
-            fontSize: 11,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
           }}
         >
-          {error}
-        </div>
-      )}
-
-      <div
-        ref={tableWrapperRef}
-        style={{
-          background: "#fff",
-          borderRadius: 8,
-          overflow: "hidden",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-        }}
-      >
-        <div
-          style={{
-            height: tableHeight,
-            overflowY: "auto",
-            overflowX: "auto",
-          }}
-        >
-          <table
+          <h2
             style={{
-              width: "100%",
-              minWidth: 900,
-              borderCollapse: "collapse",
-              fontSize: 11,
+              margin: 0,
+              color: "#1a3a5c",
+              fontSize: 15,
+              fontWeight: 700,
+              lineHeight: 1.2,
             }}
           >
-            <thead>
-              <tr
+            CANCELLATION REPORT
+          </h2>
+
+          <div
+            style={{
+              marginTop: 2,
+              fontSize: 11,
+              color: "#666",
+            }}
+          >
+            {owner?.companyName || owner?.name || ""}
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 10,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 10,
+              alignItems: "end",
+            }}
+          >
+            <div>
+              <label
                 style={{
-                  background: "#1a3a5c",
-                  color: "#fff",
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 5,
+                  display: "block",
+                  fontSize: 10,
+                  marginBottom: 3,
+                  color: "#666",
+                  fontWeight: 600,
                 }}
               >
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>Type</th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>
-                  Voucher No
-                </th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>Date</th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>
-                  Cancelled By
-                </th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>
-                  Cancelled Date
-                </th>
-                <th style={{ padding: "8px 10px", textAlign: "left" }}>
-                  Reason
-                </th>
-                <th style={{ padding: "8px 10px", textAlign: "center" }}>
-                  Action
-                </th>
-              </tr>
-            </thead>
+                FROM DATE
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                style={{
+                  height: 30,
+                  padding: "0 8px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: 5,
+                  fontSize: 11,
+                }}
+              />
+            </div>
 
-            <tbody>
-              {!loading && filteredReportData.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    style={{
-                      textAlign: "center",
-                      padding: 20,
-                      color: "#777",
-                      fontSize: 11,
-                    }}
-                  >
-                    {searchTerm
-                      ? "No matching cancellation records found"
-                      : "No cancellation records found"}
-                  </td>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 10,
+                  marginBottom: 3,
+                  color: "#666",
+                  fontWeight: 600,
+                }}
+              >
+                TO DATE
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                style={{
+                  height: 30,
+                  padding: "0 8px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: 5,
+                  fontSize: 11,
+                }}
+              />
+            </div>
+
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 10,
+                  marginBottom: 3,
+                  color: "#666",
+                  fontWeight: 600,
+                }}
+              >
+                TYPE
+              </label>
+              <select
+                value={cancelType}
+                onChange={(e) => setCancelType(e.target.value)}
+                style={{
+                  height: 30,
+                  padding: "0 8px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: 5,
+                  minWidth: 130,
+                  fontSize: 11,
+                }}
+              >
+                <option value="all">All</option>
+                <option value="booking">Booking</option>
+                <option value="checkin">Check In</option>
+                <option value="checkout">Check Out</option>
+                <option value="kot">KOT</option>
+                <option value="sale">Sale</option>
+                <option value="receipt">Receipt</option>
+              </select>
+            </div>
+
+            <button
+              onClick={fetchReport}
+              disabled={loading}
+              style={{
+                height: 30,
+                background: "#0f766e",
+                color: "#fff",
+                border: "none",
+                borderRadius: 5,
+                padding: "0 12px",
+                fontWeight: 600,
+                fontSize: 11,
+                cursor: "pointer",
+              }}
+            >
+              {loading ? "Loading..." : "Fetch"}
+            </button>
+
+            <button
+              onClick={clearFilters}
+              style={{
+                height: 30,
+                background: "#e5e7eb",
+                color: "#111",
+                border: "none",
+                borderRadius: 5,
+                padding: "0 12px",
+                fontWeight: 600,
+                fontSize: 11,
+                cursor: "pointer",
+              }}
+            >
+              Clear
+            </button>
+
+            <button
+              onClick={exportToExcel}
+              style={{
+                height: 30,
+                background: "#15803d",
+                color: "#fff",
+                border: "none",
+                borderRadius: 5,
+                padding: "0 12px",
+                fontWeight: 600,
+                fontSize: 11,
+                cursor: "pointer",
+              }}
+            >
+              Excel
+            </button>
+
+            <button
+              onClick={exportToPDF}
+              style={{
+                height: 30,
+                background: "#b91c1c",
+                color: "#fff",
+                border: "none",
+                borderRadius: 5,
+                padding: "0 12px",
+                fontWeight: 600,
+                fontSize: 11,
+                cursor: "pointer",
+              }}
+            >
+              PDF
+            </button>
+
+            <div style={{ minWidth: 180, flex: "1 1 220px" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 10,
+                  marginBottom: 3,
+                  color: "#666",
+                  fontWeight: 600,
+                }}
+              >
+                SEARCH
+              </label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Voucher / type / reason..."
+                style={{
+                  width: "100%",
+                  height: 30,
+                  padding: "0 8px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: 5,
+                  fontSize: 11,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))",
+            gap: 8,
+            marginBottom: 10,
+          }}
+        >
+          {[
+            ["Total", summary.total],
+            ["Booking", summary.booking],
+            ["Check In", summary.checkin],
+            ["Check Out", summary.checkout],
+            ["KOT", summary.kot],
+            ["Sale", summary.sale],
+            ["Receipt", summary.receipt],
+          ].map(([title, value]) => (
+            <div
+              key={title}
+              style={{
+                background: "#fff",
+                padding: 10,
+                borderRadius: 8,
+                boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  color: "#666",
+                  marginBottom: 3,
+                }}
+              >
+                {title}
+              </div>
+
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: "#1a3a5c",
+                  lineHeight: 1.1,
+                }}
+              >
+                {value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {error && (
+          <div
+            style={{
+              background: "#fee2e2",
+              color: "#b91c1c",
+              padding: 8,
+              borderRadius: 6,
+              marginBottom: 10,
+              fontSize: 11,
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        <div
+          ref={tableWrapperRef}
+          style={{
+            background: "#fff",
+            borderRadius: 8,
+            overflow: "hidden",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+          }}
+        >
+          <div
+            style={{
+              height: tableHeight,
+              overflowY: "auto",
+              overflowX: "auto",
+            }}
+          >
+            <table
+              style={{
+                width: "100%",
+                minWidth: 900,
+                borderCollapse: "collapse",
+                fontSize: 11,
+              }}
+            >
+              <thead>
+                <tr
+                  style={{
+                    background: "#1a3a5c",
+                    color: "#fff",
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 5,
+                  }}
+                >
+                  <th style={{ padding: "8px 10px", textAlign: "left" }}>
+                    Type
+                  </th>
+                  <th style={{ padding: "8px 10px", textAlign: "left" }}>
+                    Voucher No
+                  </th>
+                  <th style={{ padding: "8px 10px", textAlign: "left" }}>
+                    Date
+                  </th>
+                  <th style={{ padding: "8px 10px", textAlign: "left" }}>
+                    Cancelled By
+                  </th>
+                  <th style={{ padding: "8px 10px", textAlign: "left" }}>
+                    Cancelled Date
+                  </th>
+                  <th style={{ padding: "8px 10px", textAlign: "left" }}>
+                    Reason
+                  </th>
+                  <th style={{ padding: "8px 10px", textAlign: "center" }}>
+                    Action
+                  </th>
                 </tr>
-              ) : (
-                filteredReportData.map((row, index) => (
-                  <tr
-                    key={index}
-                    style={{
-                      background: index % 2 === 0 ? "#ffffff" : "#f8fafc",
-                      borderBottom: "1px solid #e5e7eb",
-                    }}
-                  >
-                    <td style={{ padding: "7px 10px" }}>
-                      {row.cancelType || "-"}
+              </thead>
+
+              <tbody>
+                {!loading && filteredReportData.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      style={{
+                        textAlign: "center",
+                        padding: 20,
+                        color: "#777",
+                        fontSize: 11,
+                      }}
+                    >
+                      {searchTerm
+                        ? "No matching cancellation records found"
+                        : "No cancellation records found"}
                     </td>
-                    <td style={{ padding: "7px 10px" }}>
-                      {row.voucherNumber || "-"}
-                    </td>
-                    <td style={{ padding: "7px 10px" }}>
-                      {row.date ? formatDisplayDate(row.date) : "-"}
-                    </td>
-                    <td style={{ padding: "7px 10px" }}>
-                      {row.cancelledByName || "-"}
-                    </td>
-                    <td style={{ padding: "7px 10px" }}>
-                      {row.cancelledAt
-                        ? formatDisplayDate(row.cancelledAt)
-                        : "-"}
-                    </td>
-                    <td style={{ padding: "7px 10px" }}>{row.reason || "-"}</td>
-                    <td style={{ padding: "7px 10px", textAlign: "center" }}>
+                  </tr>
+                ) : (
+                  filteredReportData.map((row, index) => (
+                    <tr
+                      key={index}
+                      style={{
+                        background: index % 2 === 0 ? "#ffffff" : "#f8fafc",
+                        borderBottom: "1px solid #e5e7eb",
+                      }}
+                    >
+                      <td style={{ padding: "7px 10px" }}>
+                        {row.cancelType || "-"}
+                      </td>
+                      <td style={{ padding: "7px 10px" }}>
+                        {row.voucherNumber || "-"}
+                      </td>
+                      <td style={{ padding: "7px 10px" }}>
+                        {row.date ? formatDisplayDate(row.date) : "-"}
+                      </td>
+                      <td style={{ padding: "7px 10px" }}>
+                        {row.cancelledByName || "-"}
+                      </td>
+                      <td style={{ padding: "7px 10px" }}>
+                        {row.cancelledAt
+                          ? formatDisplayDate(row.cancelledAt)
+                          : "-"}
+                      </td>
+                      <td style={{ padding: "7px 10px" }}>
+                        {row.reason || "-"}
+                      </td>
+                      <td style={{ padding: "7px 10px", textAlign: "center" }}>
                         <button
                           onClick={() => handlePrintRow(row)}
                           style={{
@@ -781,15 +810,15 @@ const CancellationReport = () => {
                         >
                           Print
                         </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
     </>
   );
 };
