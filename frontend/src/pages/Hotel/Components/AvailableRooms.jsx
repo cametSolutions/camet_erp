@@ -1057,7 +1057,10 @@ function AvailableRooms({
                       console.log(booking);
                       return true;
                     })
-                    .map((booking, index) => (
+                    .map((booking, index) =>{
+                        const foodPlanSelected = formData?.foodPlan?.filter((pax) => pax.roomId === booking.roomId )[0] || defaultFoodPlan
+  
+                 return (
                       <tr
                         key={booking?.roomId}
                         className={`transition-all duration-200
@@ -1219,12 +1222,12 @@ function AvailableRooms({
                         </td> */}
                         <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
                           <span className="block">
-                            {defaultFoodPlan ? defaultFoodPlan.foodPlan : ""}
+                            {foodPlanSelected ? foodPlanSelected.foodPlan : ""}
                           </span>
 
                           <span className="block text-[10px] text-gray-500 font-normal">
-                            {defaultFoodPlan
-                              ? defaultFoodPlan.amount || defaultFoodPlan.rate
+                            {foodPlanSelected
+                              ? foodPlanSelected.amount || foodPlanSelected.rate
                               : ""}
                           </span>
                         </td>
@@ -1419,7 +1422,7 @@ function AvailableRooms({
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    )})}
 
                   {/* Total Row */}
                   <tr className="bg-gray-100 font-bold sticky bottom-0">

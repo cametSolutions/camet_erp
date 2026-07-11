@@ -31,7 +31,8 @@ function CancelButton({
   actionLoading,
   cancellationAllowed,
 }) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+const [isDialogOpen, setIsDialogOpen] = useState(false);
+const [cancelReason, setCancelReason] = useState("");
   const queryClient = useQueryClient();
 
       //// check if the user is admin
@@ -81,7 +82,7 @@ function CancelButton({
       setActionLoading(true);
       await api.put(
         `/api/sUsers/cancel${voucherType}/${id}?vanSale=${vanSale}`,
-        {},
+        {cancelReason},
         {
           withCredentials: true,
         }
@@ -104,40 +105,69 @@ function CancelButton({
   };
 
   return (
-    <div className={`${actionLoading ? "pointer-events-none opacity-50" : ""}`}>
-      <div
-        onClick={handleCancelClick}
-        className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
-      >
-        <div className={`p-2 rounded-full bg-gray-100 mb-2`}>
-          <MdCancel className="text-red-500" />
-        </div>
-        <span className="text-[10px] font-bold">Cancel</span>
-      </div>
-      <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <AlertDialogContent className="bg-gray-900 text-white border-gray-800">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">
-              Are you sure?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-300">
-              You won't be able to revert this!
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="bg-gray-800 text-white hover:bg-gray-700">
-              Go Back
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmCancel}
-              className="bg-red-500 hover:bg-red-600 text-white"
-            >
-              Cancel it!
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+  <div className={`${actionLoading ? "pointer-events-none opacity-50" : ""}`}>
+  <div
+    onClick={() => {
+      setCancelReason("");
+      setIsDialogOpen(true);
+    }}
+    className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+  >
+    <div className="p-2 rounded-full bg-gray-100 mb-2">
+      <MdCancel className="text-red-500" />
     </div>
+    <span className="text-[10px] font-bold">Cancel</span>
+  </div>
+
+  <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <AlertDialogContent className="bg-gray-900 text-white border-gray-800">
+      <AlertDialogHeader>
+        <AlertDialogTitle className="text-white">
+          Are you sure?
+        </AlertDialogTitle>
+        <AlertDialogDescription className="text-gray-300">
+          You won't be able to revert this. Please enter a cancellation reason.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-200">
+          Reason <span className="text-red-400">*</span>
+        </label>
+        <textarea
+          value={cancelReason}
+          onChange={(e) => setCancelReason(e.target.value)}
+          placeholder="Enter cancellation reason..."
+          rows={4}
+          className="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-400 focus:border-red-500"
+        />
+      </div>
+
+      <AlertDialogFooter>
+        <AlertDialogCancel
+          onClick={() => setCancelReason("")}
+          className="bg-gray-800 text-white hover:bg-gray-700"
+        >
+          Go Back
+        </AlertDialogCancel>
+
+        <AlertDialogAction
+          onClick={(e) => {
+            if (!cancelReason.trim()) {
+              e.preventDefault();
+              return;
+            }
+            handleConfirmCancel(cancelReason);
+            setCancelReason("");
+          }}
+          className="bg-red-500 hover:bg-red-600 text-white disabled:opacity-50"
+        >
+          Cancel it!
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+</div>
   );
 }
 

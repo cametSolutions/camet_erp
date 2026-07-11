@@ -193,17 +193,18 @@ export default function FOSalesSummaryReport() {
       "Agent Name": row.agentName || "",
       "Guest Name": row.guestName || "",
       Room: row.room || "",
+      TotalRoom: toNumber(row.totalRoom),
       Days: toNumber(row.days),
       "Extra Person": toNumber(row.extraPerson),
       Plan: row.plan || "",
-      "Room Sale": toNumber(row.roomSaleAmount),
+      "Room Sale":toNumber(row.roomSaleAmount),
       "Plan Sale": toNumber(row.planSaleAmount),
       CGST: toNumber(row.cgst),
       SGST: toNumber(row.sgst),
       "RT Bill No": row.rtBillNo || "",
       "Rest. Sale": toNumber(row.restaurantSale),
       "MOD Sale": toNumber(row.modSale),
-      "Bill Total": toNumber(row.billTotal),
+      "Bill Total": Math.round(row.billTotal),
       Advance: toNumber(row.advance),
       Bank: toNumber(row.bank),
       Upi: toNumber(row.upi),
@@ -219,6 +220,7 @@ export default function FOSalesSummaryReport() {
       "Agent Name": "",
       "Guest Name": "GRAND TOTAL",
       Room: "",
+      TotalRoom: "",
       Days: "",
       "Extra Person": "",
       Plan: "",
@@ -229,7 +231,7 @@ export default function FOSalesSummaryReport() {
       "RT Bill No": "",
       "Rest. Sale": totals.restaurantSale,
       "MOD Sale": totals.modSale,
-      "Bill Total": totals.billTotal,
+      "Bill Total": Math.round(totals.billTotal),
       Advance: totals.advance,
       Bank: totals.bank,
       Upi: totals.upi,
@@ -693,6 +695,7 @@ export default function FOSalesSummaryReport() {
                       <TH>Agent</TH>
                       <TH>Guest</TH>
                       <TH>Room</TH>
+                      <TH right >TotalRoom</TH>
                       <TH right>Days</TH>
                       <TH right>Extra</TH>
                       <TH>Plan</TH>
@@ -729,6 +732,7 @@ export default function FOSalesSummaryReport() {
                           <TD>{row.agentName}</TD>
                           <TD bold>{row.guestName}</TD>
                           <TD>{row.room}</TD>
+                          <TD right>{row.totalRoom}</TD>
                           <TD right>{row.days}</TD>
                           <TD right>{row.extraPerson}</TD>
                           <TD>{row.plan}</TD>
@@ -736,11 +740,11 @@ export default function FOSalesSummaryReport() {
                           <TD right>{formatNumber(row.planSaleAmount)}</TD>
                           <TD right>{formatNumber(row.cgst)}</TD>
                           <TD right>{formatNumber(row.sgst)}</TD>
-                          <TD>{row.rtBillNo}</TD>
+                          <TD >{row.rtBillNo}</TD>
                           <TD right>{formatNumber(row.restaurantSale)}</TD>
                           <TD right>{formatNumber(row.modSale)}</TD>
                           <TD right bold>
-                            {formatNumber(row.billTotal)}
+                            {Math.round(Number(row.billTotal))}
                           </TD>
                           <TD right>{formatNumber(row.advance)}</TD>
                           <TD right>{formatNumber(row.bank)}</TD>
@@ -770,7 +774,7 @@ export default function FOSalesSummaryReport() {
                   <tfoot>
                     <tr style={{ background: theme.colors.totalBg }}>
                       <td
-                        colSpan={9}
+                        colSpan={10}
                         style={{
                           padding: 8,
                           fontWeight: 700,

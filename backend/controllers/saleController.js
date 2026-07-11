@@ -382,7 +382,7 @@ console.log("line 260 salescontroller")
 export const cancelSale = async (req, res) => {
   const saleId = req.params.id; // ID of the sale to cancel
   const vanSaleQuery = req.query.vanSale;
-
+  const cancelReason = req.body.cancelReason;
   const session = await mongoose.startSession(); // Start the session
 
   try {
@@ -440,18 +440,20 @@ export const cancelSale = async (req, res) => {
 
       if (checkout && !checkout.isCancelled) {
         checkout.isCancelled = true;
-         checkout.status = "cancelled";
+        checkout.status = "cancelled";
         checkout.cancelledAt = new Date();
         checkout.cancelledBy = req.sUserId;
         checkout.cancelledByName = req.suser?.name || "";
+        checkout.cancelReason = cancelReason;
         await checkout.save({ session });
       }
     }
     // Update sale status
     sale.isCancelled = true;
-      sale.cancelledAt = new Date();
+    sale.cancelledAt = new Date();
     sale.cancelledBy = req.sUserId;
     sale.cancelledByName = req.suser?.name || "";
+    sale.cancelReason = cancelReason;
 
     await (vanSaleQuery === "true"
       ? vanSaleModel

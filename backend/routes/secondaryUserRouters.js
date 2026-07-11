@@ -84,7 +84,7 @@ import {
     getSalesByCheckInNumber,
     updateRestaurantSalePayments,
     getRestaurantSales,getTravelAgentSalesReport,getAgentList,getFOSalesSummary,
-    getCancellationReport,additionalPaxDefaultSetting,getDefault,getDefaultPlan
+    getCancellationReport,additionalPaxDefaultSetting,getDefault,getDefaultPlan,getSpecificDataForPrint
 } from '../controllers/hotelController.js'
 
 import { convertCheckOutToSale } from '../controllers/hotelController2CheckOut.js';
@@ -351,7 +351,7 @@ router.post('/addAccountGroupIdToOutstanding', addAccountGroupIdToOutstanding)
 //// Hostel routes
 router.post('/saveAdditionalPax/:cmp_id', authSecondary, saveAdditionalPax)
 router.get('/getAdditionalPax/:cmp_id', authSecondary, getAdditionalPax)
-router.put('/updateAdditionalPax', authSecondary, updateAdditionalPax)
+router.put('/updateAdditionalPax/:cmp_id', authSecondary, updateAdditionalPax)
 router.delete('/deleteAdditionalPax/:cmp_id/:id', authSecondary, deleteAdditionalPax)
 router.post('/saveVisitOfPurpose/:cmp_id', authSecondary, saveVisitOfPurpose)
 router.get('/getVisitOfPurpose/:cmp_id', authSecondary, getVisitOfPurpose)
@@ -416,7 +416,7 @@ router.post('/fetchOutStandingAndFoodData/:cmp_id',authSecondary,fetchOutStandin
 router.post('/convertCheckOutToSale/:cmp_id',authSecondary,convertCheckOutToSale)
 router.put('/updateConfigurationForHotelAndRestaurant/:cmp_id',authSecondary,updateConfigurationForHotelAndRestaurant)
 router.put('/updateConfigurationForKotApproval/:cmp_id',authSecondary,updateConfigurationForKotApproval)
-router.put("/swapRoom/:checkInId", swapRoom);
+router.put("/swapRoom/:checkInId",authSecondary, swapRoom);
 router.get("/getRoomSwapHistory/:checkInId",getRoomSwapHistory);
 router.get("/getCheckedInGuests/:cmp_id", checkedInGuest);
 router.get('/summary', getSummaryDashboard);
@@ -437,7 +437,7 @@ router.get('/otherCharges/:cmp_id', authSecondary, secondaryIsBlocked, companyAu
 router.get("/flash-report", getFlashReportForDate);
 router.get("/restaurant-category-wise-sales", getRestaurantCategoryWiseSalesReport);
 router.get("/restaurant-date-wise-item-report", getRestaurantDateWiseItemReport);
-router.get("/tourist-report", getTouristReport);
+router.get("/tourist-report/:cmp_id",authSecondary, getTouristReport);
 router.get("/travel-agent-sales", getTravelAgentSalesReport);
 router.get("/travel-agent-sales/agents", getAgentList);
 router.get("/foodplan-report", getFoodPlanReport);
@@ -466,6 +466,7 @@ router.get("/getRestaurantSales/:cmp_id", authSecondary, getRestaurantSales);
 router.put("/defaultSetting/:cmp_id/:id/:selectedModal", authSecondary, additionalPaxDefaultSetting);
 router.get("/getDefaultPax/:cmp_id", authSecondary, getDefault);
 router.get("/getDefaultPlan/:cmp_id", authSecondary, getDefaultPlan);
+router.get("/specificDataForPrint/:cmp_id/:id/:under", authSecondary, getSpecificDataForPrint);
 // Route to get detailed booking information for a specific room and date
 
 export default router

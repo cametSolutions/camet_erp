@@ -21,7 +21,7 @@ import {
   handleBillDownloadPDF,
   generateBillPDFAsBase64,
 } from "../PrintSide/generateBillPrintPDF";
-
+import {calculateStayDays} from "../Helper/hotelHelper";
 import Swal from "sweetalert2";
 import { constructNow } from "date-fns";
 const HotelBillPrint = () => {
@@ -603,48 +603,42 @@ console.log(merged);
       : dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0) -
         (planAmount );
 
-    const additionalPaxAmount = (doc.selectedRooms || []).reduce(
-      (total, room) => {
-        const originalStayDays = Number(room?.stayDays || 1);
-        const originalFullDays = Math.floor(originalStayDays);
 
-        let effectiveFullDays = originalFullDays;
+//   const arrivalDate = normalizeDate(doc?.arrivalDate);
+//   const checkoutDate = normalizeDate(doc?.checkOutDate);
 
-        // Old room before swap
-        if (room?.isSwapped && room?.swappingDateFrom) {
-          const swappingDate = new Date(room.swappingDateFrom);
-          const arrivalDate = new Date(doc?.arrivalDate);
+//   if (!room?.swappingDateFrom) {
+//     return Math.max(Number(room?.stayDays || 0), 0);
+//   }
 
-          effectiveFullDays = Math.floor(
-            (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24) - 1,
-          );
+//   const swappingDate = normalizeDate(room.swappingDateFrom);
 
-          if (effectiveFullDays <= 0) effectiveFullDays = 1;
-        }
-        // New room after swap
-        else if (!room?.isSwapped && room?.swappingDateFrom) {
-          const swappingDate = new Date(room.swappingDateFrom);
-          const checkoutDate = new Date(doc?.checkOutDate);
+//   // Old room before swap
+//   if (room?.isSwapped) {
+//     return Math.max(
+//       Math.floor((swappingDate - arrivalDate) / (1000 * 60 * 60 * 24)),
+//       0,
+//     );
+//   }
 
-          effectiveFullDays = Math.floor(
-            (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
-          );
+//   // New room after swap
+//   return Math.max(
+//     Math.floor((checkoutDate - swappingDate) / (1000 * 60 * 60 * 24)),
+//     0,
+//   );
+// };
 
-          if (effectiveFullDays <= 0) effectiveFullDays = 1;
-        }
+const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
+  const originalStayDays = Math.max(Number(room?.stayDays || 0), 0);
+  const effectiveStayDays = calculateStayDays(doc, room, doc?.arrivalDate, doc?.checkOutDate, originalStayDays);
 
-        const totalPaxWithoutTax = Number(
-          room?.additionalPaxAmountWithOutTax || 0,
-        );
+  const totalPaxWithoutTax = Number(room?.additionalPaxAmountWithOutTax || 0);
 
-        // Per-day pax charge based on original room stay
-        const paxPerDay =
-          originalFullDays > 0 ? totalPaxWithoutTax / originalFullDays : 0;
+  const paxPerDay =
+    originalStayDays > 0 ? totalPaxWithoutTax / originalStayDays : 0;
 
-        return total + paxPerDay * effectiveFullDays;
-      },
-      0,
-    );
+  return total + paxPerDay * effectiveStayDays;
+}, 0);
     console.log(dateWiseLines);
     console.log(roomTariffTotal);
     console.log(additionalPaxAmount);
@@ -1245,6 +1239,7 @@ console.log(merged);
         advance: advanceTotal,
         netPay,
       },
+      isCancelled : doc?.status == "cancelled" ? true : false
     };
   };
 
@@ -1264,7 +1259,7 @@ console.log(merged);
       const owns = docOwnsAdvances(doc);
       const useAdvances = owns ? true : idx === firstPrimaryIdx;
       const bill = prepareBillDataForDoc(doc, useAdvances);
-      console.log(bill.summary);
+      console.log(bill.isCancelled);
       // ── SPLIT MODE FILTERING ──────────────────────────────────────────────
       if (activeMode === "restaurant") {
         // Keep only restaurant / dine-in / room-service charges — NO advance
@@ -1773,7 +1768,7 @@ ${hotelName}`;
             }}
           >
             {/* Watermark */}
-            {isForPreview && (
+            {isForPreview && !billData.isCancelled && (
               <div
                 style={{
                   position: "absolute",
@@ -1793,6 +1788,28 @@ ${hotelName}`;
                 }}
               >
                 PROFORMA INVOICE
+              </div>
+            )}
+              { billData.isCancelled &&  (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%) rotate(-45deg)",
+                  fontSize: "80px",
+                  fontWeight: "bold",
+                  color: "rgba(255, 0, 0, 0.18)",
+                  whiteSpace: "nowrap",
+                  pointerEvents: "none",
+                  zIndex: 0,
+                  userSelect: "none",
+                  letterSpacing: "8px",
+                  width: "200%",
+                  textAlign: "center",
+                }}
+              >
+                CANCELLED INVOICE
               </div>
             )}
             {/* Header */}

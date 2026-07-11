@@ -1010,22 +1010,21 @@ useEffect(() => {
   };
 
   const handleAdditionalPaxDetails = (details, room) => {
-
-    console.log(details,room)
-
+  let filteredDetails =  details.filter((i) => i.paxID !== "" );
+  console.log(filteredDetails,formData?.additionalPaxDetails)
     const existingDetails = Array.isArray(formData?.additionalPaxDetails)
       ? formData.additionalPaxDetails
       : [];
       
     const filterData = existingDetails.filter((i) => i.roomId !== room);
-    const totalAmount = [...filterData, ...details].reduce(
+    const totalAmount = [...filterData, ...filteredDetails].reduce(
       (acc, item) => acc + Number(item.rate),
       0,
     );
 
     setFormData((prev) => ({
       ...prev,
-      additionalPaxDetails: [...filterData, ...details],
+      additionalPaxDetails: [...filterData, ...filteredDetails],
       paxTotal: totalAmount,
       updatedDate: currentDateDefault,
     }));
@@ -1225,7 +1224,7 @@ useEffect(() => {
   };
 
   const submitHandler = async () => {
-    console.log("ahiasi")
+       if (isSubmittingRef.current) return;
     if (isFormReadOnly || isSubmittingRef.current) return;
     if (!formData.customerName || formData.customerName.trim() === "") {
       toast.error("Please enter a customer name");
@@ -1237,7 +1236,7 @@ useEffect(() => {
     try {
 
 
-      isSubmittingRef.current = true;
+      // isSubmittingRef.current = true;
     setSaveLoader(true);
       const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
         params: {
@@ -1488,8 +1487,8 @@ useEffect(() => {
       // (Number(formData.advanceAmount) + Number(formData.deletedAmount) ) ==
       //   Number(editData?.advanceAmount)
     ) {
-      if (isSubmittingRef.current) return;
-      isSubmittingRef.current = true;
+      // if (isSubmittingRef.current) return;
+      // isSubmittingRef.current = true;
       console.log(payload);
       let paymenttypeDetails = {}
       handleSubmit(payload, null, paymenttypeDetails);
