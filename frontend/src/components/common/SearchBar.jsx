@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { CiSearch } from "react-icons/ci";
 import { IoIosCloseCircleOutline } from "react-icons/io";
 import { MdOutlineCalendarToday } from "react-icons/md";
-
+import { addBookingDate } from "../../../slices/dateSlice";
+import { useDispatch } from "react-redux";
 function SearchBar({
   onType,
   toggle,
@@ -15,7 +16,7 @@ function SearchBar({
 }) {
   const [search, setSearch] = useState("");
   const [checked, setChecked] = useState(false);
-
+  const dispatch = useDispatch();
   const today = new Date().toISOString().split("T")[0];
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(new Date().getDate() - 30);
@@ -45,6 +46,7 @@ function SearchBar({
 
   const handleFromDate = (e) => {
     const val = e.target.value;
+    dispatch(addBookingDate({ start: val, end: toDate }));
     setFromDate(val);
     if (val > toDate) {
       setToDate(val);
@@ -56,11 +58,13 @@ function SearchBar({
 
   const handleToDate = (e) => {
     const val = e.target.value;
+    dispatch(addBookingDate({ start: fromDate, end: val }));
     setToDate(val);
     onDateChange?.({ from: fromDate, to: val });
   };
 
   const handleResetDates = () => {
+    dispatch(addBookingDate({ start: today, end: today }));
     setFromDate(today);
     setToDate(today);
     onDateChange?.({ from: today, to: today });

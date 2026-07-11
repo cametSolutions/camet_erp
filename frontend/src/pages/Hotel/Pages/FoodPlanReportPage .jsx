@@ -3,8 +3,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import api from "@/api/api";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import TitleDiv from "@/components/common/TitleDiv";
+import { setFoodPlanReportDate } from "../../../../slices/dateSlice";
 
 const getToday = () => new Date().toISOString().slice(0, 10);
 // Add this helper below getToday():
@@ -25,18 +26,39 @@ const formatDisplayDate = (value) => {
   });
 };
 
-
 const FoodPlanReportPage = () => {
- // Replace initial filters state:
-const [filters, setFilters] = useState({
-  fromDate: get29DaysAgo(),  // ✅ 29 days ago
-  toDate: getToday(),
-});
+  const dispatch = useDispatch();
 
+  const foodPlanReportDate = useSelector(
+    (state) => state.selectedDate.foodPlanReportDate,
+  );
 
- const cmp_id = useSelector(
-         (state) => state.secSelectedOrganization.secSelectedOrg._id
-       );
+  const { start, end, autoFetch } = foodPlanReportDate;
+
+  // Replace initial filters state:
+  const [filters, setFilters] = useState({
+    fromDate: start || get29DaysAgo(), // ✅ 29 days ago
+    toDate: end || getToday(),
+  });
+
+  const cmp_id = useSelector(
+    (state) => state.secSelectedOrganization.secSelectedOrg._id,
+  );
+
+  useEffect(() => {
+    if (autoFetch && cmp_id) {
+      fetchReport(start, end);
+
+      dispatch(
+        setFoodPlanReportDate({
+          autoFetch: true,
+          start: start,
+          end: end,
+        }),
+      );
+    }
+  }, [autoFetch, cmp_id]);
+
   const [data, setData] = useState([]);
   const [grandTotal, setGrandTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -81,12 +103,30 @@ const [filters, setFilters] = useState({
   };
 
   // Replace useEffect:
-useEffect(() => {
-  fetchReport();
-}, [filters.fromDate, filters.toDate]); // ✅ re-fetches when dates change
+  useEffect(() => {
+    fetchReport();
+  }, [filters.fromDate, filters.toDate]); // ✅ re-fetches when dates change
 
-const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleChange = (e) => {
+     const { name, value } = e.target;
+    if (name === "fromDate") {
+      dispatch(
+        setFoodPlanReportDate({
+          start: value,
+          end: filters.toDate,
+          autoFetch: false,
+        }),
+      );
+    } else {
+      dispatch(
+        setFoodPlanReportDate({
+          start: filters.fromDate,
+          end: value,
+          autoFetch: false,
+        }),
+      );
+    }
+   
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -99,324 +139,328 @@ const handleChange = (e) => {
     window.print();
   };
 
- const handleExportExcel = () => {
-  if (!data.length) return;
+  const handleExportExcel = () => {
+    if (!data.length) return;
 
-  const sheetRows = [];
+    const sheetRows = [];
 
-  // Row 1–2: hotel name + place
-  sheetRows.push(["", "THE FEEL MUNNAR"]);
-  sheetRows.push(["", "MUNNAR"]);
-  sheetRows.push([]);
-  // Period line
-  sheetRows.push([
-    "",
-    `For the Period ${formatDisplayDate(filters.fromDate)} To ${formatDisplayDate(
-      filters.toDate
-    )}`,
-  ]);
-  sheetRows.push([]);
-  // Blank line before report title
-  sheetRows.push([]);
-  // Report title row (col B)
-  sheetRows.push(["", "Outlet wise Complimentary Sale Report"]);
-  sheetRows.push([]);
-  // Column headers – start from B to look like the sample
-  sheetRows.push([
-    "",
-    "Bill No",
-    "Bill Date",
-    "Item Name",
-    "Qty",
-    "Rate",
-    "Amt",
-    "Remarks",
-  ]);
-
-  // For each foodPlan section
-  data.forEach((fp) => {
-    // Blank row between sections
+    // Row 1–2: hotel name + place
+    sheetRows.push(["", "THE FEEL MUNNAR"]);
+    sheetRows.push(["", "MUNNAR"]);
     sheetRows.push([]);
+    // Period line
+    sheetRows.push([
+      "",
+      `For the Period ${formatDisplayDate(filters.fromDate)} To ${formatDisplayDate(
+        filters.toDate,
+      )}`,
+    ]);
+    sheetRows.push([]);
+    // Blank line before report title
+    sheetRows.push([]);
+    // Report title row (col B)
+    sheetRows.push(["", "Outlet wise Complimentary Sale Report"]);
+    sheetRows.push([]);
+    // Column headers – start from B to look like the sample
+    sheetRows.push([
+      "",
+      "Bill No",
+      "Bill Date",
+      "Item Name",
+      "Qty",
+      "Rate",
+      "Amt",
+      "Remarks",
+    ]);
 
-    // Section caption (e.g. COMPLIMENTARY, MD) in column B
-    sheetRows.push(["", fp.foodPlan]);
+    // For each foodPlan section
+    data.forEach((fp) => {
+      // Blank row between sections
+      sheetRows.push([]);
 
-    // Detail rows: flatten docs
-    const flatRows = fp.rows.flat(); // each has billNo, billDate, itemName, qty, rate, amount, remarks
+      // Section caption (e.g. COMPLIMENTARY, MD) in column B
+      sheetRows.push(["", fp.foodPlan]);
 
-    flatRows.forEach((row) => {
+      // Detail rows: flatten docs
+      const flatRows = fp.rows.flat(); // each has billNo, billDate, itemName, qty, rate, amount, remarks
+
+      flatRows.forEach((row) => {
+        sheetRows.push([
+          "", // col A empty, everything starts at B
+          row.billNo || "",
+          row.billDate ? formatDisplayDate(row.billDate) : "",
+          row.itemName || "",
+          Number(row.qty || 0),
+          Number(row.rate || 0),
+          Number(row.amount || 0),
+          row.remarks || "",
+        ]);
+      });
+
+      // Subtotal row – amount only under Amt column
       sheetRows.push([
-        "",                              // col A empty, everything starts at B
-        row.billNo || "",
-        row.billDate ? formatDisplayDate(row.billDate) : "",
-        row.itemName || "",
-        Number(row.qty || 0),
-        Number(row.rate || 0),
-        Number(row.amount || 0),
-        row.remarks || "",
+        "",
+        "",
+        "",
+        "", // Item Name col
+        "",
+        "",
+        Number(fp.subTotal || 0),
+        "",
       ]);
     });
 
-    // Subtotal row – amount only under Amt column
+    // Blank row then GRAND TOTAL
+    sheetRows.push([]);
     sheetRows.push([
       "",
       "",
       "",
-      "", // Item Name col
       "",
       "",
-      Number(fp.subTotal || 0),
+      "GRAND TOTAL",
+      Number(grandTotal || 0),
       "",
     ]);
-  });
 
-  // Blank row then GRAND TOTAL
-  sheetRows.push([]);
-  sheetRows.push([
-    "",
-    "",
-    "",
-    "",
-    "",
-    "GRAND TOTAL",
-    Number(grandTotal || 0),
-    "",
-  ]);
+    // Build sheet
+    const ws = XLSX.utils.aoa_to_sheet(sheetRows);
 
-  // Build sheet
-  const ws = XLSX.utils.aoa_to_sheet(sheetRows);
+    // Optional: column widths similar to your sample
+    ws["!cols"] = [
+      { wch: 2 }, // A
+      { wch: 10 }, // B Bill No / captions
+      { wch: 12 }, // C Bill Date
+      { wch: 40 }, // D Item Name
+      { wch: 8 }, // E Qty
+      { wch: 10 }, // F Rate
+      { wch: 14 }, // G Amt
+      { wch: 20 }, // H Remarks
+    ];
 
-  // Optional: column widths similar to your sample
-  ws["!cols"] = [
-    { wch: 2 },  // A
-    { wch: 10 }, // B Bill No / captions
-    { wch: 12 }, // C Bill Date
-    { wch: 40 }, // D Item Name
-    { wch: 8 },  // E Qty
-    { wch: 10 }, // F Rate
-    { wch: 14 }, // G Amt
-    { wch: 20 }, // H Remarks
-  ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "FoodPlan Report");
 
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "FoodPlan Report");
+    const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([buf], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
 
-  const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-  const blob = new Blob([buf], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
-
-  saveAs(
-    blob,
-    `foodplan-report-${filters.fromDate}-to-${filters.toDate}.xlsx`
-  );
-};
-console.log(data)
+    saveAs(
+      blob,
+      `foodplan-report-${filters.fromDate}-to-${filters.toDate}.xlsx`,
+    );
+  };
+  console.log(data);
   return (
-  <>
-    <TitleDiv title="Food Plan Report" />
-    <div className="min-h-screen bg-slate-100 p-3 md:p-6 print:bg-white print:p-0">
-      <div className="w-full">
-
-        {/* Toolbar */}
-      {/* Toolbar */}
-<div className="mb-5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm print:hidden md:p-4">
-  <form
-    onSubmit={handleSubmit}
-    className="flex flex-wrap items-end justify-between gap-3 w-full"
-  >
-    {/* LEFT — Heading */}
-    <div>
-      <h1 className="text-base font-bold tracking-tight text-slate-900 md:text-lg uppercase">
-        Outlet Wise Complimentary Sale Report
-      </h1>
-    </div>
-
-    {/* RIGHT — Dates + Buttons */}
-    <div className="flex flex-wrap items-end gap-2">
-
-      {/* From Date */}
-      <div className="flex flex-col gap-1 w-36">
-        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          From Date
-        </label>
-        <input
-          type="date"
-          name="fromDate"
-          value={filters.fromDate}
-          onChange={handleChange}
-          className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none transition focus:border-teal-600"
-        />
-      </div>
-
-      {/* To Date */}
-      <div className="flex flex-col gap-1 w-36">
-        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          To Date
-        </label>
-        <input
-          type="date"
-          name="toDate"
-          value={filters.toDate}
-          onChange={handleChange}
-          className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none transition focus:border-teal-600"
-        />
-      </div>
-
-      {/* Get Report */}
-      <button
-        type="submit"
-        disabled={loading}
-        className="inline-flex h-9 items-center justify-center rounded-lg bg-teal-700 px-4 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-70"
-      >
-        {loading ? "Loading..." : "Get Report"}
-      </button>
-
-      {/* Print */}
-      <button
-        type="button"
-        onClick={handlePrint}
-        className="inline-flex h-9 items-center justify-center rounded-lg bg-slate-200 px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-300"
-      >
-        Print
-      </button>
-
-      {/* Export Excel */}
-      <button
-        type="button"
-        disabled={!data.length}
-        onClick={handleExportExcel}
-        className="inline-flex h-9 items-center justify-center rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        Export Excel
-      </button>
-    </div>
-  </form>
-</div>
-
-        {error ? (
-          <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 print:hidden">
-            {error}
-          </div>
-        ) : null}
-
-        {/* Printable Report */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:rounded-none print:border-0 print:p-4 print:shadow-none md:p-7">
-
-          <div className="mt-4 flex flex-col justify-between gap-3 text-sm md:flex-row">
-           
-            <div className="text-left text-sm md:text-right">
-              <div className="text-xs font-medium text-slate-500">
-                Print Date &amp; Time
+    <>
+      <TitleDiv title="Food Plan Report" />
+      <div className="min-h-screen bg-slate-100 p-3 md:p-6 print:bg-white print:p-0">
+        <div className="w-full">
+          {/* Toolbar */}
+          {/* Toolbar */}
+          <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm print:hidden md:p-4">
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-wrap items-end justify-between gap-3 w-full"
+            >
+              {/* LEFT — Heading */}
+              <div>
+                <h1 className="text-base font-bold tracking-tight text-slate-900 md:text-lg uppercase">
+                  Outlet Wise Complimentary Sale Report
+                </h1>
               </div>
-              <div className="text-sm font-semibold text-slate-800">
-                {printMeta.date} {printMeta.time}
+
+              {/* RIGHT — Dates + Buttons */}
+              <div className="flex flex-wrap items-end gap-2">
+                {/* From Date */}
+                <div className="flex flex-col gap-1 w-36">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    From Date
+                  </label>
+                  <input
+                    type="date"
+                    name="fromDate"
+                    value={filters.fromDate}
+                    onChange={handleChange}
+                    className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none transition focus:border-teal-600"
+                  />
+                </div>
+
+                {/* To Date */}
+                <div className="flex flex-col gap-1 w-36">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    To Date
+                  </label>
+                  <input
+                    type="date"
+                    name="toDate"
+                    value={filters.toDate}
+                    onChange={handleChange}
+                    className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-xs outline-none transition focus:border-teal-600"
+                  />
+                </div>
+
+                {/* Get Report */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex h-9 items-center justify-center rounded-lg bg-teal-700 px-4 text-xs font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {loading ? "Loading..." : "Get Report"}
+                </button>
+
+                {/* Print */}
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="inline-flex h-9 items-center justify-center rounded-lg bg-slate-200 px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-300"
+                >
+                  Print
+                </button>
+
+                {/* Export Excel */}
+                <button
+                  type="button"
+                  disabled={!data.length}
+                  onClick={handleExportExcel}
+                  className="inline-flex h-9 items-center justify-center rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Export Excel
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {error ? (
+            <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 print:hidden">
+              {error}
+            </div>
+          ) : null}
+
+          {/* Printable Report */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm print:rounded-none print:border-0 print:p-4 print:shadow-none md:p-7">
+            <div className="mt-4 flex flex-col justify-between gap-3 text-sm md:flex-row">
+              <div className="text-left text-sm md:text-right">
+                <div className="text-xs font-medium text-slate-500">
+                  Print Date &amp; Time
+                </div>
+                <div className="text-sm font-semibold text-slate-800">
+                  {printMeta.date} {printMeta.time}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full border-collapse text-xs md:text-sm">
-              <thead>
-                <tr className="border-y-[3px] border-slate-800">
-                  <th className="px-2 py-2 text-left font-bold">Bill No</th>
-                  <th className="px-2 py-2 text-left font-bold">Bill Date</th>
-                  <th className="px-2 py-2 text-left font-bold">Item Name</th>
-                  <th className="px-2 py-2 text-right font-bold">Qty</th>
-                  <th className="px-2 py-2 text-right font-bold">Rate</th>
-                  <th className="px-2 py-2 text-right font-bold">Amt</th>
-                  <th className="px-2 py-2 text-left font-bold">Remarks</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} className="px-2 py-8 text-center text-slate-500">
-                      Loading report...
-                    </td>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full border-collapse text-xs md:text-sm">
+                <thead>
+                  <tr className="border-y-[3px] border-slate-800">
+                    <th className="px-2 py-2 text-left font-bold">Bill No</th>
+                    <th className="px-2 py-2 text-left font-bold">Bill Date</th>
+                    <th className="px-2 py-2 text-left font-bold">Item Name</th>
+                    <th className="px-2 py-2 text-right font-bold">Qty</th>
+                    <th className="px-2 py-2 text-right font-bold">Rate</th>
+                    <th className="px-2 py-2 text-right font-bold">Amt</th>
+                    <th className="px-2 py-2 text-left font-bold">Remarks</th>
                   </tr>
-                ) : !data.length ? (
-                  <tr>
-                    <td colSpan={7} className="px-2 py-8 text-center text-slate-500">
-                      No data found
-                    </td>
-                  </tr>
-                ) : (
-                  data.map((fp, fpIdx) => (
-                    <React.Fragment key={fpIdx}>
-                      {/* Section Header */}
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className="pt-4 pb-1 text-left text-xs font-extrabold uppercase tracking-wide text-slate-800"
-                        >
-                          {fp.foodPlan}
-                        </td>
-                      </tr>
+                </thead>
 
-                      {fp.rows.flat().map((row, idx) => (
-                        <tr
-                          key={`${fp.foodPlan}-${idx}`}
-                          className="border-b border-dashed border-slate-300"
-                        >
-                          <td className="px-2 py-1">{row.billNo}</td>
-                          <td className="px-2 py-1">{row.billDate}</td>
-                          <td className="px-2 py-1 text-slate-800">{row.itemName}</td>
-                          <td className="px-2 py-1 text-right">{row.qty}</td>
-                          <td className="px-2 py-1 text-right">
-                            {Number(row.rate || 0).toFixed(2)}
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-2 py-8 text-center text-slate-500"
+                      >
+                        Loading report...
+                      </td>
+                    </tr>
+                  ) : !data.length ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-2 py-8 text-center text-slate-500"
+                      >
+                        No data found
+                      </td>
+                    </tr>
+                  ) : (
+                    data.map((fp, fpIdx) => (
+                      <React.Fragment key={fpIdx}>
+                        {/* Section Header */}
+                        <tr>
+                          <td
+                            colSpan={7}
+                            className="pt-4 pb-1 text-left text-xs font-extrabold uppercase tracking-wide text-slate-800"
+                          >
+                            {fp.foodPlan}
                           </td>
-                          <td className="px-2 py-1 text-right">
-                            {Number(row.amount || 0).toFixed(2)}
-                          </td>
-                          <td className="px-2 py-1">{row.remarks}</td>
                         </tr>
-                      ))}
 
-                      {/* Sub Total */}
-                      <tr>
-                        <td className="px-2 py-2"></td>
-                        <td className="px-2 py-2"></td>
-                        <td className="px-2 py-2 font-semibold text-slate-800">
-                          {fp.foodPlan} TOTAL
-                        </td>
-                        <td className="px-2 py-2"></td>
-                        <td className="px-2 py-2"></td>
-                        <td className="px-2 py-2 text-right font-semibold text-slate-900">
-                          {fp.subTotal.toFixed(2)}
-                        </td>
-                        <td className="px-2 py-2"></td>
-                      </tr>
-                    </React.Fragment>
-                  ))
-                )}
-              </tbody>
+                        {fp.rows.flat().map((row, idx) => (
+                          <tr
+                            key={`${fp.foodPlan}-${idx}`}
+                            className="border-b border-dashed border-slate-300"
+                          >
+                            <td className="px-2 py-1">{row.billNo}</td>
+                            <td className="px-2 py-1">{row.billDate}</td>
+                            <td className="px-2 py-1 text-slate-800">
+                              {row.itemName}
+                            </td>
+                            <td className="px-2 py-1 text-right">{row.qty}</td>
+                            <td className="px-2 py-1 text-right">
+                              {Number(row.rate || 0).toFixed(2)}
+                            </td>
+                            <td className="px-2 py-1 text-right">
+                              {Number(row.amount || 0).toFixed(2)}
+                            </td>
+                            <td className="px-2 py-1">{row.remarks}</td>
+                          </tr>
+                        ))}
 
-              {!loading && data.length ? (
-                <tfoot>
-                  <tr className="border-t-2 border-slate-900">
-                    <td className="px-2 py-3"></td>
-                    <td className="px-2 py-3"></td>
-                    <td className="px-2 py-3 text-sm font-bold text-slate-900">
-                      GRAND TOTAL
-                    </td>
-                    <td className="px-2 py-3"></td>
-                    <td className="px-2 py-3"></td>
-                    <td className="px-2 py-3 text-right text-sm font-bold text-slate-900">
-                      {grandTotal.toFixed(2)}
-                    </td>
-                    <td className="px-2 py-3"></td>
-                  </tr>
-                </tfoot>
-              ) : null}
-            </table>
+                        {/* Sub Total */}
+                        <tr>
+                          <td className="px-2 py-2"></td>
+                          <td className="px-2 py-2"></td>
+                          <td className="px-2 py-2 font-semibold text-slate-800">
+                            {fp.foodPlan} TOTAL
+                          </td>
+                          <td className="px-2 py-2"></td>
+                          <td className="px-2 py-2"></td>
+                          <td className="px-2 py-2 text-right font-semibold text-slate-900">
+                            {fp.subTotal.toFixed(2)}
+                          </td>
+                          <td className="px-2 py-2"></td>
+                        </tr>
+                      </React.Fragment>
+                    ))
+                  )}
+                </tbody>
+
+                {!loading && data.length ? (
+                  <tfoot>
+                    <tr className="border-t-2 border-slate-900">
+                      <td className="px-2 py-3"></td>
+                      <td className="px-2 py-3"></td>
+                      <td className="px-2 py-3 text-sm font-bold text-slate-900">
+                        GRAND TOTAL
+                      </td>
+                      <td className="px-2 py-3"></td>
+                      <td className="px-2 py-3"></td>
+                      <td className="px-2 py-3 text-right text-sm font-bold text-slate-900">
+                        {grandTotal.toFixed(2)}
+                      </td>
+                      <td className="px-2 py-3"></td>
+                    </tr>
+                  </tfoot>
+                ) : null}
+              </table>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </>
-);
+    </>
+  );
 };
 
 export default FoodPlanReportPage;
