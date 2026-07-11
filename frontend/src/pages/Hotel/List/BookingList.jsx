@@ -136,7 +136,7 @@ function BookingList() {
 
   console.log(additionalChargeDataBasedOnSelection);
 
-  const [remarks, setRemarks] = new Date().toISOString().split("T")[0];
+  const [remarks, setRemarks] = useState("");
   const [transactionNumber, setTransactionNumber] = useState("");
   const [restaurantSaleManageMent, setRestaurantSaleManageMent] =
     useState(false);
@@ -377,11 +377,8 @@ function BookingList() {
       console.log("checkoutTotal", checkoutTotal);
       return (
         total +
-        (checkoutTotal - advance) +
-        Math.abs(
-          Number(checkout?.otherChargeAmount || 0) -
-            Number(checkout?.discountAmount || 0),
-        )
+        (checkoutTotal - advance + Number(checkout?.otherChargeAmount || 0)) -
+        Number(checkout?.discountAmount || 0)
       );
     }, 0);
   };
