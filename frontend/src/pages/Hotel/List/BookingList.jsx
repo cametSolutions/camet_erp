@@ -143,8 +143,12 @@ function BookingList() {
 
   const selectedDate = useSelector((state) => state.selectedDate.bookingDate);
   const today = new Date().toISOString().split("T")[0];
-
-  const [fromDate, setFromDate] = useState(selectedDate?.start || today);
+  const get29DaysAgo = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 29);
+    return date.toISOString().slice(0, 10);
+  };
+  const [fromDate, setFromDate] = useState(selectedDate?.start || get29DaysAgo());
   const [toDate, setToDate] = useState(selectedDate?.end || today);
   const [nightAuditStatus, setNightAuditStatus] = useState(null);
   const [nightAuditLoading, setNightAuditLoading] = useState(false);
@@ -2393,14 +2397,14 @@ function BookingList() {
                       }}
                     />
                   )}
-                  <MdDelete
+                  {/* <MdDelete
                     title="Delete"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDelete(el._id);
                     }}
                     className="text-red-500 cursor-pointer hover:text-red-700 text-sm"
-                  />
+                  /> */}
                 </div>
               ) : null}
 
@@ -2576,6 +2580,7 @@ function BookingList() {
                     <Printer size={14} strokeWidth={2.2} />
                   </button>
                   <button
+                    title="Preview Bill"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedCustomer(el.customerId?._id);
@@ -2700,7 +2705,7 @@ function BookingList() {
                       />
                     )}
                   </div>
-                  <div className="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300">
+                  {/* <div className="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-1 rounded text-xs transition duration-300">
                     <MdDelete
                       title="Delete booking details"
                       onClick={(e) => {
@@ -2709,7 +2714,7 @@ function BookingList() {
                       }}
                       className="text-black-500 cursor-pointer hover:text-black-700 text-sm"
                     />
-                  </div>
+                  </div> */}
                 </div>
               ) : null}
               {(location.pathname === "/sUsers/bookingList" ||

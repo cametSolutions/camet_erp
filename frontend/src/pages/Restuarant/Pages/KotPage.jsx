@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import dayjs from "dayjs";
 import useFetch from "@/customHook/useFetch";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useLocation } from "react-router-dom";
 import PrintModal from "@/pages/Hotel/Components/PrintModal";
 import { IoIosArrowRoundBack } from "react-icons/io";
@@ -38,9 +38,10 @@ import VoucherThreeInchPdfFormat2 from "@/pages/voucher/voucherPdf/threeInchPdf/
 import { useReactToPrint } from "react-to-print";
 import CustomerSearchInputBox from "@/pages/Hotel/Components/CustomerSearchInPutBox";
 import KitchenBatchesViewForPrintAndEdit from "../components/KitchenBatchesViewForPrintAndEdit";
-
+import { setKotDate } from "../../../../slices/dateSlice";
 const OrdersDashboard = () => {
   const contentToPrint = useRef(null);
+  const dispatch = useDispatch();
   const [activeFilter, setActiveFilter] = useState("ON PROCESS");
   const [searchQuery, setSearchQuery] = useState("");
   const [userRole, setUserRole] = useState("reception");
@@ -54,13 +55,21 @@ const OrdersDashboard = () => {
   const [selectedDiscountCharge, setSelectedDiscountCharge] = useState(null);
   const [billFormat, setBillFormat] = useState("format1");
   const [note, setNote] = useState("");
-  const [selectedSaleDate,setSelectedSaleDate] = useState(new Date().toISOString().split("T")[0]);
+  const [selectedSaleDate, setSelectedSaleDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
   const [saveLoader, setSaveLoader] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [selectedDataForPayment, setSelectedDataForPayment] = useState({});
+  const kotPageDate = useSelector((state) => state.selectedDate.kotPageDate);
+
+  const { start, end, autoFetch } = kotPageDate;
   const [selectedDate, setSelectedDate] = useState(
-    dayjs().format("YYYY-MM-DD"),
+    end || dayjs().format("YYYY-MM-DD"),
+  );
+  const [selectedFromDate, setSelectedFromDate] = useState(
+    start || dayjs().format("YYYY-MM-DD"),
   );
   const [paymentMode, setPaymentMode] = useState("single"); // "single" or "split"
   const [cashAmount, setCashAmount] = useState(0);
@@ -117,7 +126,6 @@ const OrdersDashboard = () => {
       { source: "", amount: "", remarks: "", refNo: "" },
     ]);
 
-  console.log(splitPaymentRows);
 
   const removeSplitPaymentRow = (index) =>
     setSplitPaymentRows((prev) => prev.filter((_, i) => i !== index));
@@ -168,15 +176,35 @@ const OrdersDashboard = () => {
 
   const discountBasedOnGrossAmount =
     org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
-const complementaryWithTax =
-  org?.configurations?.[0]?.complementaryWithTax ?? false;
+  const complementaryWithTax =
+    org?.configurations?.[0]?.complementaryWithTax ?? false;
   const queryClient = useQueryClient(); // ✅ uncomment/move this to here
+  const params = new URLSearchParams({
+    date: selectedDate,
+    fromDate: selectedFromDate,
+  });
+
+    useEffect(() => {
+      if (autoFetch && cmp_id) {
+          queryKey: ["kotDash", cmp_id, selectedDate , selectedFromDate],
+  
+        dispatch(
+          setKotDate({
+            autoFetch: true,
+            start: start,
+            end: end,
+          }),
+        );
+      }
+    }, [autoFetch, cmp_id]);
+
 
   const { data, refetch: refreshHook } = useQuery({
-    queryKey: ["kotDash", cmp_id, selectedDate],
+    queryKey: ["kotDash", cmp_id, selectedDate, selectedFromDate],
+
     queryFn: async () => {
       const res = await api.get(
-        `/api/sUsers/getKotDataDash/${cmp_id}?date=${selectedDate}`,
+        `/api/sUsers/getKotDataDash/${cmp_id}?${params.toString()}`,
         { withCredentials: true },
       );
       return res.data;
@@ -272,8 +300,15 @@ const complementaryWithTax =
   useEffect(() => {
     if (data) {
       setOrders(data?.data);
+      dispatch(
+        setKotDate({
+          start: selectedFromDate,
+          end: selectedDate,
+          autoFetch: true,
+        }),
+      );
     }
-  }, [data, selectedDate]);
+  }, [data, selectedDate, selectedFromDate]);
 
   const { data: paymentTypeData } = useFetch(
     `/api/sUsers/getPaymentType/${cmp_id}`,
@@ -497,7 +532,7 @@ const complementaryWithTax =
           }),
         );
         queryClient.invalidateQueries({
-          queryKey: ["kotDash", cmp_id, selectedDate],
+          queryKey: ["kotDash", cmp_id, selectedDate, selectedFromDate],
         });
       }
     } catch (error) {
@@ -563,8 +598,7 @@ const complementaryWithTax =
       const response = await api.put(
         `/api/sUsers/cancel/${selectedOrderForCancel._id}`,
         { reason: cancelReason },
-          { withCredentials: true }
-
+        { withCredentials: true },
       );
 
       if (response.data.success) {
@@ -573,7 +607,7 @@ const complementaryWithTax =
           prevOrders.filter((kot) => kot._id !== selectedOrderForCancel._id),
         );
         queryClient.invalidateQueries({
-          queryKey: ["kotDash", cmp_id, selectedDate],
+          queryKey: ["kotDash", cmp_id, selectedDate, selectedFromDate],
         });
         setShowCancelModal(false);
         setCancelReason(""); // clear reason field
@@ -878,11 +912,10 @@ const complementaryWithTax =
         // discountAmount: previewDiscount,
         note,
         discountBasedOnGrossAmount: discountBasedOnGrossAmount,
-        complementaryWithTax: complementaryWithTax, 
+        complementaryWithTax: complementaryWithTax,
       };
 
       console.log(payment);
-   
 
       const response = await api.put(
         `/api/sUsers/updateKotPayment/${cmp_id}`,
@@ -929,7 +962,7 @@ const complementaryWithTax =
       setCashAmount(0);
       setOnlineAmount(0);
       queryClient.invalidateQueries({
-        queryKey: ["kotDash", cmp_id, selectedDate],
+        queryKey: ["kotDash", cmp_id, selectedDate, selectedFromDate],
       });
       setPaymentMode("single");
       setSelectedCreditor("");
@@ -1126,7 +1159,7 @@ const complementaryWithTax =
   console.log(paymentMethod);
   const handleSaveSales = (status) => {
     queryClient.invalidateQueries({
-      queryKey: ["kotDash", cmp_id, selectedDate],
+      queryKey: ["kotDash", cmp_id, selectedDate, selectedFromDate],
     }); // ✅
     setConformationModal(false);
     setSelectedDataForPayment(previewForSales);
@@ -1421,18 +1454,39 @@ const complementaryWithTax =
                   </select>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="text-gray-600 text-sm">
-                  {dayjs(selectedDate).format("dddd, D MMMM YYYY")}
+              <>
+                <div className="flex items-center gap-4 mr-2">
+                  <div className="text-gray-600 text-sm">
+                    <span>From:</span>
+                  </div>
+                  <input
+                    type="date"
+                    value={selectedFromDate}
+                    onChange={(e) =>
+                      e.target.value <= selectedDate &&
+                      setSelectedFromDate(e.target.value)
+                    }
+                    className="px-3 py-1 border rounded text-sm"
+                    max={dayjs().format("YYYY-MM-DD")}
+                  />
+                  {/* </div> */}
+                  {/* <div className="flex items-center gap-4"> */}
+                  <div className="text-gray-600 text-sm">
+                    <span>To:</span>
+                    {/* {dayjs(selectedDate).format("dddd, D MMMM YYYY")} */}
+                  </div>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) =>
+                      e.target.value >= selectedFromDate &&
+                      setSelectedDate(e.target.value)
+                    }
+                    className="px-3 py-1 border rounded text-sm"
+                    max={dayjs().format("YYYY-MM-DD")}
+                  />
                 </div>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-3 py-1 border rounded text-sm"
-                  max={dayjs().format("YYYY-MM-DD")}
-                />
-              </div>
+              </>
             </div>
           </div>
 
