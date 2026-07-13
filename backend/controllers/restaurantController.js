@@ -680,13 +680,20 @@ export const getKot = async (req, res) => {
 export const getKotDash = async (req, res) => {
   try {
     const { cmp_id } = req.params;
-    let { date } = req.query;
+    let { date , fromDate } = req.query;
 
-    if (!date) {
+    if (!date ) {
       date = new Date().toISOString().slice(0, 10);
     }
 
-    const start = new Date(`${date}T00:00:00.000Z`);
+    
+    if (!fromDate ) {
+      fromDate = new Date().toISOString().slice(0, 10);
+    }
+
+    console.log("dateManagement",fromDate,date)
+
+    const start = new Date(`${fromDate}T00:00:00.000Z`);
     const end = new Date(`${date}T23:59:59.999Z`);
 
     const kot = await kotModal
