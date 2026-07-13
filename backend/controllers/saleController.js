@@ -15,8 +15,8 @@ import vanSaleModel from "../models/vanSaleModel.js";
 import TallyData from "../models/TallyData.js";
 import { formatToLocalDate } from "../helpers/helper.js";
 import {
+  attachLatestSeriesDetails,
   generateVoucherNumber,
-  getSeriesDetailsById,
 } from "../helpers/voucherHelper.js";
 import settlementModel from "../models/settlementModel.js";
 import { createAdvanceReceiptsFromAppliedReceipts } from "../helpers/receiptHelper.js";
@@ -522,17 +522,7 @@ export const getSalesDetails = async (req, res) => {
       })
       .lean();
 
-    const seriesDetails = await getSeriesDetailsById(
-      saleDetails?.series_id,
-      saleDetails?.cmp_id,
-      saleDetails?.voucherType
-    );
-
-    seriesDetails.currentNumber = saleDetails?.usedSeriesNumber;
-
-    if (seriesDetails) {
-      saleDetails.seriesDetails = seriesDetails;
-    }
+    await attachLatestSeriesDetails(saleDetails, "salesNumber");
 
     if (!saleDetails) {
       return res.status(404).json({ error: "Sale not found" });

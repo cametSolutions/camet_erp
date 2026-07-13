@@ -13,8 +13,8 @@ import SecondaryUser from "../models/secondaryUserModel.js";
 import stockTransferModel from "../models/stockTransferModel.js";
 import { formatToLocalDate } from "../helpers/stockTransferHelper.js";
 import {
+  attachLatestSeriesDetails,
   generateVoucherNumber,
-  getSeriesDetailsById,
 } from "../helpers/voucherHelper.js";
 
 ////////// facing many issues while adding session and transaction in stock transfer so keeping it without session and transaction  for further updation ///////////
@@ -337,18 +337,7 @@ export const getStockTransferDetails = async (req, res) => {
         .json({ error: "Stock Transfer Details not found" });
     }
 
-    // Get series details
-    const seriesDetails = await getSeriesDetailsById(
-      details?.series_id,
-      details?.cmp_id,
-      details?.voucherType
-    );
-
-    seriesDetails.currentNumber = details?.usedSeriesNumber;
-
-    if (seriesDetails) {
-      details.seriesDetails = seriesDetails;
-    }
+    await attachLatestSeriesDetails(details, "stockTransferNumber");
 
     // Populate stockTransferToGodown details and restore _id
     if (details.stockTransferToGodown?._id) {
