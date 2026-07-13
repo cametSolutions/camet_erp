@@ -654,7 +654,10 @@ function AvailableRooms({
 
   const handlePaxChange = (e, roomId) => {
     console.log(e.target.value);
-    const newPax = Number(e.target.value || 1)
+    let newPax = Number(e.target.value || 1)
+    if(newPax <= 0 || newPax > 2) {
+      newPax = 2
+    }
     setBookings((prev) =>
       prev.map((b) => (b.roomId === roomId ? { ...b, pax: newPax } : b)),
     );
