@@ -8,7 +8,7 @@ const get29DaysAgo = () => {
 const getToday = () => new Date().toISOString().slice(0, 10);
 const initialState = {
   bookingDate: {
-    start: new Date().toISOString().split("T")[0],
+    start: get29DaysAgo(),
     end: new Date().toISOString().split("T")[0],
   },
   billSummaryDate: {
@@ -72,6 +72,11 @@ const initialState = {
     searchFilter: "",
     autoFetch: false,
   },
+  kotPageDate: {
+    start: new Date().toISOString().split("T")[0],
+    end: new Date().toISOString().split("T")[0],
+    autoFetch: false,
+  },
 };
 
 export const dateSlice = createSlice({
@@ -115,6 +120,9 @@ export const dateSlice = createSlice({
     setCancellationReportDate: (state, action) => {
       state.cancellationDate = action.payload;
     },
+    setKotDate: (state, action) => {
+      state.kotPageDate = action.payload;
+    },
     removeAll: (state) => {
       Object.assign(state, initialState);
     },
@@ -135,6 +143,7 @@ export const {
   setTravelAgentReportDate,
   setFoSalesReportDate,
   setCancellationReportDate,
+  setKotDate,
 } = dateSlice.actions;
 
 export default dateSlice.reducer;
