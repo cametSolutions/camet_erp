@@ -131,7 +131,7 @@ export const transactions = async (req, res) => {
       //   userFilter = {}; // no filter
       // }
     } else {
-    // console.log("userFilter 2");
+    console.log("userFilter 2", selectedSecondaryUser);
 
       if (selectedSecondaryUser) {
     // console.log("userFilter 3");
