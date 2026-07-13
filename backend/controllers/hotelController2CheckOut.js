@@ -13,7 +13,7 @@ import {
   updateStatus as syncRoomStatus,
 } from "../helpers/hotelHelper.js";
 import { createReceiptsAndSettlements } from "../helpers/checkoutHelper.js";
-
+import { handleRecalculateCheckOut } from "../helpers/saleCalculationHelper.js";
 // =============================================================================
 // convertCheckOutToSale
 // =============================================================================
@@ -28,8 +28,12 @@ export const convertCheckOutToSale = async (req, res) => {
   try {
     await session.withTransaction(async () => {
       const { cmp_id } = req.params;
+      req.body.selectedCheckOut = await handleRecalculateCheckOut(
+        req.body.selectedCheckOut,
+        cmp_id,
+      );
 
-      const {
+      let {
         paymentMethod,
         paymentDetails,
         selectedCheckOut = [],
@@ -53,7 +57,9 @@ export const convertCheckOutToSale = async (req, res) => {
       if (!["single", "split", "credit"].includes(paymentMode))
         throw new Error("Invalid payment mode");
 
-      let effectiveRestaurantBaseSaleData = Array.isArray(restaurantBaseSaleData)
+      let effectiveRestaurantBaseSaleData = Array.isArray(
+        restaurantBaseSaleData,
+      )
         ? [...restaurantBaseSaleData]
         : [];
 
@@ -157,10 +163,7 @@ export const convertCheckOutToSale = async (req, res) => {
         if (!selectedPartyId)
           throw new Error("Missing customerId._id in checkout item");
 
-        const itemTotal = (item.selectedRooms || []).reduce(
-          (acc, room) => acc + Number(room.amountAfterTax || 0),
-          0,
-        );
+        const itemTotal = Number(item.grandTotal || 0);
 
         const partyData = await getSelectedParty(
           selectedPartyId,
@@ -221,7 +224,7 @@ export const convertCheckOutToSale = async (req, res) => {
         }
 
         const pendingAmount =
-          itemTotal - (paidAmount + Number(item?.Totaladvance || 0));
+          itemTotal - (paidAmount + Number(item?.totalAdvance || 0));
 
         // ── Build paymentSplittingArray ──────────────────────────────────
         const { arr: paymentSplittingArray, restaurantSplitArray } =
@@ -235,10 +238,11 @@ export const convertCheckOutToSale = async (req, res) => {
             session,
           );
 
-          const hotelSplitTotal = paymentSplittingArray.reduce(
-  (sum, s) => sum + Number(s.amount || 0),
-  0,
-);const isHotelAmountZero = hotelSplitTotal === 0;
+        const hotelSplitTotal = paymentSplittingArray.reduce(
+          (sum, s) => sum + Number(s.amount || 0),
+          0,
+        );
+        const isHotelAmountZero = hotelSplitTotal === 0;
         console.log("paymentSplittingArray", paymentSplittingArray);
         console.log("restaurantSplitArray", restaurantSplitArray);
 
@@ -326,10 +330,21 @@ export const convertCheckOutToSale = async (req, res) => {
               customerId: selectedPartyId,
               customerName: item?.customerId?.partyName || party?.customerName,
               selectedRooms: roomsBeingCheckedOut,
-              totalAmount: roomTotal,
-              roomTotal,
-              grandTotal: roomTotal,
-              balanceToPay: pendingAmount <= 0 ? 0 : pendingAmount,
+              totalAmount: itemTotal,
+              roomTotal: Number(item.roomTotal || 0),
+              grandTotal: Number(item.grandTotal || 0),
+              balanceToPay: pendingAmount < 0 ? 0 : pendingAmount,
+              specificFoodPlanTotal: Number(item.specificFoodPlanTotal || 0),
+              taxableSpecificFoodPlan: Number(
+                item.taxableSpecificFoodPlan || 0,
+              ),
+              foodPlanTaxAmount: Number(item.foodPlanTaxAmount || 0),
+              additionalPaxWithTax: Number(item.additionalPaxWithTax || 0),
+              additionalPaxWithoutTax: Number(
+                item.additionalPaxWithoutTax || 0,
+              ),
+              additionalPaxTaxAmount: Number(item.additionalPaxTaxAmount || 0),
+              additionalPaxCount: Number(item.additionalPaxCount || 0),
               isPartialCheckout: isThisPartial,
               originalCheckInId: checkInId,
               discountAmount: Number(item?.discountAmount || 0),
@@ -347,15 +362,7 @@ export const convertCheckOutToSale = async (req, res) => {
         const createdDoc = checkOutDoc[0];
         createdCheckoutIds.push(createdDoc._id);
 
-        const amount = [item].reduce((total, el) => {
-          return (
-            total +
-            (el.selectedRooms || []).reduce(
-              (acc, room) => acc + Number(room.amountAfterTax || 0),
-              0,
-            )
-          );
-        }, 0);
+        const amount = Number(item.grandTotal || 0);
 
         // ── Create hotel Sale voucher ────────────────────────────────────
         const savedVoucherData = await createSalesVoucher(
@@ -385,43 +392,45 @@ export const convertCheckOutToSale = async (req, res) => {
         //          createReceiptsAndSettlements reduces pending after receipts
 
         let tallyRows = [];
- if (!isHotelAmountZero) {
-        if (paymentMode === "split") {
-          for (const splitEntry of paymentSplittingArray) {
-            const isCredit = splitEntry.type === "credit";
-            const splitPartyId = isCredit
-              ? splitEntry.customer // credit party
-              : selectedPartyId; // room payer
-            console.log("splitEntry", splitEntry);
+        if (!isHotelAmountZero) {
+          if (paymentMode === "split") {
+            for (const splitEntry of paymentSplittingArray) {
+              const isCredit = splitEntry.type === "credit";
+              const splitPartyId = isCredit
+                ? splitEntry.customer // credit party
+                : selectedPartyId; // room payer
+              console.log("splitEntry", splitEntry);
+              const rows = await createTallyEntry(
+                cmp_id,
+                req,
+                splitPartyId,
+                [item],
+                savedVoucherData[0],
+                Number(splitEntry.amount || 0), // bill_amount
+                splitEntry.type === "credit"
+                  ? Number(splitEntry.amount || 0)
+                  : 0, // pending only for credit
+                session,
+                "checkout",
+              );
+              tallyRows.push(...rows);
+            }
+          } else {
+            // single or credit → one TallyData, pending = full amount
             const rows = await createTallyEntry(
               cmp_id,
               req,
-              splitPartyId,
+              selectedPartyId,
               [item],
               savedVoucherData[0],
-              Number(splitEntry.amount || 0), // bill_amount
-              splitEntry.type === "credit" ? Number(splitEntry.amount || 0) : 0, // pending only for credit
+              amount, // bill_amount
+              amount, // bill_pending_amt ← createReceiptsAndSettlements reduces this
               session,
               "checkout",
             );
             tallyRows.push(...rows);
           }
-        } else {
-          // single or credit → one TallyData, pending = full amount
-          const rows = await createTallyEntry(
-            cmp_id,
-            req,
-            selectedPartyId,
-            [item],
-            savedVoucherData[0],
-            amount, // bill_amount
-            amount, // bill_pending_amt ← createReceiptsAndSettlements reduces this
-            session,
-            "checkout",
-          );
-          tallyRows.push(...rows);
         }
-      }
         // ── Update booking receipts to point to new sale ─────────────────
         await updateReceiptForRooms(
           item?.voucherNumber,
@@ -533,12 +542,12 @@ export const convertCheckOutToSale = async (req, res) => {
       // Credit mode  → skipped entirely
 
       const totalHotelAmount = results.reduce((sum, result) => {
-  const hotelAmount = (result.splitSummary || [])
-    .filter((s) => s.section === "hotel")
-    .reduce((acc, s) => acc + Number(s.amount || 0), 0);
+        const hotelAmount = (result.splitSummary || [])
+          .filter((s) => s.section === "hotel")
+          .reduce((acc, s) => acc + Number(s.amount || 0), 0);
 
-  return sum + hotelAmount;
-}, 0);
+        return sum + hotelAmount;
+      }, 0);
 
       if (!isPostToRoom && paymentMode !== "credit" && totalHotelAmount > 0) {
         const customerPartyDoc = await getSelectedParty(
@@ -557,9 +566,9 @@ export const convertCheckOutToSale = async (req, res) => {
           session,
         );
 
-        const hotelTallyDoc = await TallyData.findById(results[0]?.tallyId).session(
-          session,
-        );
+        const hotelTallyDoc = await TallyData.findById(
+          results[0]?.tallyId,
+        ).session(session);
         const hotelSales = results
           .map((result) => result?.salesRecord)
           .filter(Boolean);
@@ -658,7 +667,8 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
   session,
 ) => {
   try {
-    if (!Array.isArray(settlementData) || settlementData.length === 0) return true;
+    if (!Array.isArray(settlementData) || settlementData.length === 0)
+      return true;
     if (!Array.isArray(selectedCheckOut) || selectedCheckOut.length === 0) {
       throw new Error("selectedCheckOut is required");
     }
@@ -715,11 +725,13 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
 
       if (totalAmountToDeduct <= 0) continue;
 
-      const saleDoc = await salesModel.findOne({
-        _id: saleId,
-        cmp_id,
-        isCancelled: false,
-      }).session(session);
+      const saleDoc = await salesModel
+        .findOne({
+          _id: saleId,
+          cmp_id,
+          isCancelled: false,
+        })
+        .session(session);
 
       if (!saleDoc) {
         throw new Error(`Restaurant sale not found: ${saleId}`);
@@ -750,7 +762,10 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
       }
 
       const subTotal = Number(saleDoc.subTotal || 0);
-      const updatedFinalAmount = safeSub(subTotal, updatedTotalAdditionalCharges);
+      const updatedFinalAmount = safeSub(
+        subTotal,
+        updatedTotalAdditionalCharges,
+      );
 
       const existingPaymentSplits = Array.isArray(saleDoc.paymentSplittingData)
         ? saleDoc.paymentSplittingData
@@ -802,10 +817,12 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
           { session },
         );
 
-        const matchedReceipt = await receiptModel.findOne({
-          "billData._id": tally._id,
-          isCancelled: false,
-        }).session(session);
+        const matchedReceipt = await receiptModel
+          .findOne({
+            "billData._id": tally._id,
+            isCancelled: false,
+          })
+          .session(session);
 
         if (matchedReceipt) {
           const billRow = matchedReceipt.billData.find(
@@ -814,7 +831,9 @@ export const handleAdvanceAndDiscountSettlementInRestaurant = async (
 
           if (billRow) {
             const oldSettledAmount = Number(billRow.settledAmount || 0);
-            const oldTotalBillAmount = Number(matchedReceipt.totalBillAmount || 0);
+            const oldTotalBillAmount = Number(
+              matchedReceipt.totalBillAmount || 0,
+            );
             const oldEnteredAmount = Number(matchedReceipt.enteredAmount || 0);
 
             const receiptSettledReduction = Math.min(
@@ -965,20 +984,20 @@ async function createPaymentSplittingArray(
       }
 
       const splitObj = {
-  type: splitSourceType,
-  amount: Number(split.amount || 0),
-  ref_id: resolvedSourceId,
-  customer: resolvedCustomerId,
-  customerName: split.customerName,
-  remarks: split.remarks ?? null,
-  source: resolvedSourceId,
-  sourceType: splitSourceType,
-  subsource: split.subsource ?? splitSourceType,
-  transactionNo: split.transactionNo ?? "",
-  underCategory: split.underCategory,
-  upiNo: split.upiNo ?? "",
-  splitSaleId: split.splitSaleId || split.saleId || null,
-};
+        type: splitSourceType,
+        amount: Number(split.amount || 0),
+        ref_id: resolvedSourceId,
+        customer: resolvedCustomerId,
+        customerName: split.customerName,
+        remarks: split.remarks ?? null,
+        source: resolvedSourceId,
+        sourceType: splitSourceType,
+        subsource: split.subsource ?? splitSourceType,
+        transactionNo: split.transactionNo ?? "",
+        underCategory: split.underCategory,
+        upiNo: split.upiNo ?? "",
+        splitSaleId: split.splitSaleId || split.saleId || null,
+      };
 
       if (split.underCategory === "room") {
         arr.push(splitObj);
@@ -1120,117 +1139,55 @@ async function createPaymentSplittingArray(
   }
 
   // distribute restaurant splits into restaurant sale docs
-if (restaurantBaseSaleData.length > 0 && restaurantTotal > 0) {
-  let splitsToDistribute = [];
+  if (restaurantBaseSaleData.length > 0 && restaurantTotal > 0) {
+    let splitsToDistribute = [];
 
-  if (paymentMode === "split" && restaurantSplitArray.length > 0) {
-    splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
-  } else if (paymentMode === "credit") {
-    const creditorId = paymentDetails?.selectedCreditor?._id;
-    const creditorName = paymentDetails?.selectedCreditor?.partyName;
+    if (paymentMode === "split" && restaurantSplitArray.length > 0) {
+      splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
+    } else if (paymentMode === "credit") {
+      const creditorId = paymentDetails?.selectedCreditor?._id;
+      const creditorName = paymentDetails?.selectedCreditor?.partyName;
 
-    splitsToDistribute.push({
-      type: "credit",
-      amount: restaurantTotal,
-      ref_id: creditorId,
-      reference_name: creditorName,
-      customer: getCustomerId(paymentDetails?.selectedCreditor),
-      customerName: creditorName,
-      remarks: paymentDetails?.remarks ?? null,
-      source: creditorId,
-      sourceType: "credit",
-      subsource: creditorName,
-      transactionNo: "",
-      underCategory: "food",
-      upiNo: "",
-      splitSaleId: null,
-    });
-  } else {
-    splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
-  }
-
-  // if splitSaleId exists, use exact mapping
-  const hasMappedSaleIds = splitsToDistribute.some((s) => s.splitSaleId);
-
-  if (hasMappedSaleIds) {
-    const groupedRestaurantSplits = new Map();
-
-    for (const split of splitsToDistribute) {
-      const targetSaleId = String(split.splitSaleId || "");
-      if (!targetSaleId) continue;
-
-      if (!groupedRestaurantSplits.has(targetSaleId)) {
-        groupedRestaurantSplits.set(targetSaleId, []);
-      }
-
-      groupedRestaurantSplits.get(targetSaleId).push({ ...split });
-    }
-
-    for (const saleItem of restaurantBaseSaleData) {
-      const saleKey = String(saleItem._id);
-      const itemSplits = groupedRestaurantSplits.get(saleKey) || [];
-      const totalPaymentSplits = itemSplits.reduce(
-        (sum, s) => sum + Number(s.amount || 0),
-        0,
-      );
-
-      await salesModel.findOneAndUpdate(
-        { _id: saleItem._id },
-        {
-          $set: {
-            paymentSplittingData: itemSplits,
-            totalPaymentSplits: parseFloat(totalPaymentSplits.toFixed(2)),
-          },
-        },
-        { session, new: true },
-      );
-    }
-  } else {
-    // fallback old logic if splitSaleId not sent
-    if (restaurantBaseSaleData.length === 1) {
-      await salesModel.findOneAndUpdate(
-        { _id: restaurantBaseSaleData[0]._id },
-        {
-          $set: {
-            paymentSplittingData: splitsToDistribute,
-            totalPaymentSplits: parseFloat(
-              splitsToDistribute.reduce(
-                (sum, s) => sum + Number(s.amount || 0),
-                0,
-              ).toFixed(2),
-            ),
-          },
-        },
-        { session, new: true },
-      );
+      splitsToDistribute.push({
+        type: "credit",
+        amount: restaurantTotal,
+        ref_id: creditorId,
+        reference_name: creditorName,
+        customer: getCustomerId(paymentDetails?.selectedCreditor),
+        customerName: creditorName,
+        remarks: paymentDetails?.remarks ?? null,
+        source: creditorId,
+        sourceType: "credit",
+        subsource: creditorName,
+        transactionNo: "",
+        underCategory: "food",
+        upiNo: "",
+        splitSaleId: null,
+      });
     } else {
-      let remainingSplits = splitsToDistribute.map((s) => ({ ...s }));
+      splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
+    }
 
-      for (const saleItem of restaurantBaseSaleData) {
-        let remaining = Number(saleItem.finalAmount || 0);
-        const itemSplits = [];
+    // if splitSaleId exists, use exact mapping
+    const hasMappedSaleIds = splitsToDistribute.some((s) => s.splitSaleId);
 
-        for (const split of remainingSplits) {
-          if (remaining <= 0) break;
-          if (Number(split.amount || 0) <= 0) continue;
+    if (hasMappedSaleIds) {
+      const groupedRestaurantSplits = new Map();
 
-          const splitAmount = Number(split.amount || 0);
+      for (const split of splitsToDistribute) {
+        const targetSaleId = String(split.splitSaleId || "");
+        if (!targetSaleId) continue;
 
-          if (splitAmount <= remaining) {
-            itemSplits.push({ ...split, amount: splitAmount });
-            remaining = parseFloat((remaining - splitAmount).toFixed(2));
-            split.amount = 0;
-          } else {
-            itemSplits.push({ ...split, amount: remaining });
-            split.amount = parseFloat((splitAmount - remaining).toFixed(2));
-            remaining = 0;
-          }
+        if (!groupedRestaurantSplits.has(targetSaleId)) {
+          groupedRestaurantSplits.set(targetSaleId, []);
         }
 
-        remainingSplits = remainingSplits.filter(
-          (s) => Number(s.amount || 0) > 0,
-        );
+        groupedRestaurantSplits.get(targetSaleId).push({ ...split });
+      }
 
+      for (const saleItem of restaurantBaseSaleData) {
+        const saleKey = String(saleItem._id);
+        const itemSplits = groupedRestaurantSplits.get(saleKey) || [];
         const totalPaymentSplits = itemSplits.reduce(
           (sum, s) => sum + Number(s.amount || 0),
           0,
@@ -1247,9 +1204,70 @@ if (restaurantBaseSaleData.length > 0 && restaurantTotal > 0) {
           { session, new: true },
         );
       }
+    } else {
+      // fallback old logic if splitSaleId not sent
+      if (restaurantBaseSaleData.length === 1) {
+        await salesModel.findOneAndUpdate(
+          { _id: restaurantBaseSaleData[0]._id },
+          {
+            $set: {
+              paymentSplittingData: splitsToDistribute,
+              totalPaymentSplits: parseFloat(
+                splitsToDistribute
+                  .reduce((sum, s) => sum + Number(s.amount || 0), 0)
+                  .toFixed(2),
+              ),
+            },
+          },
+          { session, new: true },
+        );
+      } else {
+        let remainingSplits = splitsToDistribute.map((s) => ({ ...s }));
+
+        for (const saleItem of restaurantBaseSaleData) {
+          let remaining = Number(saleItem.finalAmount || 0);
+          const itemSplits = [];
+
+          for (const split of remainingSplits) {
+            if (remaining <= 0) break;
+            if (Number(split.amount || 0) <= 0) continue;
+
+            const splitAmount = Number(split.amount || 0);
+
+            if (splitAmount <= remaining) {
+              itemSplits.push({ ...split, amount: splitAmount });
+              remaining = parseFloat((remaining - splitAmount).toFixed(2));
+              split.amount = 0;
+            } else {
+              itemSplits.push({ ...split, amount: remaining });
+              split.amount = parseFloat((splitAmount - remaining).toFixed(2));
+              remaining = 0;
+            }
+          }
+
+          remainingSplits = remainingSplits.filter(
+            (s) => Number(s.amount || 0) > 0,
+          );
+
+          const totalPaymentSplits = itemSplits.reduce(
+            (sum, s) => sum + Number(s.amount || 0),
+            0,
+          );
+
+          await salesModel.findOneAndUpdate(
+            { _id: saleItem._id },
+            {
+              $set: {
+                paymentSplittingData: itemSplits,
+                totalPaymentSplits: parseFloat(totalPaymentSplits.toFixed(2)),
+              },
+            },
+            { session, new: true },
+          );
+        }
+      }
     }
   }
-}
 
   return { arr, restaurantSplitArray };
 }

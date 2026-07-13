@@ -1094,7 +1094,8 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
       Number(sgstAmount) +
       Number(cgstAmount) +
       Number(restaurantTotal) +
-      otherChargeAmount -
+      otherChargeAmount
+       -
       Number(
         paymentDetails?.paymentDetails?.discountAmount ||
           doc.discountAmount ||
@@ -2270,7 +2271,7 @@ ${hotelName}`;
                         </td>
                       </tr>
                     )}
-                    {activeMode !== "restaurant" && (
+                    {activeMode !== "restaurant"  &&  billData?.summary?.discount > 0 && (
                       <tr>
                         <td
                           style={{ border: "1px solid #000", padding: "4px" }}

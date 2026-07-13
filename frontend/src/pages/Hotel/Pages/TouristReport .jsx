@@ -3,7 +3,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import api from "@/api/api";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { setPaxReportDate } from "../../../../slices/dateSlice";
 import TitleDiv from "@/components/common/TitleDiv";
 const getToday = () => new Date().toISOString().slice(0, 10);
 
@@ -14,13 +15,34 @@ const get29DaysAgo = () => {
 };
 
 const TouristReport = () => {
+  const dispatch = useDispatch();
+
+  const paxReportDate = useSelector(
+    (state) => state.selectedDate.paxReportDate,
+  );
+
+  const { start, end, autoFetch } = paxReportDate;
   const [filters, setFilters] = useState({
-    fromDate: get29DaysAgo(), // ✅ 29 days ago
-    toDate: getToday(),
+    fromDate: start || get29DaysAgo(), // ✅ 29 days ago
+    toDate: end || getToday(),
   });
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
+
+  useEffect(() => {
+    if (autoFetch && cmp_id) {
+      fetchReport(start, end);
+
+      dispatch(
+        setPaxReportDate({
+          autoFetch: true,
+          start: start,
+          end: end,
+        }),
+      );
+    }
+  }, [autoFetch, cmp_id]);
 
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState({
@@ -101,6 +123,25 @@ const TouristReport = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "fromDate") {
+      dispatch(
+        setPaxReportDate({
+          start: value,
+          end: filters.toDate,
+          autoFetch: false,
+        }),
+      );
+    } else {
+      dispatch(
+        setPaxReportDate({
+          start: filters.fromDate,
+          end: value,
+          autoFetch: false,
+        }),
+      );
+    }
+
     setFilters((prev) => ({
       ...prev,
       [name]: value,

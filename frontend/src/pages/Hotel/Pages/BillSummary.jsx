@@ -1,13 +1,10 @@
-import React, { useState, useEffect,useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import api from "@/api/api";
-import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import TitleDiv from "@/components/common/TitleDiv";
 import RoomName from "@/pages/Hotel/Components/RoomName";
-
-
-
-
+import { useDispatch, useSelector } from "react-redux";
+import { setBillSummaryDate } from "../../../../slices/dateSlice";
 const formatDisplayDate = (dateStr) => {
   if (!dateStr) return "";
   const date = new Date(dateStr);
@@ -28,11 +25,6 @@ const computeKotBreakdown = (salesData) => {
 };
 
 const round2 = (value) => Math.round(value || 0); // integer rounding
-
-
-
-
-
 
 export const generatePDF = (
   salesData,
@@ -246,10 +238,11 @@ export const generatePDF = (
                 <td class="text-right">${Math.round(Number(row.upi || 0))}</td>
                 <td class="text-right">${Math.round(Number(row.bank || 0))}</td>
                 <td class="text-right">${Math.round(Number(row.card || 0))}</td>
-                <td>${row.PaymentModeArray &&
-                          row.PaymentModeArray.length > 0
-                            ? row.PaymentModeArray.join(", ")
-                            : "-"} </td>
+                <td>${
+                  row.PaymentModeArray && row.PaymentModeArray.length > 0
+                    ? row.PaymentModeArray.join(", ")
+                    : "-"
+                } </td>
                 ${
                   businessType !== "hotel"
                     ? `<td>${row.mealPeriod || "-"}</td><td>${row.kotType || "-"}</td>`
@@ -464,7 +457,7 @@ const exportToExcel = (
       "Bill No",
       "Date",
       "Guest Name",
-         "Agent name",
+      "Agent name",
       "Gross Amount",
       "CGST",
       "SGST",
@@ -479,7 +472,6 @@ const exportToExcel = (
       "Payment Mode",
       ...(businessType !== "hotel" ? ["Meal Period", "KOT Type"] : []),
       "Credit",
-   
     ],
     ...salesData.map((row) => {
       const isCreditSale =
@@ -503,10 +495,9 @@ const exportToExcel = (
         Math.round(row.upi || 0),
         Math.round(row.bank || 0),
         Math.round(row.card || 0),
-       row.PaymentModeArray &&
-                          row.PaymentModeArray.length > 0
-                            ? row.PaymentModeArray.join(", ")
-                            : "-"|| "",
+        row.PaymentModeArray && row.PaymentModeArray.length > 0
+          ? row.PaymentModeArray.join(", ")
+          : "-" || "",
       ];
 
       if (businessType !== "hotel") {
@@ -638,18 +629,14 @@ const exportToExcel = (
 /* ===================== Main Component ===================== */
 
 const BillSummary = () => {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
   const [currentDateTime, setCurrentDateTime] = useState("");
   const [reportPeriod, setReportPeriod] = useState("");
   const [salesData, setSalesData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
   const [kotTypeFilter, setKotTypeFilter] = useState("all");
   const [mealPeriodFilter, setMealPeriodFilter] = useState("all");
-const [searchTerm, setSearchTerm] = useState("");
-
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [businessType, setBusinessType] = useState(null);
   const [summary, setSummary] = useState({
@@ -663,15 +650,43 @@ const [searchTerm, setSearchTerm] = useState("");
     IsDelivery: 0,
   });
 
+  const billSummaryDate = useSelector(
+    (state) => state.selectedDate.billSummaryDate,
+  );
+  const today = new Date().toISOString().split("T")[0];
+  const [startDate, setStartDate] = useState(billSummaryDate?.start || today);
+  const [endDate, setEndDate] = useState(billSummaryDate?.end || today);
+
   const location = useLocation();
   const navigate = useNavigate();
-
+  const dispatch = useDispatch();
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
   const owner = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
+
+const { start, end, autoFetch } = billSummaryDate;
+
+useEffect(() => {
+  if (
+    autoFetch &&
+    cmp_id &&
+    owner &&
+    businessType
+  ) {
+    fetchSalesData(start, end);
+
+    dispatch(
+      setBillSummaryDate({
+        autoFetch: true,
+        start: start,
+        end: end
+      })
+    );
+  }
+}, [autoFetch, cmp_id, owner, businessType]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -723,6 +738,14 @@ const [searchTerm, setSearchTerm] = useState("");
       return;
     }
 
+  dispatch(
+    setBillSummaryDate({
+      start: startDate,
+      end: endDate,
+      autoFetch: true,
+    })
+  );
+
     setLoading(true);
     setError(null);
 
@@ -740,7 +763,7 @@ const [searchTerm, setSearchTerm] = useState("");
       );
 
       const result = response.data;
-console.log(result.data.sales[8]);
+      console.log(result.data.sales[8]);
       if (result.success) {
         setSalesData(result.data.sales || []);
         setSummary(result.data.summary || {});
@@ -783,7 +806,6 @@ console.log(result.data.sales[8]);
       setLoading(false);
     }
   };
-console.log(salesData);
 
   const filteredSalesData = salesData.filter((item) => {
     const kotMatch = kotTypeFilter === "all" || item.kotType === kotTypeFilter;
@@ -791,7 +813,7 @@ console.log(salesData);
       mealPeriodFilter === "all" || item.mealPeriod === mealPeriodFilter;
     return kotMatch && mealMatch;
   });
- const searchedSalesData = useMemo(() => {
+  const searchedSalesData = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
 
     if (!keyword) return filteredSalesData;
@@ -815,8 +837,10 @@ console.log(salesData);
         item.credit,
         item.disc,
       ].some((value) =>
-        String(value ?? "").toLowerCase().includes(keyword)
-      )
+        String(value ?? "")
+          .toLowerCase()
+          .includes(keyword),
+      ),
     );
   }, [filteredSalesData, searchTerm]);
 
@@ -855,7 +879,7 @@ console.log(salesData);
       upi: 0,
       bank: 0,
       card: 0,
-    }
+    },
   );
 
   const { kotTypes, mealPeriods } = getFilterOptions();
@@ -907,7 +931,7 @@ console.log(salesData);
       mealPeriodFilter,
     );
   };
-console.log(filteredSalesData);
+  console.log(filteredSalesData);
   return (
     <>
       <TitleDiv
@@ -920,167 +944,205 @@ console.log(filteredSalesData);
       <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 p-6">
         <div className=" mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200">
           {/* Header */}
-     {/* ── Report Header ── */}
-<div className="text-center border-b border-gray-200 pb-4 mb-5">
-  <div className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
-    {owner?.companyName || owner?.name || "Sales Report"}
-  </div>
-  <div className="mt-1 text-xs text-gray-400">
-    {owner?.flat || owner?.road || "Sales Register of the Outlet"}
-  </div>
-  <div className="mt-3 inline-block px-4 py-1 rounded-full bg-gray-900 text-white text-[11px] font-bold tracking-widest uppercase">
-    Sales Register — {businessType === "hotel" ? "Hotel" : "Restaurant"}
-  </div>
-</div>
+          {/* ── Report Header ── */}
+          <div className="text-center border-b border-gray-200 pb-4 mb-5">
+            <div className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
+              {owner?.companyName || owner?.name || "Sales Report"}
+            </div>
+            <div className="mt-1 text-xs text-gray-400">
+              {owner?.flat || owner?.road || "Sales Register of the Outlet"}
+            </div>
+            <div className="mt-3 inline-block px-4 py-1 rounded-full bg-gray-900 text-white text-[11px] font-bold tracking-widest uppercase">
+              Sales Register —{" "}
+              {businessType === "hotel" ? "Hotel" : "Restaurant"}
+            </div>
+          </div>
 
-{/* ── Filter Bar ── */}
-<div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-5">
+          {/* ── Filter Bar ── */}
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-5">
+            {/* Single row of filters */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5">
+              {/* From Date */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                  From
+                </span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    clearError();
+                  }}
+                  disabled={loading}
+                  className="h-8 px-2.5 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-800 focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 cursor-pointer"
+                />
+              </div>
 
-  {/* Single row of filters */}
-  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5">
+              {/* To Date */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                  To
+                </span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    clearError();
+                  }}
+                  disabled={loading}
+                  className="h-8 px-2.5 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-800 focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 cursor-pointer"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search room, guest, bill, amount..."
+                  className="h-8 rounded-md border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
+                />
+              </div>
 
-    {/* From Date */}
-    <div className="flex items-center gap-1.5 shrink-0">
-      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">From</span>
-      <input
-        type="date"
-        value={startDate}
-        onChange={(e) => { setStartDate(e.target.value); clearError(); }}
-        disabled={loading}
-        className="h-8 px-2.5 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-800 focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 cursor-pointer"
-      />
-    </div>
+              {/* Separator */}
+              <div className="h-6 w-px bg-gray-200 shrink-0" />
 
-    {/* To Date */}
-    <div className="flex items-center gap-1.5 shrink-0">
-      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">To</span>
-      <input
-        type="date"
-        value={endDate}
-        onChange={(e) => { setEndDate(e.target.value); clearError(); }}
-        disabled={loading}
-        className="h-8 px-2.5 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-800 focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 cursor-pointer"
-      />
-    </div><div className="flex flex-col gap-1">
- 
-  <input
-    type="text"
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-    placeholder="Search room, guest, bill, amount..."
-    className="h-8 rounded-md border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
-  />
-</div>
+              {/* All Types */}
+              <label className="flex items-center gap-1.5 shrink-0 cursor-pointer">
+                <input
+                  type="checkbox"
+                  disabled={loading}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setBusinessType("all");
+                    } else {
+                      const urlParams = new URLSearchParams(location.search);
+                      const typeFromUrl = urlParams.get("type");
+                      if (typeFromUrl) setBusinessType(typeFromUrl);
+                    }
+                  }}
+                  className="w-3.5 h-3.5 accent-teal-700 cursor-pointer"
+                />
+                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                  All Types
+                </span>
+              </label>
 
-    {/* Separator */}
-    <div className="h-6 w-px bg-gray-200 shrink-0" />
+              {/* KOT & Meal Period — only when not hotel */}
+              {businessType !== "hotel" && (
+                <>
+                  <div className="h-6 w-px bg-gray-200 shrink-0" />
 
-    {/* All Types */}
-    <label className="flex items-center gap-1.5 shrink-0 cursor-pointer">
-      <input
-        type="checkbox"
-        disabled={loading}
-        onChange={(e) => {
-          if (e.target.checked) {
-            setBusinessType("all");
-          } else {
-            const urlParams = new URLSearchParams(location.search);
-            const typeFromUrl = urlParams.get("type");
-            if (typeFromUrl) setBusinessType(typeFromUrl);
-          }
-        }}
-        className="w-3.5 h-3.5 accent-teal-700 cursor-pointer"
-      />
-      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">All Types</span>
-    </label>
+                  {/* KOT Type */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                      KOT
+                    </span>
+                    <select
+                      value={kotTypeFilter}
+                      onChange={(e) => setKotTypeFilter(e.target.value)}
+                      disabled={loading}
+                      className="h-8 pl-2.5 pr-7 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-800 focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 cursor-pointer appearance-none"
+                    >
+                      {kotTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {type === "all" ? "All KOT Types" : type}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-    {/* KOT & Meal Period — only when not hotel */}
-    {businessType !== "hotel" && (
-      <>
-        <div className="h-6 w-px bg-gray-200 shrink-0" />
+                  {/* Meal Period */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                      Meal
+                    </span>
+                    <select
+                      value={mealPeriodFilter}
+                      onChange={(e) => setMealPeriodFilter(e.target.value)}
+                      disabled={loading}
+                      className="h-8 pl-2.5 pr-7 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-800 focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 cursor-pointer appearance-none"
+                    >
+                      {mealPeriods.map((period) => (
+                        <option key={period} value={period}>
+                          {period === "all" ? "All Periods" : period}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
 
-        {/* KOT Type */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">KOT</span>
-          <select
-            value={kotTypeFilter}
-            onChange={(e) => setKotTypeFilter(e.target.value)}
-            disabled={loading}
-            className="h-8 pl-2.5 pr-7 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-800 focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 cursor-pointer appearance-none"
-          >
-            {kotTypes.map((type) => (
-              <option key={type} value={type}>
-                {type === "all" ? "All KOT Types" : type}
-              </option>
-            ))}
-          </select>
-        </div>
+              {/* Spacer */}
+              <div className="flex-1" />
 
-        {/* Meal Period */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Meal</span>
-          <select
-            value={mealPeriodFilter}
-            onChange={(e) => setMealPeriodFilter(e.target.value)}
-            disabled={loading}
-            className="h-8 pl-2.5 pr-7 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-800 focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 cursor-pointer appearance-none"
-          >
-            {mealPeriods.map((period) => (
-              <option key={period} value={period}>
-                {period === "all" ? "All Periods" : period}
-              </option>
-            ))}
-          </select>
-        </div>
-      </>
-    )}
+              {/* Fetch Button */}
+              <button
+                onClick={() => fetchSalesData(startDate, endDate)}
+                disabled={loading}
+                className="h-8 px-4 bg-teal-700 hover:bg-teal-800 active:scale-95 text-white text-xs font-semibold rounded-lg transition-all shrink-0 disabled:opacity-50 flex items-center gap-1.5"
+              >
+                <svg
+                  className="w-3 h-3"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Fetch Report
+              </button>
+            </div>
 
-    {/* Spacer */}
-    <div className="flex-1" />
+            {/* Active filter chips — only when a filter is active */}
+            {(kotTypeFilter !== "all" || mealPeriodFilter !== "all") && (
+              <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-t border-gray-100 bg-gray-50/70">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mr-1">
+                  Active
+                </span>
 
-    {/* Fetch Button */}
-    <button
-      onClick={() => fetchSalesData(startDate, endDate)}
-      disabled={loading}
-      className="h-8 px-4 bg-teal-700 hover:bg-teal-800 active:scale-95 text-white text-xs font-semibold rounded-lg transition-all shrink-0 disabled:opacity-50 flex items-center gap-1.5"
-    >
-      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="7 10 12 15 17 10"/>
-        <line x1="12" y1="15" x2="12" y2="3"/>
-      </svg>
-      Fetch Report
-    </button>
-  </div>
+                {kotTypeFilter !== "all" && (
+                  <span className="inline-flex items-center gap-1 h-[22px] px-2.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-semibold">
+                    KOT: {kotTypeFilter}
+                    <button
+                      onClick={() => setKotTypeFilter("all")}
+                      className="opacity-50 hover:opacity-100 text-sm leading-none"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
 
-  {/* Active filter chips — only when a filter is active */}
-  {(kotTypeFilter !== "all" || mealPeriodFilter !== "all") && (
-    <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-t border-gray-100 bg-gray-50/70">
-      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mr-1">Active</span>
+                {mealPeriodFilter !== "all" && (
+                  <span className="inline-flex items-center gap-1 h-[22px] px-2.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold">
+                    Meal: {mealPeriodFilter}
+                    <button
+                      onClick={() => setMealPeriodFilter("all")}
+                      className="opacity-50 hover:opacity-100 text-sm leading-none"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
 
-      {kotTypeFilter !== "all" && (
-        <span className="inline-flex items-center gap-1 h-[22px] px-2.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-semibold">
-          KOT: {kotTypeFilter}
-          <button onClick={() => setKotTypeFilter("all")} className="opacity-50 hover:opacity-100 text-sm leading-none">×</button>
-        </span>
-      )}
-
-      {mealPeriodFilter !== "all" && (
-        <span className="inline-flex items-center gap-1 h-[22px] px-2.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold">
-          Meal: {mealPeriodFilter}
-          <button onClick={() => setMealPeriodFilter("all")} className="opacity-50 hover:opacity-100 text-sm leading-none">×</button>
-        </span>
-      )}
-
-      <button
-        onClick={() => { setKotTypeFilter("all"); setMealPeriodFilter("all"); }}
-        className="h-[22px] px-2.5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-500 text-[11px] font-semibold transition-colors ml-1"
-      >
-        Clear All
-      </button>
-    </div>
-  )}
-</div>
+                <button
+                  onClick={() => {
+                    setKotTypeFilter("all");
+                    setMealPeriodFilter("all");
+                  }}
+                  className="h-[22px] px-2.5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-500 text-[11px] font-semibold transition-colors ml-1"
+                >
+                  Clear All
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Error / Loading / Period */}
           {error && (
@@ -1102,7 +1164,6 @@ console.log(filteredSalesData);
 
           {reportPeriod && (
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 text-xs md:text-sm text-gray-600">
-             
               <div className="mt-1 md:mt-0">
                 Printed at{" "}
                 <span className="font-semibold text-blue-700">
@@ -1135,10 +1196,10 @@ console.log(filteredSalesData);
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Guest Name
                   </th>
-                    <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Agent name
                   </th>
-                    <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Room Name
                   </th>
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
@@ -1175,7 +1236,7 @@ console.log(filteredSalesData);
                     Card
                   </th>
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
-                   Credit
+                    Credit
                   </th>
                   {businessType !== "hotel" && (
                     <>
@@ -1190,7 +1251,6 @@ console.log(filteredSalesData);
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Mode
                   </th>
-                
                 </tr>
               </thead>
               <tbody>
@@ -1235,14 +1295,14 @@ console.log(filteredSalesData);
                         <td className="border border-gray-200 px-2 py-1 text-left">
                           {row.guestName || row.partyName}
                         </td>
-                           <td className="border border-gray-200 px-2 py-1 text-left">
+                        <td className="border border-gray-200 px-2 py-1 text-left">
                           {isCreditSale
                             ? row.creditDescription || row.partyName || "-"
                             : "-"}
                         </td>
-<td className="border border-gray-200 px-2 py-1 text-center">
-  <RoomName rooms={row.roomNumber} />
-</td>
+                        <td className="border border-gray-200 px-2 py-1 text-center">
+                          <RoomName rooms={row.roomNumber} />
+                        </td>
                         <td className="border border-gray-200 px-2 py-1 text-right">
                           {Math.round(gross)}
                         </td>
@@ -1282,10 +1342,8 @@ console.log(filteredSalesData);
                             ? Math.round(Number(row.card))
                             : "-"}
                         </td>
-                         <td className="border border-gray-200 px-2 py-1 text-right">
-                          {isCreditSale
-                            ? Math.round(row.credit || 0)
-                            : "-"}
+                        <td className="border border-gray-200 px-2 py-1 text-right">
+                          {isCreditSale ? Math.round(row.credit || 0) : "-"}
                         </td>
                         <td className="border border-gray-200 px-2 py-1 text-center overflow-hidden">
                           {row.PaymentModeArray &&
@@ -1304,8 +1362,6 @@ console.log(filteredSalesData);
                             </td>
                           </>
                         )}
-                       
-                     
                       </tr>
                     );
                   })
@@ -1322,10 +1378,10 @@ console.log(filteredSalesData);
                     <td className="border border-gray-800 px-2 py-2 text-center">
                       -
                     </td>
-                        <td className="border border-gray-800 px-2 py-2 text-center">
+                    <td className="border border-gray-800 px-2 py-2 text-center">
                       -
                     </td>
-                        <td className="border border-gray-800 px-2 py-2 text-center">
+                    <td className="border border-gray-800 px-2 py-2 text-center">
                       -
                     </td>
                     <td className="border border-gray-800 px-2 py-2 text-right">
@@ -1361,7 +1417,7 @@ console.log(filteredSalesData);
                     <td className="border border-gray-800 px-2 py-2 text-right">
                       {Math.round(totals.card || 0)}
                     </td>
-                     <td className="border border-gray-800 px-2 py-2 text-right">
+                    <td className="border border-gray-800 px-2 py-2 text-right">
                       {Math.round(totals.credit)}
                     </td>
                     <td className="border border-gray-800 px-2 py-2 text-center">
@@ -1377,7 +1433,7 @@ console.log(filteredSalesData);
                         </td>
                       </>
                     )}
-               
+
                     {/* <td className="border border-gray-800 px-2 py-2 text-center">
                       -
                     </td> */}

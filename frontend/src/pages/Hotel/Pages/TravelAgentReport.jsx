@@ -1,11 +1,11 @@
 import api from "@/api/api";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector,useDispatch } from "react-redux";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import TitleDiv from "@/components/common/TitleDiv";
-
+import { setTravelAgentReportDate } from "../../../../slices/dateSlice";
 const fmt = (n) =>
   (n || 0).toLocaleString("en-IN", {
     minimumFractionDigits: 2,
@@ -52,12 +52,18 @@ const TD = ({ children, right, bold, muted, green }) => (
 );
 
 export default function TravelAgentSalesReport() {
+  const dispatch = useDispatch();
+   const travelAgentReportDate = useSelector(
+      (state) => state.selectedDate.travelAgentReportDate,
+    );
+  
+    const { start, end, autoFetch } = travelAgentReportDate;
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization?.secSelectedOrg?._id
   );
 
-  const [fromDate,      setFromDate]      = useState(get29DaysAgo());
-  const [toDate,        setToDate]        = useState(today);
+  const [fromDate,      setFromDate]      = useState( start ||get29DaysAgo());
+  const [toDate,        setToDate]        = useState(end || today);
   const [selectedAgent, setSelectedAgent] = useState("ALL");
   const [agentList,     setAgentList]     = useState([]);
   const [reportData,    setReportData]    = useState([]);
@@ -72,6 +78,19 @@ export default function TravelAgentSalesReport() {
       .then(({ data }) => { if (data.success) setAgentList(data.data || []); })
       .catch(console.error);
   }, [cmp_id]);
+useEffect(() => {
+    if (autoFetch && cmp_id) {
+      fetchReport(start, end);
+
+      dispatch(
+        fetchReport({
+          autoFetch: true,
+          start: start,
+          end: end,
+        }),
+      );
+    }
+  }, [autoFetch, cmp_id]);
 
   // ── Fetch report ──────────────────────────────────────────────────────────
   const fetchReport = useCallback(async () => {
@@ -269,7 +288,9 @@ export default function TravelAgentSalesReport() {
                 <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">From</label>
                 <input
                   type="date" value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
+                  onChange={(e) => {
+                    dispatch(setTravelAgentReportDate({start: e.target.value, end: toDate, autoFetch: false}));
+                    setFromDate(e.target.value)}}
                   className="h-9 w-36 rounded-lg border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
                 />
               </div>
@@ -278,7 +299,10 @@ export default function TravelAgentSalesReport() {
                 <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">To</label>
                 <input
                   type="date" value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
+                  onChange={(e) => {
+                    dispatch(setTravelAgentReportDate({start: fromDate, end: e.target.value, autoFetch: false}));
+                    setToDate(e.target.value)
+                  }}
                   className="h-9 w-36 rounded-lg border border-slate-300 px-2 text-xs outline-none focus:border-teal-600"
                 />
               </div>

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Calendar } from "lucide-react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import api from "../../../api/api";
 import TitleDiv from "@/components/common/TitleDiv";
 import { toast } from "sonner";
 import { useReactToPrint } from "react-to-print";
-
+import { setFoDailyBillDate } from "../../../../slices/dateSlice";
 function getTodayDate() {
   const today = new Date();
   const year = today.getFullYear();
@@ -15,8 +15,17 @@ function getTodayDate() {
 }
 
 const HotelCheckoutStatement = () => {
-  const [fromDate, setFromDate] = useState(getTodayDate());
-  const [toDate, setToDate] = useState(getTodayDate());
+  const dispatch = useDispatch();
+  const foDailyBillDate = useSelector(
+    (state) => state.selectedDate.foDailyBillDate,
+  );
+
+  const [fromDate, setFromDate] = useState(
+    foDailyBillDate?.start || getTodayDate(),
+  );
+
+  const [toDate, setToDate] = useState(foDailyBillDate?.end || getTodayDate());
+  
   const [checkoutData, setCheckoutData] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -24,9 +33,8 @@ const HotelCheckoutStatement = () => {
 
   const contentToPrint = useRef(null);
 
-  const { _id: cmp_id, name: organizationName } = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
-  ) || {};
+  const { _id: cmp_id, name: organizationName } =
+    useSelector((state) => state.secSelectedOrganization.secSelectedOrg) || {};
 
   const num = (v) => Number(v || 0);
   const sectionConfigs = [
@@ -49,6 +57,26 @@ const HotelCheckoutStatement = () => {
       year: "numeric",
     });
   }
+
+
+  const { start, end, autoFetch } = foDailyBillDate;
+  
+  useEffect(() => {
+    if (
+      autoFetch &&
+      cmp_id 
+    ) {
+      fetchCheckoutData(start, end);
+  
+      dispatch(
+        setFoDailyBillDate({
+          autoFetch: true,
+          start: start,
+          end: end
+        })
+      );
+    }
+  }, [autoFetch, cmp_id]);
 
   function getCurrentDateTime() {
     const now = new Date();
@@ -86,8 +114,8 @@ const HotelCheckoutStatement = () => {
         if (bills.length === 0) {
           setError(
             `No checkout data found for ${formatDate(fromDate)} to ${formatDate(
-              toDate
-            )}`
+              toDate,
+            )}`,
           );
         }
       } else {
@@ -102,7 +130,7 @@ const HotelCheckoutStatement = () => {
       setError(
         `Failed to load checkout data: ${
           err.response?.data?.message || err.message
-        }`
+        }`,
       );
     } finally {
       setLoading(false);
@@ -124,16 +152,18 @@ const HotelCheckoutStatement = () => {
     }
 
     if (name === "fromDate") {
+      dispatch(setFoDailyBillDate({ start: newDate, end: toDate , autoFetch: true}));
       setFromDate(newDate);
     } else {
+      dispatch(setFoDailyBillDate({ start: fromDate, end: newDate, autoFetch: true}));
       setToDate(newDate);
     }
   }
 
- const handlePrint = useReactToPrint({
-  content: () => contentToPrint.current,
-  documentTitle: `Checkout-Statement-${fromDate}-to-${toDate}`,
-  pageStyle: `
+  const handlePrint = useReactToPrint({
+    content: () => contentToPrint.current,
+    documentTitle: `Checkout-Statement-${fromDate}-to-${toDate}`,
+    pageStyle: `
     @page {
       size: A4 landscape;
       margin: 8mm;
@@ -193,7 +223,7 @@ const HotelCheckoutStatement = () => {
       }
     }
   `,
-});
+  });
 
   useEffect(() => {
     if (fromDate && toDate && cmp_id) {
@@ -219,9 +249,7 @@ const HotelCheckoutStatement = () => {
         <th className="text-right py-1.5 px-1 text-xs font-semibold">Cash</th>
         <th className="text-right py-1.5 px-1 text-xs font-semibold">Bank</th>
         <th className="text-right py-1.5 px-1 text-xs font-semibold">Card</th>
-        <th className="text-right py-1.5 px-1 text-xs font-semibold">
-          Credit
-        </th>
+        <th className="text-right py-1.5 px-1 text-xs font-semibold">Credit</th>
         <th className="text-right py-1.5 px-1 text-xs font-semibold">UPI</th>
         <th className="text-right py-1.5 px-1 text-xs font-semibold">Total</th>
         <th className="text-left py-1.5 px-1 text-xs font-semibold">Mode</th>
@@ -229,17 +257,17 @@ const HotelCheckoutStatement = () => {
     );
   }
 
- function getPaymentModeDisplay(item) {
-  const paymentModes = [];
+  function getPaymentModeDisplay(item) {
+    const paymentModes = [];
 
-  if (Number(item?.cash) > 0) paymentModes.push("Cash");
-  if (Number(item?.bank) > 0) paymentModes.push("Bank");
-  if (Number(item?.card) > 0) paymentModes.push("Card");
-  if (Number(item?.credit) > 0) paymentModes.push("Credit");
-  if (Number(item?.upi) > 0) paymentModes.push("UPI");
+    if (Number(item?.cash) > 0) paymentModes.push("Cash");
+    if (Number(item?.bank) > 0) paymentModes.push("Bank");
+    if (Number(item?.card) > 0) paymentModes.push("Card");
+    if (Number(item?.credit) > 0) paymentModes.push("Credit");
+    if (Number(item?.upi) > 0) paymentModes.push("UPI");
 
-  return paymentModes.length > 0 ? paymentModes.join("/") : "N/A";
-}
+    return paymentModes.length > 0 ? paymentModes.join("/") : "N/A";
+  }
 
   function renderTableRow(item, index, sectionKey) {
     const isCheckoutSection = sectionKey === "CHECKOUT";
@@ -322,7 +350,7 @@ const HotelCheckoutStatement = () => {
         credit: 0,
         upi: 0,
         total: 0,
-      }
+      },
     );
   }
 
@@ -389,27 +417,7 @@ const HotelCheckoutStatement = () => {
     );
   }
 
-  function renderSummary() {
-    if (checkoutData.length === 0 || !summary) return null;
 
-    const totalAmount = num(summary?.totalCheckoutAmount);
-
-    return (
-      <tr className="border-t-2 border-black font-semibold bg-gray-100 text-xs">
-        <td colSpan="6" className="py-1.5 px-1 text-left">
-          Total Amount
-        </td>
-        <td className="py-1.5 px-1 text-right">
-          {num(summary?.advanceTotal).toFixed(2)}
-        </td>
-        <td className="py-1.5 px-1" />
-        <td className="py-1.5 px-1" />
-        <td className="py-1.5 px-1" />
-        <td className="text-right py-1.5 px-1">{totalAmount.toFixed(2)}</td>
-        <td className="py-1.5 px-1" />
-      </tr>
-    );
-  }
 
   function renderStatementSection(section, showSummary = false) {
     return (
@@ -426,7 +434,7 @@ const HotelCheckoutStatement = () => {
 
             {section.items.length > 0
               ? section.items.map((item, index) =>
-                  renderTableRow(item, index, section.key)
+                  renderTableRow(item, index, section.key),
                 )
               : renderEmptyState(`No ${section.title.toLowerCase()} found`)}
 
@@ -575,11 +583,11 @@ const HotelCheckoutStatement = () => {
     <>
       <TitleDiv loading={loading} title="Checkout Statement" />
 
-     <div className="w-full max-w-5xl mx-auto p-4 md:p-6 bg-white print-wrap">
-  <div
-    ref={contentToPrint}
-    className="border-2 border-black p-4 md:p-6 print-report"
-  >
+      <div className="w-full max-w-5xl mx-auto p-4 md:p-6 bg-white print-wrap">
+        <div
+          ref={contentToPrint}
+          className="border-2 border-black p-4 md:p-6 print-report"
+        >
           <div className="text-center mb-4">
             <h1 className="text-xl md:text-2xl font-bold tracking-wide underline">
               {organizationName}
@@ -625,8 +633,6 @@ const HotelCheckoutStatement = () => {
             </div>
           </div>
 
-         
-
           {error && (
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-3">
               <div className="flex">
@@ -653,8 +659,8 @@ const HotelCheckoutStatement = () => {
           {sectionedData.map((section, index) =>
             renderStatementSection(
               section,
-              index === sectionedData.length - 1 && hasRecords
-            )
+              index === sectionedData.length - 1 && hasRecords,
+            ),
           )}
 
           {renderSummarySection()}

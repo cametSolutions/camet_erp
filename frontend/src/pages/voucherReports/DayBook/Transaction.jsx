@@ -107,27 +107,29 @@ function Transaction() {
             <VoucherTypeFilter />
           </section>
 
-          <section className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm">
-            {isAdmin && <SecondaryUserFilter />}
+          <section className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 sm:px-4 sm:py-3">
+            <div className="w-full sm:w-auto">
+              {isAdmin && <SecondaryUserFilter />}
+            </div>
 
-            <p className="text-sm font-medium text-gray-600 whitespace-nowrap">
+            <p className="whitespace-nowrap text-sm font-medium text-gray-600 sm:flex-1">
               Net Cash In Hand :
               <span className="ml-2 font-semibold text-gray-900">
                 {transactionLoading ? "Loading..." : netCashInHands || 0}
               </span>
             </p>
 
-            <div className="ml-auto">
-              <div className="relative">
+            <div className="w-full sm:ml-auto sm:w-auto">
+              <div className="relative w-full sm:w-64">
                 <input
                   type="text"
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="h-10 w-64 rounded-md border border-gray-300 bg-gray-50 pl-10 pr-3 text-sm font-medium text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  className="h-10 w-full rounded-md border border-gray-300 bg-gray-50 pl-10 pr-3 text-sm font-medium text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
                 />
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  <Search />
+                  <Search size={16} />
                 </span>
               </div>
             </div>
