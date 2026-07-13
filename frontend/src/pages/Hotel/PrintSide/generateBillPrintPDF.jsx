@@ -622,6 +622,9 @@ const drawSingleBill = async (
 
   for (let p = billStartPage; p <= finalPage; p++) {
     doc.setPage(p);
+     if (isForPreview) {
+    drawWatermark(doc);
+  }
     drawFooter(doc, p - billStartPage + 1, totalPagesInBill);
   }
 
