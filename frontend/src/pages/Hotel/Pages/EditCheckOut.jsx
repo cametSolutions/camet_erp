@@ -16,9 +16,9 @@ function EditCheckOut() {
   const navigate = useNavigate();
 
   const [outStanding, setOutStanding] = useState([]);
-  
+
   const { data, loading: advanceLoading } = useFetch(
-    `/api/sUsers/getBookingAdvanceData/${editData?._id}?type=${"EditCheckOut"}`
+    `/api/sUsers/getBookingAdvanceData/${editData?._id}?type=${"EditCheckOut"}`,
   );
 
   useEffect(() => {
@@ -33,7 +33,7 @@ function EditCheckOut() {
       editData.previousAdvance = Math.abs(
         Number(editData?.checkInId?.grandTotal) -
           (Number(editData?.checkInId?.balanceToPay) +
-            Number(editData?.checkInId?.discountAmount))
+            Number(editData?.checkInId?.discountAmount)),
       );
       editData.totalAdvance = editData?.previousAdvance;
     }
@@ -47,7 +47,7 @@ function EditCheckOut() {
       let response = await api.put(
         `/api/sUsers/updateRoomBooking/${editData._id}`,
         { data: data, modal: "checkOut" },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       if (response?.data?.success) {
         toast.success(response?.data?.message);
@@ -56,6 +56,8 @@ function EditCheckOut() {
     } catch (error) {
       console.log(error);
       toast.error(error?.response?.data?.message);
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
   return (

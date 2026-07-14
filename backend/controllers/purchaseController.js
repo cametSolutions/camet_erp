@@ -19,8 +19,8 @@ import purchaseModel from "../models/purchaseModel.js";
 import secondaryUserModel from "../models/secondaryUserModel.js";
 import TallyData from "../models/TallyData.js";
 import {
+  attachLatestSeriesDetails,
   generateVoucherNumber,
-  getSeriesDetailsById,
 } from "../helpers/voucherHelper.js";
 import settlementModel from "../models/settlementModel.js";
 import { createAdvancePaymentsFromAppliedPayments } from "../helpers/receiptHelper.js";
@@ -413,17 +413,7 @@ export const getPurchaseDetails = async (req, res) => {
       })
       .lean();
 
-    const seriesDetails = await getSeriesDetailsById(
-      purchaseDetails?.series_id,
-      purchaseDetails?.cmp_id,
-      purchaseDetails?.voucherType
-    );
-
-    seriesDetails.currentNumber = purchaseDetails?.usedSeriesNumber;
-
-    if (seriesDetails) {
-      purchaseDetails.seriesDetails = seriesDetails;
-    }
+    await attachLatestSeriesDetails(purchaseDetails, "purchaseNumber");
 
     if (!purchaseDetails) {
       return res.status(404).json({ error: "Sale not found" });

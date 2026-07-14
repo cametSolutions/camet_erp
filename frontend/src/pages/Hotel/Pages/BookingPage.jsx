@@ -39,13 +39,13 @@ function BookingPage() {
         });
         navigate("/sUsers/bookingList");
       }
-      isSubmittingRef.current = false;
     } catch (error) {
       console.log(error);
       toast.error(error?.response?.data?.message);
       isSubmittingRef.current = false;
     } finally {
       setSubmitLoader(false);
+       isSubmittingRef.current = false;
     }
   };
   return (
