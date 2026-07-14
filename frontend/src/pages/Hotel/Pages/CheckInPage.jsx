@@ -67,11 +67,14 @@ console.log("HHH")
         })
         navigate("/sUsers/checkInList")
       }
-      isSubmittingRef.current = false
+     
     } catch (error) {
       console.log(error)
       toast.error(error?.response?.data?.message)
+    }
+    finally {
       isSubmittingRef.current = false
+      // setSubmitLoader(false);
     }
   }
   console.log(roomId)
