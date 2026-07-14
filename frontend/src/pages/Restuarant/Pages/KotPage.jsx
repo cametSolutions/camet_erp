@@ -8,7 +8,7 @@ import PrintModal from "@/pages/Hotel/Components/PrintModal";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import ItemSelector from "../components/ItemSelector";
 import { useQuery } from "@tanstack/react-query";
-
+import {makeItemComplimentary} from '../../Hotel/Helper/hotelHelper';
 import {
   MdDescription,
   MdAccessTime,
@@ -1031,7 +1031,6 @@ const OrdersDashboard = () => {
     let roomDetails = null;
     let itemList = selectedKot.flatMap((item) => {
       let findOne = filteredOrders.find((order) => order._id == item.id);
-
       if (findOne) {
         if (!roomDetails && findOne.roomId) {
           roomDetails = {
@@ -1054,6 +1053,14 @@ const OrdersDashboard = () => {
     });
     console.log(itemList);
     let subtotal;
+
+        if(isComplimentary){
+        let updatedItemList = itemList.map((item) => {
+         return makeItemComplimentary(item)
+        })
+        itemList = updatedItemList
+      }
+
 
     if (discountBasedOnGrossAmount) {
       const gross = itemList.reduce(
