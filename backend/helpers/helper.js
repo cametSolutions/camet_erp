@@ -80,6 +80,10 @@ let partyName = (modelName === "Sales" || modelName === "Receipt")
 
   const baseProjection = {
     voucherNumber: `$${voucherNumber}`,
+    voucherType: 1,
+    series_id: 1,
+    usedSeriesNumber: 1,
+    cmp_id: 1,
     party_name: { $ifNull: [partyName, "$party.partyName"] },
     accountGroup: "$party.accountGroup",
     type: type,
