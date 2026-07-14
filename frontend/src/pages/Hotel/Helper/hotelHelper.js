@@ -295,3 +295,49 @@ export const calculateStayDays =  (doc, room , arrival,checkOut, days) => {
 
   return fullDaysAre;
 };
+
+
+export const makeItemComplimentary = (item) => ({
+  ...item,
+  total: Number(item.basePrice),
+  taxableAmount: Number(item.basePrice),
+
+  cgstValue: 0,
+  sgstValue: 0,
+  igstValue: 0,
+  cessValue: 0,
+  addlCessValue: 0,
+
+  cgstAmount: 0,
+  sgstAmount: 0,
+  igstAmount: 0,
+  cessAmount: 0,
+  additionalCessAmount: 0,
+
+  totalCgstAmt: 0,
+  totalSgstAmt: 0,
+  totalIgstAmt: 0,
+  totalCessAmt: 0,
+  totalAddlCessAmt: 0,
+
+  individualTotal: Number(item.basePrice),
+
+  GodownList: item.GodownList.map(godown => ({
+    ...godown,
+    taxableAmount: Number(godown.basePrice),
+
+    cgstValue: 0,
+    sgstValue: 0,
+    igstValue: 0,
+    cessValue: 0,
+    addlCessValue: 0,
+
+    cgstAmount: 0,
+    sgstAmount: 0,
+    igstAmount: 0,
+    cessAmount: 0,
+    additionalCessAmount: 0,
+
+    individualTotal: Number(godown.basePrice),
+  })),
+});
