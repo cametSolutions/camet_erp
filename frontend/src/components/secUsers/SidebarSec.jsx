@@ -34,7 +34,7 @@ import { IoMdPower } from "react-icons/io";
 import { BsFillBuildingsFill } from "react-icons/bs";
 import { SlUserFollow } from "react-icons/sl";
 import LogoutModal from "../common/modal/LogoutModal";
-import { canAccessPath, isAdminUser } from "@/utils/permissions";
+import { isAdminUser } from "@/utils/permissions";
 
 function SidebarSec({ showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -72,16 +72,16 @@ function SidebarSec({ showBar }) {
     };
   }, [sidebarRef, setShowSidebar]);
 
-  const canAccess = useCallback(
-    (path) =>
-      canAccessPath({
-        pathname: path,
-        user: userData?._id ? userData : storedUserData,
-        permissions:
-          userData?.permissions || storedUserData?.permissions || storedPermissions || {},
-      }),
-    [storedPermissions, storedUserData, userData]
-  );
+  // const canAccess = useCallback(
+  //   (path) =>
+  //     canAccessPath({
+  //       pathname: path,
+  //       user: userData?._id ? userData : storedUserData,
+  //       permissions:
+  //         userData?.permissions || storedUserData?.permissions || storedPermissions || {},
+  //     }),
+  //   [storedPermissions, storedUserData, userData]
+  // );
 
   const navItems = [
     {
@@ -142,8 +142,8 @@ function SidebarSec({ showBar }) {
   if (
     companies &&
     companies.length > 0 &&
-    org.isApproved === true &&
-    canAccess("/sUsers/settings")
+    org.isApproved === true 
+    // canAccess("/sUsers/settings")
   ) {
     const additionalTabs = [];
     additionalTabs.push({
@@ -393,7 +393,7 @@ function SidebarSec({ showBar }) {
 
             {/* my accounts */}
             <nav>
-              {navItems.filter((item) => canAccess(item.to)).map((item, index) => (
+              {navItems.map((item, index) => (
                 <div key={index}>
                   <SidebarCard
                     item={item}

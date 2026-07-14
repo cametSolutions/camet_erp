@@ -295,7 +295,7 @@ router.post('/addSecUsers', authPrimary, secondaryIsBlocked, addSecUsers);
 router.get('/getSecUserDetails/:id', authPrimary, secondaryIsBlocked, getSecUserDetails)
 router.put('/editSecUSer/:id', authPrimary, secondaryIsBlocked, editSecUSer)
 router.get("/getUserPermissions/:id", authPrimary,secondaryIsBlocked, getUserPermissions);
-router.patch("/updateUserPermissions/:id", authPrimary,secondaryIsBlocked, updateUserPermissions);
+router.put("/updateUserPermissions/:id", authPrimary,secondaryIsBlocked, updateUserPermissions);
 router.get("/fetchConfigurationCurrentNumber/:orgId/:_id", authPrimary, secondaryIsBlocked, fetchConfigurationCurrentNumber)
 router.get('/fetchGodownsAndPriceLevels/:cmp_id', authPrimary, secondaryIsBlocked, companyAuthentication, fetchGodownsAndPriceLevels)
 router.post('/addSecondaryConfigurations/:cmp_id/:userId', authPrimary, secondaryIsBlocked, companyAuthentication, addSecondaryConfigurations)

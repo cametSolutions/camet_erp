@@ -26,7 +26,7 @@ const Settings = () => {
     },
     {
       title: industry === 6 || industry === 7 || industry === 8 ? "PERMISSION SETTINGS" : "SECURITY",
-      description: "make you permisiion settings",
+      description: "make you permission settings",
       icon: <HiTemplate />,
       to: "/sUsers/MenuRightsSettingsPage",
       active: isAdmin,

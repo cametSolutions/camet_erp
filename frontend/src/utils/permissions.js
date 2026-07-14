@@ -68,7 +68,6 @@ export const buildDefaultPermissions = () =>
 
 const pathPermissionRules = [
   { pattern: /^\/sUsers\/MenuRightsSettingsPage/i, adminOnly: true },
-  { pattern: /^\/sUsers\/settings/i, adminOnly: true },
   {
     pattern: /^\/sUsers\/(hotelDashBoard|addAdditionalPax|visitOfPurpose|idProof|foodPlan|roomRegistration|roomList|editRoom|EditRoom|bookingPage|BookingList|checkInPage|checkInList|checkOutPage|CheckOutList|EditBooking|EditChecking|EditCheckOut|CheckOutPrint|BillPrint|CheckInPrint|Checkoutpdf|SummaryDashboard|BillSummary)/i,
     keys: ["hotelManagement"],
