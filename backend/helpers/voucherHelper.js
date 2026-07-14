@@ -162,4 +162,68 @@ export const getSeriesDetailsById = async (seriesId, cmp_id, voucherType) => {
   }
 };
 
+export const formatVoucherNumberFromSeries = (
+  seriesDetails,
+  usedSeriesNumber
+) => {
+  if (!seriesDetails || usedSeriesNumber === null || usedSeriesNumber === undefined) {
+    return null;
+  }
 
+  const numericPart = Number(usedSeriesNumber);
+
+  if (Number.isNaN(numericPart)) {
+    return null;
+  }
+
+  const paddedNumber = numericPart
+    .toString()
+    .padStart(seriesDetails.widthOfNumericalPart || 2, "0");
+
+  return `${seriesDetails.prefix || ""}${paddedNumber}${seriesDetails.suffix || ""}`;
+};
+
+export const attachLatestSeriesDetails = async (
+  voucherDetails,
+  voucherNumberField
+) => {
+  if (
+    !voucherDetails?.series_id ||
+    !voucherDetails?.cmp_id ||
+    !voucherDetails?.voucherType
+  ) {
+    return voucherDetails;
+  }
+
+  const latestSeriesDetails = await getSeriesDetailsById(
+    voucherDetails.series_id,
+    voucherDetails.cmp_id,
+    voucherDetails.voucherType
+  );
+
+  const normalizedSeriesDetails =
+    typeof latestSeriesDetails?.toObject === "function"
+      ? latestSeriesDetails.toObject()
+      : latestSeriesDetails;
+
+  const seriesDetails = {
+    ...normalizedSeriesDetails,
+    currentNumber:
+      voucherDetails?.usedSeriesNumber ?? normalizedSeriesDetails.currentNumber,
+  };
+
+  voucherDetails.seriesDetails = seriesDetails;
+
+  if (voucherNumberField) {
+    const latestVoucherNumber = formatVoucherNumberFromSeries(
+      seriesDetails,
+      voucherDetails?.usedSeriesNumber
+    );
+
+    if (latestVoucherNumber) {
+      voucherDetails[voucherNumberField] = latestVoucherNumber;
+    }
+  }
+
+  return voucherDetails;
+};

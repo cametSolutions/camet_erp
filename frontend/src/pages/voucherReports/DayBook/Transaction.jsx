@@ -73,7 +73,7 @@ function Transaction() {
             selectedVoucher?.value
           }&isAdmin=${isAdmin}&selectedSecondaryUser=${
             selectedSecondaryUser?._id || ""
-          } &searchTerm=${encodeURIComponent(searchTerm || "")}`
+          }&searchTerm=${encodeURIComponent(searchTerm || "")}`
         : null,
     [
       org?._id,
