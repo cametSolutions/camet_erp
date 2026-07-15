@@ -667,26 +667,21 @@ const BillSummary = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
-const { start, end, autoFetch } = billSummaryDate;
+  const { start, end, autoFetch } = billSummaryDate;
 
-useEffect(() => {
-  if (
-    autoFetch &&
-    cmp_id &&
-    owner &&
-    businessType
-  ) {
-    fetchSalesData(start, end);
+  useEffect(() => {
+    if (autoFetch && cmp_id && owner && businessType) {
+      fetchSalesData(start, end);
 
-    dispatch(
-      setBillSummaryDate({
-        autoFetch: true,
-        start: start,
-        end: end
-      })
-    );
-  }
-}, [autoFetch, cmp_id, owner, businessType]);
+      dispatch(
+        setBillSummaryDate({
+          autoFetch: true,
+          start: start,
+          end: end,
+        }),
+      );
+    }
+  }, [autoFetch, cmp_id, owner, businessType]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -738,13 +733,13 @@ useEffect(() => {
       return;
     }
 
-  dispatch(
-    setBillSummaryDate({
-      start: startDate,
-      end: endDate,
-      autoFetch: true,
-    })
-  );
+    dispatch(
+      setBillSummaryDate({
+        start: startDate,
+        end: endDate,
+        autoFetch: true,
+      }),
+    );
 
     setLoading(true);
     setError(null);
@@ -1238,6 +1233,9 @@ useEffect(() => {
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Credit
                   </th>
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
+                    Mode
+                  </th>
                   {businessType !== "hotel" && (
                     <>
                       <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
@@ -1248,9 +1246,6 @@ useEffect(() => {
                       </th>
                     </>
                   )}
-                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
-                    Mode
-                  </th>
                 </tr>
               </thead>
               <tbody>
