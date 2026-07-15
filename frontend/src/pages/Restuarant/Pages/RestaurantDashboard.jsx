@@ -44,7 +44,7 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { useQueryClient } from "@tanstack/react-query";
 import ParentKotPage from "../components/ParentKotPage";
 import { applyBatchEdit } from "@/pages/Restuarant/Helper/RestaurantDashBoardHelper.jsx";
-
+import RestaurantReportsMenu from "../components/RestaurantReports";
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
@@ -117,6 +117,23 @@ const RestaurantPOS = () => {
       });
     }
   };
+
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowOptions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const [customerDetails, setCustomerDetails] = useState({
     name: "",
     phone: "",
@@ -139,6 +156,11 @@ const RestaurantPOS = () => {
   const cmp_id = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg._id,
   );
+
+  const userType = useSelector(
+    (state) => state.s,
+  );
+  console.log(userType);
   const discountBasedOnGrossAmount =
     org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
 
@@ -245,14 +267,14 @@ const RestaurantPOS = () => {
   const config = configurations?.[0] || {};
   const orderTypesConfig = config.orderTypes || {};
 
- const getDefaultOrderType = () => {
-  if (orderTypesConfig?.dineIn) return "dine-in";
-  if (orderTypesConfig?.takeaway) return "takeaway";
-  if (orderTypesConfig?.delivery) return "delivery";
-  if (orderTypesConfig?.roomService) return "roomService";
-  if (orderTypesConfig?.directSale) return "direct-sale";
-  return "";
-};
+  const getDefaultOrderType = () => {
+    if (orderTypesConfig?.dineIn) return "dine-in";
+    if (orderTypesConfig?.takeaway) return "takeaway";
+    if (orderTypesConfig?.delivery) return "delivery";
+    if (orderTypesConfig?.roomService) return "roomService";
+    if (orderTypesConfig?.directSale) return "direct-sale";
+    return "";
+  };
 
   const [orderType, setOrderType] = useState(getDefaultOrderType());
 
@@ -520,39 +542,41 @@ const RestaurantPOS = () => {
         console.log("Processing booking, foodPlan array:", room?.foodPlan);
 
         return (
-          room?.selectedRooms?.filter((selectedRoom) => !selectedRoom.isSwapped)?.map((selectedRoom) => {
-            const completeFoodPlan = [];
+          room?.selectedRooms
+            ?.filter((selectedRoom) => !selectedRoom.isSwapped)
+            ?.map((selectedRoom) => {
+              const completeFoodPlan = [];
 
-            room.foodPlan?.forEach((data) => {
-              // Find matching food plan for this room
-              const roomFoodPlan =
-                data.roomId === selectedRoom.roomId ? data : null;
+              room.foodPlan?.forEach((data) => {
+                // Find matching food plan for this room
+                const roomFoodPlan =
+                  data.roomId === selectedRoom.roomId ? data : null;
 
-              // Build complete food plan object
-              if (roomFoodPlan) {
-                completeFoodPlan.push({
-                  _id: roomFoodPlan._id || roomFoodPlan.foodPlanId,
-                  planType: roomFoodPlan.planType || roomFoodPlan.foodPlan,
-                  amount: roomFoodPlan.amount ?? roomFoodPlan.rate ?? 0,
-                  isComplimentary: roomFoodPlan.isComplimentary || false,
-                });
-              }
-            });
-            console.log(room);
+                // Build complete food plan object
+                if (roomFoodPlan) {
+                  completeFoodPlan.push({
+                    _id: roomFoodPlan._id || roomFoodPlan.foodPlanId,
+                    planType: roomFoodPlan.planType || roomFoodPlan.foodPlan,
+                    amount: roomFoodPlan.amount ?? roomFoodPlan.rate ?? 0,
+                    isComplimentary: roomFoodPlan.isComplimentary || false,
+                  });
+                }
+              });
+              console.log(room);
 
-            return {
-              ...selectedRoom,
-              customerName: room?.customerName,
-              guestName: room?.guestName,
-              mobileNumber: room?.mobileNumber,
-              voucherNumber: room?.voucherNumber,
-              foodPlan: completeFoodPlan,
-              bookingDate: room?.bookingDate,
-              arrivalDate: room?.arrivalDate,
-              checkOutDate: room?.checkOutDate,
-              stayDays: room?.stayDays,
-            };
-          }) || []
+              return {
+                ...selectedRoom,
+                customerName: room?.customerName,
+                guestName: room?.guestName,
+                mobileNumber: room?.mobileNumber,
+                voucherNumber: room?.voucherNumber,
+                foodPlan: completeFoodPlan,
+                bookingDate: room?.bookingDate,
+                arrivalDate: room?.arrivalDate,
+                checkOutDate: room?.checkOutDate,
+                stayDays: room?.stayDays,
+              };
+            }) || []
         );
       });
 
@@ -1031,8 +1055,13 @@ const RestaurantPOS = () => {
     setShowPaymentModal(true);
   };
 
-  const generateKOT = async (selectedTableNumber, tableStatus, parentKot ,  roomSelected) => {
-    let roomObj =  roomSelected ? roomSelected : roomDetails
+  const generateKOT = async (
+    selectedTableNumber,
+    tableStatus,
+    parentKot,
+    roomSelected,
+  ) => {
+    let roomObj = roomSelected ? roomSelected : roomDetails;
     let updatedItems = [];
     let orderCustomerDetails = {
       ...customerDetails,
@@ -1191,7 +1220,7 @@ const RestaurantPOS = () => {
         withCredentials: true,
       });
       if (response.data?.success) {
-        handleKotPrint(response.data?.data,roomObj);
+        handleKotPrint(response.data?.data, roomObj);
         console.log(selectedTableNumber);
         if (orderType === "dine-in") {
           await api.put(
@@ -1268,7 +1297,7 @@ const RestaurantPOS = () => {
     return typeMap[type] || type;
   };
 
-  const handleKotPrint = (data,roomDetails) => {
+  const handleKotPrint = (data, roomDetails) => {
     console.log(roomDetails);
     const orderData = {
       kotNo: data?.voucherNumber,
@@ -1276,9 +1305,9 @@ const RestaurantPOS = () => {
       type: data.type,
       items: orderItems,
       createdAt: new Date(),
-      roomName : roomDetails?.roomno,
-      guestName : roomDetails?.guestName,
-      foodPlan:roomDetails?.foodPlan || [],
+      roomName: roomDetails?.roomno,
+      guestName: roomDetails?.guestName,
+      foodPlan: roomDetails?.foodPlan || [],
     };
     generateAndPrintKOT(orderData, true, false, companyName);
   };
@@ -1533,7 +1562,7 @@ const RestaurantPOS = () => {
                     </span>
                   </div>
 
-                  <div className="relative">
+                  <div className="relative" ref={menuRef}>
                     <button
                       onClick={() => setShowOptions((prev) => !prev)}
                       className="flex items-center justify-center px-2 py-1.5 bg-slate-800/50 border border-l-0 border-slate-700/60 rounded-r-md hover:bg-slate-700/60 transition-colors group"
@@ -1544,176 +1573,11 @@ const RestaurantPOS = () => {
                         <span className="w-[3px] h-[3px] bg-gray-400 rounded-full group-hover:bg-gray-200 transition-colors"></span>
                       </span>
                     </button>
-                    {showOptions && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-40"
-                          onClick={() => setShowOptions(false)}
-                        />
-                        <div
-                          className="absolute right-0 top-full mt-1.5 z-50 w-64 bg-white border 
-                    border-gray-200 rounded-xl shadow-xl overflow-hidden"
-                        >
-                          {/* Header */}
-                          <div className="flex items-center gap-2.5 px-3.5 py-3 border-b border-gray-100">
-                            <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
-                              <Coffee className="w-3.5 h-3.5 text-orange-700" />
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-gray-800 tracking-wide uppercase">
-                                Restaurant Reports
-                              </p>
-                              <p className="text-[10px] text-gray-400 mt-0.5">
-                                3 report types available
-                              </p>
-                            </div>
-                          </div>
 
-                          {/* Items */}
-                          <div className="p-1.5">
-                            <button
-                              onClick={() => {
-                                setShowOptions(false);
-                                navigate("/sUsers/BillSummary?type=restaurant");
-                              }}
-                              className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
-                     hover:bg-gray-50 transition-colors text-left"
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
-                                <BarChart2 className="w-3.5 h-3.5 text-green-700" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold text-gray-800">
-                                  Daily Sales
-                                </p>
-                                <p className="text-[10px] text-gray-400 mt-0.5">
-                                  Restaurant daily revenue summary
-                                </p>
-                              </div>
-                              <ChevronDown
-                                className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
-                                  group-hover:opacity-100 transition-opacity flex-shrink-0"
-                              />
-                            </button>
-
-                            <div className="my-1 border-t border-gray-100" />
-
-                            <button
-                              onClick={() => {
-                                setShowOptions(false);
-                                navigate("/sUsers/categoryprint");
-                              }}
-                              className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
-                     hover:bg-gray-50 transition-colors text-left"
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
-                                <LayoutGrid className="w-3.5 h-3.5 text-purple-700" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold text-gray-800">
-                                  Category Wise Sales
-                                </p>
-                                <p className="text-[10px] text-gray-400 mt-0.5">
-                                  Sales grouped by category
-                                </p>
-                              </div>
-                              <ChevronDown
-                                className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
-                                  group-hover:opacity-100 transition-opacity flex-shrink-0"
-                              />
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setShowOptions(false);
-                                navigate("/sUsers/itemwisereport");
-                              }}
-                              className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
-                     hover:bg-gray-50 transition-colors text-left"
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <ListChecks className="w-3.5 h-3.5 text-blue-700" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold text-gray-800">
-                                  Item Wise Sales
-                                </p>
-                                <p className="text-[10px] text-gray-400 mt-0.5">
-                                  Breakdown per menu item
-                                </p>
-                              </div>
-                              <ChevronDown
-                                className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
-                                  group-hover:opacity-100 transition-opacity flex-shrink-0"
-                              />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setShowOptions(false);
-                                navigate("/sUsers/register");
-                              }}
-                              className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
-                     hover:bg-gray-50 transition-colors text-left"
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <BarChart2 className="w-3.5 h-3.5 text-blue-700" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold text-gray-800">
-                                  Kot Register
-                                </p>
-                                <p className="text-[10px] text-gray-400 mt-0.5">
-                                  Breakdown of kots{" "}
-                                </p>
-                              </div>
-                              <ChevronDown
-                                className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
-                                  group-hover:opacity-100 transition-opacity flex-shrink-0"
-                              />
-                            </button>
-                             <button
-                              onClick={() => {
-                                setShowOptions(false);
-                                navigate("/sUsers/Receiptreport");
-                              }}
-                              className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
-                     hover:bg-gray-50 transition-colors text-left"
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <BarChart2 className="w-3.5 h-3.5 text-blue-700" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold text-gray-800">
-                                 Receipt Report
-                                </p>
-                                <p className="text-[10px] text-gray-400 mt-0.5">
-                                  Breakdown of Recipts{" "}
-                                </p>
-                              </div>
-                              <ChevronDown
-                                className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
-                                  group-hover:opacity-100 transition-opacity flex-shrink-0"
-                              />
-                            </button>
-                            <button
-          onClick={() => { setShowOptions(false); navigate("/sUsers/sales-register"); }}
-          className="group flex items-center gap-3 w-full px-2.5 py-2 rounded-lg 
-                     hover:bg-gray-50 transition-colors text-left"
-        >
-          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-            <LayoutGrid className="w-3.5 h-3.5 text-blue-700" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-gray-800">Sale Register</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Breakdown of Sales </p>
-          </div>
-          <ChevronDown className="w-3 h-3 text-gray-300 -rotate-90 opacity-0 
-                                  group-hover:opacity-100 transition-opacity flex-shrink-0" />
-        </button>
-                          </div>
-                        </div>
-                      </>
-                    )}
+                    <RestaurantReportsMenu
+                      showOptions={showOptions}
+                      setShowOptions={setShowOptions}
+                    />
                   </div>
                 </div>
 
@@ -2364,22 +2228,22 @@ const RestaurantPOS = () => {
                       </span>
                     </button>
                   )}
-                     {orderTypesConfig?.directSale !== false && (
-      <button
-        onClick={() => {
-          console.log("Direct Sale button clicked");
-          setOrderType("direct-sale");
-        }}
-        className={`flex flex-col items-center justify-center h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 col-span-2 ${
-          orderType === "direct-sale"
-            ? "border-transparent bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-emerald-500/25"
-            : "border-gray-200 bg-white/80 text-gray-700 hover:border-green-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50"
-        }`}
-      >
-        <Receipt className="w-4 h-4 mb-0.5" />
-        <span className="font-semibold text-xs">Direct Sale</span>
-      </button>
-    )}
+                  {orderTypesConfig?.directSale !== false && (
+                    <button
+                      onClick={() => {
+                        console.log("Direct Sale button clicked");
+                        setOrderType("direct-sale");
+                      }}
+                      className={`flex flex-col items-center justify-center h-10 rounded-xl border transition-all duration-300 transform hover:scale-105 col-span-2 ${
+                        orderType === "direct-sale"
+                          ? "border-transparent bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-emerald-500/25"
+                          : "border-gray-200 bg-white/80 text-gray-700 hover:border-green-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50"
+                      }`}
+                    >
+                      <Receipt className="w-4 h-4 mb-0.5" />
+                      <span className="font-semibold text-xs">Direct Sale</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -2438,8 +2302,13 @@ const RestaurantPOS = () => {
             <div>
               <TableSelection
                 showKOTs={false}
-                onTableSelect={(table , roomDetails) => {
-                  generateKOT(table.tableNumber, table.status ,null,roomDetails)
+                onTableSelect={(table, roomDetails) => {
+                  generateKOT(
+                    table.tableNumber,
+                    table.status,
+                    null,
+                    roomDetails,
+                  );
                   setShowFullTableSelection(false);
                 }}
                 roomData={roomData}

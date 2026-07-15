@@ -653,6 +653,9 @@ const BillSummary = () => {
   const billSummaryDate = useSelector(
     (state) => state.selectedDate.billSummaryDate,
   );
+
+  const permission = useSelector((state) => state.permissionData?.permissions);
+
   const today = new Date().toISOString().split("T")[0];
   const [startDate, setStartDate] = useState(billSummaryDate?.start || today);
   const [endDate, setEndDate] = useState(billSummaryDate?.end || today);
@@ -933,7 +936,9 @@ const BillSummary = () => {
         title={
           businessType === "hotel"
             ? "Hotel Daily Summary"
-            : "Restaurant Daily Summary"
+            : businessType === "restaurant"
+              ? "Restaurant Daily Summary"
+              : "Daily Summary"
         }
       />
       <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 p-6">
@@ -1000,30 +1005,35 @@ const BillSummary = () => {
                 />
               </div>
 
-              {/* Separator */}
-              <div className="h-6 w-px bg-gray-200 shrink-0" />
-
               {/* All Types */}
-              <label className="flex items-center gap-1.5 shrink-0 cursor-pointer">
-                <input
-                  type="checkbox"
-                  disabled={loading}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setBusinessType("all");
-                    } else {
-                      const urlParams = new URLSearchParams(location.search);
-                      const typeFromUrl = urlParams.get("type");
-                      if (typeFromUrl) setBusinessType(typeFromUrl);
-                    }
-                  }}
-                  className="w-3.5 h-3.5 accent-teal-700 cursor-pointer"
-                />
-                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                  All Types
-                </span>
-              </label>
-
+              {permission?.dailySalesReport &&
+                permission?.restaurantDailySales && (
+                  <>
+                    {/* Separator */}
+                    <div className="h-6 w-px bg-gray-200 shrink-0" />
+                    <label className="flex items-center gap-1.5 shrink-0 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        disabled={loading}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setBusinessType("all");
+                          } else {
+                            const urlParams = new URLSearchParams(
+                              location.search,
+                            );
+                            const typeFromUrl = urlParams.get("type");
+                            if (typeFromUrl) setBusinessType(typeFromUrl);
+                          }
+                        }}
+                        className="w-3.5 h-3.5 accent-teal-700 cursor-pointer"
+                      />
+                      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                        All Types
+                      </span>
+                    </label>
+                  </>
+                )}
               {/* KOT & Meal Period — only when not hotel */}
               {businessType !== "hotel" && (
                 <>

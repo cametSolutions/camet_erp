@@ -119,7 +119,7 @@ const OrdersDashboard = () => {
   const [splitPaymentRows, setSplitPaymentRows] = useState([
     { source: "", subSource: "", type: "", amount: "", remarks: "", refNo: "" },
   ]);
-
+const permission = useSelector((state) => state.permissionData?.permissions); 
   const addSplitPaymentRow = () =>
     setSplitPaymentRows((prev) => [
       ...prev,
@@ -2295,7 +2295,7 @@ const OrdersDashboard = () => {
             )}
 
             {/* ── Floating Pay Button ── */}
-            {selectedKot.length > 0 && (
+            {(selectedKot.length > 0  && permission.restaurantPayment) &&  (
               <div className="fixed bottom-4 right-4 z-50 w-[320px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border border-gray-200 p-4 animate-slideUp">
                 <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 min-w-[280px]">
                   <div className="flex items-center justify-between mb-3">

@@ -27,12 +27,11 @@ function UserWiseMenuRightsSettings() {
         const fetchedUsers = (res?.data?.secondaryUsers || []).filter(
           (user) => user?.role !== "admin"
         );
+
         setUsers(fetchedUsers);
       } catch (error) {
         console.log(error);
-        toast.error(
-          error?.response?.data?.message || "Failed to fetch users"
-        );
+        toast.error(error?.response?.data?.message || "Failed to fetch users");
       } finally {
         setLoading(false);
       }
@@ -141,7 +140,7 @@ function UserWiseMenuRightsSettings() {
 
   return (
     <section className="flex-1 text-gray-600">
-      <div className="flex flex-col sticky top-0 z-50 bg-slate-100">
+      <div className="sticky top-0 z-50 flex flex-col bg-slate-100">
         <TitleDiv
           loading={loading || saving}
           title="Menu Rights Settings"
@@ -158,7 +157,7 @@ function UserWiseMenuRightsSettings() {
                   User Permission Settings
                 </h1>
                 <p className="mt-1 text-xs text-slate-500">
-                  Select a user and tick the allowed menus.
+                  Select a user to view and manage permissions.
                 </p>
               </div>
 
@@ -178,107 +177,122 @@ function UserWiseMenuRightsSettings() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                  Allowed {allowedCount} / {allPermissionKeys.length}
-                </span>
-
-                {selectedUserData?.name && (
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-                    {selectedUserData.name}
-                  </span>
-                )}
-
-                {selectedUserData?.email && (
+            {selectedUser && (
+              <div className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                    {selectedUserData.email}
+                    Allowed {allowedCount} / {allPermissionKeys.length}
                   </span>
-                )}
+
+                  {selectedUserData?.name && (
+                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+                      {selectedUserData.name}
+                    </span>
+                  )}
+
+                  {selectedUserData?.email && (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                      {selectedUserData.email}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={handleTickAll}
+                    type="button"
+                    className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700"
+                  >
+                    Tick All
+                  </button>
+
+                  <button
+                    onClick={handleUntickAll}
+                    type="button"
+                    className="rounded-md bg-rose-600 px-3 py-2 text-xs font-medium text-white hover:bg-rose-700"
+                  >
+                    Untick All
+                  </button>
+
+                  <button
+                    onClick={handleSave}
+                    type="button"
+                    disabled={saving}
+                    className="rounded-md bg-slate-800 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {saving ? "Saving..." : "Save Permissions"}
+                  </button>
+                </div>
               </div>
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={handleTickAll}
-                  type="button"
-                  className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700"
-                >
-                  Tick All
-                </button>
-
-                <button
-                  onClick={handleUntickAll}
-                  type="button"
-                  className="rounded-md bg-rose-600 px-3 py-2 text-xs font-medium text-white hover:bg-rose-700"
-                >
-                  Untick All
-                </button>
-
-                <button
-                  onClick={handleSave}
-                  type="button"
-                  disabled={saving}
-                  className="rounded-md bg-slate-800 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {saving ? "Saving..." : "Save Permissions"}
-                </button>
-              </div>
-            </div>
+            )}
           </div>
 
-          {permissionSections.map((section) => {
-            const sectionChecked = section.items.every(
-              (item) => permissions[item.key]
-            );
+    {!selectedUser ? (
+  <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
+    <div className="mx-auto max-w-md">
+      <h2 className="text-base font-semibold text-slate-700">
+        No user selected
+      </h2>
+      <p className="mt-2 text-sm leading-6 text-slate-500">
+        Please choose a user from the dropdown above to view and manage menu permissions.
+      </p>
+    </div>
+  </div>
+) : (
+  permissionSections.map((section) => {
+    const sectionChecked = section.items.every(
+      (item) => permissions[item.key]
+    );
 
-            return (
-              <div
-                key={section.title}
-                className="rounded-xl border border-slate-200 bg-white shadow-sm"
-              >
-                <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 md:flex-row md:items-center md:justify-between">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-                    {section.title}
-                  </h2>
+    return (
+      <div
+        key={section.title}
+        className="rounded-xl border border-slate-200 bg-white shadow-sm"
+      >
+        <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 md:flex-row md:items-center md:justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
+            {section.title}
+          </h2>
 
-                  <label className="flex items-center gap-2 text-xs font-medium text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={sectionChecked}
-                      onChange={(e) =>
-                        handleSectionToggle(section.items, e.target.checked)
-                      }
-                      className="h-4 w-4 rounded border-slate-300 text-blue-600"
-                    />
-                    Tick All
-                  </label>
-                </div>
+          <label className="flex items-center gap-2 text-xs font-medium text-slate-700">
+            <input
+              type="checkbox"
+              checked={sectionChecked}
+              onChange={(e) =>
+                handleSectionToggle(section.items, e.target.checked)
+              }
+              className="h-4 w-4 rounded border-slate-300 text-blue-600"
+            />
+            Tick All
+          </label>
+        </div>
 
-                <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {section.items.map((item) => (
-                    <label
-                      key={item.key}
-                      className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-sm transition ${
-                        permissions[item.key]
-                          ? "border-emerald-300 bg-emerald-50"
-                          : "border-slate-200 bg-white hover:bg-slate-50"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={permissions[item.key]}
-                        onChange={() => handleToggle(item.key)}
-                        className="h-4 w-4 rounded border-slate-300 text-blue-600"
-                      />
-                      <span className="font-medium text-slate-700">
-                        {item.label}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+        <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 xl:grid-cols-3">
+          {section.items.map((item) => (
+            <label
+              key={item.key}
+              className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-sm transition ${
+                permissions[item.key]
+                  ? "border-emerald-300 bg-emerald-50"
+                  : "border-slate-200 bg-white hover:bg-slate-50"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={permissions[item.key]}
+                onChange={() => handleToggle(item.key)}
+                className="h-4 w-4 rounded border-slate-300 text-blue-600"
+              />
+              <span className="font-medium text-slate-700">
+                {item.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+    );
+  })
+)}
         </div>
       </div>
     </section>

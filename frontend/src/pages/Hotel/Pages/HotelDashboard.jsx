@@ -59,7 +59,8 @@ const HotelDashboard = () => {
     const today = new Date();
     return today.toISOString().split("T")[0]; // format YYYY-MM-DD
   });
-
+ 
+  const permission = useSelector((state) => state.permissionData?.permissions); 
   // Add these state variables at the top of your component
   const [showBookingDetails, setShowBookingDetails] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -284,7 +285,7 @@ const HotelDashboard = () => {
     occupied: "from-orange-500 to-red-600", // orange/red gradient
     dirty: "from-yellow-500 to-orange-600",
     blocked: "from-gray-500 to-slate-800",
-    household:'from-stone-400 to-stone-700',
+    household: "from-stone-400 to-stone-700",
   };
 
   const handleRoomAction = async (action) => {
@@ -316,7 +317,6 @@ const HotelDashboard = () => {
       });
       return;
     }
-    
 
     if (action === "editChecking") {
       setShowRoomModal(false);
@@ -355,7 +355,7 @@ const HotelDashboard = () => {
       return;
     }
 
-    if (["dirty", "blocked", "vacant" , "household"].includes(action)) {
+    if (["dirty", "blocked", "vacant", "household"].includes(action)) {
       try {
         console.log("Updating room status:", {
           roomId: selectedRoomData._id,
@@ -438,19 +438,19 @@ const HotelDashboard = () => {
     }
   };
 
-// ✅ FIXED — fetches both room statuses AND booking details together
-const handleRoomSwapConfirm = async () => {
-  try {
-    await Promise.all([
-      fetchRooms(selectedDate),
-      fetchDateBasedData(selectedDate), // ✅ refreshes tooltipData with new booking info
-    ]);
-    setShowRoomSwapModal(false);
-    setSelectedRoomData(null);
-  } catch (error) {
-    console.error("Error refreshing data after room swap", error);
-  }
-};
+  // ✅ FIXED — fetches both room statuses AND booking details together
+  const handleRoomSwapConfirm = async () => {
+    try {
+      await Promise.all([
+        fetchRooms(selectedDate),
+        fetchDateBasedData(selectedDate), // ✅ refreshes tooltipData with new booking info
+      ]);
+      setShowRoomSwapModal(false);
+      setSelectedRoomData(null);
+    } catch (error) {
+      console.error("Error refreshing data after room swap", error);
+    }
+  };
 
   // Calculate status counts
   const getStatusCounts = () => {
@@ -460,10 +460,10 @@ const handleRoomSwapConfirm = async () => {
       booked: 0,
       dirty: 0,
       blocked: 0,
-      household:0,
+      household: 0,
     };
     filteredRooms.forEach((room) => {
-        const status = room.status === "available" ? "vacant" : room.status;
+      const status = room.status === "available" ? "vacant" : room.status;
       if (counts.hasOwnProperty(status)) counts[status]++;
     });
 
@@ -516,25 +516,27 @@ const handleRoomSwapConfirm = async () => {
   };
 
   const handleConvertToAvailable = (room) => {
-    let findOne = selectedRooms.find((r) => r.roomId === room._id );
+    let findOne = selectedRooms.find((r) => r.roomId === room._id);
     if (findOne) {
       let checkIn = tooltipData?.checkins?.find((c) =>
-        c.selectedRooms?.some((sr) => sr.roomId === room._id ),
+        c.selectedRooms?.some((sr) => sr.roomId === room._id),
       );
       checkIn.selectedRooms.forEach((r) => {
         if (r.roomId.toString() == room._id.toString()) {
           r.isCheckedOut = false;
         }
       });
-      
+
       setSelectedRooms(selectedRooms.filter((r) => r.roomId !== room._id));
       return;
     }
     const baseStatus =
       selectedRooms.length > 0 ? selectedRooms[0].status : room.status;
-console.log(baseStatus);
+    console.log(baseStatus);
     const allowedStatuses =
-      baseStatus === "available" || baseStatus === "vacant" || baseStatus === "booked"
+      baseStatus === "available" ||
+      baseStatus === "vacant" ||
+      baseStatus === "booked"
         ? ["available", "vacant", "booked"]
         : baseStatus == "occupied"
           ? ["occupied"]
@@ -590,13 +592,12 @@ console.log(baseStatus);
     } else if (selectedRooms[0].status === "occupied") {
       console.log(convertDataToCheckout);
       const selectedRoomIds = selectedRooms.map((r) => r.roomId);
- const actualCheckIn = convertDataToCheckout
-  .map(checkIn => ({
-    ...checkIn,
-    selectedRooms: checkIn.selectedRooms
-      .filter(room => selectedRoomIds.includes(room.roomId))
-      .map(room => ({ ...room, included: true })),
-  }))
+      const actualCheckIn = convertDataToCheckout.map((checkIn) => ({
+        ...checkIn,
+        selectedRooms: checkIn.selectedRooms
+          .filter((room) => selectedRoomIds.includes(room.roomId))
+          .map((room) => ({ ...room, included: true })),
+      }));
       console.log(actualCheckIn[0].selectedRooms.length);
       navigate("/sUsers/checkInList", {
         state: {
@@ -643,96 +644,96 @@ console.log(baseStatus);
         {/* Main Layout Container */}
         <div className="relative z-10 flex flex-col h-full">
           <div className="p-3 flex flex-col h-full overflow-hidden">
-        
-          {/* Header */}
-<div className="bg-[#0B1D34] p-2 mb-4">
-  <div className="flex flex-col md:flex-row md:items-center gap-3">
+            {/* Header */}
+            <div className="bg-[#0B1D34] p-2 mb-4">
+              <div className="flex flex-col md:flex-row md:items-center gap-3">
+                {/* Title */}
+                <div className="flex items-center justify-between md:justify-start gap-2">
+                  {/* Mobile: icon badge + stacked text | Desktop: original style */}
+                  <div className="flex items-center gap-2">
+                    <div className="bg-cyan-500/20 p-1 rounded-md md:bg-transparent md:p-0">
+                      <BedDouble className="w-4 h-4 text-cyan-400" />
+                    </div>
+                    <div className="flex flex-col md:flex-row md:items-center md:gap-0">
+                      <h3 className="font-bold text-white md:text-blue-400 text-sm md:text-lg leading-tight tracking-wide uppercase md:normal-case md:tracking-normal">
+                        Room Status
+                        <span className="hidden md:inline"> Overview</span>
+                      </h3>
+                      <p className="text-cyan-400 text-xs font-medium md:hidden">
+                        Overview
+                      </p>
+                    </div>
+                  </div>
 
-    {/* Title */}
-    <div className="flex items-center justify-between md:justify-start gap-2">
-      {/* Mobile: icon badge + stacked text | Desktop: original style */}
-      <div className="flex items-center gap-2">
-        <div className="bg-cyan-500/20 p-1 rounded-md md:bg-transparent md:p-0">
-          <BedDouble className="w-4 h-4 text-cyan-400" />
-        </div>
-        <div className="flex flex-col md:flex-row md:items-center md:gap-0">
-          <h3 className="font-bold text-white md:text-blue-400 text-sm md:text-lg leading-tight tracking-wide uppercase md:normal-case md:tracking-normal">
-            Room Status<span className="hidden md:inline"> Overview</span>
-          </h3>
-          <p className="text-cyan-400 text-xs font-medium md:hidden">Overview</p>
-        </div>
-      </div>
+                  {/* Mobile-only Bookings toggle — moved here to title row */}
+                  {isMobile && (
+                    <button
+                      onClick={() => setShowBookingDetails(!showBookingDetails)}
+                      className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold px-3 py-1.5 rounded text-xs flex items-center gap-1"
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      Bookings
+                    </button>
+                  )}
+                </div>
 
-      {/* Mobile-only Bookings toggle — moved here to title row */}
-      {isMobile && (
-        <button
-          onClick={() => setShowBookingDetails(!showBookingDetails)}
-          className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold px-3 py-1.5 rounded text-xs flex items-center gap-1"
-        >
-          <Calendar className="w-3.5 h-3.5" />
-          Bookings
-        </button>
-      )}
-    </div>
+                {/* Buttons */}
+                <div className="md:ml-auto flex flex-wrap gap-1.5 md:gap-2">
+                  <button
+                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-xs md:text-sm"
+                    onClick={() => navigate("/sUsers/bookingList")}
+                  >
+                    <span className="md:hidden">Reservations</span>
+                    <span className="hidden md:inline">Room Reservations</span>
+                  </button>
 
-    {/* Buttons */}
-    <div className="md:ml-auto flex flex-wrap gap-1.5 md:gap-2">
-      <button
-        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-xs md:text-sm"
-        onClick={() => navigate("/sUsers/bookingList")}
-      >
-        <span className="md:hidden">Reservations</span>
-        <span className="hidden md:inline">Room Reservations</span>
-      </button>
+                  <button
+                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-xs md:text-sm"
+                    onClick={() => navigate("/sUsers/checkInList")}
+                  >
+                    <span className="md:hidden">Occupied</span>
+                    <span className="hidden md:inline">Currently Occupied</span>
+                  </button>
 
-      <button
-        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-xs md:text-sm"
-        onClick={() => navigate("/sUsers/checkInList")}
-      >
-        <span className="md:hidden">Occupied</span>
-        <span className="hidden md:inline">Currently Occupied</span>
-      </button>
+                  <button
+                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-xs md:text-sm"
+                    onClick={() => navigate("/sUsers/checkOutList")}
+                  >
+                    <span className="md:hidden">Completed</span>
+                    <span className="hidden md:inline">Completed Stays</span>
+                  </button>
 
-      <button
-        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-xs md:text-sm"
-        onClick={() => navigate("/sUsers/checkOutList")}
-      >
-        <span className="md:hidden">Completed</span>
-        <span className="hidden md:inline">Completed Stays</span>
-      </button>
+                  <button
+                    className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-xs md:text-sm"
+                    onClick={() => navigate("/sUsers/partyList")}
+                  >
+                    New Guest
+                  </button>
 
-      <button
-        className="bg-blue-500 hover:bg-[#60A5FA] text-white font-bold px-2 py-1 rounded text-xs md:text-sm"
-        onClick={() => navigate("/sUsers/partyList")}
-      >
-        New Guest
-      </button>
+                  <div className="flex items-center gap-2">
+                    <ReportsMenu permissions={permission} />
+                    <button
+                      className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-2 py-1 rounded text-xs md:text-sm flex items-center gap-1"
+                      onClick={() => setShowFilters(!showFilters)}
+                    >
+                      <Filter className="w-4 h-4" />
+                      Filters
+                    </button>
+                  </div>
 
-      <div className="flex items-center gap-2">
-        <ReportsMenu />
-        <button
-          className="bg-gray-500 hover:bg-gray-600 text-white font-bold px-2 py-1 rounded text-xs md:text-sm flex items-center gap-1"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter className="w-4 h-4" />
-          Filters
-        </button>
-      </div>
-
-      {/* Desktop-only Bookings toggle — original position */}
-      {isMobile === false && (
-        <button
-          onClick={() => setShowBookingDetails(!showBookingDetails)}
-          className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
-        >
-          <Calendar className="w-4 h-4" />
-          Bookings
-        </button>
-      )}
-    </div>
-
-  </div>
-</div>
+                  {/* Desktop-only Bookings toggle — original position */}
+                  {isMobile === false && (
+                    <button
+                      onClick={() => setShowBookingDetails(!showBookingDetails)}
+                      className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold px-3 py-1 rounded text-sm flex items-center gap-1"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      Bookings
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
 
             {/* Date Selector */}
             <div className="mb-2 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
@@ -892,7 +893,7 @@ console.log(baseStatus);
                   color: "from-gray-500 to-slate-800",
                   count: statusCounts.blocked,
                 },
-                 {
+                {
                   label: "household",
                   color: "from-red-400 to-red-800",
                   count: statusCounts.household,
@@ -1052,7 +1053,7 @@ console.log(baseStatus);
                         <p className="text-gray-400 text-sm mt-1">
                           Today's reservations
                         </p>
-                      </div> 
+                      </div>
 
                       {/* Close button for mobile */}
                       {isMobile && (
@@ -1369,9 +1370,9 @@ console.log(baseStatus);
                 </option>
                 {selectedRoomData.status === "occupied" ? (
                   <>
-                    <option value="editChecking">Edit Tarrif Rate</option>
+                   {permission?.editTariffRate &&(<option value="editChecking">Edit Tarrif Rate</option>)}
                     {/* <option value="checkOut">CheckOut</option> */}
-                    <option value="swapRoom">Swap Room</option>
+                   {/* {permission?.swapRoom && ( <option value="swapRoom">Swap Room</option>)} */}
                   </>
                 ) : (
                   <>
@@ -1385,7 +1386,7 @@ console.log(baseStatus);
                     <option value="blocked">Mark as Blocked</option>
                     <option value="vacant">Mark as available</option>
                     <option value="household">Mark as household</option>
-                    <option value="swapRoom">Swap Room</option>
+                  {permission?.roomSwap && ( <option value="swapRoom">Swap Room</option>)}
                   </>
                 )}
               </select>
@@ -1399,52 +1400,51 @@ console.log(baseStatus);
             </div>
           </div>
         )}
-      {showBookingOrCheckingSelection && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-    <div className="relative bg-white rounded-xl p-8 shadow-2xl max-w-md w-full">
+        {showBookingOrCheckingSelection && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="relative bg-white rounded-xl p-8 shadow-2xl max-w-md w-full">
+              {/* Close Button */}
+              <button
+                onClick={() => setShowBookingOrCheckingSelection(false)}
+                className="absolute top-3 right-4 text-gray-500 hover:text-red-500 text-2xl font-bold"
+              >
+                ×
+              </button>
 
-      {/* Close Button */}
-      <button
-        onClick={() => setShowBookingOrCheckingSelection(false)}
-        className="absolute top-3 right-4 text-gray-500 hover:text-red-500 text-2xl font-bold"
-      >
-        ×
-      </button>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
+                Confirm Your Booking
+              </h2>
 
-      <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
-        Confirm Your Booking
-      </h2>
+              <p className="text-gray-600 text-center mb-8">
+                Are you ready to proceed with your booking?
+              </p>
 
-      <p className="text-gray-600 text-center mb-8">
-        Are you ready to proceed with your booking?
-      </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    navigate("/sUsers/bookingPage", {
+                      state: { rooms: selectedRooms },
+                    });
+                  }}
+                  className="flex-1 bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-all"
+                >
+                  Continue
+                </button>
 
-      <div className="flex gap-4">
-        <button
-          onClick={() => {
-            navigate("/sUsers/bookingPage", {
-              state: { rooms: selectedRooms },
-            });
-          }}
-          className="flex-1 bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-all"
-        >
-          Continue
-        </button>
-
-        <button
-          onClick={() => {
-            navigate("/sUsers/checkInPage", {
-              state: { rooms: selectedRooms },
-            });
-          }}
-          className="flex-1 bg-gray-100 text-gray-800 font-semibold py-3 rounded-lg border border-blue-600 hover:bg-gray-200 transition-all"
-        >
-          Check-In
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+                <button
+                  onClick={() => {
+                    navigate("/sUsers/checkInPage", {
+                      state: { rooms: selectedRooms },
+                    });
+                  }}
+                  className="flex-1 bg-gray-100 text-gray-800 font-semibold py-3 rounded-lg border border-blue-600 hover:bg-gray-200 transition-all"
+                >
+                  Check-In
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <RoomSwapModal
           isOpen={showRoomSwapModal}
