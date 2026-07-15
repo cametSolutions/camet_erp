@@ -20,8 +20,8 @@ import secondaryUserModel from "../models/secondaryUserModel.js";
 import mongoose from "mongoose";
 import TallyData from "../models/TallyData.js";
 import {
+  attachLatestSeriesDetails,
   generateVoucherNumber,
-  getSeriesDetailsById,
 } from "../helpers/voucherHelper.js";
 import settlementModel from "../models/settlementModel.js";
 import { createAdvanceReceiptsFromAppliedReceipts } from "../helpers/receiptHelper.js";
@@ -392,17 +392,7 @@ export const getDebitNoteDetails = async (req, res) => {
       return res.status(404).json({ error: "Debit Note Details not found" });
     }
 
-    const seriesDetails = await getSeriesDetailsById(
-      details?.series_id,
-      details?.cmp_id,
-      details?.voucherType
-    );
-
-    seriesDetails.currentNumber = details?.usedSeriesNumber;
-
-    if (seriesDetails) {
-      details.seriesDetails = seriesDetails;
-    }
+    await attachLatestSeriesDetails(details, "debitNoteNumber");
 
     // Update party name and restore _id
     if (details.party?._id?.partyName) {

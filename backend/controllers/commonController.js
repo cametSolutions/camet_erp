@@ -12,6 +12,7 @@ import {
   aggregateTransactions,
   aggregateOpeningBalance,
 } from "../helpers/helper.js";
+import { attachLatestSeriesDetails } from "../helpers/voucherHelper.js";
 import { startOfDay, endOfDay, parseISO } from "date-fns";
 import receiptModel from "../models/receiptModel.js";
 import paymentModel from "../models/paymentModel.js";
@@ -134,7 +135,7 @@ export const transactions = async (req, res) => {
       //   userFilter = {}; // no filter
       // }
     } else {
-    // console.log("userFilter 2");
+    console.log("userFilter 2", selectedSecondaryUser);
 
       if (selectedSecondaryUser) {
     // console.log("userFilter 3");
@@ -348,8 +349,23 @@ const transactionPromises = modelsToQuery.map(
 );
     const results = await Promise.all(transactionPromises);
 
-    const combined = results
-      .flat()
+    const combined = (
+      await Promise.all(
+        results
+          .flat()
+          .map((transaction) =>
+            attachLatestSeriesDetails({ ...transaction }, "voucherNumber"),
+          ),
+      )
+    )
+      .map((transaction) => {
+        delete transaction.series_id;
+        delete transaction.usedSeriesNumber;
+        delete transaction.cmp_id;
+        delete transaction.voucherType;
+        delete transaction.seriesDetails;
+        return transaction;
+      })
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const totalTransactionAmount = combined.reduce((sum, transaction) => {

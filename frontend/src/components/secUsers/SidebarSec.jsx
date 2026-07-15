@@ -34,7 +34,7 @@ import { IoMdPower } from "react-icons/io";
 import { BsFillBuildingsFill } from "react-icons/bs";
 import { SlUserFollow } from "react-icons/sl";
 import LogoutModal from "../common/modal/LogoutModal";
-import { canAccessPath, isAdminUser } from "@/utils/permissions";
+import { isAdminUser } from "@/utils/permissions";
 
 function SidebarSec({ showBar }) {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -72,16 +72,16 @@ function SidebarSec({ showBar }) {
     };
   }, [sidebarRef, setShowSidebar]);
 
-  const canAccess = useCallback(
-    (path) =>
-      canAccessPath({
-        pathname: path,
-        user: userData?._id ? userData : storedUserData,
-        permissions:
-          userData?.permissions || storedUserData?.permissions || storedPermissions || {},
-      }),
-    [storedPermissions, storedUserData, userData]
-  );
+  // const canAccess = useCallback(
+  //   (path) =>
+  //     canAccessPath({
+  //       pathname: path,
+  //       user: userData?._id ? userData : storedUserData,
+  //       permissions:
+  //         userData?.permissions || storedUserData?.permissions || storedPermissions || {},
+  //     }),
+  //   [storedPermissions, storedUserData, userData]
+  // );
 
   const navItems = [
     {
@@ -142,8 +142,8 @@ function SidebarSec({ showBar }) {
   if (
     companies &&
     companies.length > 0 &&
-    org.isApproved === true &&
-    canAccess("/sUsers/settings")
+    org.isApproved === true 
+    // canAccess("/sUsers/settings")
   ) {
     const additionalTabs = [];
     additionalTabs.push({
@@ -393,7 +393,7 @@ function SidebarSec({ showBar }) {
 
             {/* my accounts */}
             <nav>
-              {navItems.filter((item) => canAccess(item.to)).map((item, index) => (
+              {navItems.map((item, index) => (
                 <div key={index}>
                   <SidebarCard
                     item={item}
@@ -491,7 +491,7 @@ function SidebarSec({ showBar }) {
 
           <div className="flex flex-col items-center px-4 bg-gray-700 py-1">
             <h3 className="text-[10px] text-gray-400 tracking-widest text-center">
-              Version 0.0.9
+              Version 0.0.10
             </h3>
           </div>
         </div>

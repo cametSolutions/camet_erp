@@ -1153,7 +1153,7 @@ export const getUserPermissions = async (req, res) => {
 // route PATCH /api/sUsers/updateUserPermissions/:id
 export const updateUserPermissions = async(req,res)=>{
 
-    const admin = await SecondaryUser.findById(req.userId);
+    const admin = await SecondaryUser.findById(req.sUserId );
 
     if(admin?.role!=="admin"){
         return res.status(403).json({

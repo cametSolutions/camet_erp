@@ -11,36 +11,30 @@ export const permissionSections = [
   {
     title: "Hotel",
     items: [
-      { key: "hotelDashboard", label: "Hotel Dashboard" },
+      // { key: "hotelDashboard", label: "Hotel Dashboard" },
       { key: "bookingList", label: "Booking List" },
       { key: "checkinList", label: "Check-in List" },
       { key: "checkoutList", label: "Checkout List" },
       { key: "editTariffRate", label: "Edit Tariff Rate" },
       { key: "swapRoom", label: "Swap Room" },
-      { key: "roomShift", label: "Room Shift" },
-      { key: "guestLedger", label: "Guest Ledger" },
+      // { key: "roomShift", label: "Room Shift" },
+      // { key: "guestLedger", label: "Guest Ledger" },
     ],
   },
   {
     title: "Restaurant",
     items: [
-      { key: "restaurantDashboard", label: "Restaurant Dashboard" },
+      // { key: "restaurantDashboard", label: "Restaurant Dashboard" },
       { key: "kotPage", label: "KOT Page" },
       { key: "restaurantPayment", label: "Restaurant Payment" },
-      { key: "restaurantDailySales", label: "Daily Sales" },
-      { key: "categoryWiseSales", label: "Category Wise Sales" },
-      { key: "itemWiseSales", label: "Item Wise Sales" },
-      { key: "kotRegister", label: "KOT Register" },
-      { key: "restaurantReceiptReport", label: "Receipt Report" },
-      { key: "saleRegister", label: "Sale Register" },
     ],
   },
   {
-    title: "Reports",
+    title: "Hotel Reports",
     items: [
-      { key: "hotelReports", label: "Hotel Reports" },
-      { key: "restaurantReports", label: "Restaurant Reports" },
-      { key: "voucherReports", label: "Voucher Reports" },
+      // { key: "hotelReports", label: "Hotel Reports" },
+      // { key: "restaurantReports", label: "Restaurant Reports" },
+      // { key: "voucherReports", label: "Voucher Reports" },
       { key: "dailySalesReport", label: "Daily Sales" },
       { key: "foDailyStatement", label: "FO Daily Statement" },
       { key: "flashReport", label: "Flash Report" },
@@ -54,10 +48,21 @@ export const permissionSections = [
       { key: "cancellationReport", label: "Cancellation Report" },
     ],
   },
+  {
+    title: "Restaurant Reports",
+    items: [
+      { key: "restaurantDailySales", label: "Daily Sales" },
+      { key: "categoryWiseSales", label: "Category Wise Sales" },
+      { key: "itemWiseSales", label: "Item Wise Sales" },
+      { key: "kotRegister", label: "KOT Register" },
+      { key: "restaurantReceiptReport", label: "Receipt Report" },
+      { key: "saleRegister", label: "Sale Register" },
+    ],
+  },
 ];
 
 export const allPermissionKeys = permissionSections.flatMap((section) =>
-  section.items.map((item) => item.key)
+  section.items.map((item) => item.key),
 );
 
 export const buildDefaultPermissions = () =>
@@ -67,59 +72,114 @@ export const buildDefaultPermissions = () =>
   }, {});
 
 const pathPermissionRules = [
-  { pattern: /^\/sUsers\/MenuRightsSettingsPage/i, adminOnly: true },
-  { pattern: /^\/sUsers\/settings/i, adminOnly: true },
   {
-    pattern: /^\/sUsers\/(hotelDashBoard|addAdditionalPax|visitOfPurpose|idProof|foodPlan|roomRegistration|roomList|editRoom|EditRoom|bookingPage|BookingList|checkInPage|checkInList|checkOutPage|CheckOutList|EditBooking|EditChecking|EditCheckOut|CheckOutPrint|BillPrint|CheckInPrint|Checkoutpdf|SummaryDashboard|BillSummary)/i,
+    pattern: /^\/sUsers\/hotelDashBoard/i,
     keys: ["hotelManagement"],
   },
   {
-    pattern: /^\/sUsers\/hotelDashBoard/i,
-    keys: ["hotelDashboard"],
-  },
-  {
-    pattern: /^\/sUsers\/(BookingList|bookingPage|EditBooking)/i,
-    keys: ["bookingList"],
-  },
-  {
-    pattern: /^\/sUsers\/(checkInList|checkInPage|EditChecking|CheckInPrint)/i,
-    keys: ["checkinList"],
-  },
-  {
-    pattern: /^\/sUsers\/(CheckOutList|checkOutPage|EditCheckOut|CheckOutPrint|Checkoutpdf)/i,
-    keys: ["checkoutList"],
-  },
-  {
-    pattern: /^\/sUsers\/(RestaurantDashboard|KotPage|itemList|editItem|itemRegistration|TableMaster|TableSelection)/i,
+    pattern: /^\/sUsers\/RestaurantDashboard/i,
     keys: ["restaurantManagement"],
   },
   {
-    pattern: /^\/sUsers\/RestaurantDashboard/i,
-    keys: ["restaurantDashboard"],
+    pattern: /^\/sUsers\/selectVouchers/i,
+    keys: ["voucher"],
+  },
+  {
+    pattern: /^\/sUsers\/reports/i,
+    keys: ["reports"],
+  },
+  {
+    pattern: /^\/sUsers\/bookingList/i,
+    keys: ["bookingList"],
+  },
+  {
+    pattern: /^\/sUsers\/checkInList/i,
+    keys: ["checkinList"],
+  },
+  {
+    pattern: /^\/sUsers\/checkOutList/i,
+    keys: ["checkoutList"],
+  },
+  {
+    pattern: /^\/sUsers\/tariffRateChange/i,
+    keys: ["editTariffRate"],
   },
   {
     pattern: /^\/sUsers\/KotPage/i,
     keys: ["kotPage"],
   },
   {
-    pattern: /^\/sUsers\/(invoice|sales|purchase|vanSale|receipt|payment|paymentPurchase|saleOrderDetails|editSaleOrder|shareSaleOrder|sharesaleOrder|salesDetails|editsales|shareSales|addItemSales|editItemVoucher|purchaseDetails|editPurchase|sharePurchase|addBatchPurchase|billToPurchase|receiptPrintOut|paymentPrintOut|vouchersLIst|sales\/paymentSplitting)/i,
-    keys: ["voucher"],
+    pattern: /^\/sUsers\/hotelDailySales/i,
+    keys: ["dailySalesReport"],
   },
   {
-    pattern: /^\/sUsers\/(reports|salesSummary|summaryReport|salesSummaryDetails|salesSummaryTransactions|outstandingSummary|outstanding|outstandingDetails|Inventory|InventoryDetails|transaction|categoryprint|itemwisereport|tourist-report|foodplan-report|occupancy-checkout-report|FOSalesSummaryReport|HotelFlashReport|CancellationReport|Receiptreport|TravelAgentReport|register|sales-register|viewReport)/i,
-    keys: ["reports"],
+    pattern: /^\/sUsers\/BillSummary/i,
+    keys: ["dailySalesReport", "restaurantDailySales"],
   },
   {
-    pattern: /^\/sUsers\/(HotelFlashReport|SummaryDashboard|BillSummary|CancellationReport|Receiptreport|TravelAgentReport|tourist-report|foodplan-report|occupancy-checkout-report|FOSalesSummaryReport|viewReport)/i,
-    keys: ["hotelReports"],
+    pattern: /^\/sUsers\/Checkoutpdf/i,
+    keys: ["foDailyStatement"],
   },
   {
-    pattern: /^\/sUsers\/(categoryprint|itemwisereport|register|sales-register)/i,
-    keys: ["restaurantReports"],
+    pattern: /^\/sUsers\/HotelFlashReport/i,
+    keys: ["flashReport"],
   },
   {
-    pattern: /^\/sUsers\/(reports|salesSummary|summaryReport|salesSummaryDetails|salesSummaryTransactions|outstandingSummary|outstanding|outstandingDetails|Inventory|InventoryDetails|transaction|vouchersLIst)/i,
-    keys: ["voucherReports"],
+    pattern: /^\/sUsers\/tourist-report/i,
+    keys: ["paxReport"],
+  },
+  {
+    pattern: /^\/sUsers\/foodplan-report/i,
+    keys: ["foodPlanReport"],
+  },
+  {
+    pattern: /^\/sUsers\/viewReport/i,
+    keys: ["occupancyReport"],
+  },
+  {
+    pattern: /^\/sUsers\/viewReport/i,
+    keys: ["roomSummaryReport"],
+  },
+  {
+    pattern: /^\/sUsers\/Receiptreport/i,
+    keys: ["receiptReport"],
+  },
+  {
+    pattern: /^\/sUsers\/TravelAgentReport/i,
+    keys: ["travelAgentReport"],
+  },
+  {
+    pattern: /^\/sUsers\/FOSalesSummaryReport/i,
+    keys: ["foBillSummary"],
+  },
+  {
+    pattern: /^\/sUsers\/CancellationReport/i,
+    keys: ["cancellationReport"],
+  },
+  {
+    pattern: /^\/sUsers\/restaurantDailySales/i,
+    keys: ["restaurantDailySales"],
+  },
+  {
+    pattern: /^\/sUsers\/categoryprint/i,
+    keys: ["categoryWiseSales"],
+  },
+  {
+    pattern: /^\/sUsers\/itemwisereport/i,
+    keys: ["itemWiseSales"],
+  },
+  {
+    pattern: /^\/sUsers\/register/i,
+    keys: ["kotRegister"],
+  },
+
+  {
+    pattern: /^\/sUsers\/restaurantReceiptReport/i,
+    keys: ["restaurantReceiptReport"],
+  },
+  {
+    pattern: /^\/sUsers\/sales-register/i,
+    keys: ["saleRegister"],
   },
 ];
 
@@ -130,7 +190,9 @@ export const isAdminUser = (user) =>
   user?.role === "admin" || user?.userType === "admin";
 
 export const canAccessPath = ({ pathname, user, permissions }) => {
+  console.log(pathname, permissions);
   const rule = getRequiredPermissionForPath(pathname);
+  console.log(rule);
 
   if (!rule) return true;
   if (isAdminUser(user)) return true;

@@ -8,7 +8,7 @@ import PrintModal from "@/pages/Hotel/Components/PrintModal";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import ItemSelector from "../components/ItemSelector";
 import { useQuery } from "@tanstack/react-query";
-
+import {makeItemComplimentary} from '../../Hotel/Helper/hotelHelper';
 import {
   MdDescription,
   MdAccessTime,
@@ -119,7 +119,7 @@ const OrdersDashboard = () => {
   const [splitPaymentRows, setSplitPaymentRows] = useState([
     { source: "", subSource: "", type: "", amount: "", remarks: "", refNo: "" },
   ]);
-
+const permission = useSelector((state) => state.permissionData?.permissions); 
   const addSplitPaymentRow = () =>
     setSplitPaymentRows((prev) => [
       ...prev,
@@ -1031,7 +1031,6 @@ const OrdersDashboard = () => {
     let roomDetails = null;
     let itemList = selectedKot.flatMap((item) => {
       let findOne = filteredOrders.find((order) => order._id == item.id);
-
       if (findOne) {
         if (!roomDetails && findOne.roomId) {
           roomDetails = {
@@ -1054,6 +1053,14 @@ const OrdersDashboard = () => {
     });
     console.log(itemList);
     let subtotal;
+
+        if(isComplimentary){
+        let updatedItemList = itemList.map((item) => {
+         return makeItemComplimentary(item)
+        })
+        itemList = updatedItemList
+      }
+
 
     if (discountBasedOnGrossAmount) {
       const gross = itemList.reduce(
@@ -2288,7 +2295,7 @@ const OrdersDashboard = () => {
             )}
 
             {/* ── Floating Pay Button ── */}
-            {selectedKot.length > 0 && (
+            {(selectedKot.length > 0  && permission.restaurantPayment) &&  (
               <div className="fixed bottom-4 right-4 z-50 w-[320px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border border-gray-200 p-4 animate-slideUp">
                 <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 min-w-[280px]">
                   <div className="flex items-center justify-between mb-3">

@@ -11,7 +11,10 @@ import secondaryUserModel from "../models/secondaryUserModel.js";
 import mongoose from "mongoose";
 import { formatToLocalDate } from "../helpers/helper.js";
 import partyModel from "../models/partyModel.js";
-import { generateVoucherNumber, getSeriesDetailsById } from "../helpers/voucherHelper.js";
+import {
+  attachLatestSeriesDetails,
+  generateVoucherNumber,
+} from "../helpers/voucherHelper.js";
 
 /**
  * @desc  create sale order
@@ -370,17 +373,7 @@ export const getInvoiceDetails = async (req, res) => {
       return res.status(404).json({ error: "Invoice not found" });
     }
 
-    const seriesDetails = await getSeriesDetailsById(
-      invoiceDetails?.series_id,
-      invoiceDetails?.cmp_id,
-      invoiceDetails?.voucherType
-    );
-
-    seriesDetails.currentNumber = invoiceDetails?.usedSeriesNumber;
-
-    if (seriesDetails) {
-      invoiceDetails.seriesDetails = seriesDetails;
-    }
+    await attachLatestSeriesDetails(invoiceDetails, "orderNumber");
 
     // Update party name and fix _id
     if (invoiceDetails.party?._id?.partyName) {

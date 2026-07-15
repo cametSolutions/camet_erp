@@ -653,6 +653,9 @@ const BillSummary = () => {
   const billSummaryDate = useSelector(
     (state) => state.selectedDate.billSummaryDate,
   );
+
+  const permission = useSelector((state) => state.permissionData?.permissions);
+
   const today = new Date().toISOString().split("T")[0];
   const [startDate, setStartDate] = useState(billSummaryDate?.start || today);
   const [endDate, setEndDate] = useState(billSummaryDate?.end || today);
@@ -667,26 +670,21 @@ const BillSummary = () => {
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
-const { start, end, autoFetch } = billSummaryDate;
+  const { start, end, autoFetch } = billSummaryDate;
 
-useEffect(() => {
-  if (
-    autoFetch &&
-    cmp_id &&
-    owner &&
-    businessType
-  ) {
-    fetchSalesData(start, end);
+  useEffect(() => {
+    if (autoFetch && cmp_id && owner && businessType) {
+      fetchSalesData(start, end);
 
-    dispatch(
-      setBillSummaryDate({
-        autoFetch: true,
-        start: start,
-        end: end
-      })
-    );
-  }
-}, [autoFetch, cmp_id, owner, businessType]);
+      dispatch(
+        setBillSummaryDate({
+          autoFetch: true,
+          start: start,
+          end: end,
+        }),
+      );
+    }
+  }, [autoFetch, cmp_id, owner, businessType]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -738,13 +736,13 @@ useEffect(() => {
       return;
     }
 
-  dispatch(
-    setBillSummaryDate({
-      start: startDate,
-      end: endDate,
-      autoFetch: true,
-    })
-  );
+    dispatch(
+      setBillSummaryDate({
+        start: startDate,
+        end: endDate,
+        autoFetch: true,
+      }),
+    );
 
     setLoading(true);
     setError(null);
@@ -938,7 +936,9 @@ useEffect(() => {
         title={
           businessType === "hotel"
             ? "Hotel Daily Summary"
-            : "Restaurant Daily Summary"
+            : businessType === "restaurant"
+              ? "Restaurant Daily Summary"
+              : "Daily Summary"
         }
       />
       <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 p-6">
@@ -1005,30 +1005,35 @@ useEffect(() => {
                 />
               </div>
 
-              {/* Separator */}
-              <div className="h-6 w-px bg-gray-200 shrink-0" />
-
               {/* All Types */}
-              <label className="flex items-center gap-1.5 shrink-0 cursor-pointer">
-                <input
-                  type="checkbox"
-                  disabled={loading}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setBusinessType("all");
-                    } else {
-                      const urlParams = new URLSearchParams(location.search);
-                      const typeFromUrl = urlParams.get("type");
-                      if (typeFromUrl) setBusinessType(typeFromUrl);
-                    }
-                  }}
-                  className="w-3.5 h-3.5 accent-teal-700 cursor-pointer"
-                />
-                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                  All Types
-                </span>
-              </label>
-
+              {permission?.dailySalesReport &&
+                permission?.restaurantDailySales && (
+                  <>
+                    {/* Separator */}
+                    <div className="h-6 w-px bg-gray-200 shrink-0" />
+                    <label className="flex items-center gap-1.5 shrink-0 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        disabled={loading}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setBusinessType("all");
+                          } else {
+                            const urlParams = new URLSearchParams(
+                              location.search,
+                            );
+                            const typeFromUrl = urlParams.get("type");
+                            if (typeFromUrl) setBusinessType(typeFromUrl);
+                          }
+                        }}
+                        className="w-3.5 h-3.5 accent-teal-700 cursor-pointer"
+                      />
+                      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                        All Types
+                      </span>
+                    </label>
+                  </>
+                )}
               {/* KOT & Meal Period — only when not hotel */}
               {businessType !== "hotel" && (
                 <>
@@ -1238,6 +1243,9 @@ useEffect(() => {
                   <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
                     Credit
                   </th>
+                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
+                    Mode
+                  </th>
                   {businessType !== "hotel" && (
                     <>
                       <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
@@ -1248,9 +1256,6 @@ useEffect(() => {
                       </th>
                     </>
                   )}
-                  <th className="border border-gray-300 px-2 py-2 text-center font-semibold">
-                    Mode
-                  </th>
                 </tr>
               </thead>
               <tbody>
