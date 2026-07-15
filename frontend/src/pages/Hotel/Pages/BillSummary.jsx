@@ -655,7 +655,8 @@ const BillSummary = () => {
   );
 
   const permission = useSelector((state) => state.permissionData?.permissions);
-
+  const secondaryUserRole =
+    JSON.parse(localStorage.getItem("sUserData"))?.role || "user";
   const today = new Date().toISOString().split("T")[0];
   const [startDate, setStartDate] = useState(billSummaryDate?.start || today);
   const [endDate, setEndDate] = useState(billSummaryDate?.end || today);
@@ -1006,8 +1007,8 @@ const BillSummary = () => {
               </div>
 
               {/* All Types */}
-              {permission?.dailySalesReport &&
-                permission?.restaurantDailySales && (
+              {(permission?.dailySalesReport &&
+                permission?.restaurantDailySales ) || secondaryUserRole == "admin" && (
                   <>
                     {/* Separator */}
                     <div className="h-6 w-px bg-gray-200 shrink-0" />
