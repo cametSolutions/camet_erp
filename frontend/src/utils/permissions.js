@@ -11,20 +11,17 @@ export const permissionSections = [
   {
     title: "Hotel",
     items: [
-      // { key: "hotelDashboard", label: "Hotel Dashboard" },
+      { key: "nightAudit", label: "Night Audit" },
       { key: "bookingList", label: "Booking List" },
       { key: "checkinList", label: "Check-in List" },
       { key: "checkoutList", label: "Checkout List" },
       { key: "editTariffRate", label: "Edit Tariff Rate" },
       { key: "swapRoom", label: "Swap Room" },
-      // { key: "roomShift", label: "Room Shift" },
-      // { key: "guestLedger", label: "Guest Ledger" },
     ],
   },
   {
     title: "Restaurant",
     items: [
-      // { key: "restaurantDashboard", label: "Restaurant Dashboard" },
       { key: "kotPage", label: "KOT Page" },
       { key: "restaurantPayment", label: "Restaurant Payment" },
     ],
@@ -32,9 +29,6 @@ export const permissionSections = [
   {
     title: "Hotel Reports",
     items: [
-      // { key: "hotelReports", label: "Hotel Reports" },
-      // { key: "restaurantReports", label: "Restaurant Reports" },
-      // { key: "voucherReports", label: "Voucher Reports" },
       { key: "dailySalesReport", label: "Daily Sales" },
       { key: "foDailyStatement", label: "FO Daily Statement" },
       { key: "flashReport", label: "Flash Report" },
