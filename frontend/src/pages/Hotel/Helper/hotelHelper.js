@@ -299,8 +299,8 @@ export const calculateStayDays =  (doc, room , arrival,checkOut, days) => {
 
 export const makeItemComplimentary = (item) => ({
   ...item,
-  total: Number(item.basePrice),
-  taxableAmount: Number(item.basePrice),
+  total: Number(item.basePrice) * Number(item.quantity),
+  taxableAmount: Number(item.basePrice) * Number(item.quantity),
 
   cgstValue: 0,
   sgstValue: 0,
@@ -324,7 +324,7 @@ export const makeItemComplimentary = (item) => ({
 
   GodownList: item.GodownList.map(godown => ({
     ...godown,
-    taxableAmount: Number(godown.basePrice),
+    taxableAmount: Number(godown.quantity) * Number(godown.quantity),
 
     cgstValue: 0,
     sgstValue: 0,
@@ -338,6 +338,6 @@ export const makeItemComplimentary = (item) => ({
     cessAmount: 0,
     additionalCessAmount: 0,
 
-    individualTotal: Number(godown.basePrice),
+    individualTotal: Number(godown.quantity) * Number(godown.quantity),
   })),
 });
