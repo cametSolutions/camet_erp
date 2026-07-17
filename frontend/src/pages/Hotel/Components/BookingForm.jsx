@@ -1223,7 +1223,7 @@ function BookingForm({
   const submitHandler = async () => {
     if (isFormReadOnly || isSubmittingRef.current) return;
      isSubmittingRef.current = true;
-    setSaveLoader(true);
+    // setSaveLoader(true);
     if (!formData.customerName || formData.customerName.trim() === "") {
       toast.error("Please enter a customer name");
       return;
@@ -1232,7 +1232,7 @@ function BookingForm({
     if (!formData.customerId) {
       try {
         // isSubmittingRef.current = true;
-        setSaveLoader(true);
+        // setSaveLoader(true);
         const res = await api.get(`/api/sUsers/PartyList/${cmp_id}`, {
           params: {
             page: 1,

@@ -97,12 +97,12 @@ function VoucherPdfHeader({
             </div>
             <div className="w-4/5 flex flex-col mt-1 ml-2">
               <div className="">
-                <p className="text-gray-700 font-semibold text-base pb-1">
+                <p className="text-black font-bold text-base pb-1">
                   {org?.name}
                 </p>
               </div>
               <div className="">
-                <div className="text-gray-500 md:text-xs text-[10px] mt-1">
+                <div className="text-gray-700 md:text-xs text-[10px] mt-1">
                   {[
                     org?.flat,
                     org?.landmark,
@@ -120,17 +120,17 @@ function VoucherPdfHeader({
           <div className="  flex  justify-between px-5 gap-6  bg-slate-100 py-2">
             <div className="">
               {org?.pan && (
-                <div className="text-gray-500 mb-0.5 md:text-xs text-[9px]">
+                <div className="text-gray-600 mb-0.5 md:text-xs text-[9px]">
                   Pan: {org?.pan && org?.pan}
                 </div>
               )}
-              <div className="text-gray-500 mb-0.5 md:text-xs text-[9px]">
+              <div className="text-gray-600 mb-0.5 md:text-xs text-[9px]">
                 {org?.country === "India" ? "Gst No" : "Vat"}:{" "}
                 {org?.gstNum && org?.gstNum !== null ? org.gstNum : ""}
               </div>
             </div>
             <div className="flex flex-col">
-              <div className="text-gray-500 mb-0.5 md:text-xs text-[9px] text-right">
+              <div className="text-gray-600 mb-0.5 md:text-xs text-[9px] text-right">
                 {org?.email && org?.email !== null ? org.email : ""}
               </div>
               <div className="text-gray-500 mb-0.5 md:text-xs text-[9px] text-right">
@@ -217,14 +217,14 @@ function VoucherPdfHeader({
                   if (value) {
                     return (
                       <tr key={key} className="flex justify-between">
-                        <td className="text-gray-500 mb-0.5 text-[9px]">
+                        <td className="text-gray-700 mb-0.5 text-[9px]">
                           {displayTitles[key] ||
                             capitalizeFirstLetter(
                               key?.split(/(?=[A-Z])/).join(" ")
                             )}
                           :
                         </td>
-                        <td className="text-gray-500 mb-0.5 text-[9px]">
+                        <td className="text-gray-700 mb-0.5 text-[9px]">
                           {value}
                         </td>
                       </tr>
