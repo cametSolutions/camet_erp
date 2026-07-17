@@ -202,7 +202,9 @@ function BookingList() {
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
   const permission = useSelector((state) => state.permissionData?.permissions);
+
 console.log(permission);
+
   const secondaryUserRole =
     JSON.parse(localStorage.getItem("sUserData"))?.role || "user";
   const isSingleAuditDateSelected = fromDate === toDate;
@@ -2412,7 +2414,7 @@ console.log(permission);
                 </div>
               ) : null}
 
-              {location.pathname === "/sUsers/bookingList" &&
+              {location.pathname === "/sUsers/bookingList"  &&
                 el?.status !== "checkIn" &&
                 el?.status !== "cancelled" && (
                   <button
@@ -2721,8 +2723,8 @@ console.log(permission);
                   </div> */}
                 </div>
               ) : null}
-              {(location.pathname === "/sUsers/bookingList" ||
-                location.pathname === "/sUsers/checkInList") &&
+              {((location.pathname === "/sUsers/bookingList" && (secondaryUserRole === "admin"   || permission?.cancelBooking)) ||
+               ( location.pathname === "/sUsers/checkInList" && (secondaryUserRole === "admin"   || permission?.cancelChecking))) &&
                 el?.status !== "cancelled" && (
                   <button
                     onClick={(e) => {

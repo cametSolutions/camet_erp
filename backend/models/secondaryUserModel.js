@@ -55,7 +55,11 @@ const secondaryUserSchema = new mongoose.Schema(
         travelAgentReport: true,
         foBillSummary: true,
         cancellationReport: true,
-        nightAudit : true
+        nightAudit: true,
+        cancelBooking:true,
+        cancelChecking: true,
+        cancelSale: true,
+        cancelReceipt: true,
       }),
     },
     userType: {

@@ -17,6 +17,11 @@ export const permissionSections = [
       { key: "checkoutList", label: "Checkout List" },
       { key: "editTariffRate", label: "Edit Tariff Rate" },
       { key: "swapRoom", label: "Swap Room" },
+      { key: "cancelBooking", label: "Cancel Booking" },
+      { key: "cancelChecking", label: "Cancel Checking" },
+      { key: "cancelSale", label: "Cancel Sale" },
+      { key: "cancelReceipt", label: "Cancel Receipt" },
+      
     ],
   },
   {
