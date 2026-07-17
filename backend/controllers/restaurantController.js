@@ -718,17 +718,20 @@ export const getKotDash = async (req, res) => {
           cmp_id,
           "convertedFrom.voucherNumber": kotDoc.voucherNumber,
         });
+        console.log("findSpecificSale",findSpecificSale)
         if (kotDoc.paymentCompleted) {
           return {
             ...kotDoc,
             items: kotDoc.items || [], // ← directly from DB, no recalculation
-            total: kotDoc.total || 0, // ← directly from DB
+            total: findSpecificSale?.subTotal || 0, // ← directly from DB
             salesNumber: findSpecificSale?.salesNumber,
           };
         }
         const recalculatedItems = (kotDoc?.items || [])
           .map((item) => recalculateKotItem(item))
           .filter(Boolean);
+
+          console.log("recalculatedItems",recalculatedItems)
 
         const kotTotal = recalculatedItems.reduce(
           (sum, item) => sum + Number(item?.total || 0),
