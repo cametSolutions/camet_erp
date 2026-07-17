@@ -2724,7 +2724,7 @@ console.log(permission);
                 </div>
               ) : null}
               {((location.pathname === "/sUsers/bookingList" && (secondaryUserRole === "admin"   || permission?.cancelBooking)) ||
-               ( location.pathname === "/sUsers/checkInList" && (secondaryUserRole === "admin"   || permission?.cancelBooking))) &&
+               ( location.pathname === "/sUsers/checkInList" && (secondaryUserRole === "admin"   || permission?.cancelChecking))) &&
                 el?.status !== "cancelled" && (
                   <button
                     onClick={(e) => {
