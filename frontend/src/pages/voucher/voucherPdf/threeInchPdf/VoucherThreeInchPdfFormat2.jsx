@@ -786,7 +786,7 @@ function VoucherThreeInchPdfFormat2({
                 fontStyle: "italic",
               }}
             >
-              INVOICE
+              {data?.isComplimentary ? "COMPLEMENTARY" : "INVOICE"}
             </div>
           ) : (
             <div
