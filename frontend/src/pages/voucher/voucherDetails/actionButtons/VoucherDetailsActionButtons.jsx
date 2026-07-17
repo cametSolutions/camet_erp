@@ -107,6 +107,9 @@ export default function VoucherDetailsActionButtons({
     },
   ];
 
+
+
+
   return (
     <div
       className={` ${
@@ -125,8 +128,11 @@ export default function VoucherDetailsActionButtons({
         data={data}
       />
 
+      
       <div className="flex justify-center space-x-8">
-        { (secondaryUserRole == "admin" || permission.cancelSale) && (
+        { (secondaryUserRole == "admin" || 
+        (permission?.cancelSale && voucherType == "sales") || 
+        (permission?.cancelReceipt && voucherType == "receipt")) && (
         <CancelButton
           id={_id}
           voucherType={voucherType}
