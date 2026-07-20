@@ -182,6 +182,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         cmp_id: filter.cmp_id,
         isPostToRoom: true,
         isCancelled: false,
+        isComplimentary : false,
         "convertedFrom.checkInNumber": {
           $in: checkInNumbers,
         },
@@ -197,6 +198,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         cmp_id: filter.cmp_id,
         isPostToRoom: false,
         isCancelled: false,
+        isComplimentary : false,
         "convertedFrom.checkInNumber": {
           $in: checkInNumbers,
         },
