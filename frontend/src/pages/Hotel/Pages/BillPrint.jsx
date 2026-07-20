@@ -218,7 +218,7 @@ const HotelBillPrint = () => {
     (doc.selectedRooms || [])?.forEach((room) => {
       const roomStartDate = new Date(room.arrivalDate || doc.arrivalDate);
 
-      const stayDays = room.stayDays || 1;
+      const stayDays = doc.stayDays || 1;
       const fullDays = Math.floor(stayDays);
       const fractionalDay = stayDays - fullDays;
 
@@ -229,6 +229,8 @@ const HotelBillPrint = () => {
       const dayWisePrices = {};
       const dayWiseTax = {};
 
+      
+
       const dateTariffs = room.dateTariffs || {};
       let activePrice = room?.priceLevelRate;
       console.log(room?.additionalPaxAmountWithTax);
@@ -236,15 +238,18 @@ const HotelBillPrint = () => {
         ? room?.priceLevelRate -
           room?.additionalPaxAmountWithTax / room.stayDays
         : room?.priceLevelRate;
-
+console.log(stayDays)
       // Build per-day prices/taxes keyed by ISO date (YYYY-MM-DD)
       for (let i = 0; i < stayDays; i++) {
+        console.log(roomStartDate)
         const d = new Date(roomStartDate);
         d.setDate(roomStartDate.getDate() + i);
         const key = d.toISOString().split("T")[0];
         if (dateTariffs[key] !== undefined) {
           activePrice = Number(dateTariffs[key]);
         }
+
+        console.log(dayWisePrices , roomStartDate);
 
         dayWisePrices[key] = doc.addTaxWithRate
           ? Number(activePrice || 0) /
@@ -325,6 +330,8 @@ const HotelBillPrint = () => {
           (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
         );
 
+        console.log(fullDaysAre)
+
         if (fullDaysAre <= 0) {
           if (swapDate == doc.arrivalDate) {
             fullDaysAre = 1;
@@ -349,6 +356,7 @@ const HotelBillPrint = () => {
         currentDate.setDate(currentDate.getDate() + incrementNumber);
 
         const isoKey = currentDate.toISOString().split("T")[0];
+        console.log(isoKey);
         const formattedDate = currentDate
           .toLocaleDateString("en-GB")
           .replace(/\//g, "-");
@@ -358,7 +366,7 @@ const HotelBillPrint = () => {
         const addArray = room?.otherChargeDetails.filter(
           (item) => item.action === "add",
         );
-        console.log(doc?.addPaxWithRate);
+        console.log(dayWisePrices[isoKey]);
         result.push({
           date: formattedDate,
           description: `Room Rent - Room ${room.roomName}`,
@@ -385,7 +393,7 @@ const HotelBillPrint = () => {
           addArray,
         });
       }
-
+        console.log(result);
       // Add fractional day (half day) – no additional pax
       if (fractionalDay > 0) {
         const baseDate =
