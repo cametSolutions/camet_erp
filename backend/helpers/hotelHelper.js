@@ -12,7 +12,7 @@ import { formatToLocalDate } from "../helpers/helper.js";
 import TallyData from "../models/TallyData.js";
 import settlementModel from "../models/settlementModel.js";
 import salesModel from "../models/salesModel.js";
-
+import nodemailer from "nodemailer";
 // helper function used to add search concept with room
 export const buildDatabaseFilterForRoom = (params) => {
   // console.log("params", params);
@@ -1686,4 +1686,33 @@ export const fetchRestaurantDetails = async (cmp_id, fromDate, toDate) => {
       salesCount: 0,
     };
   }
+};
+
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.NODE_MAILER_EMAIL,
+    pass: process.env.NODE_MAILER_APP_PASSWORD,
+  },
+});
+
+export const sendMail = async ({
+  to,
+  cc = [],
+  subject,
+  text,
+  html,
+  attachments = [],
+  fromName = "System",
+}) => {
+  return await transporter.sendMail({
+    from: `"${fromName}" <${process.env.NODE_MAILER_EMAIL}>`,
+    to,
+    cc: Array.isArray(cc) ? cc : [],
+    subject,
+    text,
+    html,
+    attachments,
+  });
 };

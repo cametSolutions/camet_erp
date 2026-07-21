@@ -21,6 +21,7 @@ import { FoodPlan } from "../models/hotelSubMasterModal.js";
 import AdditionalCharges from "../models/additionalChargesModel.js";
 import { recalculateKotItem, round2 } from "../helpers/restaurantHelper.js";
 import Settlement from "../models/settlementModel.js";
+import { sendMail } from "../helpers/hotelHelper.js";
 // Helper functions (you may need to create these or adjust based on your existing ones)
 import {
   buildDatabaseFilterForRoom,
@@ -32,6 +33,7 @@ import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 import { CheckIn } from "../models/bookingModal.js";
 import { response } from "express";
 import receiptModel from "../models/receiptModel.js";
+import primaryUserModel from "../models/primaryUserModel.js";
 // Add Item Controller
 export const addItem = async (req, res) => {
   const session = await mongoose.startSession();
@@ -818,6 +820,20 @@ console.log("req.suser =>", req.suser);
     if (!kot) {
       return res.status(404).json({ success: false, message: "KOT not found" });
     }
+  //   if(kot.status === "cancelled") {
+  // //       to,
+  // // cc = [],
+  // // subject,
+  // // text,
+  // // html,
+  // // attachments = [],
+  // // fromName = "System",
+  // let primaryUserData = await primaryUserModel.findById(req.pUserId);
+
+  //     sendMail({
+        
+  //     })
+  //   }
 
     res.status(200).json({
       success: true,
