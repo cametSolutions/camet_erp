@@ -12,7 +12,8 @@ import { formatToLocalDate } from "../helpers/helper.js";
 import TallyData from "../models/TallyData.js";
 import settlementModel from "../models/settlementModel.js";
 import salesModel from "../models/salesModel.js";
-
+import nodemailer from "nodemailer";
+import PDFDocument from "pdfkit";
 // helper function used to add search concept with room
 export const buildDatabaseFilterForRoom = (params) => {
   // console.log("params", params);
@@ -77,7 +78,7 @@ export const buildDatabaseFilterForBooking = (params) => {
   let filter = {
     cmp_id: params.cmp_id,
     Primary_user_id: params.Primary_user_id,
-    status: { $ne: "cancelled" }
+    status: { $ne: "cancelled" },
   };
 
   if (params.modal === "checkIn") {
@@ -182,6 +183,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         cmp_id: filter.cmp_id,
         isPostToRoom: true,
         isCancelled: false,
+        isComplimentary: false,
         "convertedFrom.checkInNumber": {
           $in: checkInNumbers,
         },
@@ -197,6 +199,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         cmp_id: filter.cmp_id,
         isPostToRoom: false,
         isCancelled: false,
+        isComplimentary: false,
         "convertedFrom.checkInNumber": {
           $in: checkInNumbers,
         },
@@ -404,7 +407,12 @@ export const updateStatus = async (roomData, status, session) => {
       cmp_id: room.cmp_id,
       roomId: room._id,
       roomNumber: room.roomName,
-      status: status == "booking" ? "booked" : status == "checkIn" ? "occupied" : status,
+      status:
+        status == "booking"
+          ? "booked"
+          : status == "checkIn"
+            ? "occupied"
+            : status,
       fromDate: now,
       toDate: null,
       isCurrent: true,
@@ -1258,7 +1266,6 @@ export const updateSwapDetails = async (existingRoom, updatedRoom, session) => {
   }
 };
 
-
 export const findBlockedRooms = async (
   cmp_id,
   reportDate,
@@ -1292,7 +1299,11 @@ export const findBlockedRooms = async (
       errors.push("reportYear must be a valid year");
     }
 
-    if (reportMonth != null && reportMonth !== "" && !isValidMonth(reportMonth)) {
+    if (
+      reportMonth != null &&
+      reportMonth !== "" &&
+      !isValidMonth(reportMonth)
+    ) {
       errors.push("reportMonth must be between 1 and 12");
     }
 
@@ -1359,7 +1370,8 @@ export const findBlockedRooms = async (
 
       if (reportDate) {
         const rd = toDay(new Date(reportDate));
-        monthEnd = addDays(rd, 1) < nextMonthStart ? addDays(rd, 1) : nextMonthStart;
+        monthEnd =
+          addDays(rd, 1) < nextMonthStart ? addDays(rd, 1) : nextMonthStart;
       } else if (todayDay >= monthStart && todayDay < nextMonthStart) {
         monthEnd = tomorrowDay;
       } else {
@@ -1374,7 +1386,10 @@ export const findBlockedRooms = async (
 
       monthStart = new Date(Date.UTC(y, m, 1));
       const nextMonthStart = new Date(Date.UTC(y, m + 1, 1));
-      monthEnd = addDays(dayOnly, 1) < nextMonthStart ? addDays(dayOnly, 1) : nextMonthStart;
+      monthEnd =
+        addDays(dayOnly, 1) < nextMonthStart
+          ? addDays(dayOnly, 1)
+          : nextMonthStart;
     }
 
     // ─── Target day ──────────────────────────────────────────────────
@@ -1414,7 +1429,9 @@ export const findBlockedRooms = async (
     });
 
     const blockedRecords = validRecords.filter((r) => r.status === "blocked");
-    const householdRecords = validRecords.filter((r) => r.status === "household");
+    const householdRecords = validRecords.filter(
+      (r) => r.status === "household",
+    );
 
     // ─── Helpers ─────────────────────────────────────────────────────
     const isActiveOnDay = (record, day) => {
@@ -1443,13 +1460,13 @@ export const findBlockedRooms = async (
         const fromDay = toDay(new Date(record.fromDate));
         const endDay =
           record.toDate == null
-            ? windowEnd < tomorrowDay ? windowEnd : tomorrowDay
+            ? windowEnd < tomorrowDay
+              ? windowEnd
+              : tomorrowDay
             : toDay(new Date(record.toDate));
 
-        const effectiveStart =
-          fromDay > windowStart ? fromDay : windowStart;
-        const effectiveEnd =
-          endDay < windowEnd ? endDay : windowEnd;
+        const effectiveStart = fromDay > windowStart ? fromDay : windowStart;
+        const effectiveEnd = endDay < windowEnd ? endDay : windowEnd;
 
         const nights = Math.round(
           (effectiveEnd.getTime() - effectiveStart.getTime()) / MS_PER_DAY,
@@ -1521,7 +1538,9 @@ export const getRoomMetricsForPeriod = ({
   const toUTCDay = (str) => {
     if (!str) return null;
     if (str instanceof Date) {
-      return new Date(Date.UTC(str.getFullYear(), str.getMonth(), str.getDate()));
+      return new Date(
+        Date.UTC(str.getFullYear(), str.getMonth(), str.getDate()),
+      );
     }
     const [y, m, d] = str.split("T")[0].split("-").map(Number);
     return new Date(Date.UTC(y, m - 1, d));
@@ -1529,8 +1548,8 @@ export const getRoomMetricsForPeriod = ({
 
   // ─── DAY ────────────────────────────────────────────────────────────
   if (reportType === "day") {
-    const blockedRooms  = blockedCounts?.data?.dailyRooms  || 0;
-    const totalRooms    = totalPhysicalRooms;
+    const blockedRooms = blockedCounts?.data?.dailyRooms || 0;
+    const totalRooms = totalPhysicalRooms;
     const saleableRooms = totalRooms - blockedRooms;
 
     return {
@@ -1538,29 +1557,29 @@ export const getRoomMetricsForPeriod = ({
       totalRooms,
       blockedRooms,
       saleableRooms,
-      availableRoomNights:  saleableRooms,
-      totalRoomNights:      totalRooms,
-      saleableRoomNights:   saleableRooms,
-      blockedRoomNights:    blockedRooms,
+      availableRoomNights: saleableRooms,
+      totalRoomNights: totalRooms,
+      saleableRoomNights: saleableRooms,
+      blockedRoomNights: blockedRooms,
       periodDays: 1,
     };
   }
 
   // ─── MONTH / YEAR ────────────────────────────────────────────────────
   const start = toUTCDay(fromDate);
-  const end   = toUTCDay(toDate);
+  const end = toUTCDay(toDate);
 
   // periodDays is inclusive: Jun1→Jun18 = 18 days
   const periodDays = Math.round((end - start) / MS_PER_DAY) + 1;
 
-  const totalRooms      = totalPhysicalRooms;
+  const totalRooms = totalPhysicalRooms;
   const totalRoomNights = totalRooms * periodDays;
 
   // Use pre-fetched blockedCounts — NO day loop, NO extra DB calls
   const blockedRoomNights =
     reportType === "month"
       ? blockedCounts?.data?.monthlyRooms || 0
-      : blockedCounts?.data?.yearlyRooms  || 0;
+      : blockedCounts?.data?.yearlyRooms || 0;
 
   const saleableRoomNights = Math.max(0, totalRoomNights - blockedRoomNights);
 
@@ -1573,7 +1592,7 @@ export const getRoomMetricsForPeriod = ({
     saleableRoomNights,
     availableRoomNights: saleableRoomNights,
     // aliases for backward compat used in processCheckins
-    blockedRooms:  blockedRoomNights,
+    blockedRooms: blockedRoomNights,
     saleableRooms: saleableRoomNights,
   };
 };
@@ -1684,4 +1703,209 @@ export const fetchRestaurantDetails = async (cmp_id, fromDate, toDate) => {
       salesCount: 0,
     };
   }
+};
+
+
+export const sendMail = async ({
+  to,
+  cc=[],
+  subject,
+  fromName = "System",
+  text,
+  html,
+  data = {},
+}) => {
+  try{
+  let attachments = fromName === "Cancel Kot" ? [await getKotAttachment(data)] : [];
+  const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.NODE_MAILER_EMAIL,
+    pass: process.env.NODE_MAILER_APP_PASSWORD,
+  },
+});
+  return await transporter.sendMail({
+    from: `"${fromName}" <${process.env.NODE_MAILER_EMAIL}>`,
+    to,
+    cc: Array.isArray(cc) ? cc : [],
+    subject,
+    html,
+    text,
+    // attachments,
+  });
+  }catch(e){
+    console.log(e);
+  }
+};
+
+const getKotAttachment = async (data) => {
+  const pdfBuffer = await generateCancelledKotPdf(data);
+
+  return {
+    filename: `${String(data?.voucherNumber || "kot").replace(/[^\w-]/g, "_")}-cancelled.pdf`,
+    content: pdfBuffer,
+    contentType: "application/pdf",
+  };
+};
+
+const generateCancelledKotPdf = (data) => {
+  return new Promise((resolve, reject) => {
+    const items = Array.isArray(data?.items) ? data.items : [];
+    const pageHeight = Math.max(135, 92 + items.length * 8 + 18);
+
+    const doc = new PDFDocument({
+      size: [176, pageHeight],
+      margin: 6,
+    });
+
+    const buffers = [];
+    doc.on("data", (chunk) => buffers.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(buffers)));
+    doc.on("error", reject);
+
+    const voucherNumber = data?.voucherNumber || "";
+    const tableNumber = data?.tableNumber || data?.customer?.tableNumber || "";
+    const rawDate =
+      data?.cancelledAt?.$date ||
+      data?.cancelledAt ||
+      data?.createdAt?.$date ||
+      data?.createdAt;
+
+    const dt = rawDate ? new Date(rawDate) : null;
+    const formattedDate = dt
+      ? dt.toLocaleDateString("en-GB")
+      : "";
+    const formattedTime = dt
+      ? dt.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        })
+      : "";
+
+    const cancelledByName =
+      data?.cancelledByName ||
+      data?.staffName ||
+      data?.userName ||
+      "Admin";
+
+    const leftX = 8;
+    const rightX = 168;
+    const qtyX = 158;
+    const itemX = 8;
+    const itemWidth = 126;
+
+    let y = 8;
+
+    doc.font("Courier-Bold").fontSize(10).text("ARCADIA", 0, y, {
+      width: 176,
+      align: "center",
+      lineBreak: false,
+    });
+
+    y += 14;
+    doc.font("Courier-Bold").fontSize(8).text("KOT", 0, y, {
+      width: 176,
+      align: "center",
+      lineBreak: false,
+    });
+
+    y += 15;
+    doc.font("Courier-Bold").fontSize(6.2);
+    doc.text(`KOT: ${voucherNumber}`, leftX, y, {
+      width: 104,
+      lineBreak: false,
+    });
+    doc.text(formattedDate, 104, y, {
+      width: 60,
+      align: "right",
+      lineBreak: false,
+    });
+
+    y += 8;
+    doc.font("Courier-Bold").fontSize(6.2).text(`Staff: ${cancelledByName}`, leftX, y, {
+      width: 120,
+      lineBreak: false,
+    });
+
+    y += 8;
+    doc.font("Courier-Bold").fontSize(6.2);
+    doc.text(formattedTime, leftX, y, {
+      width: 40,
+      lineBreak: false,
+    });
+    doc.text(`T:${tableNumber}`, 118, y, {
+      width: 46,
+      align: "right",
+      lineBreak: false,
+    });
+
+    y += 12;
+    doc.font("Courier-Bold").fontSize(6.2);
+    doc.text("Food Plan :", leftX, y, {
+      width: 56,
+      lineBreak: false,
+    });
+    doc.fillColor("red").text("CANCELLED", 74, y, {
+      width: 54,
+      lineBreak: false,
+    });
+    doc.fillColor("black");
+
+    y += 11;
+    doc.font("Courier-Bold").fontSize(6.4);
+    doc.text("SL ITEM", itemX, y, {
+      width: itemWidth,
+      lineBreak: false,
+    });
+    doc.text("QTY", qtyX, y, {
+      width: 10,
+      align: "right",
+      lineBreak: false,
+    });
+
+    y += 4;
+    doc.moveTo(leftX, y).lineTo(rightX, y).stroke();
+    y += 4;
+
+    doc.font("Courier-Bold").fontSize(6.2);
+
+    items.forEach((item, index) => {
+      const name = String(item?.product_name || item?.name || "").trim();
+      const qty = String(item?.quantity || 1);
+      const shortName = name.length > 18 ? `${name.slice(0, 18)}` : name;
+
+      doc.text(`${index + 1} ${shortName}`, itemX, y, {
+        width: itemWidth,
+        lineBreak: false,
+      });
+
+      doc.text(qty, qtyX, y, {
+        width: 10,
+        align: "right",
+        lineBreak: false,
+      });
+
+      y += 8;
+    });
+
+    y -= 1;
+    doc.moveTo(leftX, y).lineTo(rightX, y).stroke();
+
+    y += 8;
+    doc.font("Courier-Bold").fontSize(6.8).text("** CANCELLED KITCHEN COPY **", 0, y, {
+      width: 176,
+      align: "center",
+      lineBreak: false,
+    });
+
+    y += 10;
+    doc.font("Courier-Bold").fontSize(6.4).text("THIS KOT IS CANCELLED", 0, y, {
+      width: 176,
+      align: "center",
+      lineBreak: false,
+    });
+
+    doc.end();
+  });
 };
