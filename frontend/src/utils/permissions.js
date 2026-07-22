@@ -6,6 +6,7 @@ export const permissionSections = [
       { key: "restaurantManagement", label: "Restaurant Management" },
       { key: "voucher", label: "Voucher" },
       { key: "reports", label: "Reports" },
+       { key: "settings", label: "Settings" },
     ],
   },
   {
@@ -179,6 +180,10 @@ const pathPermissionRules = [
   {
     pattern: /^\/sUsers\/sales-register/i,
     keys: ["saleRegister"],
+  },
+    {
+    pattern: /^\/sUsers\/settings/i,
+    keys: ["settings"],
   },
 ];
 
