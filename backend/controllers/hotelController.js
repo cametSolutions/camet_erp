@@ -61,6 +61,8 @@ import {
   ensureHotelTariffDateIsEditable,
   ensureSecondaryUserCompanyAccess,
 } from "../helpers/nightAuditHelper.js";
+import primaryUserModel from "../models/primaryUserModel.js";
+import { sendMail } from "../helpers/hotelHelper.js";
 // function used to save additional pax details
 export const saveAdditionalPax = async (req, res) => {
   try {
@@ -5188,10 +5190,11 @@ export const cancelBooking = async (req, res) => {
 
     let responseData = null;
     let responseMessage = "";
-
+    let record = {}
+     let recordType = "";
     await session.withTransaction(async () => {
-      let record = await Booking.findById(id).session(session);
-      let recordType = "booking";
+       record = await Booking.findById(id).session(session);
+       recordType = "booking";
 
       if (!record) {
         record = await CheckIn.findById(id).session(session);
@@ -5227,6 +5230,38 @@ export const cancelBooking = async (req, res) => {
         recordType === "checkin" ? "Check-in" : "Booking"
       } ${record.voucherNumber} has been cancelled successfully and room marked as dirty`;
     });
+
+    let heading = recordType == "checkin" ? "Check-in" : recordType == "booking" ? "Booking" : "Checkout"
+
+     let primaryUserData = await primaryUserModel.findById(req.owner);
+        
+            if (!primaryUserData || !primaryUserData?.email) {
+              res.status(200).json({
+                success: true,
+                message: `${heading}cancelled successfully but email not sent`,
+                data: sale,
+              });
+            }
+        
+            await sendMail({
+              to: primaryUserData?.email,
+              cc: [],
+              subject: `${heading} Cancelled Alert - ${record?.voucherNumber}`,
+              fromName: `Cancel ${heading}` ,
+              text: `${heading} ${record?.voucherNumber} has been cancelled by ${req?.secUserName || primaryUserData?.userName || "System"}. Please check the attached cancelled KOT copy.`,
+              html: `
+                <div style="font-family: Arial, sans-serif;">
+                  <h2 style="color:#b91c1c;">${heading} Cancelled Alert</h2>
+                <p>${heading} <strong>${record?.voucherNumber}</strong> has been cancelled.</p>
+                  <p><strong>Cancelled By:</strong> ${req?.secUserName || primaryUserData?.userName || "System"}</p>
+                  <p><strong>Reason:</strong> ${req?.body?.cancelReason || "Reason not given"}</p>
+        
+                  <p><strong>Total:</strong> ₹ ${record?.grandTotal || 0}</p>
+                  
+                </div>
+              `,
+              data: record,
+            });
 
     return res.status(200).json({
       success: true,
@@ -6471,113 +6506,7 @@ const addOneDay = (value) => {
 const overlaps = (start1, end1, start2, end2) => {
   return start1 < end2 && start2 < end1;
 };
-  // (doc?.selectedRooms || []).forEach((room) => {
-  //       if (room.isSwapped ) return;
-  //       const pax = Number(room?.pax || 0);
-  //       const tariff = Number(
-  //         Math.round(room.priceLevelRate) ||
-  //           room?.baseAmount ||
-  //           room?.amountAfterTax ||
-  //           room?.totalAmount ||
-  //           room?.baseAmountWithTax ||
-  //           0,
-  //       );
-
-  //       roomRevenue += tariff;
-  //       occupiedRoomNames.add(room?.roomName);
-
-  //       const roomTypeName =
-  //         room?.roomType?.roomTypeName || room?.roomType?.name || "";
-
-  //       const type = roomTypeName.toLowerCase();
-  //       let single = 0;
-  //       let doubleRoom = 0;
-  //       let triple = 0;
-  //       let other = 0;
-
-  //       if (type.includes("single")) single += 1;
-  //       else if (type.includes("double")) doubleRoom += 1;
-  //       else if (type.includes("triple")) triple += 1;
-  //       else other += 1;
-
-  //       let planName = "";
-  //       if (Array.isArray(doc?.foodPlan) && doc.foodPlan.length > 0) {
-  //         const foundPlan = doc.foodPlan.filter(
-  //           (plan) => plan?.roomId?.toString() === room?.roomId?.toString(),
-  //         );
-  //         const getPlanNames = (plans = []) =>
-  //           plans
-  //             .map((p) => p?.foodPlan)
-  //             .filter(Boolean)
-  //             .join(", ") || "";
-
-  //         if (foundPlan.length >= 0) {
-  //           foundPlan.map((plan) => {
-  //             planName = plan.foodPlan;
-  //             if (!planMap[plan.foodPlan]) {
-  //               planMap[plan.foodPlan] = {
-  //                 plan: plan.foodPlan,
-  //                 rms: 0,
-  //                 pax: 0,
-  //                 addnl: 0,
-  //                 total: 0,
-  //               };
-  //             }
-
-  //             planMap[plan.foodPlan].rms += 1;
-  //             planMap[plan.foodPlan].pax += pax;
-  //             planMap[plan.foodPlan].addnl += additionalPaxCount;
-  //             planMap[plan.foodPlan].total += pax + additionalPaxCount;
-  //           });
-  //           if (!planMap[planName]) {
-  //             planMap[planName] = {
-  //               plan: planName,
-  //               rms: 0,
-  //               pax: 0,
-  //               addnl: 0,
-  //               total: 0,
-  //             };
-  //           }
-
-  //           planMap[planName].rms += 1;
-  //           planMap[planName].pax += pax;
-  //           planMap[planName].addnl += additionalPaxCount;
-  //           planMap[planName].total += pax + additionalPaxCount;
-  //         }
-  //       }
-
-  //       let extraPersonTariff =
-  //         doc?.additionalPaxDetails?.reduce((acc, item) => {
-  //           return item?.roomId?.toString() === room?.roomId?.toString()
-  //             ? acc + (item?.rate || 0)
-  //             : acc;
-  //         }, 0) || 0;
-
-  //       let additionalPax =
-  //         doc?.additionalPaxDetails?.filter(
-  //           (item) => item?.roomId.toString() == room?.roomId.toString(),
-  //         ).length || 0;
-
-  //       rows.push({
-  //         slNo: rows.length + 1,
-  //         room: room?.roomName || "",
-  //         grcNo: doc?.grcno || "",
-  //         guestName: doc?.guestName || doc?.customerName || "",
-  //         company: doc?.company || "",
-  //         pax,
-  //         additionalPax,
-  //         arrivalDate: doc?.arrivalDate || "",
-  //         arrivalTime: doc?.arrivalTime || "",
-  //         departureDate: doc?.newChecoutDate || doc?.checkOutDate || "",
-  //         departureTime: doc?.newCheckoutTime || doc?.checkOutTime || "",
-  //         plan: planName,
-  //         tariff,
-  //         extraPersonTariff,
-  //         totalTariffWithPax: extraPersonTariff + tariff,
-  //         discountPercent: 0,
-  //         discountAmount: 0,
-  //       });
-  //     });
+ 
 
     (doc?.selectedRooms || []).forEach((room) => {
   const bookingStart = normalizeDate(doc?.arrivalDateObj || doc?.arrivalDate);
@@ -6621,7 +6550,7 @@ const overlaps = (start1, end1, start2, end2) => {
       room?.totalAmount ||
       room?.baseAmountWithTax ||
       0
-  );
+  ) 
 
   roomRevenue += tariff;
   occupiedRoomNames.add(room?.roomName);
@@ -6693,9 +6622,9 @@ const overlaps = (start1, end1, start2, end2) => {
     departureDate: doc?.newChecoutDate || doc?.checkOutDate || "",
     departureTime: doc?.newCheckoutTime || doc?.checkOutTime || "",
     plan: planName,
-    tariff,
+    tariff : tariff - extraPersonTariff ,
     extraPersonTariff,
-    totalTariffWithPax: extraPersonTariff + tariff,
+    totalTariffWithPax:  tariff,
     discountPercent: 0,
     discountAmount: 0,
   });

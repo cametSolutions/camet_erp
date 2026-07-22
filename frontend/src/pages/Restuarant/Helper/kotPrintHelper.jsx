@@ -70,7 +70,7 @@ export const generateKitchenOrderTicket = (
   restaurantName = "ABC RESTAURANT"
 ) => {
 
-  console.log(orderData);
+
 
   validateOrderData(orderData);
 
@@ -301,7 +301,7 @@ export const printDirectHTML = (
   restaurantName = "ABC RESTAURANT",
   isKOT = true
 ) => {
-  console.log(orderData);
+
   if (!orderData) return;
 
   const { date, time } = formatDateTime(orderData.createdAt);
@@ -452,7 +452,7 @@ export const printCancelDirectHTML = (
   restaurantName = "ABC RESTAURANT",
   isKOT = true
 ) => {
-  console.log(orderData);
+
   if (!orderData) return;
 
   const { date, time } = formatDateTime(orderData.createdAt);
@@ -726,7 +726,7 @@ export const generateAndPrintKOT = (
   restaurantName = "ABC RESTAURANT",
   useHTML = true
 ) => {
-console.log(orderData);
+
   try {
     validateOrderData(orderData);
 
@@ -757,7 +757,7 @@ export const generateAndPrintBill = (
   restaurantInfo,
   useHTML = true
 ) => {
-  console.log(orderData);
+
   try {
     validateOrderData(orderData);
 

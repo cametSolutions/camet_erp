@@ -55,6 +55,7 @@ const DashboardTransaction = ({ filteredData, from }) => {
 
   const renderTransaction = useMemo(
     () => (transaction, index) => {
+      console.log(transaction?.secondaryUserName);
       const {
         type,
         _id,

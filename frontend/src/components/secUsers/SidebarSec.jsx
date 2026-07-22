@@ -48,7 +48,9 @@ function SidebarSec({ showBar }) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const selectedTab = localStorage.getItem("selectedSecondatSidebarTab");
   const storedUserData = JSON.parse(localStorage.getItem("sUserData"));
-  const storedPermissions = JSON.parse(localStorage.getItem("permissions"));
+  const permission = useSelector((state) => state?.permissionData?.permissions);
+
+  console.log(storedUserData);
 
   const [tab, setTab] = useState(selectedTab);
   const navigate = useNavigate();
@@ -146,12 +148,15 @@ function SidebarSec({ showBar }) {
     // canAccess("/sUsers/settings")
   ) {
     const additionalTabs = [];
+    {(permission?.settings || storedUserData?.role === "admin") && 
+  
     additionalTabs.push({
       to: "/sUsers/settings",
       tab: "terms",
       icon: <IoMdSettings />,
       label: "Settings",
-    });
+    })
+    }
 
     additionalTabs.forEach((item) => {
       navItems.push(item);

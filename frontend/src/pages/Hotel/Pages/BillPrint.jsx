@@ -21,7 +21,7 @@ import {
   handleBillDownloadPDF,
   generateBillPDFAsBase64,
 } from "../PrintSide/generateBillPrintPDF";
-import {calculateStayDays} from "../Helper/hotelHelper";
+import { calculateStayDays } from "../Helper/hotelHelper";
 import Swal from "sweetalert2";
 import { constructNow } from "date-fns";
 const HotelBillPrint = () => {
@@ -157,34 +157,33 @@ const HotelBillPrint = () => {
           console.log("ha");
           cleanData = location?.state?.splitDetailsAfterSave;
         }
-        
+
         let mapData = [...cleanData];
         console.log(mapData);
-        let splitArray=[]
+        let splitArray = [];
         mapData?.forEach((item) => {
-            splitArray.push( {
-              customerName:
-                item.customerName || selectedCheckOut[0].customerName,
-              mode: item.mode || item.subsource || item.type,
-              amount: Number(item.amount),
-              under: item.underCategory,
-            });
+          splitArray.push({
+            customerName: item.customerName || selectedCheckOut[0].customerName,
+            mode: item.mode || item.subsource || item.type,
+            amount: Number(item.amount),
+            under: item.underCategory,
+          });
         });
         const merged = Object.values(
-  splitArray.reduce((acc, item) => {
-    const key = `${item.customerName}-${item.mode}-${item.under}`;
+          splitArray.reduce((acc, item) => {
+            const key = `${item.customerName}-${item.mode}-${item.under}`;
 
-    if (!acc[key]) {
-      acc[key] = { ...item };
-    } else {
-      acc[key].amount += Number(item.amount);
-    }
+            if (!acc[key]) {
+              acc[key] = { ...item };
+            } else {
+              acc[key].amount += Number(item.amount);
+            }
 
-    return acc;
-  }, {})
-);
+            return acc;
+          }, {}),
+        );
 
-console.log(merged);
+        console.log(merged);
         setPaymentModeDetails(merged);
       }
       console.log("hh");
@@ -194,7 +193,7 @@ console.log(merged);
 
   // Split handlers
   const handleSplitPayment = () => setShowSplitPopUp(true);
-  const handleChange = (value) => setSelected(value);
+
   const handleSplit = () => {
     setShowSplitPopUp(false);
     setActiveMode(selected); // apply the selected mode without destroying data
@@ -219,7 +218,7 @@ console.log(merged);
     (doc.selectedRooms || [])?.forEach((room) => {
       const roomStartDate = new Date(room.arrivalDate || doc.arrivalDate);
 
-      const stayDays = room.stayDays || 1;
+      const stayDays = doc.stayDays || 1;
       const fullDays = Math.floor(stayDays);
       const fractionalDay = stayDays - fullDays;
 
@@ -230,19 +229,27 @@ console.log(merged);
       const dayWisePrices = {};
       const dayWiseTax = {};
 
+      
+
       const dateTariffs = room.dateTariffs || {};
       let activePrice = room?.priceLevelRate;
-      console.log(room?.additionalPaxAmountWithTax)
-      activePrice = doc?.addPaxWithRate ?  room?.priceLevelRate - (room?.additionalPaxAmountWithTax / room.stayDays) : room?.priceLevelRate
-
+      console.log(room?.additionalPaxAmountWithTax);
+      activePrice = doc?.addPaxWithRate
+        ? room?.priceLevelRate -
+          room?.additionalPaxAmountWithTax / room.stayDays
+        : room?.priceLevelRate;
+console.log(stayDays)
       // Build per-day prices/taxes keyed by ISO date (YYYY-MM-DD)
       for (let i = 0; i < stayDays; i++) {
+        console.log(roomStartDate)
         const d = new Date(roomStartDate);
         d.setDate(roomStartDate.getDate() + i);
         const key = d.toISOString().split("T")[0];
         if (dateTariffs[key] !== undefined) {
           activePrice = Number(dateTariffs[key]);
         }
+
+        console.log(dayWisePrices , roomStartDate);
 
         dayWisePrices[key] = doc.addTaxWithRate
           ? Number(activePrice || 0) /
@@ -323,6 +330,8 @@ console.log(merged);
           (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
         );
 
+        console.log(fullDaysAre)
+
         if (fullDaysAre <= 0) {
           if (swapDate == doc.arrivalDate) {
             fullDaysAre = 1;
@@ -331,7 +340,6 @@ console.log(merged);
           }
         }
       }
-  
 
       // Add full days (respect swap base date, read tariff via ISO key)
       for (let i = 0; i < fullDaysAre; i++) {
@@ -348,6 +356,7 @@ console.log(merged);
         currentDate.setDate(currentDate.getDate() + incrementNumber);
 
         const isoKey = currentDate.toISOString().split("T")[0];
+        console.log(isoKey);
         const formattedDate = currentDate
           .toLocaleDateString("en-GB")
           .replace(/\//g, "-");
@@ -357,7 +366,7 @@ console.log(merged);
         const addArray = room?.otherChargeDetails.filter(
           (item) => item.action === "add",
         );
-      console.log(doc?.addPaxWithRate)
+        console.log(dayWisePrices[isoKey]);
         result.push({
           date: formattedDate,
           description: `Room Rent - Room ${room.roomName}`,
@@ -384,7 +393,7 @@ console.log(merged);
           addArray,
         });
       }
-
+        console.log(result);
       // Add fractional day (half day) – no additional pax
       if (fractionalDay > 0) {
         const baseDate =
@@ -601,44 +610,54 @@ console.log(merged);
     let roomTariffTotal = !doc?.addFoodPlanWithRate
       ? dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0)
       : dateWiseLines.reduce((t, i) => t + Number(i.baseAmount || 0), 0) -
-        (planAmount );
+        planAmount;
 
+    //   const arrivalDate = normalizeDate(doc?.arrivalDate);
+    //   const checkoutDate = normalizeDate(doc?.checkOutDate);
 
-//   const arrivalDate = normalizeDate(doc?.arrivalDate);
-//   const checkoutDate = normalizeDate(doc?.checkOutDate);
+    //   if (!room?.swappingDateFrom) {
+    //     return Math.max(Number(room?.stayDays || 0), 0);
+    //   }
 
-//   if (!room?.swappingDateFrom) {
-//     return Math.max(Number(room?.stayDays || 0), 0);
-//   }
+    //   const swappingDate = normalizeDate(room.swappingDateFrom);
 
-//   const swappingDate = normalizeDate(room.swappingDateFrom);
+    //   // Old room before swap
+    //   if (room?.isSwapped) {
+    //     return Math.max(
+    //       Math.floor((swappingDate - arrivalDate) / (1000 * 60 * 60 * 24)),
+    //       0,
+    //     );
+    //   }
 
-//   // Old room before swap
-//   if (room?.isSwapped) {
-//     return Math.max(
-//       Math.floor((swappingDate - arrivalDate) / (1000 * 60 * 60 * 24)),
-//       0,
-//     );
-//   }
+    //   // New room after swap
+    //   return Math.max(
+    //     Math.floor((checkoutDate - swappingDate) / (1000 * 60 * 60 * 24)),
+    //     0,
+    //   );
+    // };
 
-//   // New room after swap
-//   return Math.max(
-//     Math.floor((checkoutDate - swappingDate) / (1000 * 60 * 60 * 24)),
-//     0,
-//   );
-// };
+    const additionalPaxAmount = (doc.selectedRooms || []).reduce(
+      (total, room) => {
+        const originalStayDays = Math.max(Number(room?.stayDays || 0), 0);
+        const effectiveStayDays = calculateStayDays(
+          doc,
+          room,
+          doc?.arrivalDate,
+          doc?.checkOutDate,
+          originalStayDays,
+        );
 
-const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
-  const originalStayDays = Math.max(Number(room?.stayDays || 0), 0);
-  const effectiveStayDays = calculateStayDays(doc, room, doc?.arrivalDate, doc?.checkOutDate, originalStayDays);
+        const totalPaxWithoutTax = Number(
+          room?.additionalPaxAmountWithOutTax || 0,
+        );
 
-  const totalPaxWithoutTax = Number(room?.additionalPaxAmountWithOutTax || 0);
+        const paxPerDay =
+          originalStayDays > 0 ? totalPaxWithoutTax / originalStayDays : 0;
 
-  const paxPerDay =
-    originalStayDays > 0 ? totalPaxWithoutTax / originalStayDays : 0;
-
-  return total + paxPerDay * effectiveStayDays;
-}, 0);
+        return total + paxPerDay * effectiveStayDays;
+      },
+      0,
+    );
     console.log(dateWiseLines);
     console.log(roomTariffTotal);
     console.log(additionalPaxAmount);
@@ -903,7 +922,7 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
                   totalAdditionalPaxWithoutTax) *
                 100
               : 0;
-              
+
           const halfAdditionalPaxTaxPercentage = additionalPaxTaxPercentage / 2;
 
           const paxCGST = roomAdditionalPaxTax / 2;
@@ -1094,8 +1113,7 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
       Number(sgstAmount) +
       Number(cgstAmount) +
       Number(restaurantTotal) +
-      otherChargeAmount
-       -
+      otherChargeAmount -
       Number(
         paymentDetails?.paymentDetails?.discountAmount ||
           doc.discountAmount ||
@@ -1215,14 +1233,8 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
           Number(roomWiseDiscount || 0)
         ).toFixed(2),
         discount: discount,
-        sgst:
-          Number(foodPlanTax) > 0
-            ? Number(sgstAmount) 
-            : sgstAmount,
-        cgst:
-          Number(foodPlanTax) > 0
-            ? Number(cgstAmount) 
-            : cgstAmount,
+        sgst: Number(foodPlanTax) > 0 ? Number(sgstAmount) : sgstAmount,
+        cgst: Number(foodPlanTax) > 0 ? Number(cgstAmount) : cgstAmount,
         restaurant: dineInTotal, // ✅ Only dine-in restaurant amount
         roomService: roomServiceTotal, // ✅ Only room service amount
         restaurantSideDiscount: newlyAppliedDiscount,
@@ -1240,7 +1252,7 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
         advance: advanceTotal,
         netPay,
       },
-      isCancelled : doc?.status == "cancelled" ? true : false
+      isCancelled: doc?.status == "cancelled" ? true : false,
     };
   };
 
@@ -1344,14 +1356,15 @@ const additionalPaxAmount = (doc.selectedRooms || []).reduce((total, room) => {
         // Zero out restaurant summary fields
         bill.summary.restaurant = 0;
         bill.summary.roomService = 0;
-        console.log(bill.summary);
+        console.log(bill);
 
         const roomOnlyTotal =
           Number(bill.summary.roomRent || 0) +
           Number(bill.summary.sgst || 0) +
           Number(bill.summary.cgst || 0) +
           Number(bill.summary.foodPlan || 0) +
-          Number(bill.summary.otherChargeAmount || 0);
+          Number(bill.summary.otherChargeAmount || 0) +
+          Number(bill.summary.additionalPax || 0);
 
         bill.summary.total = roomOnlyTotal;
         bill.summary.totalWords = `${Math.round(roomOnlyTotal)} Rupees Only`;
@@ -1791,7 +1804,7 @@ ${hotelName}`;
                 PROFORMA INVOICE
               </div>
             )}
-              { billData.isCancelled &&  (
+            {billData.isCancelled && (
               <div
                 style={{
                   position: "absolute",
@@ -2271,28 +2284,29 @@ ${hotelName}`;
                         </td>
                       </tr>
                     )}
-                    {activeMode !== "restaurant"  &&  billData?.summary?.discount > 0 && (
-                      <tr>
-                        <td
-                          style={{ border: "1px solid #000", padding: "4px" }}
-                        >
-                          Discount
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #000",
-                            padding: "4px",
-                            textAlign: "right",
-                          }}
-                        >
-                          {Number(
-                            billData?.summary?.discount || 0,
-                          ).toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </td>
-                      </tr>
-                    )}
+                    {activeMode !== "restaurant" &&
+                      billData?.summary?.discount > 0 && (
+                        <tr>
+                          <td
+                            style={{ border: "1px solid #000", padding: "4px" }}
+                          >
+                            Discount
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #000",
+                              padding: "4px",
+                              textAlign: "right",
+                            }}
+                          >
+                            {Number(
+                              billData?.summary?.discount || 0,
+                            ).toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                        </tr>
+                      )}
 
                     {activeMode !== "restaurant" &&
                       billData?.summary?.foodPlan > 0 && (
@@ -2324,7 +2338,7 @@ ${hotelName}`;
                           <td
                             style={{ border: "1px solid #000", padding: "4px" }}
                           >
-                            Additional Pax 
+                            Additional Pax
                           </td>
                           <td
                             style={{
@@ -2346,7 +2360,7 @@ ${hotelName}`;
                         <td
                           style={{ border: "1px solid #000", padding: "4px" }}
                         >
-                          SGST 
+                          SGST
                         </td>
                         <td
                           style={{
@@ -2641,6 +2655,17 @@ ${hotelName}`;
                             >
                               Total :
                             </div>
+                            {billData?.payment?.total &&
+                              Number(billData?.payment?.advance) > 0 && (
+                                <div
+                                  style={{
+                                    fontWeight: "bold",
+                                    marginBottom: "4px",
+                                  }}
+                                >
+                                  Advance :
+                                </div>
+                              )}
                             <div style={{ fontWeight: "bold" }}>Net Pay :</div>
                           </td>
 
@@ -2659,6 +2684,19 @@ ${hotelName}`;
                             >
                               {Number(billData?.payment?.total || 0).toFixed(2)}
                             </div>
+                            {billData?.payment?.total &&
+                              Number(billData?.payment?.advance) > 0 && (
+                                <div
+                                  style={{
+                                    fontWeight: "bold",
+                                    marginBottom: "4px",
+                                  }}
+                                >
+                                  {Number(
+                                    billData?.payment?.advance || 0,
+                                  ).toFixed(2)}
+                                </div>
+                              )}
                             <div style={{ fontWeight: "bold" }}>
                               {Number(billData?.payment?.netPay || 0).toFixed(
                                 2,

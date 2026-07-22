@@ -659,7 +659,7 @@ const OccupancyCheckoutReport = () => {
                           </td>
                           <td className="px-1.5 py-1.5">{row.plan}</td>
                           <td className="px-1.5 py-1.5 text-right">
-                            {row.tariff}
+                            {row.tariff }
                           </td>
                           <td className="px-1.5 py-1.5 text-right">
                             {row.extraPersonTariff}
