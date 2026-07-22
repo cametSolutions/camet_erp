@@ -682,18 +682,17 @@ export const getKot = async (req, res) => {
 export const getKotDash = async (req, res) => {
   try {
     const { cmp_id } = req.params;
-    let { date , fromDate } = req.query;
+    let { date, fromDate } = req.query;
 
-    if (!date ) {
+    if (!date) {
       date = new Date().toISOString().slice(0, 10);
     }
 
-    
-    if (!fromDate ) {
+    if (!fromDate) {
       fromDate = new Date().toISOString().slice(0, 10);
     }
 
-    console.log("dateManagement",fromDate,date)
+    console.log("dateManagement", fromDate, date);
 
     const start = new Date(`${fromDate}T00:00:00.000Z`);
     const end = new Date(`${date}T23:59:59.999Z`);
@@ -720,7 +719,6 @@ export const getKotDash = async (req, res) => {
           cmp_id,
           "convertedFrom.voucherNumber": kotDoc.voucherNumber,
         });
-        console.log("findSpecificSale",findSpecificSale)
         if (kotDoc.paymentCompleted) {
           return {
             ...kotDoc,
@@ -732,8 +730,6 @@ export const getKotDash = async (req, res) => {
         const recalculatedItems = (kotDoc?.items || [])
           .map((item) => recalculateKotItem(item))
           .filter(Boolean);
-
-          console.log("recalculatedItems",recalculatedItems)
 
         const kotTotal = recalculatedItems.reduce(
           (sum, item) => sum + Number(item?.total || 0),
@@ -802,8 +798,8 @@ export const cancelKot = async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-console.log("req.sUserId =>", req.sUserId);
-console.log("req.suser =>", req.suser);
+    console.log("req.sUserId =>", req.sUserId);
+    console.log("req.suser =>", req.suser);
     const kot = await kotModal.findByIdAndUpdate(
       id,
       {
@@ -812,7 +808,6 @@ console.log("req.suser =>", req.suser);
         cancelledAt: new Date(),
         cancelledBy: req.sUserId,
         cancelledByName: req.suser?.name || "",
-
       },
       { new: true },
     );
@@ -820,20 +815,36 @@ console.log("req.suser =>", req.suser);
     if (!kot) {
       return res.status(404).json({ success: false, message: "KOT not found" });
     }
-  //   if(kot.status === "cancelled") {
-  // //       to,
-  // // cc = [],
-  // // subject,
-  // // text,
-  // // html,
-  // // attachments = [],
-  // // fromName = "System",
-  // let primaryUserData = await primaryUserModel.findById(req.pUserId);
-
-  //     sendMail({
-        
-  //     })
-  //   }
+    if (kot.status === "cancelled") {
+      let primaryUserData = await primaryUserModel.findById(req.owner);
+      if (!primaryUserData || !primaryUserData?.email) {
+        res.status(200).json({
+          success: true,
+          message: "KOT cancelled successfully but email not sent",
+          data: kot,
+        });
+      }
+      console.log("req?.secUserName ", req?.secUserName);
+      await sendMail({
+        to: primaryUserData?.email,
+        cc: [],
+        subject: `KOT Cancelled Alert - ${kot.voucherNumber}`,
+        fromName: "Cancel Kot",
+        text: `KOT ${kot.voucherNumber} has been cancelled by ${req?.secUserName || primaryUserData?.userName || "System"}. Please check the attached cancelled KOT copy.`,
+        html: `
+    <div style="font-family: Arial, sans-serif;">
+      <h2 style="color:#b91c1c;">KOT Cancelled Alert</h2>
+      <p>KOT <strong>${kot.voucherNumber}</strong> has been cancelled.</p>
+      <p><strong>Cancelled By:</strong> ${req?.secUserName || primaryUserData?.userName || "System"}</p>
+      <p><strong>Reason:</strong> ${reason || "Reason not given"}</p>
+      <p><strong>Table No:</strong> ${kot?.tableNumber || ""}</p>
+      <p><strong>Total:</strong> ₹ ${kot?.total || 0}</p>
+      
+    </div>
+  `,
+        data: kot,
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -919,7 +930,7 @@ export const getRoomDataForRestaurant = async (req, res) => {
     // Get all records for cmp_id
     const allData = await CheckIn.find({
       cmp_id: req.params.cmp_id,
-     status: { $nin: ["checkOut", "cancelled"] }
+      status: { $nin: ["checkOut", "cancelled"] },
     });
 
     // Filter only those where today's date falls between arrivalDate & checkOutDate
@@ -1217,7 +1228,6 @@ export const directSale = async (req, res) => {
 
       let additionalChargesArray = additionalCharges;
 
-      
       // Create a sales voucher entry (no KOT reference)
       const savedVoucherData = await createSalesVoucher(
         cmp_id,
@@ -1236,10 +1246,8 @@ export const directSale = async (req, res) => {
         false,
         false,
         false,
-        false
+        false,
       );
-
-
 
       // ✅ Convert Mongoose document to plain object and ensure _id is included
       const salesRecordData = savedVoucherData[0].toObject
@@ -1433,8 +1441,16 @@ export const updateKotPayment = async (req, res) => {
       }
       console.log(paymentMethod, "paymentMethod");
 
-      if (!isPostToRoom && kotData?.voucherNumber[0]?.checkInNumber && paymentMethod !== "credit") {
-        let totalAmount = paymentSplittingArray.reduce((acc,item)=> item.type == "credit" ? acc : acc + Number(item.amount), 0)
+      if (
+        !isPostToRoom &&
+        kotData?.voucherNumber[0]?.checkInNumber &&
+        paymentMethod !== "credit"
+      ) {
+        let totalAmount = paymentSplittingArray.reduce(
+          (acc, item) =>
+            item.type == "credit" ? acc : acc + Number(item.amount),
+          0,
+        );
         tallyData = await createTallyEntry(
           cmp_id,
           req,
@@ -1450,7 +1466,7 @@ export const updateKotPayment = async (req, res) => {
         if (paymentSplittingArray && paymentSplittingArray?.length > 0) {
           // One receipt per split row
           for (const split of paymentSplittingArray) {
-            console.log("splitsplit",split)
+            console.log("splitsplit", split);
             if (split.type == "credit") continue;
             let receipt = await buildReceipt({
               cmp_id,
@@ -1483,7 +1499,7 @@ export const updateKotPayment = async (req, res) => {
               req,
               session,
             });
-            console.log("split",split)
+            console.log("split", split);
 
             await Settlement.create({
               voucherNumber: receipt.receiptNumber,
@@ -2044,10 +2060,11 @@ async function createSalesVoucher(
   // console.log("additionalChargesArray", additionalChargesArray);
   // ✅ FIXED: Use SUBTOTAL (BEFORE discount)
   const originalTotal = Number(kotData?.subtotal || kotData?.total || 0); // 1000 ✅
-  const additionalCharges = additionalChargesArray?.length > 0 ? additionalChargesArray : [];
+  const additionalCharges =
+    additionalChargesArray?.length > 0 ? additionalChargesArray : [];
   const isComplimentary = req.body.isComplimentary || false;
   const isPostToRoom = req.body.isPostToRoom || false;
-  const saleDate = req.body?.selectedSaleDate || new Date()
+  const saleDate = req.body?.selectedSaleDate || new Date();
 
   console.log("kotData", paymentSplittingArray);
   // ✅ Calculate totals

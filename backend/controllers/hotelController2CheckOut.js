@@ -1346,7 +1346,7 @@ async function createSalesVoucher(
         usedSeriesNumber: saleNumber.usedSeriesNumber,
         Primary_user_id: req.pUserId || req.owner,
         cmp_id,
-        secondary_user_id: req.sUserId,
+        Secondary_user_id: req.sUserId,
         party,
         partyAccount: selectedParty.accountGroup?.accountGroup,
         items,

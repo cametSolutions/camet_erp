@@ -8,7 +8,7 @@ import PrintModal from "@/pages/Hotel/Components/PrintModal";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import ItemSelector from "../components/ItemSelector";
 import { useQuery } from "@tanstack/react-query";
-import {makeItemComplimentary} from '../../Hotel/Helper/hotelHelper';
+import { makeItemComplimentary } from "../../Hotel/Helper/hotelHelper";
 import {
   MdDescription,
   MdAccessTime,
@@ -119,19 +119,19 @@ const OrdersDashboard = () => {
   const [splitPaymentRows, setSplitPaymentRows] = useState([
     { source: "", subSource: "", type: "", amount: "", remarks: "", refNo: "" },
   ]);
-
+ const [cancelReload, setCancelReload] = useState(false);
   const addSplitPaymentRow = () =>
     setSplitPaymentRows((prev) => [
       ...prev,
       { source: "", amount: "", remarks: "", refNo: "" },
     ]);
 
+  
 
   const removeSplitPaymentRow = (index) =>
     setSplitPaymentRows((prev) => prev.filter((_, i) => i !== index));
 
   const updateSplitPaymentRow = (index, field, value) => {
-    console.log(field, value);
     if (value == "credit") {
       setSplitPaymentRows((prev) =>
         prev.map((row, i) =>
@@ -184,20 +184,18 @@ const OrdersDashboard = () => {
     fromDate: selectedFromDate,
   });
 
-    useEffect(() => {
-      if (autoFetch && cmp_id) {
-          queryKey: ["kotDash", cmp_id, selectedDate , selectedFromDate],
-  
+  useEffect(() => {
+    if (autoFetch && cmp_id) {
+      queryKey: (["kotDash", cmp_id, selectedDate, selectedFromDate],
         dispatch(
           setKotDate({
             autoFetch: true,
             start: start,
             end: end,
           }),
-        );
-      }
-    }, [autoFetch, cmp_id]);
-
+        ));
+    }
+  }, [autoFetch, cmp_id]);
 
   const { data, refetch: refreshHook } = useQuery({
     queryKey: ["kotDash", cmp_id, selectedDate, selectedFromDate],
@@ -254,7 +252,6 @@ const OrdersDashboard = () => {
         }
         setAllAdditionalChargesFromRedux(additionalChargesResponse);
       }
-      console.log(selectedAdditionalChargeData);
       // ✅ Now SAFE to filter
       const discountCharges = additionalChargesResponse.filter((charge) =>
         charge.name.toLowerCase().includes("discount"),
@@ -318,7 +315,6 @@ const OrdersDashboard = () => {
       const { bankDetails, cashDetails } = paymentTypeData?.data;
 
       setCashOrBank(paymentTypeData?.data);
-      console.log(paymentTypeData?.data);
       if (bankDetails && bankDetails.length > 0) {
         setSelectedBank(bankDetails[0]._id);
       }
@@ -467,7 +463,6 @@ const OrdersDashboard = () => {
 
     // Filter by search query
     if (searchQuery) {
-      console.log(filtered);
       filtered = filtered.filter(
         (order) =>
           order?.customer?.tableNumber
@@ -492,7 +487,6 @@ const OrdersDashboard = () => {
   };
 
   const handleStatusChange = async (orderId, newStatus, batchNo) => {
-    console.log(newStatus);
     setSaveLoader(true);
 
     try {
@@ -513,15 +507,9 @@ const OrdersDashboard = () => {
                 : batch,
             );
 
-            console.log(updatedBatches);
-
             const allCompleted =
               updatedBatches?.length > 0 &&
               updatedBatches.every((b) => b.status === "completed");
-
-            console.log(allCompleted);
-            console.log(updatedBatches);
-            console.log(order.status);
 
             return {
               ...order,
@@ -545,14 +533,11 @@ const OrdersDashboard = () => {
     }
   };
 
-  console.log(orders[20]?.voucherNumber);
-  console.log(orders[20]?.status);
   // function used to perform print  with kot
   const handleKotPrint = (data, batchNo) => {
     let newItems = data?.items || [];
-    console.log(data);
+
     if (batchNo !== null && batchNo !== undefined && batchNo !== "") {
-      console.log(batchNo);
       const batchData = data.kitchenBatches.find(
         (item) => item.batchNo === batchNo,
       );
@@ -573,7 +558,7 @@ const OrdersDashboard = () => {
           });
       }
     }
-    console.log(data);
+
     const orderData = {
       kotNo: data?.voucherNumber,
       tableNo: data?.tableNumber,
@@ -592,9 +577,9 @@ const OrdersDashboard = () => {
   };
 
   const handleKotCancel = async () => {
+     setCancelReload(true);
     try {
       if (!selectedOrderForCancel) return;
-
       const response = await api.put(
         `/api/sUsers/cancel/${selectedOrderForCancel._id}`,
         { reason: cancelReason },
@@ -617,6 +602,8 @@ const OrdersDashboard = () => {
       }
     } catch (error) {
       console.error("Error cancelling KOT:", error);
+    } finally {
+      setCancelReload(false);
     }
   };
 
@@ -662,7 +649,6 @@ const OrdersDashboard = () => {
 
   useEffect(() => {
     if (salePrintData) {
-      console.log("salePrintData", salePrintData);
       billFormat === "format1"
         ? navigate(`/sUsers/sharesalesThreeInch/${salePrintData._id}`)
         : navigate(`/sUsers/sharesalesThreeInch2/${true}`, {
@@ -673,10 +659,7 @@ const OrdersDashboard = () => {
 
   const filteredOrders = getFilteredOrders();
 
-  console.log("filteredOrders", filteredOrders);
-
   const handleSavePayment = async (id) => {
-    console.log(paymentMode);
     setSaveLoader(true);
 
     try {
@@ -854,7 +837,6 @@ const OrdersDashboard = () => {
       if (previewForSales && previewForSales.additionalCharges.length > 0) {
         // ✅ Use EXACTLY what's in preview - don't rebuild
         additionalChargesData = previewForSales.additionalCharges;
-        console.log(additionalChargesData);
         additionalChargesData = [
           {
             _id: findOne._id,
@@ -867,24 +849,14 @@ const OrdersDashboard = () => {
             finalValue: previewForSales.additionalCharges[0].finalValue,
           },
         ];
-        console.log(additionalChargesData);
       }
 
-      console.log("=== PAYMENT SUBMISSION ===");
       const hasAutoComplimentary = selectedKot.some((kot) => {
         const order = filteredOrders.find((o) => o._id === kot.id);
         return order?.foodPlanDetails?.isComplimentary === true;
       });
 
       const isManuallyComplimentary = isComplimentary && !hasAutoComplimentary;
-
-      console.log("=== PAYMENT SUBMISSION ===");
-      console.log("Is Complimentary:", isComplimentary);
-      console.log(
-        "Has Auto Complimentary (from Food Plan):",
-        hasAutoComplimentary,
-      );
-      console.log("Is Manually Complimentary:", isManuallyComplimentary);
 
       // Show appropriate toast message
       if (isComplimentary) {
@@ -915,8 +887,6 @@ const OrdersDashboard = () => {
         complementaryWithTax: complementaryWithTax,
       };
 
-      console.log(payment);
-
       const response = await api.put(
         `/api/sUsers/updateKotPayment/${cmp_id}`,
         payment,
@@ -939,8 +909,6 @@ const OrdersDashboard = () => {
             ? "Complimentary order processed successfully!"
             : response?.data?.message,
         );
-
-        console.log(response.data.data);
 
         setPrintData(response?.data?.data);
         setShowPaymentModal(false);
@@ -977,7 +945,6 @@ const OrdersDashboard = () => {
         `/api/sUsers/getSalePrintData/${cmp_id}/${kotId}`,
         { withCredentials: true },
       );
-      console.log(saleData?.data?.data);
       setSalePrintData(saleData?.data?.data);
     } catch (error) {
       console.log(error);
@@ -988,10 +955,9 @@ const OrdersDashboard = () => {
   const handleSelectMultipleKots = (order) => {
     if (userRole == "kitchen") return;
     if (order && !order?.paymentCompleted) {
-      console.log(order?.roomId?._id);
       const findOne = selectedKot.find((item) => item.id === order._id);
       const firstSelected = selectedKot[0];
-      console.log(firstSelected); // take the first selection
+      // take the first selection
 
       if (firstSelected) {
         // ✅ only allow roomService with same roomId
@@ -1051,16 +1017,14 @@ const OrdersDashboard = () => {
       }
       return findOne?.items || []; // return empty array if not found
     });
-    console.log(itemList);
     let subtotal;
 
-        if(isComplimentary){
-        let updatedItemList = itemList.map((item) => {
-         return makeItemComplimentary(item)
-        })
-        itemList = updatedItemList
-      }
-
+    if (isComplimentary) {
+      let updatedItemList = itemList.map((item) => {
+        return makeItemComplimentary(item);
+      });
+      itemList = updatedItemList;
+    }
 
     if (discountBasedOnGrossAmount) {
       const gross = itemList.reduce(
@@ -1077,22 +1041,20 @@ const OrdersDashboard = () => {
       const totalDiscount = Number(discountAmount || 0);
 
       const net = itemList.reduce((acc, item) => {
-        console.log(item);
         const lineTotal = Number(item.total || 0);
-        console.log(lineTotal);
+
         const share = gross > 0 ? (lineTotal / gross) * totalDiscount : 0; // proportional
-        console.log(share);
+
         return acc + (lineTotal - share);
       }, 0);
 
       subtotal = Math.round(net).toFixed(2);
     }
 
-    console.log(subtotal, discountAmount);
     let finalAmount = discountBasedOnGrossAmount
       ? Math.round(Number(subtotal) - Number(discountAmount || 0)).toFixed(2)
       : Math.round(subtotal).toFixed(2);
-    console.log(finalAmount);
+
     let additionalChargesArray = [];
 
     if (discountAmount > 0 && selectedDiscountCharge) {
@@ -1116,7 +1078,6 @@ const OrdersDashboard = () => {
         finalValue: Number(discountAmount),
       });
     }
-    console.log(additionalChargesArray);
 
     let newObject = {
       Date: new Date(),
@@ -1148,7 +1109,7 @@ const OrdersDashboard = () => {
         mobile: selectedKot[0]?.customer?.phone,
       },
     };
-    console.log("Preview Object Created:", newObject);
+
     setPreviewForSales(newObject);
   };
 
@@ -1163,7 +1124,6 @@ const OrdersDashboard = () => {
     }
   }, [paymentMethod, selectedCash, selectedBank, isForComp]);
 
-  console.log(paymentMethod);
   const handleSaveSales = (status) => {
     queryClient.invalidateQueries({
       queryKey: ["kotDash", cmp_id, selectedDate, selectedFromDate],
@@ -1180,7 +1140,7 @@ const OrdersDashboard = () => {
         ...cashOrBank.bankDetails,
         ...cashOrBank.cashDetails,
       ];
-      console.log(newMergedCashOrBank);
+
       let complementaryParty = newMergedCashOrBank.find(
         (item) => item.isTaggedWithComplementary,
       );
@@ -1191,7 +1151,6 @@ const OrdersDashboard = () => {
 
       setPaymentMethod(complementaryParty?.partyType);
       if (complementaryParty.partyType == "cash") {
-        console.log(complementaryParty?._id);
         setSelectedCash(complementaryParty?._id);
       }
       if (complementaryParty.partyType == "bank") {
@@ -1210,14 +1169,11 @@ const OrdersDashboard = () => {
     setShowPaymentModal(true);
   };
 
-  console.log("selectedKot", showPaymentModal);
-
   const handleEditKot = (kotData, batchNo, order) => {
     if (kotData?.paymentCompleted) {
       toast.error("Kot Payment is completed so you can't edit");
       return;
     }
-    console.log("KOT to be edited:", order);
     // else if (kotData?.status === "completed") {
     //   toast.error("Kot is already completed so you can't edit");
     //   return;
@@ -1231,26 +1187,14 @@ const OrdersDashboard = () => {
     content: () => contentToPrint.current,
   });
 
-  console.log(additionalCharges);
   useEffect(() => {
     if (selectedKot.length > 0 && filteredOrders.length > 0) {
-      console.log("=== PAYMENT MODAL OPENED ===");
-
       // Check if any KOT has complimentary food plan
       const hasComplimentaryFoodPlan = selectedKot.some((kot) => {
         const order = filteredOrders.find((o) => o._id === kot.id);
 
-        console.log("Checking KOT:", kot.voucherNumber);
-        console.log("Food Plan Details:", order?.foodPlanDetails);
-        console.log(
-          "Is Complimentary:",
-          order?.foodPlanDetails?.isComplimentary,
-        );
-
         return order?.foodPlanDetails?.isComplimentary == true;
       });
-
-      console.log("Has Complimentary Food Plan:", hasComplimentaryFoodPlan);
 
       // ✅ Auto-tick checkbox if complimentary
       setIsComplimentary(hasComplimentaryFoodPlan);
@@ -1259,7 +1203,6 @@ const OrdersDashboard = () => {
 
   const handlePrintShow = () => {
     let updatedData = { ...printData.salesRecord, ...printData?.kotData };
-    console.log(updatedData);
     navigate(`/sUsers/sharesalesThreeInch2/${true}`, {
       state: updatedData,
     });
@@ -1315,7 +1258,6 @@ const OrdersDashboard = () => {
   };
 
   const handleSpecificItemSale = (data) => {
-    console.log("data", data);
     setOrders((prevOrders) =>
       prevOrders.map((order) => {
         const matchedItem = data.find((item) => item._id === order._id);
@@ -1329,7 +1271,7 @@ const OrdersDashboard = () => {
     );
     setSpecificSelectedKotItemWise(data);
   };
-  console.log(cashOrBank);
+
   const combinedSources = [
     ...(cashOrBank?.cashDetails?.map((c) => ({
       id: c._id,
@@ -1579,7 +1521,6 @@ const OrdersDashboard = () => {
                     const isOrderSelected = (o) =>
                       selectedKot.find((item) => item.id === o._id);
                     const displayItems = order._batchItems ?? order.items;
-                    console.log(order);
                     return (
                       <div
                         key={order._batchCardId}
@@ -1922,12 +1863,10 @@ const OrdersDashboard = () => {
                           const isSelected = selectedKot.find(
                             (item) => item.id === order._id,
                           );
-                          console.log(order.total);
+
                           const isExpanded = expandedOrders[order._id];
                           const discountedTotal =
                             Number(order.total) - Number(order.discount || 0);
-
-                          console.log(order);
 
                           return (
                             <div
@@ -2455,8 +2394,6 @@ const OrdersDashboard = () => {
                                     }, 0);
                                   }
 
-                                  console.log(subtotal);
-
                                   // Calculate discount amount
                                   const calculatedAmount =
                                     discountType === "percentage"
@@ -2918,7 +2855,6 @@ const OrdersDashboard = () => {
                       // ✅ Restaurant: no customer field required — only source + amount
                       const lastRow =
                         splitPaymentRows[splitPaymentRows.length - 1];
-                      console.log(lastRow);
                       const lastRowValid =
                         lastRow &&
                         lastRow.source?.trim() !== "" &&
@@ -2970,8 +2906,6 @@ const OrdersDashboard = () => {
                                 (s) => s.id === row.source,
                               );
                               const sourceType = sourceObj?.type || "";
-
-                              console.log(sourceType);
 
                               const rowLocked =
                                 isFullyPaid &&
@@ -3503,10 +3437,42 @@ const OrdersDashboard = () => {
                     </button>
                     <button
                       onClick={handleKotCancel}
-                      className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-all duration-200 flex items-center justify-center gap-2"
+                      disabled={cancelReload}
+                      className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                        cancelReload
+                          ? "bg-red-400 cursor-not-allowed opacity-80"
+                          : "bg-red-500 text-white hover:bg-red-600"
+                      }`}
                     >
-                      <MdCancel className="w-4 h-4" />
-                      Confirm Cancel
+                      {cancelReload ? (
+                        <>
+                          <svg
+                            className="w-4 h-4 animate-spin"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            />
+                          </svg>
+                          Cancelling...
+                        </>
+                      ) : (
+                        <>
+                          <MdCancel className="w-4 h-4" />
+                          Confirm Cancel
+                        </>
+                      )}
                     </button>
                   </div>
                 </motion.div>

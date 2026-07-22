@@ -61,6 +61,8 @@ import {
   ensureHotelTariffDateIsEditable,
   ensureSecondaryUserCompanyAccess,
 } from "../helpers/nightAuditHelper.js";
+import primaryUserModel from "../models/primaryUserModel.js";
+import { sendMail } from "../helpers/hotelHelper.js";
 // function used to save additional pax details
 export const saveAdditionalPax = async (req, res) => {
   try {
@@ -5188,10 +5190,11 @@ export const cancelBooking = async (req, res) => {
 
     let responseData = null;
     let responseMessage = "";
-
+    let record = {}
+     let recordType = "";
     await session.withTransaction(async () => {
-      let record = await Booking.findById(id).session(session);
-      let recordType = "booking";
+       record = await Booking.findById(id).session(session);
+       recordType = "booking";
 
       if (!record) {
         record = await CheckIn.findById(id).session(session);
@@ -5227,6 +5230,38 @@ export const cancelBooking = async (req, res) => {
         recordType === "checkin" ? "Check-in" : "Booking"
       } ${record.voucherNumber} has been cancelled successfully and room marked as dirty`;
     });
+
+    let heading = recordType == "checkin" ? "Check-in" : recordType == "booking" ? "Booking" : "Checkout"
+
+     let primaryUserData = await primaryUserModel.findById(req.owner);
+        
+            if (!primaryUserData || !primaryUserData?.email) {
+              res.status(200).json({
+                success: true,
+                message: `${heading}cancelled successfully but email not sent`,
+                data: sale,
+              });
+            }
+        
+            await sendMail({
+              to: primaryUserData?.email,
+              cc: [],
+              subject: `${heading} Cancelled Alert - ${record?.voucherNumber}`,
+              fromName: `Cancel ${heading}` ,
+              text: `${heading} ${record?.voucherNumber} has been cancelled by ${req?.secUserName || primaryUserData?.userName || "System"}. Please check the attached cancelled KOT copy.`,
+              html: `
+                <div style="font-family: Arial, sans-serif;">
+                  <h2 style="color:#b91c1c;">${heading} Cancelled Alert</h2>
+                <p>${heading} <strong>${record?.voucherNumber}</strong> has been cancelled.</p>
+                  <p><strong>Cancelled By:</strong> ${req?.secUserName || primaryUserData?.userName || "System"}</p>
+                  <p><strong>Reason:</strong> ${req?.body?.cancelReason || "Reason not given"}</p>
+        
+                  <p><strong>Total:</strong> ₹ ${record?.grandTotal || 0}</p>
+                  
+                </div>
+              `,
+              data: record,
+            });
 
     return res.status(200).json({
       success: true,
