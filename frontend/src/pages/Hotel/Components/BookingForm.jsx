@@ -1018,11 +1018,13 @@ function BookingForm({
       (acc, item) => acc + Number(item.rate),
       0,
     );
+    console.log(details)
 
     setFormData((prev) => ({
       ...prev,
       additionalPaxDetails: [...filterData, ...filteredDetails],
       paxTotal: totalAmount,
+      addPaxWithRate: includePaxRateWithRoom,
       updatedDate: currentDateDefault,
     }));
   };
