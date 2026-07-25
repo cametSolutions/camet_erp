@@ -1018,7 +1018,20 @@ function BookingForm({
       (acc, item) => acc + Number(item.rate),
       0,
     );
-    console.log(details)
+    let selectedRoom = formData?.selectedRooms.find((i) => i.roomId === room);
+    let amountWithFoodPlan =
+      totalAmount +
+      (includeFoodRateWithRoom ? selectedRoom.foodPlanAmountWithTax : 0);
+    if (
+      Number(amountWithFoodPlan) > Number(selectedRoom?.priceLevelRate) &&
+      includePaxRateWithRoom
+    ) {
+      setIncludePaxRateWithRoom(formData?.addFoodPlanWithRate);
+      toast.error(
+        "Rate cannot be less than sum of food plan amount or additional pax amount",
+      );
+      return;
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -1038,6 +1051,21 @@ function BookingForm({
       (acc, item) => acc + Number(item.rate),
       0,
     );
+    let selectedRoom = formData?.selectedRooms.find((i) => i.roomId === room);
+    let amountWithAdditionalPax =
+      totalAmount +
+      (includePaxRateWithRoom ? selectedRoom.additionalPaxAmountWithTax : 0);
+    console.log(amountWithAdditionalPax, selectedRoom?.priceLevelRate);
+    if (
+      Number(amountWithAdditionalPax) > Number(selectedRoom?.priceLevelRate) &&
+      includeFoodRateWithRoom
+    ) {
+      setIncludeFoodRateWithRoom(formData?.addFoodPlanWithRate);
+      toast.error(
+        "Rate cannot be less than sum of food plan amount or additional pax amount",
+      );
+      return;
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -1224,7 +1252,7 @@ function BookingForm({
 
   const submitHandler = async () => {
     if (isFormReadOnly || isSubmittingRef.current) return;
-     isSubmittingRef.current = true;
+    isSubmittingRef.current = true;
     // setSaveLoader(true);
     if (!formData.customerName || formData.customerName.trim() === "") {
       toast.error("Please enter a customer name");

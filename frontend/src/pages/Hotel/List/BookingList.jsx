@@ -148,7 +148,9 @@ function BookingList() {
     date.setDate(date.getDate() - 29);
     return date.toISOString().slice(0, 10);
   };
-  const [fromDate, setFromDate] = useState(selectedDate?.start || get29DaysAgo());
+  const [fromDate, setFromDate] = useState(
+    selectedDate?.start || get29DaysAgo(),
+  );
   const [toDate, setToDate] = useState(selectedDate?.end || today);
   const [nightAuditStatus, setNightAuditStatus] = useState(null);
   const [nightAuditLoading, setNightAuditLoading] = useState(false);
@@ -1351,6 +1353,45 @@ function BookingList() {
       } else {
         updatedRows[index][field] = Number(value || 0);
       }
+    } else if (
+      field === "amount" &&
+      updatedRows[index].underCategory === "room"
+    ) {
+      console.log(selectedDataForPayment);
+
+      // Calculate total food amount excluding current row
+      let totalFoodAmount =
+        splitPaymentRows.reduce((sum, item, i) => {
+          if (item?.underCategory === "room" && i !== index) {
+            return sum + Number(item.amount || 0);
+          }
+
+          return sum;
+        }, 0) + Number(value || 0);
+
+      console.log(selectedDataForPayment);
+
+      if (totalFoodAmount > Number(selectedDataForPayment?.total || 0)) {
+        updatedRows[index][field] = 0;
+
+        toast.error(
+          "Room amount tagged is already equal to restaurant subtotal",
+        );
+      } else {
+        updatedRows[index][field] = Number(value || 0);
+      }
+    } else if (field === "underCategory" && value == "room") {
+      console.log(splitPaymentRows);
+      let totalFoodAmount = splitPaymentRows.reduce(
+        (sum, item) =>
+          item?.underCategory == "room" ? sum + item.amount : sum,
+        0,
+      );
+      console.log(totalFoodAmount);
+      updatedRows[index][field] = value;
+      updatedRows[index].amount = Math.abs(
+        selectedDataForPayment?.total - totalFoodAmount,
+      );
     } else {
       updatedRows[index][field] = value;
     }
@@ -3605,8 +3646,8 @@ function BookingList() {
                                     </span>
                                     {(selectedDataForPayment?.restaurantSubTotal >
                                     0
-                                      ? ["food", "room", "laundry"]
-                                      : ["room", "laundry"]
+                                      ? ["food", "room"]
+                                      : ["room"]
                                     ).map((category) => (
                                       <button
                                         key={category}
@@ -3635,7 +3676,7 @@ function BookingList() {
                                       >
                                         {category === "food" && "🍽 "}
                                         {category === "room" && "🛏 "}
-                                        {category === "laundry" && "👕 "}
+                                        {/* {category === "laundry" && "👕 "} */}
                                         {category.charAt(0).toUpperCase() +
                                           category.slice(1)}
                                       </button>
@@ -4394,6 +4435,7 @@ function BookingList() {
             selectedCheckIns={selectedCheckOut}
             onClose={setShowRestaurantBillTransfer}
             cmp_id={cmp_id}
+            sendToParent={fetchBookings}
           />
         )}
         {restaurantSaleManageMent && (

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  BarChart2, FileText, Zap, Users, Coffee, Home, ChevronDown, LayoutGrid,
+  BarChart2, FileText, Zap, Users, Coffee, Home, ChevronDown, LayoutGrid,LogIn
 } from "lucide-react";
 
 const reports = [
@@ -94,6 +94,14 @@ const reports = [
     iconBg: "bg-blue-50",
     iconColor: "text-blue-700",
     path: "/sUsers/CancellationReport",
+  },
+     {
+    label: "Login report",
+    desc: "Login report",
+    icon: LogIn,
+    iconBg: "bg-blue-50",
+    iconColor: "text-blue-700",
+    path: "/sUsers/LoginReport",
   },
   
           

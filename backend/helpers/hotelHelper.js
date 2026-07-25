@@ -77,7 +77,7 @@ export const buildDatabaseFilterForBooking = (params) => {
   let filter = {
     cmp_id: params.cmp_id,
     Primary_user_id: params.Primary_user_id,
-    status: { $ne: "cancelled" }
+    status: { $ne: "cancelled" },
   };
 
   if (params.modal === "checkIn") {
@@ -124,8 +124,13 @@ export const buildDatabaseFilterForBooking = (params) => {
         },
       ];
     } else {
-      // ✅ Keep existing date filter, only add status
-      filter.status = { $exists: false };
+    filter.$or = [
+  { status: { $exists: false } },
+  {
+    status: "checkIn",
+    isPartiallyCheckedOut: true,
+  },
+];
     }
   } else if (params.searchTerm === "completed") {
     if (params.modal === "booking") filter.status = "checkIn";
@@ -182,7 +187,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         cmp_id: filter.cmp_id,
         isPostToRoom: true,
         isCancelled: false,
-        isComplimentary : false,
+        isComplimentary: false,
         "convertedFrom.checkInNumber": {
           $in: checkInNumbers,
         },
@@ -198,7 +203,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         cmp_id: filter.cmp_id,
         isPostToRoom: false,
         isCancelled: false,
-        isComplimentary : false,
+        isComplimentary: false,
         "convertedFrom.checkInNumber": {
           $in: checkInNumbers,
         },
@@ -406,7 +411,12 @@ export const updateStatus = async (roomData, status, session) => {
       cmp_id: room.cmp_id,
       roomId: room._id,
       roomNumber: room.roomName,
-      status: status == "booking" ? "booked" : status == "checkIn" ? "occupied" : status,
+      status:
+        status == "booking"
+          ? "booked"
+          : status == "checkIn"
+            ? "occupied"
+            : status,
       fromDate: now,
       toDate: null,
       isCurrent: true,
@@ -1260,7 +1270,6 @@ export const updateSwapDetails = async (existingRoom, updatedRoom, session) => {
   }
 };
 
-
 export const findBlockedRooms = async (
   cmp_id,
   reportDate,
@@ -1294,7 +1303,11 @@ export const findBlockedRooms = async (
       errors.push("reportYear must be a valid year");
     }
 
-    if (reportMonth != null && reportMonth !== "" && !isValidMonth(reportMonth)) {
+    if (
+      reportMonth != null &&
+      reportMonth !== "" &&
+      !isValidMonth(reportMonth)
+    ) {
       errors.push("reportMonth must be between 1 and 12");
     }
 
@@ -1361,7 +1374,8 @@ export const findBlockedRooms = async (
 
       if (reportDate) {
         const rd = toDay(new Date(reportDate));
-        monthEnd = addDays(rd, 1) < nextMonthStart ? addDays(rd, 1) : nextMonthStart;
+        monthEnd =
+          addDays(rd, 1) < nextMonthStart ? addDays(rd, 1) : nextMonthStart;
       } else if (todayDay >= monthStart && todayDay < nextMonthStart) {
         monthEnd = tomorrowDay;
       } else {
@@ -1376,7 +1390,10 @@ export const findBlockedRooms = async (
 
       monthStart = new Date(Date.UTC(y, m, 1));
       const nextMonthStart = new Date(Date.UTC(y, m + 1, 1));
-      monthEnd = addDays(dayOnly, 1) < nextMonthStart ? addDays(dayOnly, 1) : nextMonthStart;
+      monthEnd =
+        addDays(dayOnly, 1) < nextMonthStart
+          ? addDays(dayOnly, 1)
+          : nextMonthStart;
     }
 
     // ─── Target day ──────────────────────────────────────────────────
@@ -1416,7 +1433,9 @@ export const findBlockedRooms = async (
     });
 
     const blockedRecords = validRecords.filter((r) => r.status === "blocked");
-    const householdRecords = validRecords.filter((r) => r.status === "household");
+    const householdRecords = validRecords.filter(
+      (r) => r.status === "household",
+    );
 
     // ─── Helpers ─────────────────────────────────────────────────────
     const isActiveOnDay = (record, day) => {
@@ -1445,13 +1464,13 @@ export const findBlockedRooms = async (
         const fromDay = toDay(new Date(record.fromDate));
         const endDay =
           record.toDate == null
-            ? windowEnd < tomorrowDay ? windowEnd : tomorrowDay
+            ? windowEnd < tomorrowDay
+              ? windowEnd
+              : tomorrowDay
             : toDay(new Date(record.toDate));
 
-        const effectiveStart =
-          fromDay > windowStart ? fromDay : windowStart;
-        const effectiveEnd =
-          endDay < windowEnd ? endDay : windowEnd;
+        const effectiveStart = fromDay > windowStart ? fromDay : windowStart;
+        const effectiveEnd = endDay < windowEnd ? endDay : windowEnd;
 
         const nights = Math.round(
           (effectiveEnd.getTime() - effectiveStart.getTime()) / MS_PER_DAY,
@@ -1523,7 +1542,9 @@ export const getRoomMetricsForPeriod = ({
   const toUTCDay = (str) => {
     if (!str) return null;
     if (str instanceof Date) {
-      return new Date(Date.UTC(str.getFullYear(), str.getMonth(), str.getDate()));
+      return new Date(
+        Date.UTC(str.getFullYear(), str.getMonth(), str.getDate()),
+      );
     }
     const [y, m, d] = str.split("T")[0].split("-").map(Number);
     return new Date(Date.UTC(y, m - 1, d));
@@ -1531,8 +1552,8 @@ export const getRoomMetricsForPeriod = ({
 
   // ─── DAY ────────────────────────────────────────────────────────────
   if (reportType === "day") {
-    const blockedRooms  = blockedCounts?.data?.dailyRooms  || 0;
-    const totalRooms    = totalPhysicalRooms;
+    const blockedRooms = blockedCounts?.data?.dailyRooms || 0;
+    const totalRooms = totalPhysicalRooms;
     const saleableRooms = totalRooms - blockedRooms;
 
     return {
@@ -1540,29 +1561,29 @@ export const getRoomMetricsForPeriod = ({
       totalRooms,
       blockedRooms,
       saleableRooms,
-      availableRoomNights:  saleableRooms,
-      totalRoomNights:      totalRooms,
-      saleableRoomNights:   saleableRooms,
-      blockedRoomNights:    blockedRooms,
+      availableRoomNights: saleableRooms,
+      totalRoomNights: totalRooms,
+      saleableRoomNights: saleableRooms,
+      blockedRoomNights: blockedRooms,
       periodDays: 1,
     };
   }
 
   // ─── MONTH / YEAR ────────────────────────────────────────────────────
   const start = toUTCDay(fromDate);
-  const end   = toUTCDay(toDate);
+  const end = toUTCDay(toDate);
 
   // periodDays is inclusive: Jun1→Jun18 = 18 days
   const periodDays = Math.round((end - start) / MS_PER_DAY) + 1;
 
-  const totalRooms      = totalPhysicalRooms;
+  const totalRooms = totalPhysicalRooms;
   const totalRoomNights = totalRooms * periodDays;
 
   // Use pre-fetched blockedCounts — NO day loop, NO extra DB calls
   const blockedRoomNights =
     reportType === "month"
       ? blockedCounts?.data?.monthlyRooms || 0
-      : blockedCounts?.data?.yearlyRooms  || 0;
+      : blockedCounts?.data?.yearlyRooms || 0;
 
   const saleableRoomNights = Math.max(0, totalRoomNights - blockedRoomNights);
 
@@ -1575,7 +1596,7 @@ export const getRoomMetricsForPeriod = ({
     saleableRoomNights,
     availableRoomNights: saleableRoomNights,
     // aliases for backward compat used in processCheckins
-    blockedRooms:  blockedRoomNights,
+    blockedRooms: blockedRoomNights,
     saleableRooms: saleableRoomNights,
   };
 };
@@ -1687,7 +1708,6 @@ export const fetchRestaurantDetails = async (cmp_id, fromDate, toDate) => {
     };
   }
 };
-
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
