@@ -125,8 +125,13 @@ export const buildDatabaseFilterForBooking = (params) => {
         },
       ];
     } else {
-      // ✅ Keep existing date filter, only add status
-      filter.status = { $exists: false };
+    filter.$or = [
+  { status: { $exists: false } },
+  {
+    status: "checkIn",
+    isPartiallyCheckedOut: true,
+  },
+];
     }
   } else if (params.searchTerm === "completed") {
     if (params.modal === "booking") filter.status = "checkIn";
@@ -1705,6 +1710,7 @@ export const fetchRestaurantDetails = async (cmp_id, fromDate, toDate) => {
   }
 };
 
+<<<<<<< HEAD
 
 export const sendMail = async ({
   to,
@@ -1718,6 +1724,9 @@ export const sendMail = async ({
   try{
   let attachments = fromName === "Cancel Kot" ? [await getKotAttachment(data)] : [];
   const transporter = nodemailer.createTransport({
+=======
+const transporter = nodemailer.createTransport({
+>>>>>>> main
   service: "gmail",
   auth: {
     user: process.env.NODE_MAILER_EMAIL,
