@@ -201,6 +201,10 @@ function BookingList() {
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
+  const permission = useSelector((state) => state.permissionData?.permissions);
+
+console.log(permission);
+
   const secondaryUserRole =
     JSON.parse(localStorage.getItem("sUserData"))?.role || "user";
   const isSingleAuditDateSelected = fromDate === toDate;
@@ -2449,7 +2453,7 @@ function BookingList() {
                 </div>
               ) : null}
 
-              {location.pathname === "/sUsers/bookingList" &&
+              {location.pathname === "/sUsers/bookingList"  &&
                 el?.status !== "checkIn" &&
                 el?.status !== "cancelled" && (
                   <button
@@ -2758,8 +2762,8 @@ function BookingList() {
                   </div> */}
                 </div>
               ) : null}
-              {(location.pathname === "/sUsers/bookingList" ||
-                location.pathname === "/sUsers/checkInList") &&
+              {((location.pathname === "/sUsers/bookingList" && (secondaryUserRole === "admin"   || permission?.cancelBooking)) ||
+               ( location.pathname === "/sUsers/checkInList" && (secondaryUserRole === "admin"   || permission?.cancelChecking))) &&
                 el?.status !== "cancelled" && (
                   <button
                     onClick={(e) => {
@@ -3084,20 +3088,24 @@ function BookingList() {
                         Reopen Audit
                       </button>
                     )}
-
-                  <button
-                    type="button"
-                    onClick={handleCompleteNightAudit}
-                    disabled={
-                      !isSingleAuditDateSelected ||
-                      isNightAuditLocked ||
-                      nightAuditLoading ||
-                      nightAuditActionLoading
-                    }
-                    className="rounded-md bg-[#0f766e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#115e59] disabled:cursor-not-allowed disabled:bg-slate-300"
-                  >
-                    {nightAuditActionLoading ? "Processing..." : "Night Audit"}
-                  </button>
+                  {(permission?.nightAudit || secondaryUserRole === "admin")
+                   && (
+                      <button
+                        type="button"
+                        onClick={handleCompleteNightAudit}
+                        disabled={
+                          !isSingleAuditDateSelected ||
+                          isNightAuditLocked ||
+                          nightAuditLoading ||
+                          nightAuditActionLoading
+                        }
+                        className="rounded-md mr-2 bg-[#0f766e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#115e59] disabled:cursor-not-allowed disabled:bg-slate-300"
+                      >
+                        {nightAuditActionLoading
+                          ? "Processing..."
+                          : "Night Audit"}
+                      </button>
+                    )}
                 </div>
               )
             }

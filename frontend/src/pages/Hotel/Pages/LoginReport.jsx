@@ -62,7 +62,6 @@ function LoginReport() {
   const [filters, setFilters] = useState(defaultFilters);
 
   const scrollRef = useRef(null);
-  const requestIdRef = useRef(0);
 
   const totalPages = pagination?.totalPages || 1;
   const hasMore = page < totalPages;
@@ -184,8 +183,72 @@ const handleCardClick = (field, value) => {
   };
 
   const handlePrint = () => window.print();
-  const handleExcel = () => {};
-  const handlePdf = () => {};
+const handleExcel = async () => {
+  try {
+const response = await api.get(
+  `/api/sUsers/loginReportExport/${cmp_id}`,
+  {
+    params: {
+      type: "excel",
+      ...filters,
+      search: search.trim(),
+    },
+    responseType: "blob",
+    withCredentials: true,
+  }
+);
+
+console.log(response.headers["content-type"]);
+console.log(response.data);
+    const url = window.URL.createObjectURL(
+      new Blob([response.data])
+    );
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "LoginReport.xlsx";
+    link.click();
+
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    toast.error("Failed to export Excel");
+  }
+};
+const handlePdf = async () => {
+  try {
+
+  const response = await api.get(
+  `/api/sUsers/loginReportExport/${cmp_id}`,
+  {
+    params: {
+      type: "pdf",
+      ...filters,
+      search: search.trim(),
+    },
+    responseType: "blob",
+    withCredentials: true,
+  }
+);
+
+
+console.log(response.headers["content-type"]);
+console.log(response.data);
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "Login_Report.pdf";
+
+    document.body.appendChild(link);
+    link.click();
+
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">

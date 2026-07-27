@@ -58,8 +58,6 @@ const KitchenBatchesViewForPrint = ({
             );
 
             const handlePrimaryAction = () => {
-              console.log(order);
-              console.log(items);
               const updatedOrderItems = order?.items
                 ?.map((orderItem) => {
                   const match = items.find(
@@ -69,7 +67,6 @@ const KitchenBatchesViewForPrint = ({
                   return { ...orderItem, quantity: match.quantity };
                 })
                 .filter(Boolean); // removes null/undefined
-              console.log(updatedOrderItems);
 
               const payload = {
                 ...order,

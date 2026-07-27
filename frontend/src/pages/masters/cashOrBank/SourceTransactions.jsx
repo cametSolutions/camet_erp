@@ -42,6 +42,7 @@ function SourceTransactions() {
   useEffect(() => {
     if (data?.data?.settlements) {
       setSettlements(data?.data?.settlements);
+      console.log(data?.data?.settlements);
       setOpeningBalance(data?.data?.openingBalance);
 
       // setSettlements([])

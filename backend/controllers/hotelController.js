@@ -30,6 +30,9 @@ import {
   findBlockedRooms,
   getRoomMetricsForPeriod,
   fetchRestaurantDetails,
+  buildLoginReportFilter,
+  exportLoginReportPdf,
+  exportLoginReportExcel,
 } from "../helpers/hotelHelper.js";
 import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
@@ -61,6 +64,8 @@ import {
   ensureHotelTariffDateIsEditable,
   ensureSecondaryUserCompanyAccess,
 } from "../helpers/nightAuditHelper.js";
+import primaryUserModel from "../models/primaryUserModel.js";
+import { sendMail } from "../helpers/hotelHelper.js";
 // function used to save additional pax details
 export const saveAdditionalPax = async (req, res) => {
   try {
@@ -5188,10 +5193,11 @@ export const cancelBooking = async (req, res) => {
 
     let responseData = null;
     let responseMessage = "";
-
+    let record = {}
+     let recordType = "";
     await session.withTransaction(async () => {
-      let record = await Booking.findById(id).session(session);
-      let recordType = "booking";
+       record = await Booking.findById(id).session(session);
+       recordType = "booking";
 
       if (!record) {
         record = await CheckIn.findById(id).session(session);
@@ -5227,6 +5233,38 @@ export const cancelBooking = async (req, res) => {
         recordType === "checkin" ? "Check-in" : "Booking"
       } ${record.voucherNumber} has been cancelled successfully and room marked as dirty`;
     });
+
+    let heading = recordType == "checkin" ? "Check-in" : recordType == "booking" ? "Booking" : "Checkout"
+
+     let primaryUserData = await primaryUserModel.findById(req.owner);
+        
+            if (!primaryUserData || !primaryUserData?.email) {
+              res.status(200).json({
+                success: true,
+                message: `${heading}cancelled successfully but email not sent`,
+                data: sale,
+              });
+            }
+        
+            await sendMail({
+              to: primaryUserData?.email,
+              cc: [],
+              subject: `${heading} Cancelled Alert - ${record?.voucherNumber}`,
+              fromName: `Cancel ${heading}` ,
+              text: `${heading} ${record?.voucherNumber} has been cancelled by ${req?.secUserName || primaryUserData?.userName || "System"}. Please check the attached cancelled KOT copy.`,
+              html: `
+                <div style="font-family: Arial, sans-serif;">
+                  <h2 style="color:#b91c1c;">${heading} Cancelled Alert</h2>
+                <p>${heading} <strong>${record?.voucherNumber}</strong> has been cancelled.</p>
+                  <p><strong>Cancelled By:</strong> ${req?.secUserName || primaryUserData?.userName || "System"}</p>
+                  <p><strong>Reason:</strong> ${req?.body?.cancelReason || "Reason not given"}</p>
+        
+                  <p><strong>Total:</strong> ₹ ${record?.grandTotal || 0}</p>
+                  
+                </div>
+              `,
+              data: record,
+            });
 
     return res.status(200).json({
       success: true,
@@ -9524,6 +9562,211 @@ export const loginReport = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message || "Internal Server Error",
+    });
+  }
+};
+
+export const loginReportExport = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+
+    const {
+      type,
+      search = "",
+      fromDate,
+      toDate,
+      status,
+      bookingType,
+      guestName,
+      mobileNumber,
+    } = req.query;
+
+    console.log("Export Query:", req.query); // Remove after testing
+
+    const filter = {
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+    };
+
+    // Date Filter
+    if (fromDate || toDate) {
+      filter.arrivalDate = {};
+
+      if (fromDate) filter.arrivalDate.$gte = fromDate;
+      if (toDate) filter.arrivalDate.$lte = toDate;
+    }
+
+    // Booking Type
+    if (bookingType && bookingType !== "all") {
+      filter.bookingType = bookingType;
+    }
+
+    // Guest Name
+    if (guestName) {
+      filter.customerName = {
+        $regex: guestName,
+        $options: "i",
+      };
+    }
+
+    // Mobile Number
+    if (mobileNumber) {
+      filter.mobileNumber = {
+        $regex: mobileNumber,
+      };
+    }
+
+    // Search
+    if (search.trim()) {
+      filter.$or = [
+        {
+          voucherNumber: {
+            $regex: search.trim(),
+            $options: "i",
+          },
+        },
+        {
+          customerName: {
+            $regex: search.trim(),
+            $options: "i",
+          },
+        },
+        {
+          mobileNumber: {
+            $regex: search.trim(),
+          },
+        },
+        {
+          "selectedRooms.roomName": {
+            $regex: search.trim(),
+            $options: "i",
+          },
+        },
+      ];
+    }
+
+    // Status Filter
+    if (status && status !== "all") {
+      filter.$and = [];
+
+      if (status === "checkIn") {
+        filter.$and.push({
+          $or: [
+            { status: "" },
+            { status: "checkIn" },
+            { status: null },
+          ],
+        });
+      } else if (status === "checkOut") {
+        filter.$and.push({
+          $or: [
+            { status: "checkOut" },
+            { status: "CheckOut" },
+            { status: "Checkout" },
+          ],
+        });
+      } else if (status === "cancelled") {
+        filter.$and.push({
+          $or: [
+            { status: "cancelled" },
+            { status: "Cancelled" },
+          ],
+        });
+      }
+    }
+
+    const bookings = await CheckIn.find(filter)
+      .populate("Secondary_user_id", "username name")
+      .sort({
+        createdAt: -1,
+        _id: -1,
+      })
+      .lean();
+const processedBookings = bookings.map((booking) => {
+  const roomNameById = (id) => {
+    const room = booking.selectedRooms?.find(
+      (r) => String(r.roomId) === String(id)
+    );
+
+    return room?.roomName || "-";
+  };
+
+  return {
+    ...booking,
+
+    guestName: booking.guestName || booking.customerName || "-",
+
+    room:
+      booking.selectedRooms
+        ?.map((room) => room.roomName)
+        .join(", ") || "-",
+
+    createdBy:
+      booking.Secondary_user_id?.username ||
+      booking.Secondary_user_id?.name ||
+      "-",
+
+    created: booking.createdAt
+      ? new Date(booking.createdAt).toLocaleString("en-IN")
+      : "-",
+
+    updated: booking.updatedAt
+      ? new Date(booking.updatedAt).toLocaleString("en-IN")
+      : "-",
+
+    roomSwapHistory:
+      booking.roomSwapHistory?.length
+        ? booking.roomSwapHistory.map((swap) => ({
+            from: roomNameById(swap.fromRoomId),
+            to: roomNameById(swap.toRoomId),
+            reason: swap.reason || "-",
+            date: swap.swapDate
+              ? new Date(swap.swapDate).toLocaleString("en-IN")
+              : "-",
+          }))
+        : [],
+
+    partialCheckoutHistory:
+      booking.partialCheckoutHistory?.length
+        ? booking.partialCheckoutHistory.map((pc) => ({
+            saleVoucherNumber: pc.saleVoucherNumber || "-",
+            rooms:
+              pc.roomsCheckedOut
+                ?.map((r) => r.roomName)
+                .join(", ") || "-",
+            date: pc.date
+              ? new Date(pc.date).toLocaleString("en-IN")
+              : "-",
+          }))
+        : [],
+  };
+});
+    switch (type) {
+     case "excel":
+  try {
+    return await exportLoginReportExcel(res, processedBookings);
+  } catch (err) {
+    console.error("Excel Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+
+      case "pdf":
+        return exportLoginReportPdf(res, processedBookings);
+
+      default:
+        return res.status(400).json({
+          success: false,
+          message: "Invalid export type",
+        });
+    }
+  } catch (error) {
+    console.error("loginReportExport:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 };

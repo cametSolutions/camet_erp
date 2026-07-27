@@ -818,20 +818,36 @@ export const cancelKot = async (req, res) => {
     if (!kot) {
       return res.status(404).json({ success: false, message: "KOT not found" });
     }
-    //   if(kot.status === "cancelled") {
-    // //       to,
-    // // cc = [],
-    // // subject,
-    // // text,
-    // // html,
-    // // attachments = [],
-    // // fromName = "System",
-    // let primaryUserData = await primaryUserModel.findById(req.pUserId);
-
-    //     sendMail({
-
-    //     })
-    //   }
+    if (kot.status === "cancelled") {
+      let primaryUserData = await primaryUserModel.findById(req.owner);
+      if (!primaryUserData || !primaryUserData?.email) {
+        res.status(200).json({
+          success: true,
+          message: "KOT cancelled successfully but email not sent",
+          data: kot,
+        });
+      }
+      console.log("req?.secUserName ", req?.secUserName);
+      await sendMail({
+        to: primaryUserData?.email,
+        cc: [],
+        subject: `KOT Cancelled Alert - ${kot.voucherNumber}`,
+        fromName: "Cancel Kot",
+        text: `KOT ${kot.voucherNumber} has been cancelled by ${req?.secUserName || primaryUserData?.userName || "System"}. Please check the attached cancelled KOT copy.`,
+        html: `
+    <div style="font-family: Arial, sans-serif;">
+      <h2 style="color:#b91c1c;">KOT Cancelled Alert</h2>
+      <p>KOT <strong>${kot.voucherNumber}</strong> has been cancelled.</p>
+      <p><strong>Cancelled By:</strong> ${req?.secUserName || primaryUserData?.userName || "System"}</p>
+      <p><strong>Reason:</strong> ${reason || "Reason not given"}</p>
+      <p><strong>Table No:</strong> ${kot?.tableNumber || ""}</p>
+      <p><strong>Total:</strong> ₹ ${kot?.total || 0}</p>
+      
+    </div>
+  `,
+        data: kot,
+      });
+    }
 
     res.status(200).json({
       success: true,

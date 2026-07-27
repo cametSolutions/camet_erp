@@ -21,7 +21,9 @@ import {
 import settlementModel from "../models/settlementModel.js";
 import { createAdvanceReceiptsFromAppliedReceipts } from "../helpers/receiptHelper.js";
 import { CheckOut } from "../models/bookingModal.js";
-
+import {sendMail} from "../helpers/hotelHelper.js";
+import primaryUserModel from "../models/primaryUserModel.js";
+import kotModal from "../models/kotModal.js";
 /**
  * @desc To createSale
  * @route POST /api/sUsers/createSale
@@ -77,7 +79,7 @@ export const createSale = async (req, res) => {
     }
 
     const configuration = secondaryUser.configurations.find(
-      (config) => config.organization.toString() === orgId
+      (config) => config.organization.toString() === orgId,
     );
 
     // const updatedItems = processSaleItems(items);
@@ -100,7 +102,7 @@ export const createSale = async (req, res) => {
       totalAdditionalCharges,
       totalWithAdditionalCharges,
       totalPaymentSplits,
-      subTotal
+      subTotal,
     );
 
     /// add conversion status in sale order if the sale is converted from order
@@ -118,8 +120,6 @@ export const createSale = async (req, res) => {
     }
 
     console.log("hasPaymentSplittingData", hasPaymentSplittingData);
-
-
 
     /// if payment splitting data is present it will do settlement in the next function else we do it in updateTallyData
 
@@ -139,7 +139,7 @@ export const createSale = async (req, res) => {
         "Dr",
         undefined,
         undefined,
-        hasPaymentSplittingData
+        hasPaymentSplittingData,
       );
     }
 
@@ -159,7 +159,7 @@ export const createSale = async (req, res) => {
         session,
         selectedDate,
         voucherType,
-        "Dr"
+        "Dr",
       );
     }
 
@@ -244,7 +244,7 @@ export const editSale = async (req, res) => {
             orgId,
             existingSale.voucherType,
             series_id,
-            session
+            session,
           );
 
         salesNumber = voucherNumber; // Always update when series changes
@@ -258,7 +258,7 @@ export const editSale = async (req, res) => {
       await revertSaleStockUpdates(existingSale.items, session);
       /// create stock updates with new data
       await handleSaleStockUpdates(items, session);
-console.log("line 260 salescontroller")
+      console.log("line 260 salescontroller");
       /// update sale details
       const updateData = {
         _id: existingSale._id,
@@ -313,7 +313,7 @@ console.log("line 260 salescontroller")
           selectedDate,
           voucherType,
           "Dr",
-          "edit"
+          "edit",
         );
       }
 
@@ -402,7 +402,7 @@ export const cancelSale = async (req, res) => {
     }
 
     // Revert stock updates
-   !sale.checkOutId  &&  await revertSaleStockUpdates(sale.items, session); // Ensure stock updates use session
+    !sale.checkOutId && (await revertSaleStockUpdates(sale.items, session)); // Ensure stock updates use session
 
     /// delete  all the settlements
     await settlementModel.deleteMany({ voucherId: saleId }, { session });
@@ -434,9 +434,10 @@ export const cancelSale = async (req, res) => {
       await outstandingRecord.save({ session });
     }
 
-
-     if (sale.checkOutId) {
-      const checkout = await CheckOut.findById(sale.checkOutId).session(session);
+    if (sale.checkOutId) {
+      const checkout = await CheckOut.findById(sale.checkOutId).session(
+        session,
+      );
 
       if (checkout && !checkout.isCancelled) {
         checkout.isCancelled = true;
@@ -452,12 +453,11 @@ export const cancelSale = async (req, res) => {
     sale.isCancelled = true;
     sale.cancelledAt = new Date();
     sale.cancelledBy = req.sUserId;
-    sale.cancelledByName = req.suser?.name || "";
+    sale.cancelledByName = req.secUserName || "";
     sale.cancelReason = cancelReason;
 
-    await (vanSaleQuery === "true"
-      ? vanSaleModel
-      : salesModel
+    await (
+      vanSaleQuery === "true" ? vanSaleModel : salesModel
     ).findByIdAndUpdate(saleId, sale, { session }); // Use the session in the update\
 
     ///
@@ -472,13 +472,88 @@ export const cancelSale = async (req, res) => {
     await session.commitTransaction();
     session.endSession(); // End the session
 
+    let primaryUserData = await primaryUserModel.findById(req.owner);
+
+    if (!primaryUserData || !primaryUserData?.email) {
+      res.status(200).json({
+        success: true,
+        message: "Sale cancelled successfully but email not sent",
+        data: sale,
+      });
+    }
+const kotIds = sale.convertedFrom.map(item => item.id);
+const kotObjectIds = kotIds.map(id => new mongoose.Types.ObjectId(id));
+let kots = await kotModal.find({
+  _id: { $in: kotObjectIds }   // or kotIds if they are already ObjectId
+});
+let kotHtml = kots.length > 0 ? kots.map((kot) => `<li> ${kot?.voucherNumber} - Service Type : ${kot?.type}</li>`).join("") : "None";
+const cancelledBy = req?.secUserName || primaryUserData?.userName || "System";
+const customer = sale.guest?.partyName ||  sale.party?.partyName || "";
+const paymentSplitHtml = (sale?.paymentSplittingData || [])
+  .map((payment, index) => `
+    <tr>
+      <td style="padding:8px; border:1px solid #ddd;">${index + 1}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${payment?.type || "-"}</td>
+      <td style="padding:8px; border:1px solid #ddd;">₹ ${payment?.amount || 0}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${payment?.subsource || "-"}</td>
+      <td style="padding:8px; border:1px solid #ddd;">${payment?.underCategory || "-"}</td>
+    </tr>
+  `)
+  .join("");
+
+await sendMail({
+  to: primaryUserData?.email,
+  cc: [],
+  subject: `Sale Cancelled Alert - ${sale?.salesNumber}`,
+  fromName: "Cancel Sale",
+  text: `Sale ${sale?.salesNumber} has been cancelled by ${cancelledBy}. Please check the payment split details below.`,
+  html: `
+    <div style="font-family: Arial, sans-serif; color:#111827;">
+      <h2 style="color:#b91c1c;">Sale Cancelled Alert</h2>
+
+      <p>Sale <strong>${sale?.salesNumber}</strong> has been cancelled.</p>
+      <p><strong>Customer :</strong> ${cancelledBy}</p>
+      <p><strong>Cancelled By:</strong> ${cancelledBy}</p>
+      ${kots?.length > 0 ? `<p><strong>Service Type Details </strong>${kotHtml}</p>` : ""}
+      
+      <p><strong>Reason:</strong> ${cancelReason || "Reason not given"}</p>
+      <p><strong>Total:</strong> ₹ ${sale?.finalAmount || 0}</p>
+
+      <h3 style="margin-top:24px; color:#1f2937;">Payment Split Details</h3>
+      ${
+        sale?.paymentSplittingData?.length
+          ? `
+            <table style="border-collapse:collapse; width:100%; margin-top:12px; font-size:14px;">
+              <thead>
+                <tr style="background:#f3f4f6;">
+                  <th style="padding:8px; border:1px solid #ddd; text-align:left;">#</th>
+                  <th style="padding:8px; border:1px solid #ddd; text-align:left;">Type</th>
+                  <th style="padding:8px; border:1px solid #ddd; text-align:left;">Amount</th>
+                  <th style="padding:8px; border:1px solid #ddd; text-align:left;">Sub Source</th>
+                  <th style="padding:8px; border:1px solid #ddd; text-align:left;">Category</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${paymentSplitHtml}
+              </tbody>
+            </table>
+          `
+          : `<p>No payment split details available.</p>`
+      }
+    </div>
+  `,
+  data: sale,
+});
+
     res.status(200).json({
       success: true,
       message: "Sale canceled and stock reverted successfully",
     });
   } catch (error) {
-    // Rollback the transaction if something goes wrong
-    await session.abortTransaction();
+    if (session?.inTransaction()) {
+      await session.abortTransaction();
+    }
+
     session.endSession(); // End the session
     console.error("Error in canceling sale:", error);
     res.status(500).json({
