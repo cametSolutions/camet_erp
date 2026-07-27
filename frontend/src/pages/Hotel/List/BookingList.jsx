@@ -1357,6 +1357,45 @@ console.log(permission);
       } else {
         updatedRows[index][field] = Number(value || 0);
       }
+    } else if (
+      field === "amount" &&
+      updatedRows[index].underCategory === "room"
+    ) {
+      console.log(selectedDataForPayment);
+
+      // Calculate total food amount excluding current row
+      let totalFoodAmount =
+        splitPaymentRows.reduce((sum, item, i) => {
+          if (item?.underCategory === "room" && i !== index) {
+            return sum + Number(item.amount || 0);
+          }
+
+          return sum;
+        }, 0) + Number(value || 0);
+
+      console.log(selectedDataForPayment);
+
+      if (totalFoodAmount > Number(selectedDataForPayment?.total || 0)) {
+        updatedRows[index][field] = 0;
+
+        toast.error(
+          "Room amount tagged is already equal to restaurant subtotal",
+        );
+      } else {
+        updatedRows[index][field] = Number(value || 0);
+      }
+    } else if (field === "underCategory" && value == "room") {
+      console.log(splitPaymentRows);
+      let totalFoodAmount = splitPaymentRows.reduce(
+        (sum, item) =>
+          item?.underCategory == "room" ? sum + item.amount : sum,
+        0,
+      );
+      console.log(totalFoodAmount);
+      updatedRows[index][field] = value;
+      updatedRows[index].amount = Math.abs(
+        selectedDataForPayment?.total - totalFoodAmount,
+      );
     } else {
       updatedRows[index][field] = value;
     }
@@ -3615,8 +3654,8 @@ console.log(permission);
                                     </span>
                                     {(selectedDataForPayment?.restaurantSubTotal >
                                     0
-                                      ? ["food", "room", "laundry"]
-                                      : ["room", "laundry"]
+                                      ? ["food", "room"]
+                                      : ["room"]
                                     ).map((category) => (
                                       <button
                                         key={category}
@@ -3645,7 +3684,7 @@ console.log(permission);
                                       >
                                         {category === "food" && "🍽 "}
                                         {category === "room" && "🛏 "}
-                                        {category === "laundry" && "👕 "}
+                                        {/* {category === "laundry" && "👕 "} */}
                                         {category.charAt(0).toUpperCase() +
                                           category.slice(1)}
                                       </button>
@@ -4404,6 +4443,7 @@ console.log(permission);
             selectedCheckIns={selectedCheckOut}
             onClose={setShowRestaurantBillTransfer}
             cmp_id={cmp_id}
+            sendToParent={fetchBookings}
           />
         )}
         {restaurantSaleManageMent && (

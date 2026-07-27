@@ -719,6 +719,7 @@ export const getKotDash = async (req, res) => {
           cmp_id,
           "convertedFrom.voucherNumber": kotDoc.voucherNumber,
         });
+        console.log("findSpecificSale", findSpecificSale);
         if (kotDoc.paymentCompleted) {
           return {
             ...kotDoc,
@@ -730,6 +731,8 @@ export const getKotDash = async (req, res) => {
         const recalculatedItems = (kotDoc?.items || [])
           .map((item) => recalculateKotItem(item))
           .filter(Boolean);
+
+        console.log("recalculatedItems", recalculatedItems);
 
         const kotTotal = recalculatedItems.reduce(
           (sum, item) => sum + Number(item?.total || 0),
@@ -4465,12 +4468,37 @@ export const getRestaurantBillsDetails = async (req, res) => {
         checkInNumber: { $in: checkInNumbers },
       })
       .lean();
+    const kotNumbers = generatedKots.map((kot) => kot.voucherNumber);
+
+    const sales = await salesModel
+      .find({
+        cmp_id,
+        "convertedFrom.voucherNumber": { $in: kotNumbers },
+      })
+      .lean();
+
+    // Create a lookup map: voucherNumber -> sale
+    const salesMap = new Map();
+
+    sales.forEach((sale) => {
+      sale.convertedFrom.forEach((item) => {
+        salesMap.set(item.voucherNumber, sale.salesNumber);
+      });
+    });
+
+    console.log("salesMap", salesMap);
+
+    // Add salesNumber to each KOT
+    const updatedGeneratedKots = generatedKots.map((kot) => ({
+      ...kot,
+      salesNumber: salesMap.get(kot.voucherNumber) || null, // or saleNumber field if that's what you store
+    }));
 
     return res.status(200).json({
       success: true,
       message: "Data fetched successfully",
-      count: generatedKots.length,
-      data: generatedKots,
+      count: updatedGeneratedKots.length,
+      data: updatedGeneratedKots,
     });
   } catch (error) {
     console.error("Error in getRestaurantBillsDetails:", error);
@@ -4547,11 +4575,11 @@ export const transferKotBills = async (req, res) => {
         await salesModel.updateOne(
           {
             cmp_id,
-            "convertedFrom.0.voucherNumber": bill.billNo,
+            "convertedFrom.voucherNumber": bill.billNo,
           },
           {
             $set: {
-              "convertedFrom.0.checkInNumber": targetRoom.checkInNo,
+              "convertedFrom.$[].checkInNumber": targetRoom.checkInNo,
               party: party,
               partyAccount: party.accountGroupName,
             },

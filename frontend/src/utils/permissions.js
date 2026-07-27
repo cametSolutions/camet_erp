@@ -6,7 +6,7 @@ export const permissionSections = [
       { key: "restaurantManagement", label: "Restaurant Management" },
       { key: "voucher", label: "Voucher" },
       { key: "reports", label: "Reports" },
-       { key: "settings", label: "Settings" },
+      { key: "settings", label: "Settings" },
     ],
   },
   {
@@ -22,7 +22,7 @@ export const permissionSections = [
       { key: "cancelChecking", label: "Cancel Checking" },
       { key: "cancelSale", label: "Cancel Sale" },
       { key: "cancelReceipt", label: "Cancel Receipt" },
-      
+      { key: "loginReport", label: "Login Report" },
     ],
   },
   {
@@ -181,9 +181,13 @@ const pathPermissionRules = [
     pattern: /^\/sUsers\/sales-register/i,
     keys: ["saleRegister"],
   },
-    {
+  {
     pattern: /^\/sUsers\/settings/i,
     keys: ["settings"],
+  },
+    {
+    pattern: /^\/sUsers\/LoginReport/i,
+    keys: ["loginReport"],
   },
 ];
 

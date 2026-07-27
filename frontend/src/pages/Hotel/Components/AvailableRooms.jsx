@@ -607,8 +607,12 @@ function AvailableRooms({
   };
 
   const handlePriceLevelRateChange = (e, roomId) => {
-    const value = e.target.value;
-    console.log(value);
+    let value = e.target.value;
+    let selectedRoom = bookings.find((b) => b.roomId === roomId) || 0
+    if(Number(value) < 0 || Number(value) < (Number(selectedRoom?.foodPlanAmountWithTax || 0) + Number(selectedRoom?.additionalPaxAmountWithTax || 0))) {
+      toast.error("Rate cannot be less than sum of food plan amount or additional pax amount");
+      value = (Number(selectedRoom?.foodPlanAmountWithTax) + Number(selectedRoom?.additionalPaxAmountWithTax))
+    }
     const newRate = value === "" ? "" : Number(value); // allow empty input
     console.log("Rate Change - New Rate:", newRate, "for Room:", roomId);
     if (isTariffRateChange) {
@@ -654,9 +658,9 @@ function AvailableRooms({
 
   const handlePaxChange = (e, roomId) => {
     console.log(e.target.value);
-    let newPax = Number(e.target.value || 1)
-    if(newPax <= 0 || newPax > 2) {
-      newPax = 2
+    let newPax = Number(e.target.value || 1);
+    if (newPax <= 0 || newPax > 2) {
+      newPax = 2;
     }
     setBookings((prev) =>
       prev.map((b) => (b.roomId === roomId ? { ...b, pax: newPax } : b)),
@@ -1060,150 +1064,157 @@ function AvailableRooms({
                       console.log(booking);
                       return true;
                     })
-                    .map((booking, index) =>{
-                        const foodPlanSelected = formData?.foodPlan?.filter((pax) => pax.roomId === booking.roomId )[0] || defaultFoodPlan
-  
-                 return (
-                      <tr
-                        key={booking?.roomId}
-                        className={`transition-all duration-200
+                    .map((booking, index) => {
+                      const foodPlanSelected =
+                        formData?.foodPlan?.filter(
+                          (pax) => pax.roomId === booking.roomId,
+                        )[0] || defaultFoodPlan;
+
+                      return (
+                        <tr
+                          key={booking?.roomId}
+                          className={`transition-all duration-200
     ${
       booking?.isSwapped
         ? "bg-red-100 text-red-700 opacity-80 pointer-events-none"
         : "hover:bg-blue-50/50"
     }
   `}
-                      >
-                        <td className="px-1 py-1 text-center font-medium text-blue-600 text-xs">
-                          {index + 1}
-                        </td>
+                        >
+                          <td className="px-1 py-1 text-center font-medium text-blue-600 text-xs">
+                            {index + 1}
+                          </td>
 
-                        <td className="px-2 py-1">
-                          <div className="min-w-0">
-                            <p className="font-medium text-emerald-600 text-xs truncate">
-                              {booking.roomName}
-                            </p>
-                            <p className="text-red-500 text-xs truncate">
-                              {booking.roomType?.brand}
-                            </p>
-                          </div>
-                        </td>
+                          <td className="px-2 py-1">
+                            <div className="min-w-0">
+                              <p className="font-medium text-emerald-600 text-xs truncate">
+                                {booking.roomName}
+                              </p>
+                              <p className="text-red-500 text-xs truncate">
+                                {booking.roomType?.brand}
+                              </p>
+                            </div>
+                          </td>
 
-                        <td className="px-1 py-1">
-                          {booking.priceLevel &&
-                          booking.priceLevel.length > 0 ? (
-                            <select
-                              value={booking.selectedPriceLevel || ""}
-                              onChange={(e) =>
-                                handlePriceLevelChange(e, booking.roomId)
-                              }
-                              disabled={isTariffRateChange ? true : false}
-                              className="w-full px-1 py-1 border border-red-300 rounded text-red-600 bg-red-50 text-xs focus:outline-none focus:ring-1 focus:ring-red-500"
-                            >
-                              {booking.priceLevel.map((priceLevel) => {
-                                const levelId =
-                                  priceLevel._id || priceLevel.priceLevel?._id;
-                                const levelName =
-                                  priceLevel.pricelevel ||
-                                  priceLevel.priceLevel?.pricelevel ||
-                                  "Unknown";
+                          <td className="px-1 py-1">
+                            {booking.priceLevel &&
+                            booking.priceLevel.length > 0 ? (
+                              <select
+                                value={booking.selectedPriceLevel || ""}
+                                onChange={(e) =>
+                                  handlePriceLevelChange(e, booking.roomId)
+                                }
+                                disabled={isTariffRateChange ? true : false}
+                                className="w-full px-1 py-1 border border-red-300 rounded text-red-600 bg-red-50 text-xs focus:outline-none focus:ring-1 focus:ring-red-500"
+                              >
+                                {booking.priceLevel.map((priceLevel) => {
+                                  const levelId =
+                                    priceLevel._id ||
+                                    priceLevel.priceLevel?._id;
+                                  const levelName =
+                                    priceLevel.pricelevel ||
+                                    priceLevel.priceLevel?.pricelevel ||
+                                    "Unknown";
 
-                                return (
-                                  <option key={levelId} value={levelId}>
-                                    {levelName}
+                                  return (
+                                    <option key={levelId} value={levelId}>
+                                      {levelName}
+                                    </option>
+                                  );
+                                })}
+                                {booking?.roomType && (
+                                  <option value={booking?.roomType?._id}>
+                                    Normal (₹{booking?.roomType?.roomRent || 0})
                                   </option>
-                                );
-                              })}
-                              {booking?.roomType && (
-                                <option value={booking?.roomType?._id}>
-                                  Normal (₹{booking?.roomType?.roomRent || 0})
-                                </option>
-                              )}
-                            </select>
-                          ) : (
-                            <span className="text-red-500 text-xs">
-                              No Level
-                            </span>
-                          )}
-                        </td>
+                                )}
+                              </select>
+                            ) : (
+                              <span className="text-red-500 text-xs">
+                                No Level
+                              </span>
+                            )}
+                          </td>
 
-                        {!isTariffRateChange ? (
+                          {!isTariffRateChange ? (
+                            <td className="px-1 py-1">
+                              <input
+                                type="number"
+                                value={booking.priceLevelRate}
+                                onChange={(e) =>
+                                  handlePriceLevelRateChange(e, booking.roomId)
+                                }
+                                min="-1"
+                                step="0.01"
+                                className="w-full px-1 py-1 border border-red-300 rounded text-red-600 bg-red-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-red-500"
+                              />
+                            </td>
+                          ) : (
+                            <td className="px-1 py-1">
+                              <input
+                                type="number"
+                                value={
+                                  booking?.dateTariffs?.[
+                                    formData?.currentDate
+                                  ] ?? booking?.priceLevelRate
+                                }
+                                onChange={(e) =>
+                                  handlePriceLevelRateChange(e, booking.roomId)
+                                }
+                                min="-1"
+                                step="0.01"
+                                className="w-full px-1 py-1 border border-red-300 rounded text-red-600 bg-red-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-red-500"
+                              />
+                            </td>
+                          )}
+
                           <td className="px-1 py-1">
                             <input
                               type="number"
-                              value={booking.priceLevelRate}
-                              onChange={(e) =>
-                                handlePriceLevelRateChange(e, booking.roomId)
-                              }
-                              min="-1"
-                              step="0.01"
-                              className="w-full px-1 py-1 border border-red-300 rounded text-red-600 bg-red-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-red-500"
+                              value={booking.stayDays || 0}
+                              disabled={true}
+                              // onChange={(e) =>
+                              //   handleDaysChange(e, booking.roomId)
+                              // }
+                              min="0"
+                              className="w-full px-1 py-1 border border-purple-300 rounded text-purple-600 bg-purple-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-purple-500"
                             />
                           </td>
-                        ) : (
-                          <td className="px-1 py-1">
+
+                          <td className="px-1 py-1 disabled ">
+                            <input
+                              type="number"
+                              value={booking.pax || 2}
+                              onChange={(e) =>
+                                handlePaxChange(e, booking.roomId)
+                              }
+                              disabled={isTariffRateChange ? true : false}
+                              min="1"
+                              max={2}
+                              className=" disabled w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                            />
+                          </td>
+
+                          <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
                             <input
                               type="number"
                               value={
-                                booking?.dateTariffs?.[formData?.currentDate] ??
-                                booking?.priceLevelRate
+                                formData?.additionalPaxDetails?.filter(
+                                  (pax) => pax.roomId === booking.roomId,
+                                )?.length || 0
                               }
                               onChange={(e) =>
-                                handlePriceLevelRateChange(e, booking.roomId)
+                                handleAdditionalPaxChange(
+                                  e,
+                                  booking.roomId,
+                                  booking,
+                                )
                               }
-                              min="-1"
-                              step="0.01"
-                              className="w-full px-1 py-1 border border-red-300 rounded text-red-600 bg-red-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-red-500"
+                              disabled={isTariffRateChange}
+                              min="0"
+                              className="w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
                             />
                           </td>
-                        )}
-
-                        <td className="px-1 py-1">
-                          <input
-                            type="number"
-                            value={booking.stayDays || 0}
-                            disabled={true}
-                            // onChange={(e) =>
-                            //   handleDaysChange(e, booking.roomId)
-                            // }
-                            min="0"
-                            className="w-full px-1 py-1 border border-purple-300 rounded text-purple-600 bg-purple-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-purple-500"
-                          />
-                        </td>
-
-                        <td className="px-1 py-1 disabled ">
-                          <input
-                            type="number"
-                            value={booking.pax || 2}
-                            onChange={(e) => handlePaxChange(e, booking.roomId)}
-                            disabled={isTariffRateChange ? true : false}
-                            min="1"
-                            max={2}
-                            className=" disabled w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                          />
-                        </td>
-
-                        <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
-                          <input
-                            type="number"
-                            value={
-                              formData?.additionalPaxDetails?.filter(
-                                (pax) => pax.roomId === booking.roomId,
-                              )?.length || 0
-                            }
-                            onChange={(e) =>
-                              handleAdditionalPaxChange(
-                                e,
-                                booking.roomId,
-                                booking,
-                              )
-                            }
-                            disabled={isTariffRateChange}
-                            min="0"
-                            className="w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                          />
-                        </td>
-                        {/* <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
+                          {/* <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
                           <input
                             type="number"
                             value={
@@ -1223,44 +1234,49 @@ function AvailableRooms({
                             className="w-full px-1 py-1 border border-emerald-300 rounded font-medium text-emerald-600 bg-emerald-50 text-xs text-center focus:outline-none focus:ring-1 focus:ring-emerald-500"
                           />
                         </td> */}
-                        <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
-                          <span className="block">
-                            {foodPlanSelected ? foodPlanSelected.foodPlan : ""}
-                          </span>
-
-                          <span className="block text-[10px] text-gray-500 font-normal">
-                            {foodPlanSelected
-                              ? foodPlanSelected.amount || foodPlanSelected.rate
-                              : ""}
-                          </span>
-                        </td>
-                        <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
-                          {Number(booking.taxPercentage || 0).toFixed(1)}%
-                        </td>
-                        <td className="px-1 py-1">
-                          <div className="text-center">
-                            <span className="block font-bold text-emerald-600 text-xs leading-tight">
-                              ₹{Number(booking.totalAmount || 0).toFixed(0)}
+                          <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
+                            <span className="block">
+                              {foodPlanSelected
+                                ? foodPlanSelected.foodPlan
+                                : ""}
                             </span>
-                            {addTaxWithRate && (
-                              <span className="block text-gray-600 text-xs leading-tight">
-                                ₹
-                                {(
-                                  Number(booking.totalAmount || 0) /
-                                  (1 + (booking.taxPercentage || 0) / 100)
-                                ).toFixed(0)}
-                              </span>
-                            )}
-                          </div>
-                        </td>
 
-                        <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
-                          ₹
-                          {Number(
-                            booking.amountAfterTax || booking.totalAmount || 0,
-                          )}
-                        </td>
-                        {/* 
+                            <span className="block text-[10px] text-gray-500 font-normal">
+                              {foodPlanSelected
+                                ? foodPlanSelected.amount ||
+                                  foodPlanSelected.rate
+                                : ""}
+                            </span>
+                          </td>
+                          <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
+                            {Number(booking.taxPercentage || 0).toFixed(1)}%
+                          </td>
+                          <td className="px-1 py-1">
+                            <div className="text-center">
+                              <span className="block font-bold text-emerald-600 text-xs leading-tight">
+                                ₹{Number(booking.totalAmount || 0).toFixed(0)}
+                              </span>
+                              {addTaxWithRate && (
+                                <span className="block text-gray-600 text-xs leading-tight">
+                                  ₹
+                                  {(
+                                    Number(booking.totalAmount || 0) /
+                                    (1 + (booking.taxPercentage || 0) / 100)
+                                  ).toFixed(0)}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="px-1 py-1 text-center text-emerald-600 font-bold text-xs">
+                            ₹
+                            {Number(
+                              booking.amountAfterTax ||
+                                booking.totalAmount ||
+                                0,
+                            )}
+                          </td>
+                          {/* 
                         <td className="px-1 py-1 text-center text-emerald-600 text-xs">
                           <div className="max-w-16 truncate">
                             {formData?.foodPlan
@@ -1273,159 +1289,163 @@ function AvailableRooms({
                           </div>
                         </td> */}
 
-                        <td className="px-1 py-1">
-                          <div className="flex flex-col gap-1">
-                            <div className="flex justify-center gap-1">
-                              <div className="text-center">
-                                <button
-                                  onClick={() => {
-                                    selectedRoomData(booking?.roomId, "addPax");
-                                    setPendingRoomId(booking.roomId);
-                                  }}
-                                  disabled={isTariffRateChange ? true : false}
-                                  className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-2 py-1 rounded text-xs font-medium hover:from-orange-600 hover:to-amber-600 transition-all duration-200 flex items-center gap-1"
-                                >
-                                  <Users className="w-3 h-3" />
-                                  Pax
-                                </button>
-                                <div className="text-xs font-bold text-blue-700 mt-1">
-                                  {booking?.stayDays > 1 ? (
-                                    <div className="flex flex-col items-center">
-                                      <span className="text-[10px] text-gray-500">
-                                        {booking?.stayDays} × ₹
-                                        {(
-                                          booking?.additionalPaxAmountWithTax /
-                                            booking?.stayDays || 0
-                                        ).toFixed(0)}
-                                      </span>
-                                      <span className="text-xs font-bold">
+                          <td className="px-1 py-1">
+                            <div className="flex flex-col gap-1">
+                              <div className="flex justify-center gap-1">
+                                <div className="text-center">
+                                  <button
+                                    onClick={() => {
+                                      selectedRoomData(
+                                        booking?.roomId,
+                                        "addPax",
+                                      );
+                                      setPendingRoomId(booking.roomId);
+                                    }}
+                                    disabled={isTariffRateChange ? true : false}
+                                    className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-2 py-1 rounded text-xs font-medium hover:from-orange-600 hover:to-amber-600 transition-all duration-200 flex items-center gap-1"
+                                  >
+                                    <Users className="w-3 h-3" />
+                                    Pax
+                                  </button>
+                                  <div className="text-xs font-bold text-blue-700 mt-1">
+                                    {booking?.stayDays > 1 ? (
+                                      <div className="flex flex-col items-center">
+                                        <span className="text-[10px] text-gray-500">
+                                          {booking?.stayDays} × ₹
+                                          {(
+                                            booking?.additionalPaxAmountWithTax /
+                                              booking?.stayDays || 0
+                                          ).toFixed(0)}
+                                        </span>
+                                        <span className="text-xs font-bold">
+                                          ₹
+                                          {Number(
+                                            booking?.additionalPaxAmountWithTax ||
+                                              0,
+                                          ).toFixed(0)}
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span>
                                         ₹
                                         {Number(
                                           booking?.additionalPaxAmountWithTax ||
                                             0,
                                         ).toFixed(0)}
                                       </span>
-                                    </div>
-                                  ) : (
-                                    <span>
-                                      ₹
-                                      {Number(
-                                        booking?.additionalPaxAmountWithTax ||
-                                          0,
-                                      ).toFixed(0)}
-                                    </span>
-                                  )}
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
 
-                              <div className="text-center">
-                                <button
-                                  onClick={() => {
-                                    selectedRoomData(
-                                      booking?.roomId,
-                                      "addFoodPlan",
-                                    );
-                                    setPendingRoomId(booking.roomId);
-                                  }}
-                                  disabled={isTariffRateChange ? true : false}
-                                  className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-2 py-1 rounded text-xs font-medium hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 flex items-center gap-1"
-                                >
-                                  <Utensils className="w-3 h-3" />
-                                  Food
-                                </button>
-                                <p className="text-xs font-bold text-blue-700 mt-1">
-                                  {booking?.stayDays > 1 ? (
-                                    <div className="flex flex-col items-center">
-                                      <span className="text-[10px] text-gray-500">
-                                        {booking?.stayDays} × ₹
-                                        {Number(
-                                          (
-                                            booking?.foodPlanAmountWithOutTax /
-                                              booking?.stayDays || 0
-                                          ).toFixed(0),
-                                        )}
-                                      </span>
+                                <div className="text-center">
+                                  <button
+                                    onClick={() => {
+                                      selectedRoomData(
+                                        booking?.roomId,
+                                        "addFoodPlan",
+                                      );
+                                      setPendingRoomId(booking.roomId);
+                                    }}
+                                    disabled={isTariffRateChange ? true : false}
+                                    className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-2 py-1 rounded text-xs font-medium hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 flex items-center gap-1"
+                                  >
+                                    <Utensils className="w-3 h-3" />
+                                    Food
+                                  </button>
+                                  <p className="text-xs font-bold text-blue-700 mt-1">
+                                    {booking?.stayDays > 1 ? (
+                                      <div className="flex flex-col items-center">
+                                        <span className="text-[10px] text-gray-500">
+                                          {booking?.stayDays} × ₹
+                                          {Number(
+                                            (
+                                              booking?.foodPlanAmountWithOutTax /
+                                                booking?.stayDays || 0
+                                            ).toFixed(0),
+                                          )}
+                                        </span>
 
-                                      <span className="text-xs font-bold">
+                                        <span className="text-xs font-bold">
+                                          ₹
+                                          {Number(
+                                            booking?.foodPlanAmountWithTax || 0,
+                                          ).toFixed(0)}
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span>
                                         ₹
                                         {Number(
                                           booking?.foodPlanAmountWithTax || 0,
                                         ).toFixed(0)}
                                       </span>
-                                    </div>
-                                  ) : (
-                                    <span>
-                                      ₹
-                                      {Number(
-                                        booking?.foodPlanAmountWithTax || 0,
-                                      ).toFixed(0)}
-                                    </span>
-                                  )}
-                                </p>
-                              </div>
+                                    )}
+                                  </p>
+                                </div>
 
-                              <div className="text-center">
+                                <div className="text-center">
+                                  <button
+                                    onClick={() => {
+                                      selectedRoomData(
+                                        booking?.roomId,
+                                        "addAdjustment",
+                                      );
+                                      setPendingRoomId(booking.roomId);
+                                    }}
+                                    disabled={isTariffRateChange ? true : false}
+                                    className="bg-gradient-to-r from-red-500 to-rose-500 text-white px-2 py-1 rounded text-xs font-medium hover:from-red-600 hover:to-rose-600 transition-all duration-200 flex items-center gap-1"
+                                  >
+                                    <SlidersHorizontal className="w-3 h-3" />
+                                    Adj
+                                  </button>
+                                  <p className="text-xs font-bold text-blue-700 mt-1">
+                                    {booking?.otherChargeDetails?.length > 0 ? (
+                                      <div className="flex flex-col items-center">
+                                        {booking?.discountAmount > 0 && (
+                                          <span className="text-[10px] text-red-500">
+                                            Dis :{" "}
+                                            {booking?.discountAmount.toFixed(2)}
+                                          </span>
+                                        )}
+                                        {booking?.otherChargeAmount > 0 && (
+                                          <span className="text-[10px] text-blue-500">
+                                            Oth :{" "}
+                                            {booking?.otherChargeAmount.toFixed(
+                                              2,
+                                            )}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span>₹{Number(0).toFixed(0)}</span>
+                                    )}
+                                  </p>
+                                </div>
+
+                                {!isTariffRateChange && (
+                                  <button
+                                    onClick={() => handleDelete(booking.roomId)}
+                                    className="text-white px-2 py-1 rounded hover:from-red-600 hover:to-rose-600 transition-all duration-200 flex items-center"
+                                  >
+                                    <Trash2 className="w-3 h-3 text-red-500" />
+                                  </button>
+                                )}
+
                                 <button
                                   onClick={() => {
-                                    selectedRoomData(
-                                      booking?.roomId,
-                                      "addAdjustment",
-                                    );
-                                    setPendingRoomId(booking.roomId);
+                                    setSelectedRoomForHistory(booking.roomId);
+                                    setShowHistory(true);
                                   }}
-                                  disabled={isTariffRateChange ? true : false}
-                                  className="bg-gradient-to-r from-red-500 to-rose-500 text-white px-2 py-1 rounded text-xs font-medium hover:from-red-600 hover:to-rose-600 transition-all duration-200 flex items-center gap-1"
-                                >
-                                  <SlidersHorizontal className="w-3 h-3" />
-                                  Adj
-                                </button>
-                                <p className="text-xs font-bold text-blue-700 mt-1">
-                                  {booking?.otherChargeDetails?.length > 0 ? (
-                                    <div className="flex flex-col items-center">
-                                      {booking?.discountAmount > 0 && (
-                                        <span className="text-[10px] text-red-500">
-                                          Dis :{" "}
-                                          {booking?.discountAmount.toFixed(2)}
-                                        </span>
-                                      )}
-                                      {booking?.otherChargeAmount > 0 && (
-                                        <span className="text-[10px] text-blue-500">
-                                          Oth :{" "}
-                                          {booking?.otherChargeAmount.toFixed(
-                                            2,
-                                          )}
-                                        </span>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <span>₹{Number(0).toFixed(0)}</span>
-                                  )}
-                                </p>
-                              </div>
-
-                              {!isTariffRateChange && (
-                                <button
-                                  onClick={() => handleDelete(booking.roomId)}
                                   className="text-white px-2 py-1 rounded hover:from-red-600 hover:to-rose-600 transition-all duration-200 flex items-center"
                                 >
-                                  <Trash2 className="w-3 h-3 text-red-500" />
+                                  <FaHistory className="w-3 h-3 text-yellow-600" />
                                 </button>
-                              )}
-
-                              <button
-                                onClick={() => {
-                                  setSelectedRoomForHistory(booking.roomId);
-                                  setShowHistory(true);
-                                }}
-                                className="text-white px-2 py-1 rounded hover:from-red-600 hover:to-rose-600 transition-all duration-200 flex items-center"
-                              >
-                                <FaHistory className="w-3 h-3 text-yellow-600" />
-                              </button>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )})}
+                          </td>
+                        </tr>
+                      );
+                    })}
 
                   {/* Total Row */}
                   <tr className="bg-gray-100 font-bold sticky bottom-0">

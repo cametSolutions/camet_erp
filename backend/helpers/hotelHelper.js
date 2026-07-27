@@ -125,8 +125,13 @@ export const buildDatabaseFilterForBooking = (params) => {
         },
       ];
     } else {
-      // ✅ Keep existing date filter, only add status
-      filter.status = { $exists: false };
+    filter.$or = [
+  { status: { $exists: false } },
+  {
+    status: "checkIn",
+    isPartiallyCheckedOut: true,
+  },
+];
     }
   } else if (params.searchTerm === "completed") {
     if (params.modal === "booking") filter.status = "checkIn";

@@ -1413,7 +1413,7 @@ export const getBookings = async (req, res) => {
     const params = extractRequestParamsForBookings(req);
     console.log("paramss", params);
     const filter = buildDatabaseFilterForBooking(params);
-
+console.log("filter",filter)
     const { bookings = [], totalBookings = 0 } =
       await fetchBookingsFromDatabase(filter, params);
 
@@ -9320,6 +9320,245 @@ export const getSpecificDataForPrint = async (req, res) => {
       success: false,
       message: "Server error",
       error: error.message,
+    });
+  }
+};
+
+
+export const loginReport = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+
+    const {
+      page = 1,
+      limit = 20,
+      search = "",
+      fromDate,
+      toDate,
+      status,
+      bookingType,
+      guestName,
+      mobileNumber,
+    } = req.query;
+
+    const pageNumber = parseInt(page) || 1;
+    const limitNumber = parseInt(limit) || 20;
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const filter = {
+      cmp_id: new mongoose.Types.ObjectId(cmp_id),
+    };
+
+    // Date Filter
+    if (fromDate || toDate) {
+      filter.arrivalDate = {};
+
+      if (fromDate) {
+        filter.arrivalDate.$gte = fromDate;
+      }
+
+      if (toDate) {
+        filter.arrivalDate.$lte = toDate;
+      }
+    }
+
+    // Booking Type
+    if (bookingType && bookingType !== "all") {
+      filter.bookingType = bookingType;
+    }
+
+    // Guest Name
+    if (guestName) {
+      filter.customerName = {
+        $regex: guestName,
+        $options: "i",
+      };
+    }
+
+    // Mobile Number
+    if (mobileNumber) {
+      filter.mobileNumber = {
+        $regex: mobileNumber,
+      };
+    }
+
+    // Search
+    if (search.trim()) {
+      const searchValue = search.trim();
+
+      filter.$or = [
+        {
+          voucherNumber: {
+            $regex: searchValue,
+            $options: "i",
+          },
+        },
+        {
+          customerName: {
+            $regex: searchValue,
+            $options: "i",
+          },
+        },
+        {
+          mobileNumber: {
+            $regex: searchValue,
+          },
+        },
+        {
+          "selectedRooms.roomName": {
+            $regex: searchValue,
+            $options: "i",
+          },
+        },
+      ];
+    }
+
+    // -----------------------------
+    // Create Summary Filter BEFORE status filter
+    // -----------------------------
+    const summaryFilter = {
+      ...filter,
+    };
+
+    if (filter.arrivalDate) {
+      summaryFilter.arrivalDate = { ...filter.arrivalDate };
+    }
+
+    if (filter.$or) {
+      summaryFilter.$or = [...filter.$or];
+    }
+
+    // -----------------------------
+    // Status Filter (Listing only)
+    // -----------------------------
+    if (status && status !== "all") {
+      filter.$and = filter.$and || [];
+
+      if (status === "checkIn") {
+        filter.$and.push({
+          $or: [
+            { status: "" },
+            { status: "checkIn" },
+            { status: null },
+          ],
+        });
+      } else if (status === "checkOut") {
+        filter.$and.push({
+          $or: [
+            { status: "checkOut" },
+            { status: "CheckOut" },
+            { status: "Checkout" },
+          ],
+        });
+      } else if (status === "cancelled") {
+        filter.$and.push({
+          $or: [
+            { status: "cancelled" },
+            { status: "Cancelled" },
+          ],
+        });
+      }
+    }
+
+    // console.log("Filter:", filter);
+    // console.log("Summary Filter:", summaryFilter);
+
+    const [bookings, totalBookings, groupedStatus] = await Promise.all([
+      CheckIn.find(filter)
+        .populate("Secondary_user_id", "username name")
+        .sort({
+          createdAt: -1,
+          _id: -1,
+        })
+        .skip(skip)
+        .limit(limitNumber)
+        .lean(),
+
+      CheckIn.countDocuments(filter),
+
+      CheckIn.aggregate([
+        {
+          $match: summaryFilter,
+        },
+        {
+          $group: {
+            _id: "$status",
+            count: {
+              $sum: 1,
+            },
+          },
+        },
+      ]),
+    ]);
+
+    const summary = {
+      total: 0,
+      checkIn: 0,
+      checkOut: 0,
+      cancelled: 0,
+    };
+
+    groupedStatus.forEach((item) => {
+      const count = Number(item.count || 0);
+
+      summary.total += count;
+
+      if (
+        item._id === "" ||
+        item._id === "checkIn" ||
+        item._id === null
+      ) {
+        summary.checkIn += count;
+      } else if (
+        item._id === "checkOut" ||
+        item._id === "CheckOut" ||
+        item._id === "Checkout"
+      ) {
+        summary.checkOut += count;
+      } else if (
+        item._id === "cancelled" ||
+        item._id === "Cancelled"
+      ) {
+        summary.cancelled += count;
+      }
+    });
+
+    const processedBookings = bookings.map((booking) => ({
+      ...booking,
+      createdBy:
+        booking.Secondary_user_id?.username ||
+        booking.Secondary_user_id?.name ||
+        "-",
+    }));
+
+    const totalPages = Math.ceil(totalBookings / limitNumber);
+    console.log({
+  page: pageNumber,
+  limit: limitNumber,
+  returned: bookings.length,
+  total: totalBookings,
+  totalPages,
+  hasMore: pageNumber < totalPages,
+});
+
+    return res.status(200).json({
+      success: true,
+      data: processedBookings,
+      summary,
+      pagination: {
+        total: totalBookings,
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages,
+        hasMore: pageNumber < totalPages,
+      },
+    });
+  } catch (error) {
+    console.error("loginReport error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal Server Error",
     });
   }
 };
