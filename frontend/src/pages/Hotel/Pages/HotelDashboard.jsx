@@ -61,6 +61,7 @@ const HotelDashboard = () => {
   });
  
   const permission = useSelector((state) => state.permissionData?.permissions); 
+  console.log(permission);
   // Add these state variables at the top of your component
   const [showBookingDetails, setShowBookingDetails] = useState(true);
   const [isMobile, setIsMobile] = useState(false);

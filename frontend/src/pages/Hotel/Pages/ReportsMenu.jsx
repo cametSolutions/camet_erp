@@ -113,6 +113,7 @@ const reports = [
     iconBg: "bg-blue-50",
     iconColor: "text-blue-700",
     path: "/sUsers/LoginReport",
+    key: "loginReport",
   },
   
           
