@@ -13,6 +13,8 @@ import TallyData from "../models/TallyData.js";
 import settlementModel from "../models/settlementModel.js";
 import salesModel from "../models/salesModel.js";
 import nodemailer from "nodemailer";
+import PDFDocument from "pdfkit";
+import ExcelJS from "exceljs";
 // helper function used to add search concept with room
 export const buildDatabaseFilterForRoom = (params) => {
   // console.log("params", params);
@@ -77,7 +79,7 @@ export const buildDatabaseFilterForBooking = (params) => {
   let filter = {
     cmp_id: params.cmp_id,
     Primary_user_id: params.Primary_user_id,
-    status: { $ne: "cancelled" }
+    status: { $ne: "cancelled" },
   };
 
   if (params.modal === "checkIn") {
@@ -124,8 +126,13 @@ export const buildDatabaseFilterForBooking = (params) => {
         },
       ];
     } else {
-      // ✅ Keep existing date filter, only add status
-      filter.status = { $exists: false };
+    filter.$or = [
+  { status: { $exists: false } },
+  {
+    status: "checkIn",
+    isPartiallyCheckedOut: true,
+  },
+];
     }
   } else if (params.searchTerm === "completed") {
     if (params.modal === "booking") filter.status = "checkIn";
@@ -182,7 +189,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         cmp_id: filter.cmp_id,
         isPostToRoom: true,
         isCancelled: false,
-        isComplimentary : false,
+        isComplimentary: false,
         "convertedFrom.checkInNumber": {
           $in: checkInNumbers,
         },
@@ -198,7 +205,7 @@ export const fetchBookingsFromDatabase = async (filter = {}, params = {}) => {
         cmp_id: filter.cmp_id,
         isPostToRoom: false,
         isCancelled: false,
-        isComplimentary : false,
+        isComplimentary: false,
         "convertedFrom.checkInNumber": {
           $in: checkInNumbers,
         },
@@ -406,7 +413,12 @@ export const updateStatus = async (roomData, status, session) => {
       cmp_id: room.cmp_id,
       roomId: room._id,
       roomNumber: room.roomName,
-      status: status == "booking" ? "booked" : status == "checkIn" ? "occupied" : status,
+      status:
+        status == "booking"
+          ? "booked"
+          : status == "checkIn"
+            ? "occupied"
+            : status,
       fromDate: now,
       toDate: null,
       isCurrent: true,
@@ -1260,7 +1272,6 @@ export const updateSwapDetails = async (existingRoom, updatedRoom, session) => {
   }
 };
 
-
 export const findBlockedRooms = async (
   cmp_id,
   reportDate,
@@ -1294,7 +1305,11 @@ export const findBlockedRooms = async (
       errors.push("reportYear must be a valid year");
     }
 
-    if (reportMonth != null && reportMonth !== "" && !isValidMonth(reportMonth)) {
+    if (
+      reportMonth != null &&
+      reportMonth !== "" &&
+      !isValidMonth(reportMonth)
+    ) {
       errors.push("reportMonth must be between 1 and 12");
     }
 
@@ -1361,7 +1376,8 @@ export const findBlockedRooms = async (
 
       if (reportDate) {
         const rd = toDay(new Date(reportDate));
-        monthEnd = addDays(rd, 1) < nextMonthStart ? addDays(rd, 1) : nextMonthStart;
+        monthEnd =
+          addDays(rd, 1) < nextMonthStart ? addDays(rd, 1) : nextMonthStart;
       } else if (todayDay >= monthStart && todayDay < nextMonthStart) {
         monthEnd = tomorrowDay;
       } else {
@@ -1376,7 +1392,10 @@ export const findBlockedRooms = async (
 
       monthStart = new Date(Date.UTC(y, m, 1));
       const nextMonthStart = new Date(Date.UTC(y, m + 1, 1));
-      monthEnd = addDays(dayOnly, 1) < nextMonthStart ? addDays(dayOnly, 1) : nextMonthStart;
+      monthEnd =
+        addDays(dayOnly, 1) < nextMonthStart
+          ? addDays(dayOnly, 1)
+          : nextMonthStart;
     }
 
     // ─── Target day ──────────────────────────────────────────────────
@@ -1416,7 +1435,9 @@ export const findBlockedRooms = async (
     });
 
     const blockedRecords = validRecords.filter((r) => r.status === "blocked");
-    const householdRecords = validRecords.filter((r) => r.status === "household");
+    const householdRecords = validRecords.filter(
+      (r) => r.status === "household",
+    );
 
     // ─── Helpers ─────────────────────────────────────────────────────
     const isActiveOnDay = (record, day) => {
@@ -1445,13 +1466,13 @@ export const findBlockedRooms = async (
         const fromDay = toDay(new Date(record.fromDate));
         const endDay =
           record.toDate == null
-            ? windowEnd < tomorrowDay ? windowEnd : tomorrowDay
+            ? windowEnd < tomorrowDay
+              ? windowEnd
+              : tomorrowDay
             : toDay(new Date(record.toDate));
 
-        const effectiveStart =
-          fromDay > windowStart ? fromDay : windowStart;
-        const effectiveEnd =
-          endDay < windowEnd ? endDay : windowEnd;
+        const effectiveStart = fromDay > windowStart ? fromDay : windowStart;
+        const effectiveEnd = endDay < windowEnd ? endDay : windowEnd;
 
         const nights = Math.round(
           (effectiveEnd.getTime() - effectiveStart.getTime()) / MS_PER_DAY,
@@ -1523,7 +1544,9 @@ export const getRoomMetricsForPeriod = ({
   const toUTCDay = (str) => {
     if (!str) return null;
     if (str instanceof Date) {
-      return new Date(Date.UTC(str.getFullYear(), str.getMonth(), str.getDate()));
+      return new Date(
+        Date.UTC(str.getFullYear(), str.getMonth(), str.getDate()),
+      );
     }
     const [y, m, d] = str.split("T")[0].split("-").map(Number);
     return new Date(Date.UTC(y, m - 1, d));
@@ -1531,8 +1554,8 @@ export const getRoomMetricsForPeriod = ({
 
   // ─── DAY ────────────────────────────────────────────────────────────
   if (reportType === "day") {
-    const blockedRooms  = blockedCounts?.data?.dailyRooms  || 0;
-    const totalRooms    = totalPhysicalRooms;
+    const blockedRooms = blockedCounts?.data?.dailyRooms || 0;
+    const totalRooms = totalPhysicalRooms;
     const saleableRooms = totalRooms - blockedRooms;
 
     return {
@@ -1540,29 +1563,29 @@ export const getRoomMetricsForPeriod = ({
       totalRooms,
       blockedRooms,
       saleableRooms,
-      availableRoomNights:  saleableRooms,
-      totalRoomNights:      totalRooms,
-      saleableRoomNights:   saleableRooms,
-      blockedRoomNights:    blockedRooms,
+      availableRoomNights: saleableRooms,
+      totalRoomNights: totalRooms,
+      saleableRoomNights: saleableRooms,
+      blockedRoomNights: blockedRooms,
       periodDays: 1,
     };
   }
 
   // ─── MONTH / YEAR ────────────────────────────────────────────────────
   const start = toUTCDay(fromDate);
-  const end   = toUTCDay(toDate);
+  const end = toUTCDay(toDate);
 
   // periodDays is inclusive: Jun1→Jun18 = 18 days
   const periodDays = Math.round((end - start) / MS_PER_DAY) + 1;
 
-  const totalRooms      = totalPhysicalRooms;
+  const totalRooms = totalPhysicalRooms;
   const totalRoomNights = totalRooms * periodDays;
 
   // Use pre-fetched blockedCounts — NO day loop, NO extra DB calls
   const blockedRoomNights =
     reportType === "month"
       ? blockedCounts?.data?.monthlyRooms || 0
-      : blockedCounts?.data?.yearlyRooms  || 0;
+      : blockedCounts?.data?.yearlyRooms || 0;
 
   const saleableRoomNights = Math.max(0, totalRoomNights - blockedRoomNights);
 
@@ -1575,7 +1598,7 @@ export const getRoomMetricsForPeriod = ({
     saleableRoomNights,
     availableRoomNights: saleableRoomNights,
     // aliases for backward compat used in processCheckins
-    blockedRooms:  blockedRoomNights,
+    blockedRooms: blockedRoomNights,
     saleableRooms: saleableRoomNights,
   };
 };
@@ -1689,30 +1712,636 @@ export const fetchRestaurantDetails = async (cmp_id, fromDate, toDate) => {
 };
 
 
-const transporter = nodemailer.createTransport({
+export const sendMail = async ({
+  to,
+  cc=[],
+  subject,
+  fromName = "System",
+  text,
+  html,
+  data = {},
+}) => {
+  try{
+  let attachments = fromName === "Cancel Kot" ? [await getKotAttachment(data)] : [];
+  const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: process.env.NODE_MAILER_EMAIL,
     pass: process.env.NODE_MAILER_APP_PASSWORD,
   },
 });
-
-export const sendMail = async ({
-  to,
-  cc = [],
-  subject,
-  text,
-  html,
-  attachments = [],
-  fromName = "System",
-}) => {
   return await transporter.sendMail({
     from: `"${fromName}" <${process.env.NODE_MAILER_EMAIL}>`,
     to,
     cc: Array.isArray(cc) ? cc : [],
     subject,
-    text,
     html,
-    attachments,
+    text,
+    // attachments,
   });
+  }catch(e){
+    console.log(e);
+  }
+};
+
+const getKotAttachment = async (data) => {
+  const pdfBuffer = await generateCancelledKotPdf(data);
+
+  return {
+    filename: `${String(data?.voucherNumber || "kot").replace(/[^\w-]/g, "_")}-cancelled.pdf`,
+    content: pdfBuffer,
+    contentType: "application/pdf",
+  };
+};
+
+const generateCancelledKotPdf = (data) => {
+  return new Promise((resolve, reject) => {
+    const items = Array.isArray(data?.items) ? data.items : [];
+    const pageHeight = Math.max(135, 92 + items.length * 8 + 18);
+
+    const doc = new PDFDocument({
+      size: [176, pageHeight],
+      margin: 6,
+    });
+
+    const buffers = [];
+    doc.on("data", (chunk) => buffers.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(buffers)));
+    doc.on("error", reject);
+
+    const voucherNumber = data?.voucherNumber || "";
+    const tableNumber = data?.tableNumber || data?.customer?.tableNumber || "";
+    const rawDate =
+      data?.cancelledAt?.$date ||
+      data?.cancelledAt ||
+      data?.createdAt?.$date ||
+      data?.createdAt;
+
+    const dt = rawDate ? new Date(rawDate) : null;
+    const formattedDate = dt
+      ? dt.toLocaleDateString("en-GB")
+      : "";
+    const formattedTime = dt
+      ? dt.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        })
+      : "";
+
+    const cancelledByName =
+      data?.cancelledByName ||
+      data?.staffName ||
+      data?.userName ||
+      "Admin";
+
+    const leftX = 8;
+    const rightX = 168;
+    const qtyX = 158;
+    const itemX = 8;
+    const itemWidth = 126;
+
+    let y = 8;
+
+    doc.font("Courier-Bold").fontSize(10).text("ARCADIA", 0, y, {
+      width: 176,
+      align: "center",
+      lineBreak: false,
+    });
+
+    y += 14;
+    doc.font("Courier-Bold").fontSize(8).text("KOT", 0, y, {
+      width: 176,
+      align: "center",
+      lineBreak: false,
+    });
+
+    y += 15;
+    doc.font("Courier-Bold").fontSize(6.2);
+    doc.text(`KOT: ${voucherNumber}`, leftX, y, {
+      width: 104,
+      lineBreak: false,
+    });
+    doc.text(formattedDate, 104, y, {
+      width: 60,
+      align: "right",
+      lineBreak: false,
+    });
+
+    y += 8;
+    doc.font("Courier-Bold").fontSize(6.2).text(`Staff: ${cancelledByName}`, leftX, y, {
+      width: 120,
+      lineBreak: false,
+    });
+
+    y += 8;
+    doc.font("Courier-Bold").fontSize(6.2);
+    doc.text(formattedTime, leftX, y, {
+      width: 40,
+      lineBreak: false,
+    });
+    doc.text(`T:${tableNumber}`, 118, y, {
+      width: 46,
+      align: "right",
+      lineBreak: false,
+    });
+
+    y += 12;
+    doc.font("Courier-Bold").fontSize(6.2);
+    doc.text("Food Plan :", leftX, y, {
+      width: 56,
+      lineBreak: false,
+    });
+    doc.fillColor("red").text("CANCELLED", 74, y, {
+      width: 54,
+      lineBreak: false,
+    });
+    doc.fillColor("black");
+
+    y += 11;
+    doc.font("Courier-Bold").fontSize(6.4);
+    doc.text("SL ITEM", itemX, y, {
+      width: itemWidth,
+      lineBreak: false,
+    });
+    doc.text("QTY", qtyX, y, {
+      width: 10,
+      align: "right",
+      lineBreak: false,
+    });
+
+    y += 4;
+    doc.moveTo(leftX, y).lineTo(rightX, y).stroke();
+    y += 4;
+
+    doc.font("Courier-Bold").fontSize(6.2);
+
+    items.forEach((item, index) => {
+      const name = String(item?.product_name || item?.name || "").trim();
+      const qty = String(item?.quantity || 1);
+      const shortName = name.length > 18 ? `${name.slice(0, 18)}` : name;
+
+      doc.text(`${index + 1} ${shortName}`, itemX, y, {
+        width: itemWidth,
+        lineBreak: false,
+      });
+
+      doc.text(qty, qtyX, y, {
+        width: 10,
+        align: "right",
+        lineBreak: false,
+      });
+
+      y += 8;
+    });
+
+    y -= 1;
+    doc.moveTo(leftX, y).lineTo(rightX, y).stroke();
+
+    y += 8;
+    doc.font("Courier-Bold").fontSize(6.8).text("** CANCELLED KITCHEN COPY **", 0, y, {
+      width: 176,
+      align: "center",
+      lineBreak: false,
+    });
+
+    y += 10;
+    doc.font("Courier-Bold").fontSize(6.4).text("THIS KOT IS CANCELLED", 0, y, {
+      width: 176,
+      align: "center",
+      lineBreak: false,
+    });
+
+    doc.end();
+  });
+};
+// helpers/buildLoginReportFilter.js
+
+export const buildLoginReportFilter = (cmp_id, query) => {
+  const {
+    search = "",
+    fromDate,
+    toDate,
+    status,
+    bookingType,
+    guestName,
+    mobileNumber,
+  } = query;
+
+  const filter = { cmp_id };
+
+  if (fromDate || toDate) {
+    filter.arrivalDate = {};
+
+    if (fromDate) filter.arrivalDate.$gte = fromDate;
+    if (toDate) filter.arrivalDate.$lte = toDate;
+  }
+
+  if (bookingType && bookingType !== "all") {
+    filter.bookingType = bookingType;
+  }
+
+  if (guestName) {
+    filter.customerName = {
+      $regex: guestName,
+      $options: "i",
+    };
+  }
+
+  if (mobileNumber) {
+    filter.mobileNumber = {
+      $regex: mobileNumber,
+    };
+  }
+
+  if (search.trim()) {
+    const searchValue = search.trim();
+
+    filter.$or = [
+      {
+        voucherNumber: {
+          $regex: searchValue,
+          $options: "i",
+        },
+      },
+      {
+        customerName: {
+          $regex: searchValue,
+          $options: "i",
+        },
+      },
+      {
+        mobileNumber: {
+          $regex: searchValue,
+        },
+      },
+      {
+        "selectedRooms.roomName": {
+          $regex: searchValue,
+          $options: "i",
+        },
+      },
+    ];
+  }
+
+  if (status && status !== "all") {
+    filter.$and = [];
+
+    if (status === "checkIn") {
+      filter.$and.push({
+        $or: [
+          { status: "" },
+          { status: "checkIn" },
+          { status: null },
+        ],
+      });
+    } else if (status === "checkOut") {
+      filter.$and.push({
+        $or: [
+          { status: "checkOut" },
+          { status: "CheckOut" },
+          { status: "Checkout" },
+        ],
+      });
+    } else if (status === "cancelled") {
+      filter.$and.push({
+        $or: [
+          { status: "cancelled" },
+          { status: "Cancelled" },
+        ],
+      });
+    }
+  }
+
+  return filter;
+};
+
+
+export const exportLoginReportExcel = async (res, bookings) => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Login Report");
+
+worksheet.columns = [
+  { header: "#", key: "slNo", width: 8 },
+  { header: "Voucher No", key: "voucherNumber", width: 20 },
+  { header: "Guest Name", key: "guestName", width: 25 },
+  { header: "Room", key: "room", width: 30 },
+  { header: "Arrival Date", key: "arrivalDate", width: 18 },
+  { header: "Arrival Time", key: "arrivalTime", width: 15 },
+  { header: "Last Updated", key: "updated", width: 25 },
+  { header: "Created", key: "created", width: 25 },
+  { header: "Created By", key: "createdBy", width: 20 },
+  { header: "Room Swap History", key: "roomSwapHistory", width: 50 },
+  { header: "Partial Checkout History", key: "partialCheckoutHistory", width: 60 },
+];
+  worksheet.getRow(1).font = {
+    bold: true,
+    color: { argb: "FFFFFFFF" },
+  };
+
+  worksheet.getRow(1).fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "4472C4" },
+  };
+
+  bookings.forEach((booking, index) => {
+    worksheet.addRow({
+  slNo: index + 1,
+  voucherNumber: booking.voucherNumber,
+  guestName: booking.guestName,
+  room: booking.room,
+  arrivalDate: booking.arrivalDate,
+  arrivalTime: booking.arrivalTime,
+  updated: booking.updated,
+  created: booking.created,
+  createdBy: booking.createdBy,
+
+  roomSwapHistory:
+    booking.roomSwapHistory.length
+      ? booking.roomSwapHistory
+          .map(
+            (x) =>
+              `${x.from} → ${x.to}\n${x.date}\n${x.reason}`
+          )
+          .join("\n\n")
+      : "-",
+
+  partialCheckoutHistory:
+    booking.partialCheckoutHistory.length
+      ? booking.partialCheckoutHistory
+          .map(
+            (x) =>
+              `${x.saleVoucherNumber}\n${x.rooms}\n${x.date}`
+          )
+          .join("\n\n")
+      : "-",
+});
+  });
+
+worksheet.eachRow((row) => {
+  row.eachCell((cell) => {
+    cell.alignment = {
+      vertical: "top",
+      wrapText: true,
+    };
+
+    cell.border = {
+      top: { style: "thin" },
+      left: { style: "thin" },
+      bottom: { style: "thin" },
+      right: { style: "thin" },
+    };
+  });
+});
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+
+  res.setHeader(
+    "Content-Disposition",
+    'attachment; filename="Login_Report.xlsx"'
+  );
+
+  await workbook.xlsx.write(res);
+  res.end();
+};
+
+
+
+
+export const exportLoginReportPdf = (res, bookings) => {
+  const doc = new PDFDocument({
+    margin: 30,
+    size: "A4",
+    bufferPages: true, // required for page numbering to work
+  });
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    'attachment; filename="Login_Report.pdf"'
+  );
+
+  doc.pipe(res);
+
+  // ---------- Palette ----------
+  const colors = {
+    primary: "#1F3A5F",      // deep navy — header banner
+    primaryLight: "#EAF0F7", // light navy tint — header row bg
+    text: "#1A1A1A",
+    subtext: "#6B7280",
+    border: "#D7DCE2",
+    zebra: "#F7F9FB",
+    accent: "#B08D57",       // muted gold accent line
+    white: "#FFFFFF",
+  };
+
+  const pageWidth = doc.page.width;
+  const startX = 30;
+  const endX = pageWidth - 30;
+  const rowHeight = 22;
+
+  // ---------- Header Banner ----------
+  const drawHeaderBanner = () => {
+    doc.rect(0, 0, pageWidth, 70).fill(colors.primary);
+
+    doc
+      .fillColor(colors.white)
+      .font("Helvetica-Bold")
+      .fontSize(18)
+      .text("Login Report", startX, 22, { align: "left" });
+
+    doc
+      .fillColor(colors.white)
+      .font("Helvetica")
+      .fontSize(9)
+      .text(
+        `Generated on ${new Date().toLocaleString()}`,
+        startX,
+        44,
+        { align: "left" }
+      );
+
+    // thin gold accent line under banner
+    doc.rect(0, 70, pageWidth, 3).fill(colors.accent);
+
+    doc.fillColor(colors.text);
+  };
+
+  drawHeaderBanner();
+
+  let y = 90;
+
+  const columns = [
+    { title: "#", width: 25 },
+    { title: "Voucher", width: 60 },
+    { title: "Guest", width: 90 },
+    { title: "Room", width: 80 },
+    { title: "Arrival", width: 60 },
+    { title: "Created By", width: 70 },
+    { title: "Status", width: 55 },
+    { title: "Updated", width: 90 },
+  ];
+
+  // ---------- Table Header Row ----------
+  const drawTableHeader = () => {
+    let x = startX;
+
+    doc.rect(startX, y, endX - startX, rowHeight).fill(colors.primaryLight);
+    doc.strokeColor(colors.border).rect(startX, y, endX - startX, rowHeight).stroke();
+
+    doc.font("Helvetica-Bold").fontSize(9).fillColor(colors.primary);
+
+    columns.forEach((col) => {
+      doc.text(col.title, x + 4, y + 6, {
+        width: col.width - 8,
+        align: "left",
+      });
+      x += col.width;
+    });
+
+    doc.fillColor(colors.text);
+    y += rowHeight;
+  };
+
+  drawTableHeader();
+
+  const ensureSpace = (needed = rowHeight) => {
+    if (y + needed > doc.page.height - 50) {
+      doc.addPage();
+      drawHeaderBanner();
+      y = 90;
+      drawTableHeader();
+    }
+  };
+
+  const statusColor = (status) => {
+    switch ((status || "").toLowerCase()) {
+      case "checked out":
+        return "#B45309"; // amber
+      case "check in":
+      case "checked in":
+        return "#15803D"; // green
+      case "cancelled":
+        return "#B91C1C"; // red
+      default:
+        return colors.text;
+    }
+  };
+
+  const drawDataRow = (values, rowIndex) => {
+    ensureSpace();
+
+    let x = startX;
+    const bg = rowIndex % 2 === 0 ? colors.white : colors.zebra;
+
+    doc.rect(startX, y, endX - startX, rowHeight).fill(bg);
+    doc.strokeColor(colors.border).rect(startX, y, endX - startX, rowHeight).stroke();
+
+    doc.font("Helvetica").fontSize(8);
+
+    values.forEach((value, index) => {
+      const width = columns[index].width;
+      const isStatus = columns[index].title === "Status";
+
+      doc.fillColor(isStatus ? statusColor(value) : colors.text);
+      if (isStatus) doc.font("Helvetica-Bold");
+
+      doc.text(String(value ?? "-"), x + 4, y + 6, {
+        width: width - 8,
+        align: "left",
+      });
+
+      if (isStatus) doc.font("Helvetica");
+      x += width;
+    });
+
+    doc.fillColor(colors.text);
+    y += rowHeight;
+  };
+
+  const drawSubHistory = (label, lines) => {
+    ensureSpace(12 * (lines.length + 1));
+
+    doc.font("Helvetica-Bold").fontSize(8).fillColor(colors.primary);
+    doc.text(label, startX + 8, y + 3);
+    y += 13;
+
+    doc.font("Helvetica").fontSize(8).fillColor(colors.subtext);
+    lines.forEach((line) => {
+      ensureSpace(12);
+      doc.text(`•  ${line}`, startX + 18, y);
+      y += 12;
+    });
+
+    doc.fillColor(colors.text);
+  };
+
+  // ---------- Body Rows ----------
+  bookings.forEach((booking, index) => {
+    drawDataRow(
+      [
+        index + 1,
+        booking.voucherNumber || "-",
+        booking.guestName || booking.customerName || "-",
+        booking.room ||
+          booking.selectedRooms?.map((r) => r.roomName).join(", ") ||
+          "-",
+        `${booking.arrivalDate || ""} ${booking.arrivalTime || ""}`.trim() || "-",
+        booking.createdBy || "-",
+        booking.status || "Check In",
+        booking.updated || "-",
+      ],
+      index
+    );
+
+    if (booking.roomSwapHistory?.length) {
+      drawSubHistory(
+        "Room Swap History",
+        booking.roomSwapHistory.map(
+          (s) => `${s.from} → ${s.to}  |  ${s.date}  |  ${s.reason}`
+        )
+      );
+    }
+
+    if (booking.partialCheckoutHistory?.length) {
+      drawSubHistory(
+        "Partial Checkout History",
+        booking.partialCheckoutHistory.map(
+          (pc) => `${pc.saleVoucherNumber}  |  ${pc.rooms}  |  ${pc.date}`
+        )
+      );
+    }
+
+    // subtle divider between booking blocks (only when history was shown)
+    if (booking.roomSwapHistory?.length || booking.partialCheckoutHistory?.length) {
+      ensureSpace(10);
+      doc
+        .moveTo(startX, y + 2)
+        .lineTo(endX, y + 2)
+        .strokeColor(colors.border)
+        .stroke();
+      y += 8;
+    }
+  });
+
+  // ---------- Footer with page numbers ----------
+  const range = doc.bufferedPageRange();
+  for (let i = range.start; i < range.start + range.count; i++) {
+    doc.switchToPage(i);
+    doc
+      .font("Helvetica")
+      .fontSize(8)
+      .fillColor(colors.subtext)
+      .text(
+        `Page ${i + 1} of ${range.count}`,
+        startX,
+        doc.page.height - 30,
+        { width: endX - startX, align: "center" }
+      );
+  }
+
+  doc.end();
 };

@@ -39,6 +39,7 @@ export default function KotBillTransferModal({
   selectedCheckIns = [],
   onClose,
   cmp_id,
+  sendToParent,
 }) {
   const [selectedBills, setSelectedBills] = useState([]);
   const [kotData, setKotData] = useState([]);
@@ -99,6 +100,7 @@ export default function KotBillTransferModal({
         id: kot?._id,
         billNo: kot?.voucherNumber || "KOT",
         amount: Number(kot?.total || 0),
+        salesNumber: kot.salesNumber,
         status: kot?.status || "pending",
         time: kot?.createdAt
           ? new Date(kot.createdAt).toLocaleTimeString([], {
@@ -262,17 +264,36 @@ export default function KotBillTransferModal({
     });
   }, [allCheckInRooms, sourceRoomIds, targetSearch]);
 
-  const toggleBill = (bill, room) => {
-    setSelectedBills((prev) => {
-      const exists = prev.find((sb) => sb.bill.id === bill.id);
+ const toggleBill = (bill) => {
+  setSelectedBills((prev) => {
+    const alreadySelected = prev.some(
+      (sb) => sb.bill.salesNumber === bill.salesNumber
+    );
 
-      if (exists) {
-        return prev.filter((sb) => sb.bill.id !== bill.id);
-      }
+    if (alreadySelected) {
+      // Remove every KOT of this sale
+      return prev.filter(
+        (sb) => sb.bill.salesNumber !== bill.salesNumber
+      );
+    }
 
-      return [...prev, { bill, room }];
+    // Find every bill having the same salesNumber
+    const billsToAdd = [];
+
+    organizedRooms.forEach((room) => {
+      room.bills.forEach((b) => {
+        if (b.salesNumber === bill.salesNumber) {
+          billsToAdd.push({
+            bill: b,
+            room,
+          });
+        }
+      });
     });
-  };
+
+    return [...prev, ...billsToAdd];
+  });
+};
 
   const isBillSelected = (billId) => {
     return selectedBills.some((sb) => sb.bill.id === billId);
@@ -338,6 +359,8 @@ const handleTransfer = async () => {
   } catch (error) {
     console.error("Error in handleTransfer:", error);
     toast.error(error?.response?.data?.message || "Something went wrong");
+  }finally{
+    window.location.reload();
   }
 };
 

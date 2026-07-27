@@ -148,7 +148,9 @@ function BookingList() {
     date.setDate(date.getDate() - 29);
     return date.toISOString().slice(0, 10);
   };
-  const [fromDate, setFromDate] = useState(selectedDate?.start || get29DaysAgo());
+  const [fromDate, setFromDate] = useState(
+    selectedDate?.start || get29DaysAgo(),
+  );
   const [toDate, setToDate] = useState(selectedDate?.end || today);
   const [nightAuditStatus, setNightAuditStatus] = useState(null);
   const [nightAuditLoading, setNightAuditLoading] = useState(false);
@@ -199,6 +201,10 @@ function BookingList() {
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
+  const permission = useSelector((state) => state.permissionData?.permissions);
+
+console.log(permission);
+
   const secondaryUserRole =
     JSON.parse(localStorage.getItem("sUserData"))?.role || "user";
   const isSingleAuditDateSelected = fromDate === toDate;
@@ -1351,6 +1357,45 @@ function BookingList() {
       } else {
         updatedRows[index][field] = Number(value || 0);
       }
+    } else if (
+      field === "amount" &&
+      updatedRows[index].underCategory === "room"
+    ) {
+      console.log(selectedDataForPayment);
+
+      // Calculate total food amount excluding current row
+      let totalFoodAmount =
+        splitPaymentRows.reduce((sum, item, i) => {
+          if (item?.underCategory === "room" && i !== index) {
+            return sum + Number(item.amount || 0);
+          }
+
+          return sum;
+        }, 0) + Number(value || 0);
+
+      console.log(selectedDataForPayment);
+
+      if (totalFoodAmount > Number(selectedDataForPayment?.total || 0)) {
+        updatedRows[index][field] = 0;
+
+        toast.error(
+          "Room amount tagged is already equal to restaurant subtotal",
+        );
+      } else {
+        updatedRows[index][field] = Number(value || 0);
+      }
+    } else if (field === "underCategory" && value == "room") {
+      console.log(splitPaymentRows);
+      let totalFoodAmount = splitPaymentRows.reduce(
+        (sum, item) =>
+          item?.underCategory == "room" ? sum + item.amount : sum,
+        0,
+      );
+      console.log(totalFoodAmount);
+      updatedRows[index][field] = value;
+      updatedRows[index].amount = Math.abs(
+        selectedDataForPayment?.total - totalFoodAmount,
+      );
     } else {
       updatedRows[index][field] = value;
     }
@@ -2408,7 +2453,7 @@ function BookingList() {
                 </div>
               ) : null}
 
-              {location.pathname === "/sUsers/bookingList" &&
+              {location.pathname === "/sUsers/bookingList"  &&
                 el?.status !== "checkIn" &&
                 el?.status !== "cancelled" && (
                   <button
@@ -2717,8 +2762,8 @@ function BookingList() {
                   </div> */}
                 </div>
               ) : null}
-              {(location.pathname === "/sUsers/bookingList" ||
-                location.pathname === "/sUsers/checkInList") &&
+              {((location.pathname === "/sUsers/bookingList" && (secondaryUserRole === "admin"   || permission?.cancelBooking)) ||
+               ( location.pathname === "/sUsers/checkInList" && (secondaryUserRole === "admin"   || permission?.cancelChecking))) &&
                 el?.status !== "cancelled" && (
                   <button
                     onClick={(e) => {
@@ -3043,20 +3088,24 @@ function BookingList() {
                         Reopen Audit
                       </button>
                     )}
-
-                  <button
-                    type="button"
-                    onClick={handleCompleteNightAudit}
-                    disabled={
-                      !isSingleAuditDateSelected ||
-                      isNightAuditLocked ||
-                      nightAuditLoading ||
-                      nightAuditActionLoading
-                    }
-                    className="rounded-md bg-[#0f766e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#115e59] disabled:cursor-not-allowed disabled:bg-slate-300"
-                  >
-                    {nightAuditActionLoading ? "Processing..." : "Night Audit"}
-                  </button>
+                  {(permission?.nightAudit || secondaryUserRole === "admin")
+                   && (
+                      <button
+                        type="button"
+                        onClick={handleCompleteNightAudit}
+                        disabled={
+                          !isSingleAuditDateSelected ||
+                          isNightAuditLocked ||
+                          nightAuditLoading ||
+                          nightAuditActionLoading
+                        }
+                        className="rounded-md mr-2 bg-[#0f766e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#115e59] disabled:cursor-not-allowed disabled:bg-slate-300"
+                      >
+                        {nightAuditActionLoading
+                          ? "Processing..."
+                          : "Night Audit"}
+                      </button>
+                    )}
                 </div>
               )
             }
@@ -3605,8 +3654,8 @@ function BookingList() {
                                     </span>
                                     {(selectedDataForPayment?.restaurantSubTotal >
                                     0
-                                      ? ["food", "room", "laundry"]
-                                      : ["room", "laundry"]
+                                      ? ["food", "room"]
+                                      : ["room"]
                                     ).map((category) => (
                                       <button
                                         key={category}
@@ -3635,7 +3684,7 @@ function BookingList() {
                                       >
                                         {category === "food" && "🍽 "}
                                         {category === "room" && "🛏 "}
-                                        {category === "laundry" && "👕 "}
+                                        {/* {category === "laundry" && "👕 "} */}
                                         {category.charAt(0).toUpperCase() +
                                           category.slice(1)}
                                       </button>
@@ -4394,6 +4443,7 @@ function BookingList() {
             selectedCheckIns={selectedCheckOut}
             onClose={setShowRestaurantBillTransfer}
             cmp_id={cmp_id}
+            sendToParent={fetchBookings}
           />
         )}
         {restaurantSaleManageMent && (

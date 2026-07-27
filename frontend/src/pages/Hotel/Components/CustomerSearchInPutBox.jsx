@@ -43,7 +43,7 @@ const duplicateCheckRef = useRef(null);
     return "sale";
   };
 
-  console.log("selectedParty", selectedParty);
+
 
   const fetchParties = useCallback(async (pageNum = 1, searchTerm = "") => {
     setLoading(true);

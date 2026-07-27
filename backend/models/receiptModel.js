@@ -145,6 +145,10 @@ const receiptSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "SecondaryUser",
     },
+    cancelReason: {
+      type: String,
+      default: "",
+    },
     cancelledByName: {
       type: String,
       default: "",
