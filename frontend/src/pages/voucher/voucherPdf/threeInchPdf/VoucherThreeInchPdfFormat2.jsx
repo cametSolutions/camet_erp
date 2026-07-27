@@ -812,10 +812,9 @@ function VoucherThreeInchPdfFormat2({
           }}
         >
           <div style={{ display: "flex" }}>
-            <span style={{ minWidth: "170px" }}>Bill {getBillNumber()}</span>
+            <span style={{ minWidth: "160px" }}>Bill {getBillNumber()}</span>
             <span>
-              Date:{" "}
-              {new Date(data?.Date || data?.createdAt).toLocaleDateString(
+              Date: {""}{new Date(data?.date || data?.createdAt).toLocaleDateString(
                 "en-GB",
               )}
             </span>
@@ -823,7 +822,7 @@ function VoucherThreeInchPdfFormat2({
           <div style={{ display: "flex" }}>
             <span
               style={{
-                minWidth: "170px",
+                minWidth: "160px",
                 visibility:
                   getTableNumber() && getTableNumber() !== "10"
                     ? "visible"
@@ -833,11 +832,12 @@ function VoucherThreeInchPdfFormat2({
               Table: {getTableNumber()}
             </span>
             <span>
-              Time:{" "}
-              {new Date(data?.Date || data?.createdAt).toLocaleTimeString(
-                "en-GB",
-                { hour: "2-digit", minute: "2-digit", hour12: false },
-              )}
+              Time: {""}
+        {new Date(data?.Date || data?.createdAt).toLocaleTimeString("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: true,
+})}
             </span>
           </div>
           {data?.orderType && (

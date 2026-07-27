@@ -12,7 +12,7 @@ import { RiUser2Fill } from "react-icons/ri";
 import { AiFillSetting } from "react-icons/ai";
 import { MdAdminPanelSettings } from "react-icons/md";
 import TitleDiv from "@/components/common/TitleDiv";
-
+import { VscOrganization } from "react-icons/vsc";
 function RetailersList() {
   const [secondaryUsers, setSecondaryUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -21,7 +21,7 @@ function RetailersList() {
   const navigate = useNavigate();
 
   const companyFilter = useSelector(
-    (state) => state?.companyFilter?.selectedCompany || {}
+    (state) => state?.companyFilter?.selectedCompany || {},
   );
 
   // Fetch users on initial mount
@@ -51,7 +51,7 @@ function RetailersList() {
   useEffect(() => {
     if (Object.keys(companyFilter).length > 0) {
       const filtered = secondaryUsers.filter((user) =>
-        user.organization.some((el) => el?._id === companyFilter?._id)
+        user.organization.some((el) => el?._id === companyFilter?._id),
       );
       setFilteredUsers(filtered);
     } else {
@@ -71,7 +71,7 @@ function RetailersList() {
     <section className="flex-1 text-gray-600  ">
       <div className="flex flex-col sticky top-0 z-50">
         <TitleDiv
-        loading={loading}
+          loading={loading}
           title="Your Users"
           from="/sUsers/dashboard"
           dropdownContents={[
@@ -85,7 +85,7 @@ function RetailersList() {
           <CompanyFilter setLoading={setLoading} />
         </div>
       </div>
-     
+
       <div className=" ">
         {filteredUsers.length > 0 && !loading ? (
           <div className="space-y-2 p-2">
@@ -119,6 +119,16 @@ function RetailersList() {
                       <RiUser2Fill className=" mr-1 " />
                       <span>{user?._id}</span>
                     </div>
+                    {user?.organization?.length > 0 && (
+                      <div className="flex items-center mt-1 text-orange-500 text-xs">
+                        <VscOrganization className="text-black mr-1 " />
+                        <span>
+                          {user?.organization
+                            ?.map((org) => org.name)
+                            .join(", ")}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center space-x-5">
                     {/* <Link to={`/sUsers/configureUser/${user._id}`}> */}
@@ -131,13 +141,13 @@ function RetailersList() {
                         <AiFillSetting className="text-lg" />
                       </button>
                     )} */}
-                  
-                      <button
-                        onClick={() => handleConfigNavigation(user)}
-                        className="hover:text-gray-500  "
-                      >
-                        <AiFillSetting className="text-lg" />
-                      </button>
+
+                    <button
+                      onClick={() => handleConfigNavigation(user)}
+                      className="hover:text-gray-500  "
+                    >
+                      <AiFillSetting className="text-lg" />
+                    </button>
 
                     {/* </Link> */}
                     <Link to={`/sUsers/editUser/${user._id}`}>
