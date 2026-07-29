@@ -1022,16 +1022,16 @@ function BookingForm({
     let amountWithFoodPlan =
       totalAmount +
       (includeFoodRateWithRoom ? selectedRoom.foodPlanAmountWithTax : 0);
-    if (
-      Number(amountWithFoodPlan) > Number(selectedRoom?.priceLevelRate) &&
-      includePaxRateWithRoom
-    ) {
-      setIncludePaxRateWithRoom(formData?.addFoodPlanWithRate);
-      toast.error(
-        "Rate cannot be less than sum of food plan amount or additional pax amount",
-      );
-      return;
-    }
+    // if (
+    //   Number(amountWithFoodPlan) > Number(selectedRoom?.priceLevelRate) &&
+    //   includePaxRateWithRoom
+    // ) {
+    //   setIncludePaxRateWithRoom(formData?.addFoodPlanWithRate);
+    //   toast.error(
+    //     "Rate cannot be less than sum of food plan amount or additional pax amount",
+    //   );
+    //   return;
+    // }
 
     setFormData((prev) => ({
       ...prev,
@@ -1056,16 +1056,16 @@ function BookingForm({
       totalAmount +
       (includePaxRateWithRoom ? selectedRoom.additionalPaxAmountWithTax : 0);
     console.log(amountWithAdditionalPax, selectedRoom?.priceLevelRate);
-    if (
-      Number(amountWithAdditionalPax) > Number(selectedRoom?.priceLevelRate) &&
-      includeFoodRateWithRoom
-    ) {
-      setIncludeFoodRateWithRoom(formData?.addFoodPlanWithRate);
-      toast.error(
-        "Rate cannot be less than sum of food plan amount or additional pax amount",
-      );
-      return;
-    }
+    // if (
+    //   Number(amountWithAdditionalPax) > Number(selectedRoom?.priceLevelRate) &&
+    //   includeFoodRateWithRoom
+    // ) {
+    //   setIncludeFoodRateWithRoom(formData?.addFoodPlanWithRate);
+    //   toast.error(
+    //     "Rate cannot be less than sum of food plan amount or additional pax amount",
+    //   );
+    //   return;
+    // }
 
     setFormData((prev) => ({
       ...prev,
