@@ -608,11 +608,11 @@ function AvailableRooms({
 
   const handlePriceLevelRateChange = (e, roomId) => {
     let value = e.target.value;
-    let selectedRoom = bookings.find((b) => b.roomId === roomId) || 0
-    if(Number(value) < 0 || Number(value) < (Number(selectedRoom?.foodPlanAmountWithTax || 0) + Number(selectedRoom?.additionalPaxAmountWithTax || 0))) {
-      toast.error("Rate cannot be less than sum of food plan amount or additional pax amount");
-      value = (Number(selectedRoom?.foodPlanAmountWithTax) + Number(selectedRoom?.additionalPaxAmountWithTax))
-    }
+    // let selectedRoom = bookings.find((b) => b.roomId === roomId) || 0
+    // if(Number(value) < 0 || Number(value) < (Number(selectedRoom?.foodPlanAmountWithTax || 0) + Number(selectedRoom?.additionalPaxAmountWithTax || 0))) {
+    //   toast.error("Rate cannot be less than sum of food plan amount or additional pax amount");
+    //   value = (Number(selectedRoom?.foodPlanAmountWithTax) + Number(selectedRoom?.additionalPaxAmountWithTax))
+    // }
     const newRate = value === "" ? "" : Number(value); // allow empty input
     console.log("Rate Change - New Rate:", newRate, "for Room:", roomId);
     if (isTariffRateChange) {
