@@ -1022,16 +1022,16 @@ function BookingForm({
     let amountWithFoodPlan =
       totalAmount +
       (includeFoodRateWithRoom ? selectedRoom.foodPlanAmountWithTax : 0);
-    // if (
-    //   Number(amountWithFoodPlan) > Number(selectedRoom?.priceLevelRate) &&
-    //   includePaxRateWithRoom
-    // ) {
-    //   setIncludePaxRateWithRoom(formData?.addFoodPlanWithRate);
-    //   toast.error(
-    //     "Rate cannot be less than sum of food plan amount or additional pax amount",
-    //   );
-    //   return;
-    // }
+    if (
+      Number(amountWithFoodPlan) > Number(selectedRoom?.priceLevelRate) &&
+      includePaxRateWithRoom
+    ) {
+      setIncludePaxRateWithRoom(formData?.addFoodPlanWithRate);
+      toast.error(
+        "Rate cannot be less than sum of food plan amount or additional pax amount",
+      );
+      return;
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -1056,16 +1056,16 @@ function BookingForm({
       totalAmount +
       (includePaxRateWithRoom ? selectedRoom.additionalPaxAmountWithTax : 0);
     console.log(amountWithAdditionalPax, selectedRoom?.priceLevelRate);
-    // if (
-    //   Number(amountWithAdditionalPax) > Number(selectedRoom?.priceLevelRate) &&
-    //   includeFoodRateWithRoom
-    // ) {
-    //   setIncludeFoodRateWithRoom(formData?.addFoodPlanWithRate);
-    //   toast.error(
-    //     "Rate cannot be less than sum of food plan amount or additional pax amount",
-    //   );
-    //   return;
-    // }
+    if (
+      Number(amountWithAdditionalPax) > Number(selectedRoom?.priceLevelRate) &&
+      includeFoodRateWithRoom
+    ) {
+      setIncludeFoodRateWithRoom(formData?.addFoodPlanWithRate);
+      toast.error(
+        "Rate cannot be less than sum of food plan amount or additional pax amount",
+      );
+      return;
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -1256,6 +1256,7 @@ function BookingForm({
     // setSaveLoader(true);
     if (!formData.customerName || formData.customerName.trim() === "") {
       toast.error("Please enter a customer name");
+       isSubmittingRef.current = false;
       return;
     }
 
@@ -1286,7 +1287,9 @@ function BookingForm({
             `Customer "${formData.customerName.trim()}" already exists. Please select from the dropdown instead of typing manually.`,
             { duration: 5000 },
           );
+          isSubmittingRef.current = false;
           return; // ❌ Block save
+          
         }
       } catch (_) {
         // silently fail — don't block submit on network error
@@ -1323,6 +1326,7 @@ function BookingForm({
             `Guest "${formData.guestName.trim()}" already exists. Please select from the dropdown instead of typing manually.`,
             { duration: 5000 },
           );
+          isSubmittingRef.current = false;
           return; // ❌ Block save
         }
       } catch (_) {
@@ -1334,6 +1338,7 @@ function BookingForm({
       toast.error(
         "Please select at least one room or enter price for selected room",
       );
+      isSubmittingRef.current = false;
       return;
     }
 
@@ -1413,6 +1418,7 @@ function BookingForm({
         }
       } catch {
         toast.error("Failed to create customer ");
+        isSubmittingRef.current = false;
         return;
       }
     }
@@ -1461,7 +1467,8 @@ function BookingForm({
         guestDetailedAddress = res.data?.result?.billingAddress;
         guestMobileNumber = res.data?.result?.mobileNumber;
       } catch {
-        toast.error("Failed to create customer c");
+        toast.error("Failed to create customer ");
+          isSubmittingRef.current = false;
         return;
       }
     }
@@ -1477,6 +1484,7 @@ function BookingForm({
         toast.error(
           "Error: Some rooms were lost during update. Please try again.",
         );
+        isSubmittingRef.current = false;
         return;
       }
     }

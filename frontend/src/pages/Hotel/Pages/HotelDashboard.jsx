@@ -60,8 +60,10 @@ const HotelDashboard = () => {
     return today.toISOString().split("T")[0]; // format YYYY-MM-DD
   });
  
-  const permission = useSelector((state) => state.permissionData?.permissions); 
-  console.log(permission);
+const permission = useSelector((state) => state.permissionData?.permissions); 
+console.log(permission)
+  const secondaryUserRole =
+    JSON.parse(localStorage.getItem("sUserData"))?.role || "user";
   // Add these state variables at the top of your component
   const [showBookingDetails, setShowBookingDetails] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -1371,7 +1373,7 @@ const HotelDashboard = () => {
                 </option>
                 {selectedRoomData.status === "occupied" ? (
                   <>
-                   {permission?.editTariffRate &&(<option value="editChecking">Edit Tarrif Rate</option>)}
+                   {(permission?.editTariffRate || secondaryUserRole === "admin") &&(<option value="editChecking">Edit Tarrif Rate</option>)}
                     {/* <option value="checkOut">CheckOut</option> */}
                    {/* {permission?.swapRoom && ( <option value="swapRoom">Swap Room</option>)} */}
                   </>
@@ -1387,7 +1389,7 @@ const HotelDashboard = () => {
                     <option value="blocked">Mark as Blocked</option>
                     <option value="vacant">Mark as available</option>
                     <option value="household">Mark as household</option>
-                  {permission?.roomSwap && ( <option value="swapRoom">Swap Room</option>)}
+                  {(permission?.swapRoom || secondaryUserRole === "admin") && ( <option value="swapRoom">Swap Room</option>)}
                   </>
                 )}
               </select>
