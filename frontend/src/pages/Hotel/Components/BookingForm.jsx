@@ -1008,30 +1008,37 @@ function BookingForm({
 
   const handleAdditionalPaxDetails = (details, room) => {
     let filteredDetails = details.filter((i) => i.paxID !== "");
-    console.log(filteredDetails, formData?.additionalPaxDetails);
+
     const existingDetails = Array.isArray(formData?.additionalPaxDetails)
       ? formData.additionalPaxDetails
       : [];
 
     const filterData = existingDetails.filter((i) => i.roomId !== room);
-    const totalAmount = [...filterData, ...filteredDetails].reduce(
+    const totalAmount = filteredDetails.reduce(
       (acc, item) => acc + Number(item.rate),
       0,
     );
-    let selectedRoom = formData?.selectedRooms.find((i) => i.roomId === room);
+    const selectedRoom = formData?.selectedRooms?.find(
+      (i) => i.roomId === room,
+    );
+
+    if (!selectedRoom) {
+      toast.error("Room not found");
+      return;
+    }
     let amountWithFoodPlan =
       totalAmount +
       (includeFoodRateWithRoom ? selectedRoom.foodPlanAmountWithTax : 0);
-    // if (
-    //   Number(amountWithFoodPlan) > Number(selectedRoom?.priceLevelRate) &&
-    //   includePaxRateWithRoom
-    // ) {
-    //   setIncludePaxRateWithRoom(formData?.addFoodPlanWithRate);
-    //   toast.error(
-    //     "Rate cannot be less than sum of food plan amount or additional pax amount",
-    //   );
-    //   return;
-    // }
+    if (
+      Number(amountWithFoodPlan) > Number(selectedRoom?.priceLevelRate) &&
+      includePaxRateWithRoom
+    ) {
+      setIncludePaxRateWithRoom(formData?.addPaxWithRate);
+      toast.error(
+        "Rate cannot be less than sum of food plan amount or additional pax amount",
+      );
+      return;
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -1046,26 +1053,32 @@ function BookingForm({
     const existingDetails = Array.isArray(formData?.foodPlan)
       ? formData.foodPlan
       : [];
-    const filterData = existingDetails.filter((i) => i.roomId !== room);
-    const totalAmount = [...filterData, ...details].reduce(
+    const filterData = existingDetails.filter((i) => i.roomId != room);
+    const totalAmount = details.reduce(
       (acc, item) => acc + Number(item.rate),
       0,
     );
-    let selectedRoom = formData?.selectedRooms.find((i) => i.roomId === room);
+    const selectedRoom = formData?.selectedRooms?.find(
+      (i) => i.roomId === room,
+    );
+
+    if (!selectedRoom) {
+      toast.error("Room not found");
+      return;
+    }
     let amountWithAdditionalPax =
       totalAmount +
       (includePaxRateWithRoom ? selectedRoom.additionalPaxAmountWithTax : 0);
-    console.log(amountWithAdditionalPax, selectedRoom?.priceLevelRate);
-    // if (
-    //   Number(amountWithAdditionalPax) > Number(selectedRoom?.priceLevelRate) &&
-    //   includeFoodRateWithRoom
-    // ) {
-    //   setIncludeFoodRateWithRoom(formData?.addFoodPlanWithRate);
-    //   toast.error(
-    //     "Rate cannot be less than sum of food plan amount or additional pax amount",
-    //   );
-    //   return;
-    // }
+    if (
+      Number(amountWithAdditionalPax) > Number(selectedRoom?.priceLevelRate) &&
+      includeFoodRateWithRoom
+    ) {
+      setIncludeFoodRateWithRoom(formData?.addFoodPlanWithRate);
+      toast.error(
+        "Rate cannot be less than sum of food plan amount or additional pax amount",
+      );
+      return;
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -1256,7 +1269,7 @@ function BookingForm({
     // setSaveLoader(true);
     if (!formData.customerName || formData.customerName.trim() === "") {
       toast.error("Please enter a customer name");
-       isSubmittingRef.current = false;
+      isSubmittingRef.current = false;
       return;
     }
 
@@ -1289,7 +1302,6 @@ function BookingForm({
           );
           isSubmittingRef.current = false;
           return; // ❌ Block save
-          
         }
       } catch (_) {
         // silently fail — don't block submit on network error
@@ -1468,7 +1480,7 @@ function BookingForm({
         guestMobileNumber = res.data?.result?.mobileNumber;
       } catch {
         toast.error("Failed to create customer ");
-          isSubmittingRef.current = false;
+        isSubmittingRef.current = false;
         return;
       }
     }
