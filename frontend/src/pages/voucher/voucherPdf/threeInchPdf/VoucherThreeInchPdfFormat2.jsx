@@ -812,10 +812,10 @@ function VoucherThreeInchPdfFormat2({
           }}
         >
           <div style={{ display: "flex" }}>
-            <span style={{ minWidth: "170px" }}>Bill {getBillNumber()}</span>
+            <span style={{ minWidth: "160px" }}>Bill {getBillNumber()}</span>
             <span>
-              Date:{" "}
-              {new Date(data?.Date || data?.createdAt).toLocaleDateString(
+              Date: {""}
+              {new Date(data?.date || data?.createdAt).toLocaleDateString(
                 "en-GB",
               )}
             </span>
@@ -823,7 +823,7 @@ function VoucherThreeInchPdfFormat2({
           <div style={{ display: "flex" }}>
             <span
               style={{
-                minWidth: "170px",
+                minWidth: "160px",
                 visibility:
                   getTableNumber() && getTableNumber() !== "10"
                     ? "visible"
@@ -833,10 +833,14 @@ function VoucherThreeInchPdfFormat2({
               Table: {getTableNumber()}
             </span>
             <span>
-              Time:{" "}
+              Time: {""}
               {new Date(data?.Date || data?.createdAt).toLocaleTimeString(
                 "en-GB",
-                { hour: "2-digit", minute: "2-digit", hour12: false },
+                {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                },
               )}
             </span>
           </div>
@@ -1194,8 +1198,9 @@ function VoucherThreeInchPdfFormat2({
 
       <div className="flex justify-between items-center">
         {isPreview && (
-          <div className="my-3 mx-4">
+          <div className="my-2 mx-2">
             <input
+             className="border rounded-md px-3 py-2 hover:cursor-pointer"
               type="date"
               value={selectedSaleDate}
               onChange={(e) => {
@@ -1205,7 +1210,7 @@ function VoucherThreeInchPdfFormat2({
           </div>
         )}
 
-        <div className="my-3 mx-4 ml-auto">
+        <div className="my-2 mx-2 ml-auto hover:cursor-pointer">
           <PrintModeDropdown />
         </div>
       </div>
