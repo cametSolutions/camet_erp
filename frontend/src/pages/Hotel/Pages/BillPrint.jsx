@@ -216,7 +216,7 @@ const HotelBillPrint = () => {
     const result = [];
 
     (doc.selectedRooms || [])?.forEach((room) => {
-      const roomStartDate = new Date(room.arrivalDate || doc.arrivalDate);
+      let roomStartDate = new Date(room.arrivalDate || doc.arrivalDate);
 
       const stayDays = doc.stayDays || 1;
       const fullDays = Math.floor(stayDays);
@@ -229,8 +229,6 @@ const HotelBillPrint = () => {
       const dayWisePrices = {};
       const dayWiseTax = {};
 
-      
-
       const dateTariffs = room.dateTariffs || {};
       let activePrice = room?.priceLevelRate;
       console.log(room?.additionalPaxAmountWithTax);
@@ -238,10 +236,10 @@ const HotelBillPrint = () => {
         ? room?.priceLevelRate -
           room?.additionalPaxAmountWithTax / room.stayDays
         : room?.priceLevelRate;
-console.log(stayDays)
+      console.log(stayDays);
       // Build per-day prices/taxes keyed by ISO date (YYYY-MM-DD)
       for (let i = 0; i < stayDays; i++) {
-        console.log(roomStartDate)
+        console.log(roomStartDate);
         const d = new Date(roomStartDate);
         d.setDate(roomStartDate.getDate() + i);
         const key = d.toISOString().split("T")[0];
@@ -249,7 +247,7 @@ console.log(stayDays)
           activePrice = Number(dateTariffs[key]);
         }
 
-        console.log(dayWisePrices , roomStartDate);
+        console.log(dayWisePrices, roomStartDate);
 
         dayWisePrices[key] = doc.addTaxWithRate
           ? Number(activePrice || 0) /
@@ -296,17 +294,43 @@ console.log(stayDays)
 
       const normalizeToDate = (d) => {
         const nd = new Date(d);
-        nd.setHours(0, 0, 0, 0);
+        nd.setUTCHours(0, 0, 0, 0);
         return nd;
       };
+
       const swapDate = room?.swappingDateFrom
         ? new Date(room.swappingDateFrom).toISOString().split("T")[0]
         : "";
       console.log(swapDate);
       if (room.isSwapped && room.swappingDateFrom) {
         console.log(room.roomName);
-        const swappingDate = normalizeToDate(room.swappingDateFrom);
-        const arrivalDate = normalizeToDate(doc.arrivalDate);
+        let swappingDate = normalizeToDate(room.swappingDateFrom);
+        let arrivalDate = normalizeToDate(doc.arrivalDate);
+
+        let swappedRoomObject = doc?.roomSwapHistory.find(
+          (r) => r.fromRoomId == room.roomId,
+        );
+        console.log(swappedRoomObject);
+        if (swappedRoomObject?.toRoomId) {
+          let swappedRoomData = doc?.selectedRooms.find(
+            (r) => r.roomId == swappedRoomObject.toRoomId,
+          );
+          let isRoomSwappedData = doc?.roomSwapHistory.find(
+            (r) => r.toRoomId == room.roomId,
+          )
+      
+          if (swappedRoomData?.isSwapped === false  && isRoomSwappedData) {
+            arrivalDate = normalizeToDate(swappedRoomData.swappingDateFrom);
+            arrivalDate.setDate(arrivalDate.getDate() - 1);
+            roomStartDate = arrivalDate;
+          }else{
+            console.log(room)
+            arrivalDate = normalizeToDate(doc.arrivalDate);
+            roomStartDate = arrivalDate;
+            swappingDate =  normalizeToDate(room.swappingDateFrom);
+          }
+
+        }
 
         fullDaysAre = Math.floor(
           (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24),
@@ -330,7 +354,7 @@ console.log(stayDays)
           (checkoutDate - swappingDate) / (1000 * 60 * 60 * 24),
         );
 
-        console.log(fullDaysAre)
+        console.log(fullDaysAre);
 
         if (fullDaysAre <= 0) {
           if (swapDate == doc.arrivalDate) {
@@ -393,7 +417,7 @@ console.log(stayDays)
           addArray,
         });
       }
-        console.log(result);
+      console.log(result);
       // Add fractional day (half day) – no additional pax
       if (fractionalDay > 0) {
         const baseDate =

@@ -280,7 +280,7 @@ const calculateTaxAmount = (
           ? acc + Number(item.rate || 0)
           : acc,
       0,
-    )  * Number(stayDays || 1);
+    ) * Number(stayDays || 1);
 
   let specificAdditionalPaxDetails =
     (additionalPaxDetails || []).reduce(
@@ -293,30 +293,30 @@ const calculateTaxAmount = (
 
   // Food plan taxable amount
   let taxableSpecificFoodPlan = specificFoodPlanTotal / (1 + foodPlanTax / 100);
-const additionalPaxTaxableAmount =
-  Number(specificAdditionalPaxDetails) /
-  (1 + Number(taxPercentage) / 100);
+  const additionalPaxTaxableAmount =
+    Number(specificAdditionalPaxDetails) / (1 + Number(taxPercentage) / 100);
   // additionalPax  taxable amount
 
-const additionalPaxTaxAmount =
-  Number(specificAdditionalPaxDetails) - additionalPaxTaxableAmount;
+  const additionalPaxTaxAmount =
+    Number(specificAdditionalPaxDetails) - additionalPaxTaxableAmount;
 
-  console.log(doc.addFoodPlanWithRate)
-   console.log(doc.addPaxWithRate)
+  console.log(doc.addFoodPlanWithRate);
+  console.log(doc.addPaxWithRate);
 
-  
   let originalRoomPrice = roomPrice * Number(stayDays || 1);
   // Room amount including tax
   let amountWithTax = Math.max(
     0,
-    Number(originalRoomPrice || 0) - ((doc.addFoodPlanWithRate ? Number(specificFoodPlanTotal || 0) : 0) + (doc.addPaxWithRate ? Number(specificAdditionalPaxDetails || 0): 0)),
+    Number(originalRoomPrice || 0) -
+      ((doc.addFoodPlanWithRate ? Number(specificFoodPlanTotal || 0) : 0) +
+        (doc.addPaxWithRate ? Number(specificAdditionalPaxDetails || 0) : 0)),
   );
 
   // Room taxable amount
   let taxableAmount = amountWithTax / (1 + taxPercentage / 100);
 
   // Room tax amount
-  let roomTaxAmount = (amountWithTax - taxableAmount ) + (additionalPaxTaxAmount)
+  let roomTaxAmount = amountWithTax - taxableAmount + additionalPaxTaxAmount;
 
   // Food plan tax amount
   let foodPlanTaxAmount = specificFoodPlanTotal - taxableSpecificFoodPlan;
@@ -506,21 +506,21 @@ export const fetchDataHotel = async (
         .lean();
       await Promise.all(
         checkout.map(async (doc) => {
-          console.log(doc)
+          console.log(doc);
           if (!doc?.voucherNumber) return;
 
           const selectedRooms = Array.isArray(doc.selectedRooms)
             ? doc.selectedRooms
             : [];
 
-          let totalFoodPlanAmount = 0
+          let totalFoodPlanAmount = 0;
 
-          let taxableFoodPlanAmount = 0
+          let taxableFoodPlanAmount = 0;
 
           let newItemsArranged = await Promise.all(
             selectedRooms.map(async (room) => {
               let stayDays = await calculateStayDays(doc, room);
-              if (stayDays === 0 ) {
+              if (stayDays === 0) {
                 return null;
               }
 
@@ -535,7 +535,7 @@ export const fetchDataHotel = async (
                 console.log("stayDays", stayDays, doc.voucherNumber);
               }
 
-              if(room.priceLevelRate == 0) {
+              if (room.priceLevelRate == 0) {
                 return null;
               }
 
@@ -551,8 +551,12 @@ export const fetchDataHotel = async (
                 doc,
               );
 
-              totalFoodPlanAmount = totalFoodPlanAmount + Number(taxDetails?.specificFoodPlanTotal),
-              taxableFoodPlanAmount = taxableFoodPlanAmount + Number(taxDetails?.taxableSpecificFoodPlan)
+              ((totalFoodPlanAmount =
+                totalFoodPlanAmount +
+                Number(taxDetails?.specificFoodPlanTotal)),
+                (taxableFoodPlanAmount =
+                  taxableFoodPlanAmount +
+                  Number(taxDetails?.taxableSpecificFoodPlan)));
               return {
                 _id: room._id,
                 product_name: room?.roomName,
@@ -1017,16 +1021,39 @@ export const calculateStayDays = async (doc, room) => {
   let fullDaysAre = doc.stayDays;
   const normalizeToDate = (d) => {
     const nd = new Date(d);
-    nd.setHours(0, 0, 0, 0);
+    nd.setUTCHours(0, 0, 0, 0);
     return nd;
   };
   const swapDate = room?.swappingDateFrom
     ? new Date(room.swappingDateFrom).toISOString().split("T")[0]
     : "";
-  console.log(swapDate);
+
+
   if (room.isSwapped && room.swappingDateFrom) {
-    const swappingDate = normalizeToDate(room.swappingDateFrom);
-    const arrivalDate = normalizeToDate(doc.arrivalDate);
+    let swappingDate = normalizeToDate(room.swappingDateFrom);
+    let arrivalDate = normalizeToDate(doc.arrivalDate);
+
+    let swappedRoomObject = doc?.roomSwapHistory.find(
+      (r) => r.fromRoomId == room.roomId,
+    );
+
+    if (swappedRoomObject?.toRoomId) {
+      let swappedRoomData = doc?.selectedRooms.find(
+        (r) => r.roomId == swappedRoomObject.toRoomId,
+      );
+      let isRoomSwappedData = doc?.roomSwapHistory.find(
+        (r) => r.toRoomId == room.roomId,
+      );
+
+      if (swappedRoomData?.isSwapped === false && isRoomSwappedData) {
+        arrivalDate = normalizeToDate(swappedRoomData.swappingDateFrom);
+        arrivalDate.setDate(arrivalDate.getDate() - 1);
+      } else {
+        console.log(room);
+        arrivalDate = normalizeToDate(doc.arrivalDate);
+        swappingDate = normalizeToDate(room.swappingDateFrom);
+      }
+    }
 
     fullDaysAre = Math.floor(
       (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24),
