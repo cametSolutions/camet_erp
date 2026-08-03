@@ -142,6 +142,7 @@ function AvailableRooms({
   useEffect(() => {
     const fetchBookings = async () => {
       if (formData?.selectedRooms?.length > 0) {
+        console.log(formData.selectedRooms);
         const updatedBookings = await Promise.all(
           formData.selectedRooms.map(async (booking) => {
             console.log(booking);
@@ -381,9 +382,47 @@ function AvailableRooms({
         };
       }
 
+      const normalizeToDate = (d) => {
+        const nd = new Date(d);
+        nd.setUTCHours(0, 0, 0, 0);
+        return nd;
+      };
+
       const stayDates = [];
-      const currentDate = new Date(checkInDate);
-      const endDate = new Date(checkOutDate);
+      let currentDate = new Date(checkInDate);
+      let endDate = new Date(checkOutDate);
+      if (booking?.isSwapped && booking?.swappingDateFrom) {
+        let swappingDate = normalizeToDate(booking.swappingDateFrom);
+        let arrivalDate = normalizeToDate(checkInDate?.arrivalDate);
+
+        let swappedRoomObject = formData?.roomSwapHistory.find(
+          (r) => r.fromRoomId == booking.roomId,
+        );
+        console.log(swappedRoomObject);
+        if (swappedRoomObject?.toRoomId) {
+          let swappedRoomData = formData?.selectedRooms.find(
+            (r) => r.roomId == swappedRoomObject.toRoomId,
+          );
+          let isRoomSwappedData = formData?.roomSwapHistory.find(
+            (r) => r.toRoomId == booking.roomId,
+          );
+
+          if (swappedRoomData?.isSwapped === false && isRoomSwappedData) {
+            arrivalDate = normalizeToDate(swappedRoomData.swappingDateFrom);
+            arrivalDate.setDate(arrivalDate.getDate() - 1);
+          } else {
+            console.log(bookings);
+            arrivalDate = normalizeToDate(formData.arrivalDate);
+            swappingDate = normalizeToDate(booking.swappingDateFrom);
+          }
+        }
+        currentDate = arrivalDate 
+        endDate = swappingDate;
+      } else if (!booking?.isSwapped && booking?.swappingDateFrom) {
+        currentDate = normalizeToDate(booking.swappingDateFrom);
+        currentDate = normalizeToDate(booking.checkOutDate);
+      }
+      console.log()
 
       while (currentDate < endDate) {
         const formattedDate = currentDate.toISOString().split("T")[0];
@@ -606,16 +645,19 @@ function AvailableRooms({
     );
   };
 
-  const handlePriceLevelRateChange = (e, roomId, validate=false) => {
+  const handlePriceLevelRateChange = (e, roomId, validate = false) => {
     let value = e.target.value;
-    if(validate){
-    let selectedRoom = bookings.find((b) => b.roomId === roomId) || 0
-    const minimumRate = Number(selectedRoom?.foodPlanAmountWithTax || 0) + Number(selectedRoom?.additionalPaxAmountWithTax || 0);
-    if(Number(value) < 0 || (Number(value) < minimumRate)) {
-      toast.error("Rate cannot be less than sum of food plan amount or additional pax amount");
-      value = minimumRate
-    }
-          
+    if (validate) {
+      let selectedRoom = bookings.find((b) => b.roomId === roomId) || 0;
+      const minimumRate =
+        Number(selectedRoom?.foodPlanAmountWithTax || 0) +
+        Number(selectedRoom?.additionalPaxAmountWithTax || 0);
+      if (Number(value) < 0 || Number(value) < minimumRate) {
+        toast.error(
+          "Rate cannot be less than sum of food plan amount or additional pax amount",
+        );
+        value = minimumRate;
+      }
     }
     const newRate = value === "" ? "" : Number(value); // allow empty input
     console.log("Rate Change - New Rate:", newRate, "for Room:", roomId);
@@ -1148,7 +1190,11 @@ function AvailableRooms({
                                   handlePriceLevelRateChange(e, booking.roomId)
                                 }
                                 onBlur={(e) =>
-                                  handlePriceLevelRateChange(e, booking.roomId , true)
+                                  handlePriceLevelRateChange(
+                                    e,
+                                    booking.roomId,
+                                    true,
+                                  )
                                 }
                                 min="-1"
                                 step="0.01"
