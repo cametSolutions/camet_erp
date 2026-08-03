@@ -235,6 +235,7 @@ export const reArrangeAdditionalPaxDetails = (additionalPax = [], roomId) => {
 export const calculateStayDays = (doc, room, arrival, checkOut, days) => {
   let fullDaysAre = days;
   console.log(room, arrival, checkOut, days);
+  console.log(doc);
   const normalizeToDate = (d) => {
     const nd = new Date(d);
     nd.setUTCHours(0, 0, 0, 0);
@@ -247,7 +248,7 @@ export const calculateStayDays = (doc, room, arrival, checkOut, days) => {
   if (room.isSwapped && room.swappingDateFrom) {
     let swappingDate = normalizeToDate(room.swappingDateFrom);
     let arrivalDate = normalizeToDate(arrival);
-
+console.log(arrivalDate, checkOut, swappingDate)
     let swappedRoomObject = doc?.roomSwapHistory.find(
       (r) => r.fromRoomId == room.roomId,
     );
@@ -265,8 +266,8 @@ export const calculateStayDays = (doc, room, arrival, checkOut, days) => {
         arrivalDate.setDate(arrivalDate.getDate() - 1);
       } else {
         console.log(room);
-        arrivalDate = normalizeToDate(doc.arrivalDate);
-        swappingDate = normalizeToDate(room.swappingDateFrom);
+           arrivalDate = normalizeToDate(arrivalDate);
+            swappingDate =  normalizeToDate(room.swappingDateFrom);
       }
     }
     fullDaysAre = Math.floor(
@@ -280,6 +281,7 @@ export const calculateStayDays = (doc, room, arrival, checkOut, days) => {
         fullDaysAre = 1;
       }
     }
+      console.log(fullDaysAre);
   }
 
   if (!room.isSwapped && room.swappingDateFrom) {
