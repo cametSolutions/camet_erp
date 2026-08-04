@@ -606,13 +606,17 @@ function AvailableRooms({
     );
   };
 
-  const handlePriceLevelRateChange = (e, roomId) => {
+  const handlePriceLevelRateChange = (e, roomId, validate=false) => {
     let value = e.target.value;
-    // let selectedRoom = bookings.find((b) => b.roomId === roomId) || 0
-    // // if(Number(value) < 0 || Number(value) < (Number(selectedRoom?.foodPlanAmountWithTax || 0) + Number(selectedRoom?.additionalPaxAmountWithTax || 0))) {
-    // //   toast.error("Rate cannot be less than sum of food plan amount or additional pax amount");
-    // //   value = (Number(selectedRoom?.foodPlanAmountWithTax) + Number(selectedRoom?.additionalPaxAmountWithTax))
-    // // }
+    if(validate){
+    let selectedRoom = bookings.find((b) => b.roomId === roomId) || 0
+    const minimumRate = Number(selectedRoom?.foodPlanAmountWithTax || 0) + Number(selectedRoom?.additionalPaxAmountWithTax || 0);
+    if(Number(value) < 0 || (Number(value) < minimumRate)) {
+      toast.error("Rate cannot be less than sum of food plan amount or additional pax amount");
+      value = minimumRate
+    }
+          
+    }
     const newRate = value === "" ? "" : Number(value); // allow empty input
     console.log("Rate Change - New Rate:", newRate, "for Room:", roomId);
     if (isTariffRateChange) {
@@ -1142,6 +1146,9 @@ function AvailableRooms({
                                 value={booking.priceLevelRate}
                                 onChange={(e) =>
                                   handlePriceLevelRateChange(e, booking.roomId)
+                                }
+                                onBlur={(e) =>
+                                  handlePriceLevelRateChange(e, booking.roomId , true)
                                 }
                                 min="-1"
                                 step="0.01"
