@@ -3,6 +3,7 @@
 const fmt = (n) => "₹" + Number(n ?? 0).toLocaleString("en-IN");
 
 const RevenueTable = ({ rows = [], selectedDateLabel = "" }) => {
+  console.log(rows)
   const sortedRows = [...rows].sort(
     (a, b) => Number(b?.revenue ?? 0) - Number(a?.revenue ?? 0),
   );
@@ -10,6 +11,8 @@ const RevenueTable = ({ rows = [], selectedDateLabel = "" }) => {
     ...sortedRows.map((row) => Number(row?.revenue ?? 0)),
     0,
   );
+
+  console.log(sortedRows)
 
   return (
     <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -32,7 +35,6 @@ const RevenueTable = ({ rows = [], selectedDateLabel = "" }) => {
               </th>
             </tr>
           </thead>
-
           <tbody>
             {sortedRows.length > 0 ? (
               sortedRows.map((row, index) => (
@@ -69,7 +71,13 @@ const RevenueTable = ({ rows = [], selectedDateLabel = "" }) => {
                         />
                       </div>
                       <span className="min-w-fit rounded-md bg-slate-100 px-2 py-1 text-sm font-semibold text-slate-800">
-                        {fmt(row?.revenue)}
+                        {fmt(row?.dailyRevenue)}
+                      </span>
+                        <span className="min-w-fit rounded-md bg-slate-100 px-2 py-1 text-sm font-semibold text-slate-800">
+                        {fmt(row?.monthlyRevenue)}
+                      </span>
+                        <span className="min-w-fit rounded-md bg-slate-100 px-2 py-1 text-sm font-semibold text-slate-800">
+                        {fmt(row?.yearlyRevenue)}
                       </span>
                     </div>
                   </td>

@@ -16,11 +16,26 @@ const PropertySalesBreakdownSheet = ({
   open,
   onOpenChange,
   totalPropertySales,
+  finalAmount,
+  tax,
   totalHotelSales,
   totalRestaurantSales,
   propertySalesBreakdown = [],
 }) => {
   const isMobile = useIsMobile();
+
+  console.log(propertySalesBreakdown);
+
+  //  {
+  //     cmp_id: '685e813492da9720ba535083',
+  //     companyName: 'ARCADIA',
+  //     hotelSales: 6135695.8,
+  //     hotelTax: 785121,
+  //     restaurantSales: 188498.21,
+  //     restaurantTax: 3762.01,
+  //     totalSales: 6324194.01,
+  //     totalTax: 788883.01
+  //   },
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -42,11 +57,20 @@ const PropertySalesBreakdownSheet = ({
             <p className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">
               Total Property Sales
             </p>
-            <p className="text-lg sm:text-2xl font-bold text-gray-800 leading-tight break-all">
+            <p className="text-md sm:text-md font-bold text-gray-800 leading-tight break-all">
               {totalPropertySales}
             </p>
+            <p className="text-md sm:text-md font-bold text-gray-800 leading-tight break-all">
+              {tax}
+            </p>
+            <p className="text-md sm:text-md font-bold text-gray-800 leading-tight break-all">
+              {finalAmount}
+            </p>
           </div>
-          <Badge variant="secondary" className="text-xs self-center sm:self-center">
+          <Badge
+            variant="secondary"
+            className="text-xs self-center sm:self-center"
+          >
             {propertySalesBreakdown.length} companies
           </Badge>
         </div>
@@ -54,11 +78,29 @@ const PropertySalesBreakdownSheet = ({
         <div className="mx-4 sm:mx-6 mb-3 sm:mb-4 grid grid-cols-2 gap-2 sm:gap-3">
           <div className="rounded-xl bg-slate-50 border border-slate-100 px-2.5 sm:px-3 py-2">
             <div className="inline-flex items-center gap-1 rounded-full px-2 py-1 bg-amber-50 text-amber-700">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
-                <path d="M4 20V7C4 5.89543 4.89543 5 6 5H18C19.1046 5 20 5.89543 20 7V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                <path d="M8 9H10M14 9H16M8 13H10M14 13H16M10 20V16H14V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="flex-shrink-0"
+              >
+                <path
+                  d="M4 20V7C4 5.89543 4.89543 5 6 5H18C19.1046 5 20 5.89543 20 7V20"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M8 9H10M14 9H16M8 13H10M14 13H16M10 20V16H14V20"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
               </svg>
-              <p className="text-[9px] uppercase tracking-wider leading-none font-semibold">Hotel</p>
+              <p className="text-[9px] uppercase tracking-wider leading-none font-semibold">
+                Hotel
+              </p>
             </div>
             <p className="text-xs sm:text-sm font-semibold text-gray-800 mt-1 break-all">
               {totalHotelSales}
@@ -67,11 +109,29 @@ const PropertySalesBreakdownSheet = ({
 
           <div className="rounded-xl bg-slate-50 border border-slate-100 px-2.5 sm:px-3 py-2">
             <div className="inline-flex items-center gap-1 rounded-full px-2 py-1 bg-sky-50 text-sky-700">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
-                <path d="M7 4V11M10 4V11M7 8H10M8.5 11V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                <path d="M15 4C17 6 17 9 15 11V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="flex-shrink-0"
+              >
+                <path
+                  d="M7 4V11M10 4V11M7 8H10M8.5 11V20"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M15 4C17 6 17 9 15 11V20"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
               </svg>
-              <p className="text-[9px] uppercase tracking-wider leading-none font-semibold">Restaurant</p>
+              <p className="text-[9px] uppercase tracking-wider leading-none font-semibold">
+                Restaurant
+              </p>
             </div>
             <p className="text-xs sm:text-sm font-semibold text-gray-800 mt-1 break-all">
               {totalRestaurantSales}
@@ -103,30 +163,79 @@ const PropertySalesBreakdownSheet = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mt-3">
+              <div className="grid grid-cols-2 gap-3 mt-1">
                 <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
                   <div className="inline-flex items-center gap-1 rounded-full px-2 py-1 bg-amber-50 text-amber-700">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
-                      <path d="M4 20V7C4 5.89543 4.89543 5 6 5H18C19.1046 5 20 5.89543 20 7V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                      <path d="M8 9H10M14 9H16M8 13H10M14 13H16M10 20V16H14V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="flex-shrink-0"
+                    >
+                      <path
+                        d="M4 20V7C4 5.89543 4.89543 5 6 5H18C19.1046 5 20 5.89543 20 7V20"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M8 9H10M14 9H16M8 13H10M14 13H16M10 20V16H14V20"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
                     </svg>
-                    <p className="text-[9px] uppercase tracking-wider leading-none font-semibold">Hotel</p>
+                    <p className="text-[9px] uppercase tracking-wider leading-none font-semibold">
+                      Hotel
+                    </p>
                   </div>
                   <p className="text-xs sm:text-sm font-semibold text-gray-800 mt-1 break-all">
                     {fmt(company.hotelSales)}
+                  </p>
+
+                  <p className="text-xs sm:text-sm font-semibold text-gray-800 mt-1 break-all">
+                    {fmt(company.hotelTax)}
+                  </p>
+                  <p className="text-xs sm:text-sm font-semibold text-gray-800 mt-1 break-all">
+                    {fmt(company.hotelSales - company.hotelTax)}
                   </p>
                 </div>
 
                 <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
                   <div className="inline-flex items-center gap-1 rounded-full px-2 py-1 bg-sky-50 text-sky-700">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
-                      <path d="M7 4V11M10 4V11M7 8H10M8.5 11V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                      <path d="M15 4C17 6 17 9 15 11V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="flex-shrink-0"
+                    >
+                      <path
+                        d="M7 4V11M10 4V11M7 8H10M8.5 11V20"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M15 4C17 6 17 9 15 11V20"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
                     </svg>
-                    <p className="text-[9px] uppercase tracking-wider leading-none font-semibold">Restaurant</p>
+                    <p className="text-[9px] uppercase tracking-wider leading-none font-semibold">
+                      Restaurant
+                    </p>
                   </div>
                   <p className="text-xs sm:text-sm font-semibold text-gray-800 mt-1 break-all">
                     {fmt(company.restaurantSales)}
+                  </p>
+                  <p className="text-xs sm:text-sm font-semibold text-gray-800 mt-1 break-all">
+                    {fmt(company.restaurantTax)}
+                  </p>
+                  <p className="text-xs sm:text-sm font-semibold text-gray-800 mt-1 break-all">
+                    {fmt(company.restaurantSales - company.restaurantTax)}
                   </p>
                 </div>
               </div>

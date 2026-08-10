@@ -13,7 +13,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 
-const fmt = (n) => "₹" + Number(n ?? 0).toLocaleString("en-IN");
+const fmt = (n) =>
+  "₹" +
+  Number(n ?? 0).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
 const SummaryDashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -51,6 +56,7 @@ const SummaryDashboard = () => {
     );
     return response.data;
   };
+
 
   const fetchDashboardCompanyRevenueBreakdown = async () => {
     const response = await api.get(
@@ -123,6 +129,8 @@ const SummaryDashboard = () => {
     retry: 1,
     refetchOnWindowFocus: false,
   });
+
+  console.log(revenueBreakdownData)
 
   const {
     data: dailyCollectionBreakdownData,
@@ -228,6 +236,8 @@ const SummaryDashboard = () => {
     ]);
   };
 
+  console.log(propertySalesSummaryData)
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div>
@@ -321,6 +331,8 @@ const SummaryDashboard = () => {
           <div className="space-y-6">
             <SummaryCards
               totalRevenue={fmt(data.totalRevenue)}
+              totalTax={fmt(data.totalTax)}
+              finalRevenue={fmt(Number(propertySalesSummaryData?.totalPropertySales) - Number(data.totalTax)   )}
               revenueBreakdown={revenueBreakdownData?.companyWiseRevenue ?? []}
               dailyCollection={fmt(data.dailyCollection)}
               dailyCollectionBreakdown={
@@ -332,7 +344,11 @@ const SummaryDashboard = () => {
               }
               totalPropertySales={fmt(propertySalesSummaryData?.totalPropertySales)}
               totalHotelSales={fmt(propertySalesSummaryData?.totalHotelSales)}
+              totalHotelSalesTax={fmt(propertySalesSummaryData?.totalHotelSalesTax)}
+              grossSalesHotel={fmt(propertySalesSummaryData?.totalHotelSaleWithOutTax)}
               totalRestaurantSales={fmt(propertySalesSummaryData?.totalRestaurantSales)}
+              totalRestaurantSalesTax={fmt(propertySalesSummaryData?.totalRestaurantTax)}
+              grossRestaurantSales={fmt(propertySalesSummaryData?.totalRestaurantSaleWithOutTax)}
               propertySalesBreakdown={
                 propertySalesSummaryData?.companyWisePropertySales ?? []
               }
