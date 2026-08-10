@@ -5,6 +5,11 @@ const { Schema } = mongoose;
 // Payment Splitting Schema
 const paymentSplitSchema = new Schema(
   {
+    paymentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: () => new mongoose.Types.ObjectId(),
+      immutable: true,
+    },
     type: {
       type: String,
       required: true,
@@ -342,7 +347,7 @@ const salesSchema = new Schema(
     },
 
     isCancelled: { type: Boolean, default: false },
-      cancelledAt: {
+    cancelledAt: {
       type: Date,
     },
     cancelledBy: {

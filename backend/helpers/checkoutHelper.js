@@ -270,6 +270,7 @@ export const createReceiptsAndSettlements = async ({
           paymentDetails: buildPaymentDetails(source, sourceParty),
           note: "",
           isCancelled: false,
+          paymentId: currentEntry.tally.paymentId,
         };
 
         if (paymentMode === "split") {
@@ -620,6 +621,7 @@ async function createSettlementForReceipt({
         voucherType: "receipt",
         amount: payAmount,
         payment_mode: normalizeSourceType(source.sourceType),
+        paymentId: receipt.paymentId,
         partyId: partyDoc._id,
         partyName: partyDoc.partyName,
         partyType: "party",

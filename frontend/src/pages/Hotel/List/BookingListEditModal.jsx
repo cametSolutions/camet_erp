@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import HotelTabContent from "./HotelTabContent";
 import RestaurantTabContent from "./RestaurantTabContent";
 
-
+   
 // ── Helpers ──
 const getPaymentMethod = (sourceType) => {
   switch (sourceType?.toLowerCase()) {
@@ -116,6 +116,7 @@ const {
             ? { _id: p.customer || p.source || "", partyName: p.customerName || "" }
             : null,
           creditPartyId: isCredit ? (p.customer || p.source || "") : "",
+          paymentId:     p.paymentId,
         };
       });
 
@@ -243,6 +244,8 @@ const handleCreditPartyChange = (index, party) => {
 
   const handleSave = async () => {
     setSaveLoading(true);
+    console.log(payments)
+
     try {
       const formattedPayments = payments.map((p) => {
         const isCredit = p.sourceType?.toLowerCase() === "credit";
@@ -257,6 +260,7 @@ const handleCreditPartyChange = (index, party) => {
           underCategory: p.underCategory,
           transactionNo: p.transactionNo,
           upiNo:         p.upiNo,
+          paymentId:     p.paymentId,
           ...(isCredit && { creditPartyId: p.creditPartyId }),
         };
       });

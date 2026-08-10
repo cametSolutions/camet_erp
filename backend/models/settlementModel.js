@@ -36,6 +36,10 @@ const settlementSchema = new mongoose.Schema(
       default:null,
       enum: ["cash", "bank", "cheque", "upi", "card", "online","credit"],
     },
+    paymentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      index: true,
+    },
 
     // Party Information (who paid/received from)
     partyId: {

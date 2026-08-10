@@ -34,6 +34,7 @@ import {
   exportLoginReportPdf,
   exportLoginReportExcel,
 } from "../helpers/hotelHelper.js";
+import {createReceiptsAndSettlements} from  "../helpers/checkoutHelper.js"
 import { extractRequestParams } from "../helpers/productHelper.js";
 import { generateVoucherNumber } from "../helpers/voucherHelper.js";
 import mongoose, { get } from "mongoose";
@@ -1416,7 +1417,7 @@ export const getBookings = async (req, res) => {
     const params = extractRequestParamsForBookings(req);
     console.log("paramss", params);
     const filter = buildDatabaseFilterForBooking(params);
-console.log("filter",filter)
+    console.log("filter", filter);
     const { bookings = [], totalBookings = 0 } =
       await fetchBookingsFromDatabase(filter, params);
 
@@ -5193,11 +5194,11 @@ export const cancelBooking = async (req, res) => {
 
     let responseData = null;
     let responseMessage = "";
-    let record = {}
-     let recordType = "";
+    let record = {};
+    let recordType = "";
     await session.withTransaction(async () => {
-       record = await Booking.findById(id).session(session);
-       recordType = "booking";
+      record = await Booking.findById(id).session(session);
+      recordType = "booking";
 
       if (!record) {
         record = await CheckIn.findById(id).session(session);
@@ -5234,25 +5235,30 @@ export const cancelBooking = async (req, res) => {
       } ${record.voucherNumber} has been cancelled successfully and room marked as dirty`;
     });
 
-    let heading = recordType == "checkin" ? "Check-in" : recordType == "booking" ? "Booking" : "Checkout"
+    let heading =
+      recordType == "checkin"
+        ? "Check-in"
+        : recordType == "booking"
+          ? "Booking"
+          : "Checkout";
 
-     let primaryUserData = await primaryUserModel.findById(req.owner);
-        
-            if (!primaryUserData || !primaryUserData?.email) {
-              res.status(200).json({
-                success: true,
-                message: `${heading}cancelled successfully but email not sent`,
-                data: sale,
-              });
-            }
-        
-            await sendMail({
-              to: primaryUserData?.email,
-              cc: [],
-              subject: `${heading} Cancelled Alert - ${record?.voucherNumber}`,
-              fromName: `Cancel ${heading}` ,
-              text: `${heading} ${record?.voucherNumber} has been cancelled by ${req?.secUserName || primaryUserData?.userName || "System"}. Please check the attached cancelled KOT copy.`,
-              html: `
+    let primaryUserData = await primaryUserModel.findById(req.owner);
+
+    if (!primaryUserData || !primaryUserData?.email) {
+      res.status(200).json({
+        success: true,
+        message: `${heading}cancelled successfully but email not sent`,
+        data: sale,
+      });
+    }
+
+    await sendMail({
+      to: primaryUserData?.email,
+      cc: [],
+      subject: `${heading} Cancelled Alert - ${record?.voucherNumber}`,
+      fromName: `Cancel ${heading}`,
+      text: `${heading} ${record?.voucherNumber} has been cancelled by ${req?.secUserName || primaryUserData?.userName || "System"}. Please check the attached cancelled KOT copy.`,
+      html: `
                 <div style="font-family: Arial, sans-serif;">
                   <h2 style="color:#b91c1c;">${heading} Cancelled Alert</h2>
                 <p>${heading} <strong>${record?.voucherNumber}</strong> has been cancelled.</p>
@@ -5263,8 +5269,8 @@ export const cancelBooking = async (req, res) => {
                   
                 </div>
               `,
-              data: record,
-            });
+      data: record,
+    });
 
     return res.status(200).json({
       success: true,
@@ -6494,144 +6500,156 @@ export const getOccupancyCheckoutReport = async (req, res) => {
       additionalPaxTotal += additionalPaxCount;
 
       const normalizeDate = (value) => {
-  const d = new Date(value);
-  d.setHours(0, 0, 0, 0);
-  return d;
-};
+        const d = new Date(value);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      };
 
-const addOneDay = (value) => {
-  const d = new Date(value);
-  d.setDate(d.getDate() + 1);
-  d.setHours(0, 0, 0, 0);
-  return d;
-};
+      const addOneDay = (value) => {
+        const d = new Date(value);
+        d.setDate(d.getDate() + 1);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      };
 
-const overlaps = (start1, end1, start2, end2) => {
-  return start1 < end2 && start2 < end1;
-};
- 
+      const overlaps = (start1, end1, start2, end2) => {
+        return start1 < end2 && start2 < end1;
+      };
 
-    (doc?.selectedRooms || []).forEach((room) => {
-  const bookingStart = normalizeDate(doc?.arrivalDateObj || doc?.arrivalDate);
-  const bookingEnd = normalizeDate(doc?.newChecoutDate || doc?.checkOutDate);
+      (doc?.selectedRooms || []).forEach((room) => {
+        const bookingStart = normalizeDate(
+          doc?.arrivalDateObj || doc?.arrivalDate,
+        );
+        const bookingEnd = normalizeDate(
+          doc?.newChecoutDate || doc?.checkOutDate,
+        );
 
-  const filterStart = fromDate ? normalizeDate(fromDate) : null;
-  const filterEnd = toDate ? addOneDay(toDate) : null;
+        const filterStart = fromDate ? normalizeDate(fromDate) : null;
+        const filterEnd = toDate ? addOneDay(toDate) : null;
 
-  let roomStart = bookingStart;
-  let roomEnd = bookingEnd;
+        let roomStart = bookingStart;
+        let roomEnd = bookingEnd;
 
-  const currentRoomId = room?.roomId?.toString();
+        const currentRoomId = room?.roomId?.toString();
 
-  if (Array.isArray(doc?.roomSwapHistory) && doc.roomSwapHistory.length > 0) {
-    doc.roomSwapHistory.forEach((swap) => {
-      const fromRoomId = swap?.fromRoomId?.toString();
-      const toRoomId = swap?.toRoomId?.toString();
-      const swapDate = swap?.swapDate ? normalizeDate(swap.swapDate) : null;
+        if (
+          Array.isArray(doc?.roomSwapHistory) &&
+          doc.roomSwapHistory.length > 0
+        ) {
+          doc.roomSwapHistory.forEach((swap) => {
+            const fromRoomId = swap?.fromRoomId?.toString();
+            const toRoomId = swap?.toRoomId?.toString();
+            const swapDate = swap?.swapDate
+              ? normalizeDate(swap.swapDate)
+              : null;
 
-      if (!swapDate) return;
+            if (!swapDate) return;
 
-      if (currentRoomId === fromRoomId) {
-        roomEnd = swapDate;
-      }
+            if (currentRoomId === fromRoomId) {
+              roomEnd = swapDate;
+            }
 
-      if (currentRoomId === toRoomId) {
-        roomStart = swapDate;
-      }
-    });
-  }
-
-  if (filterStart && filterEnd && !overlaps(roomStart, roomEnd, filterStart, filterEnd)) {
-    return;
-  }
-
-  const pax = Number(room?.pax || 0);
-  const tariff = Number(
-    Math.round(room.priceLevelRate) ||
-      room?.baseAmount ||
-      room?.amountAfterTax ||
-      room?.totalAmount ||
-      room?.baseAmountWithTax ||
-      0
-  ) 
-
-  roomRevenue += tariff;
-  occupiedRoomNames.add(room?.roomName);
-
-  const roomTypeName =
-    room?.roomType?.roomTypeName || room?.roomType?.name || "";
-
-  const type = roomTypeName.toLowerCase();
-  let single = 0;
-  let doubleRoom = 0;
-  let triple = 0;
-  let other = 0;
-
-  if (type.includes("single")) single += 1;
-  else if (type.includes("double")) doubleRoom += 1;
-  else if (type.includes("triple")) triple += 1;
-  else other += 1;
-
-  let planName = "";
-  if (Array.isArray(doc?.foodPlan) && doc.foodPlan.length > 0) {
-    const foundPlan = doc.foodPlan.filter(
-      (plan) => plan?.roomId?.toString() === room?.roomId?.toString()
-    );
-
-    if (foundPlan.length > 0) {
-      foundPlan.forEach((plan) => {
-        planName = plan.foodPlan;
-
-        if (!planMap[plan.foodPlan]) {
-          planMap[plan.foodPlan] = {
-            plan: plan.foodPlan,
-            rms: 0,
-            pax: 0,
-            addnl: 0,
-            total: 0,
-          };
+            if (currentRoomId === toRoomId) {
+              roomStart = swapDate;
+            }
+          });
         }
 
-        planMap[plan.foodPlan].rms += 1;
-        planMap[plan.foodPlan].pax += pax;
-        planMap[plan.foodPlan].addnl += additionalPaxCount;
-        planMap[plan.foodPlan].total += pax + additionalPaxCount;
+        if (
+          filterStart &&
+          filterEnd &&
+          !overlaps(roomStart, roomEnd, filterStart, filterEnd)
+        ) {
+          return;
+        }
+
+        const pax = Number(room?.pax || 0);
+        const tariff = Number(
+          Math.round(room.priceLevelRate) ||
+            room?.baseAmount ||
+            room?.amountAfterTax ||
+            room?.totalAmount ||
+            room?.baseAmountWithTax ||
+            0,
+        );
+
+        roomRevenue += tariff;
+        occupiedRoomNames.add(room?.roomName);
+
+        const roomTypeName =
+          room?.roomType?.roomTypeName || room?.roomType?.name || "";
+
+        const type = roomTypeName.toLowerCase();
+        let single = 0;
+        let doubleRoom = 0;
+        let triple = 0;
+        let other = 0;
+
+        if (type.includes("single")) single += 1;
+        else if (type.includes("double")) doubleRoom += 1;
+        else if (type.includes("triple")) triple += 1;
+        else other += 1;
+
+        let planName = "";
+        if (Array.isArray(doc?.foodPlan) && doc.foodPlan.length > 0) {
+          const foundPlan = doc.foodPlan.filter(
+            (plan) => plan?.roomId?.toString() === room?.roomId?.toString(),
+          );
+
+          if (foundPlan.length > 0) {
+            foundPlan.forEach((plan) => {
+              planName = plan.foodPlan;
+
+              if (!planMap[plan.foodPlan]) {
+                planMap[plan.foodPlan] = {
+                  plan: plan.foodPlan,
+                  rms: 0,
+                  pax: 0,
+                  addnl: 0,
+                  total: 0,
+                };
+              }
+
+              planMap[plan.foodPlan].rms += 1;
+              planMap[plan.foodPlan].pax += pax;
+              planMap[plan.foodPlan].addnl += additionalPaxCount;
+              planMap[plan.foodPlan].total += pax + additionalPaxCount;
+            });
+          }
+        }
+
+        const extraPersonTariff =
+          doc?.additionalPaxDetails?.reduce((acc, item) => {
+            return item?.roomId?.toString() === room?.roomId?.toString()
+              ? acc + Number(item?.rate || 0)
+              : acc;
+          }, 0) || 0;
+
+        const additionalPax =
+          doc?.additionalPaxDetails?.filter(
+            (item) => item?.roomId?.toString() === room?.roomId?.toString(),
+          ).length || 0;
+
+        rows.push({
+          slNo: rows.length + 1,
+          room: room?.roomName || "",
+          grcNo: doc?.grcno || "",
+          guestName: doc?.guestName || doc?.customerName || "",
+          company: doc?.company || "",
+          pax,
+          additionalPax,
+          arrivalDate: doc?.arrivalDate || "",
+          arrivalTime: doc?.arrivalTime || "",
+          departureDate: doc?.newChecoutDate || doc?.checkOutDate || "",
+          departureTime: doc?.newCheckoutTime || doc?.checkOutTime || "",
+          plan: planName,
+          tariff: tariff - extraPersonTariff,
+          extraPersonTariff,
+          totalTariffWithPax: tariff,
+          discountPercent: 0,
+          discountAmount: 0,
+        });
       });
-    }
-  }
-
-  const extraPersonTariff =
-    doc?.additionalPaxDetails?.reduce((acc, item) => {
-      return item?.roomId?.toString() === room?.roomId?.toString()
-        ? acc + Number(item?.rate || 0)
-        : acc;
-    }, 0) || 0;
-
-  const additionalPax =
-    doc?.additionalPaxDetails?.filter(
-      (item) => item?.roomId?.toString() === room?.roomId?.toString()
-    ).length || 0;
-
-  rows.push({
-    slNo: rows.length + 1,
-    room: room?.roomName || "",
-    grcNo: doc?.grcno || "",
-    guestName: doc?.guestName || doc?.customerName || "",
-    company: doc?.company || "",
-    pax,
-    additionalPax,
-    arrivalDate: doc?.arrivalDate || "",
-    arrivalTime: doc?.arrivalTime || "",
-    departureDate: doc?.newChecoutDate || doc?.checkOutDate || "",
-    departureTime: doc?.newCheckoutTime || doc?.checkOutTime || "",
-    plan: planName,
-    tariff : tariff - extraPersonTariff ,
-    extraPersonTariff,
-    totalTariffWithPax:  tariff,
-    discountPercent: 0,
-    discountAmount: 0,
-  });
-});
     });
 
     const totalRooms = allRooms.length;
@@ -7193,9 +7211,880 @@ export const buildEmbeddedParty = (party, { gstNo, address } = {}) => ({
   newAddress: party.newAddress || {},
 });
 
+// export const updateCheckout = async (req, res) => {
+//   const session = await mongoose.startSession();
+
+//   try {
+//     session.startTransaction();
+
+//     const { id } = req.params;
+//     const { cmp_id } = req.query;
+
+//     if (!id || !cmp_id) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(400).json({ message: "id and cmp_id are required" });
+//     }
+
+//     const sale = await salesModel.findOne({ _id: id, cmp_id }).session(session);
+
+//     if (!sale) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(404).json({ message: "Sale not found" });
+//     }
+
+//     const { partyId, gstNo, address, payments = [] } = req.body;
+
+//     if (!partyId) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(400).json({ message: "partyId is required" });
+//     }
+
+//     const party = await Party.findOne({ _id: partyId, cmp_id }).session(
+//       session,
+//     );
+
+//     if (!party) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(404).json({ message: "Party not found" });
+//     }
+
+//     // ── Helper: map sourceType to settlement sourceType enum ──
+//     // cash → "cash", everything else (bank/upi/card) → "bank"
+//     const toSourceType = (sourceType) => {
+//       return sourceType?.toLowerCase() === "cash" ? "cash" : "bank";
+//     };
+
+//     // ── Update sale party ──
+//     sale.party = buildEmbeddedParty(party, { gstNo, address });
+//     sale.markModified("party");
+
+//     // ── Update payment splits by index ──
+//     payments.forEach((payment, index) => {
+//       const matchingPayment = sale.paymentSplittingData[index];
+//       if (!matchingPayment) return;
+
+//       matchingPayment.ref_id = payment.source || matchingPayment.ref_id;
+//       matchingPayment.source = payment.source || matchingPayment.source;
+//       matchingPayment.type =
+//         payment.sourceType?.toLowerCase() || matchingPayment.type;
+//       matchingPayment.sourceType =
+//         payment.sourceType?.toLowerCase() || matchingPayment.sourceType;
+//       matchingPayment.subsource =
+//         payment.subsource || matchingPayment.subsource;
+//       matchingPayment.remarks = payment.remarks ?? matchingPayment.remarks;
+//       matchingPayment.customer = party._id;
+//       matchingPayment.customerName = party.partyName;
+//     });
+
+//     sale.markModified("paymentSplittingData");
+//     await sale.save({ session });
+
+//     // ── Fetch all receipts linked to this sale ──
+//     const receipts = await ReceiptModel.find({
+//       cmp_id,
+//       "billData.bill_no": sale.salesNumber,
+//     }).session(session);
+
+//     if (receipts.length > 0) {
+//       await Promise.all(
+//         receipts.map(async (receipt, index) => {
+//           // 1. Update party
+//           receipt.party = buildEmbeddedParty(party, { gstNo, address });
+//           receipt.markModified("party");
+
+//           // 2. Match by index
+//           const matchedPayment = sale.paymentSplittingData[index] || null;
+
+//           if (matchedPayment) {
+//             const isCash = matchedPayment.sourceType?.toLowerCase() === "cash";
+
+//             if (isCash) {
+//               receipt.paymentMethod = "Cash";
+//               receipt.paymentDetails.cash_id =
+//                 matchedPayment.source || receipt.paymentDetails.cash_id;
+//               receipt.paymentDetails.cash_ledname =
+//                 matchedPayment.subsource || receipt.paymentDetails.cash_ledname;
+//               receipt.paymentDetails.cash_name =
+//                 matchedPayment.subsource || receipt.paymentDetails.cash_name;
+//               receipt.paymentDetails.bank_id = null;
+//               receipt.paymentDetails.bank_ledname = "";
+//               receipt.paymentDetails.bank_name = "";
+//             } else {
+//               receipt.paymentMethod =
+//                 matchedPayment.sourceType || receipt.paymentMethod;
+//               receipt.paymentDetails.bank_id =
+//                 matchedPayment.source || receipt.paymentDetails.bank_id;
+//               receipt.paymentDetails.bank_ledname =
+//                 matchedPayment.subsource || receipt.paymentDetails.bank_ledname;
+//               receipt.paymentDetails.bank_name =
+//                 matchedPayment.subsource || receipt.paymentDetails.bank_name;
+//               receipt.paymentDetails.cash_id = null;
+//               receipt.paymentDetails.cash_ledname = "";
+//               receipt.paymentDetails.cash_name = "";
+//             }
+
+//             receipt.markModified("paymentDetails");
+//           }
+
+//           await receipt.save({ session });
+//         }),
+//       );
+//     }
+
+//     // ── Update Checkout ──
+//     const checkout = await CheckOut.findOne({
+//       cmp_id,
+//       voucherNumber: sale.salesNumber,
+//     }).session(session);
+
+//     if (!checkout) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res
+//         .status(404)
+//         .json({ message: "Checkout not found for this sale" });
+//     }
+
+//     payments.forEach((payment, index) => {
+//       const matchingPayment = checkout.checkoutpaymenttypedetails[index];
+//       if (!matchingPayment) return;
+
+//       matchingPayment.mode =
+//         payment.sourceType?.toLowerCase() || matchingPayment.mode;
+//       matchingPayment._id = payment.source || matchingPayment._id;
+//       matchingPayment.customerName =
+//         party.partyName || matchingPayment.customerName;
+//     });
+
+//     checkout.markModified("checkoutpaymenttypedetails");
+
+//     // ── Payment totals for checkout ──
+//     const paymentTotals = { cash: 0, bank: 0, upi: 0, credit: 0, card: 0 };
+
+//     sale.paymentSplittingData.forEach((p) => {
+//       const type = p.sourceType?.toLowerCase() || p.type?.toLowerCase();
+//       const amount = parseFloat(p.amount?.toString() || "0");
+//       if (type === "cash") paymentTotals.cash += amount;
+//       else if (type === "bank") paymentTotals.bank += amount;
+//       else if (type === "upi") paymentTotals.upi += amount;
+//       else if (type === "credit") paymentTotals.credit += amount;
+//       else if (type === "card") paymentTotals.card += amount;
+//     });
+
+//     checkout.paymenttypeDetails = paymentTotals;
+//     checkout.markModified("paymenttypeDetails");
+
+//     /// update guest info of checkout accriding to party
+
+//     checkout.guestId = party._id || checkout.guestId;
+//     checkout.guestName = party.partyName || checkout.guestName;
+//     // checkout.guestCountry=party._id;
+//     checkout.guestState =
+//       statesData.find((el) => el?.stateCode === party?.state_reference) ||
+//       checkout.guestState;
+//     checkout.guestPinCode = party.guestPinCode || checkout.guestPinCode;
+//     checkout.guestDetailedAddress = address || checkout.guestDetailedAddress;
+//     checkout.guestMobileNumber =
+//       party.mobileNumber || checkout.guestMobileNumber;
+//     checkout.gstNo = gstNo || checkout.gstNo;
+
+//     await checkout.save({ session });
+
+//     // ── Update Settlements ──
+//     // Fetch all settlements for receipt voucher numbers
+
+//     const receiptVoucherNumbers = receipts
+//       .map((r) => r.receiptNumber)
+//       .filter(Boolean);
+
+//     const settlements = await settlementModel
+//       .find({
+//         cmp_id,
+//         voucherNumber: { $in: receiptVoucherNumbers },
+//       })
+//       .session(session);
+
+//     // console.log("receipts", receipts);
+//     // console.log("receiptVoucherNumbers", receiptVoucherNumbers);
+//     // console.log("settlements", settlements);
+
+//     if (settlements.length > 0) {
+//       await Promise.all(
+//         settlements.map(async (settlement, index) => {
+//           const matchedPayment = sale.paymentSplittingData[index] || null;
+
+//           // Always update party info
+//           settlement.partyId = party._id;
+//           settlement.partyName = party.partyName;
+//           settlement.partyType = party.partyType || "party"; // from Party document
+
+//           if (matchedPayment) {
+//             const rawType = matchedPayment.sourceType?.toLowerCase();
+
+//             settlement.sourceId = matchedPayment.source || settlement.sourceId;
+//             settlement.sourceType = toSourceType(rawType); // "cash" | "bank"
+//             settlement.payment_mode = rawType || settlement.payment_mode; // "cash" | "bank" | "upi" | "card"
+//           }
+
+//           await settlement.save({ session });
+//         }),
+//       );
+//     }
+
+//     // console.log("sale party", sale.party); /* */
+//     // console.log("sale paymentSplittingData", sale.paymentSplittingData); /* */
+//     // console.log("receipts party", receipts.party);
+//     // console.log(
+//     //   "receipts party",
+//     //   receipts.map((r) => r.party),
+//     // );
+//     // console.log(
+//     //   "receipts paymentDetails",
+//     //   receipts.map((r) => r.paymentDetails),
+//     // );
+//     // console.log(
+//     //   "checkout checkoutpaymenttypedetails",
+//     //   checkout.checkoutpaymenttypedetails,
+//     // );
+
+//     // /log settlements
+//     console.log(
+//       "settlements after update",
+//       settlements.map((s) => ({
+//         partyId: s.partyId,
+//         partyName: s.partyName,
+//         partyType: s.partyType,
+//         sourceId: s.sourceId,
+//         sourceType: s.sourceType,
+//         payment_mode: s.payment_mode,
+//       })),
+//     );
+
+//     // ── Commit ──
+//     await session.commitTransaction();
+//     session.endSession();
+
+//     // console.log("receipt",rece);
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Sale updated successfully",
+//       data: sale,
+//     });
+//   } catch (error) {
+//     await session.abortTransaction();
+//     session.endSession();
+
+//     console.error("updateCheckout error:", error);
+//     return res.status(500).json({
+//       message: "Server error",
+//       error: error.message,
+//     });
+//   }
+// };
 
 export const updateCheckout = async (req, res) => {
   const session = await mongoose.startSession();
+
+  /*
+   * Convert all paymentId values to one consistent Map key.
+   *
+   * A request may contain a string while MongoDB documents contain
+   * ObjectId values. Both must resolve to the same payment split.
+   */
+  const getPaymentIdKey = (paymentId) => {
+    if (paymentId === undefined || paymentId === null) {
+      return null;
+    }
+
+    return paymentId.toString();
+  };
+
+  /*
+   * Convert a Mongoose document/subdocument into a plain object.
+   */
+  const toPlainObject = (value) => {
+    if (!value) {
+      return {};
+    }
+
+    if (typeof value.toObject === "function") {
+      return value.toObject({
+        depopulate: true,
+        virtuals: false,
+        getters: false,
+      });
+    }
+
+    return { ...value };
+  };
+
+  /*
+   * Normalize payment-mode values before comparing transitions.
+   */
+  const normalizePaymentType = (sourceType) => {
+    if (typeof sourceType !== "string") {
+      return "";
+    }
+
+    return sourceType.trim().toLowerCase();
+  };
+
+  /*
+   * Existing data may contain the mode in either sourceType or type.
+   */
+  const getPaymentType = (payment) => {
+    return normalizePaymentType(
+      payment?.sourceType || payment?.type,
+    );
+  };
+
+  const isCreditPayment = (paymentType) => {
+    return normalizePaymentType(paymentType) === "credit";
+  };
+
+  const isImmediatePayment = (paymentType) => {
+    const normalizedType =
+      normalizePaymentType(paymentType);
+
+    return [
+      "cash",
+      "bank",
+      "upi",
+      "card",
+      "cheque",
+    ].includes(normalizedType);
+  };
+
+  /*
+   * Settlement sourceType supports the broad accounting source.
+   *
+   * UPI, Card and Cheque are bank-side sources, while payment_mode
+   * stores the exact payment mode.
+   */
+  const toSettlementSourceType = (paymentType) => {
+    return normalizePaymentType(paymentType) === "cash"
+      ? "cash"
+      : "bank";
+  };
+
+  /*
+   * Build a strict paymentId Map.
+   *
+   * This is suitable for:
+   *
+   * - Sale payments
+   * - Request payments
+   * - Checkout payment rows
+   * - Tally records
+   *
+   * It must not be used on all Receipt or Settlement history because
+   * cancelled and newly created records may share the same paymentId.
+   */
+  const createStrictPaymentMap = (
+    records,
+    recordName,
+    { paymentIdRequired = false } = {},
+  ) => {
+    const map = new Map();
+
+    for (const record of records || []) {
+      console.log("records",records)
+      const paymentIdKey = getPaymentIdKey(
+        record?.paymentId,
+      );
+
+      if (!paymentIdKey) {
+        if (paymentIdRequired) {
+          throw new Error(
+            `${recordName} contains a record without paymentId`,
+          );
+        }
+
+        continue;
+      }
+      console.log("paymentIdKey",paymentIdKey)
+
+      if (map.has(paymentIdKey)) {
+        throw new Error(
+          `Duplicate paymentId "${paymentIdKey}" found in ${recordName}`,
+        );
+      }
+
+      map.set(paymentIdKey, record);
+    }
+
+    return map;
+  };
+
+  /*
+   * Create a Map containing only active Receipts or Settlements.
+   *
+   * There must never be more than one active document for the same
+   * company and paymentId.
+   */
+  const createActiveDocumentMap = (
+    records,
+    recordName,
+  ) => {
+    const map = new Map();
+
+    for (const record of records || []) {
+      const paymentIdKey = getPaymentIdKey(
+        record?.paymentId,
+      );
+
+      if (!paymentIdKey) {
+        continue;
+      }
+
+      if (record.isCancelled === true) {
+        continue;
+      }
+
+      if (map.has(paymentIdKey)) {
+        throw new Error(
+          `Multiple active ${recordName} records found for paymentId ${paymentIdKey}`,
+        );
+      }
+
+      map.set(paymentIdKey, record);
+    }
+
+    return map;
+  };
+
+  const abortAndRespond = async (
+    statusCode,
+    message,
+  ) => {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+
+    return res.status(statusCode).json({
+      message,
+    });
+  };
+
+  /*
+   * Update one existing Sale payment.
+   *
+   * The payment has already been located through paymentId.
+   */
+  const updateSalePayment = ({
+    salePayment,
+    incomingPayment,
+    party,
+  }) => {
+    const newPaymentType =
+      normalizePaymentType(
+        incomingPayment.sourceType,
+      );
+
+    if (!newPaymentType) {
+      throw new Error(
+        `sourceType is required for paymentId ${getPaymentIdKey(
+          incomingPayment.paymentId,
+        )}`,
+      );
+    }
+
+    /*
+     * Preserve the existing behavior:
+     * do not clear source/ref_id when an empty source is sent.
+     */
+    if (incomingPayment.source) {
+      salePayment.ref_id =
+        incomingPayment.source;
+
+      salePayment.source =
+        incomingPayment.source;
+    }
+
+    salePayment.type = newPaymentType;
+    salePayment.sourceType = newPaymentType;
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+        incomingPayment,
+        "subsource",
+      )
+    ) {
+      salePayment.subsource =
+        incomingPayment.subsource;
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+        incomingPayment,
+        "remarks",
+      )
+    ) {
+      salePayment.remarks =
+        incomingPayment.remarks;
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+        incomingPayment,
+        "amount",
+      ) &&
+      incomingPayment.amount !== undefined &&
+      incomingPayment.amount !== null
+    ) {
+      salePayment.amount =
+        incomingPayment.amount;
+    }
+
+    salePayment.customer = party._id;
+    salePayment.customerName =
+      party.partyName;
+  };
+
+  /*
+   * Update an active Receipt during:
+   *
+   * Immediate -> Immediate
+   *
+   * This helper never reactivates a cancelled Receipt.
+   */
+  const updateReceipt = ({
+    receipt,
+    payment,
+    party,
+    gstNo,
+    address,
+  }) => {
+    const paymentType =
+      getPaymentType(payment);
+
+    receipt.party = buildEmbeddedParty(
+      party,
+      {
+        gstNo,
+        address,
+      },
+    );
+
+    receipt.markModified("party");
+
+    if (!receipt.paymentDetails) {
+      receipt.paymentDetails = {};
+    }
+
+    if (paymentType === "cash") {
+      receipt.paymentMethod = "Cash";
+
+      receipt.paymentDetails.cash_id =
+        payment.source ||
+        receipt.paymentDetails.cash_id;
+
+      receipt.paymentDetails.cash_ledname =
+        payment.subsource ||
+        receipt.paymentDetails.cash_ledname;
+
+      receipt.paymentDetails.cash_name =
+        payment.subsource ||
+        receipt.paymentDetails.cash_name;
+
+      receipt.paymentDetails.bank_id = null;
+      receipt.paymentDetails.bank_ledname =
+        "";
+      receipt.paymentDetails.bank_name = "";
+    } else {
+      /*
+       * Bank, Card, UPI and Cheque use the bank-side fields.
+       */
+      receipt.paymentMethod =
+        paymentType ||
+        receipt.paymentMethod;
+
+      receipt.paymentDetails.bank_id =
+        payment.source ||
+        receipt.paymentDetails.bank_id;
+
+      receipt.paymentDetails.bank_ledname =
+        payment.subsource ||
+        receipt.paymentDetails.bank_ledname;
+
+      receipt.paymentDetails.bank_name =
+        payment.subsource ||
+        receipt.paymentDetails.bank_name;
+
+      receipt.paymentDetails.cash_id = null;
+      receipt.paymentDetails.cash_ledname =
+        "";
+      receipt.paymentDetails.cash_name = "";
+    }
+
+    receipt.paymentId = payment.paymentId;
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+        payment,
+        "amount",
+      ) &&
+      payment.amount !== undefined &&
+      payment.amount !== null &&
+      Object.prototype.hasOwnProperty.call(
+        receipt,
+        "amount",
+      )
+    ) {
+      receipt.amount = payment.amount;
+    }
+
+    receipt.markModified(
+      "paymentDetails",
+    );
+  };
+
+  /*
+   * Cancel the active Receipt during:
+   *
+   * Immediate -> Credit
+   */
+  const cancelReceipt = ({
+    receipt,
+    party,
+    gstNo,
+    address,
+  }) => {
+    receipt.party = buildEmbeddedParty(
+      party,
+      {
+        gstNo,
+        address,
+      },
+    );
+
+    receipt.markModified("party");
+
+    receipt.isCancelled = true;
+    receipt.cancelledAt = new Date();
+    receipt.cancelledBy = req.sUserId;
+    receipt.cancelledByName =
+      req.secUserName;
+
+    /*
+     * The original controller uses cancelReason.
+     *
+     * Keep this field unless your actual schema uses
+     * cancelledReason instead.
+     */
+    receipt.cancelReason =
+      "Payment mode changed to Credit";
+  };
+
+  /*
+   * Update an active Settlement during:
+   *
+   * Immediate -> Immediate
+   */
+  const updateSettlement = ({
+    settlement,
+    payment,
+    party,
+    receipt,
+  }) => {
+    const paymentType =
+      getPaymentType(payment);
+
+    settlement.paymentId =
+      payment.paymentId;
+
+    settlement.partyId = party._id;
+    settlement.partyName =
+      party.partyName;
+
+    settlement.partyType =
+      party.partyType || "party";
+
+    settlement.sourceId =
+      payment.source ||
+      settlement.sourceId;
+
+    settlement.sourceType =
+      toSettlementSourceType(
+        paymentType,
+      );
+
+    settlement.payment_mode =
+      paymentType ||
+      settlement.payment_mode;
+
+    if (receipt?.receiptNumber) {
+      settlement.voucherNumber =
+        receipt.receiptNumber;
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+        payment,
+        "amount",
+      ) &&
+      payment.amount !== undefined &&
+      payment.amount !== null &&
+      Object.prototype.hasOwnProperty.call(
+        settlement,
+        "amount",
+      )
+    ) {
+      settlement.amount = payment.amount;
+    }
+  };
+
+  /*
+   * Cancel the active Settlement during:
+   *
+   * Immediate -> Credit
+   */
+  const cancelSettlement = ({
+    settlement,
+    party,
+  }) => {
+    settlement.partyId = party._id;
+    settlement.partyName =
+      party.partyName;
+
+    settlement.partyType =
+      party.partyType || "party";
+
+    settlement.isCancelled = true;
+    settlement.cancelledAt = new Date();
+    settlement.cancelledBy =
+      req.sUserId;
+
+    settlement.cancelledByName =
+      req.secUserName;
+
+    settlement.cancelReason =
+      "Payment mode changed to Credit";
+  };
+
+  /*
+   * Rebuild a Checkout payment row from the final Sale payment.
+   *
+   * Existing Checkout-only values are preserved using paymentId.
+   * No array index is used.
+   */
+  const buildCheckoutPaymentRow = ({
+    salePayment,
+    existingCheckoutPayment,
+    party,
+  }) => {
+    const existingData =
+      toPlainObject(
+        existingCheckoutPayment,
+      );
+
+    const paymentType =
+      getPaymentType(salePayment);
+
+    return {
+      ...existingData,
+
+      /*
+       * Preserve the Checkout subdocument _id through existingData.
+       * Never replace it with payment.source.
+       */
+
+      paymentId: salePayment.paymentId,
+
+      mode:
+        paymentType ||
+        existingData.mode,
+
+      type:
+        paymentType ||
+        existingData.type,
+
+      sourceType:
+        paymentType ||
+        existingData.sourceType,
+
+      source:
+        salePayment.source !== undefined
+          ? salePayment.source
+          : existingData.source,
+
+      ref_id:
+        salePayment.ref_id !== undefined
+          ? salePayment.ref_id
+          : existingData.ref_id,
+
+      subsource:
+        salePayment.subsource !== undefined
+          ? salePayment.subsource
+          : existingData.subsource,
+
+      remarks:
+        salePayment.remarks !== undefined
+          ? salePayment.remarks
+          : existingData.remarks,
+
+      amount:
+        salePayment.amount !== undefined
+          ? salePayment.amount
+          : existingData.amount,
+
+      customer: party._id,
+      customerName: party.partyName,
+    };
+  };
+
+  const calculatePaymentTotals = (
+    salePayments,
+  ) => {
+    const totals = {
+      cash: 0,
+      bank: 0,
+      upi: 0,
+      credit: 0,
+      card: 0,
+    };
+
+    for (const payment of salePayments || []) {
+      const paymentType =
+        getPaymentType(payment);
+
+      const parsedAmount =
+        Number.parseFloat(
+          payment.amount?.toString() || "0",
+        );
+
+      const amount = Number.isFinite(
+        parsedAmount,
+      )
+        ? parsedAmount
+        : 0;
+
+      if (paymentType === "cash") {
+        totals.cash += amount;
+      } else if (
+        paymentType === "bank" ||
+        paymentType === "cheque"
+      ) {
+        /*
+         * The current totals object has no separate cheque field.
+         */
+        totals.bank += amount;
+      } else if (paymentType === "upi") {
+        totals.upi += amount;
+      } else if (paymentType === "credit") {
+        totals.credit += amount;
+      } else if (paymentType === "card") {
+        totals.card += amount;
+      }
+    }
+
+    return totals;
+  };
 
   try {
     session.startTransaction();
@@ -7204,272 +8093,1012 @@ export const updateCheckout = async (req, res) => {
     const { cmp_id } = req.query;
 
     if (!id || !cmp_id) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({ message: "id and cmp_id are required" });
-    }
-
-    const sale = await salesModel.findOne({ _id: id, cmp_id }).session(session);
-
-    if (!sale) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ message: "Sale not found" });
-    }
-
-    const { partyId, gstNo, address, payments = [] } = req.body;
-
-    if (!partyId) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({ message: "partyId is required" });
-    }
-
-    const party = await Party.findOne({ _id: partyId, cmp_id }).session(
-      session,
-    );
-
-    if (!party) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ message: "Party not found" });
-    }
-
-    // ── Helper: map sourceType to settlement sourceType enum ──
-    // cash → "cash", everything else (bank/upi/card) → "bank"
-    const toSourceType = (sourceType) => {
-      return sourceType?.toLowerCase() === "cash" ? "cash" : "bank";
-    };
-
-    // ── Update sale party ──
-    sale.party = buildEmbeddedParty(party, { gstNo, address });
-    sale.markModified("party");
-
-    // ── Update payment splits by index ──
-    payments.forEach((payment, index) => {
-      const matchingPayment = sale.paymentSplittingData[index];
-      if (!matchingPayment) return;
-
-      matchingPayment.ref_id = payment.source || matchingPayment.ref_id;
-      matchingPayment.source = payment.source || matchingPayment.source;
-      matchingPayment.type =
-        payment.sourceType?.toLowerCase() || matchingPayment.type;
-      matchingPayment.sourceType =
-        payment.sourceType?.toLowerCase() || matchingPayment.sourceType;
-      matchingPayment.subsource =
-        payment.subsource || matchingPayment.subsource;
-      matchingPayment.remarks = payment.remarks ?? matchingPayment.remarks;
-      matchingPayment.customer = party._id;
-      matchingPayment.customerName = party.partyName;
-    });
-
-    sale.markModified("paymentSplittingData");
-    await sale.save({ session });
-
-    // ── Fetch all receipts linked to this sale ──
-    const receipts = await ReceiptModel.find({
-      cmp_id,
-      "billData.bill_no": sale.salesNumber,
-    }).session(session);
-
-    if (receipts.length > 0) {
-      await Promise.all(
-        receipts.map(async (receipt, index) => {
-          // 1. Update party
-          receipt.party = buildEmbeddedParty(party, { gstNo, address });
-          receipt.markModified("party");
-
-          // 2. Match by index
-          const matchedPayment = sale.paymentSplittingData[index] || null;
-
-          if (matchedPayment) {
-            const isCash = matchedPayment.sourceType?.toLowerCase() === "cash";
-
-            if (isCash) {
-              receipt.paymentMethod = "Cash";
-              receipt.paymentDetails.cash_id =
-                matchedPayment.source || receipt.paymentDetails.cash_id;
-              receipt.paymentDetails.cash_ledname =
-                matchedPayment.subsource || receipt.paymentDetails.cash_ledname;
-              receipt.paymentDetails.cash_name =
-                matchedPayment.subsource || receipt.paymentDetails.cash_name;
-              receipt.paymentDetails.bank_id = null;
-              receipt.paymentDetails.bank_ledname = "";
-              receipt.paymentDetails.bank_name = "";
-            } else {
-              receipt.paymentMethod =
-                matchedPayment.sourceType || receipt.paymentMethod;
-              receipt.paymentDetails.bank_id =
-                matchedPayment.source || receipt.paymentDetails.bank_id;
-              receipt.paymentDetails.bank_ledname =
-                matchedPayment.subsource || receipt.paymentDetails.bank_ledname;
-              receipt.paymentDetails.bank_name =
-                matchedPayment.subsource || receipt.paymentDetails.bank_name;
-              receipt.paymentDetails.cash_id = null;
-              receipt.paymentDetails.cash_ledname = "";
-              receipt.paymentDetails.cash_name = "";
-            }
-
-            receipt.markModified("paymentDetails");
-          }
-
-          await receipt.save({ session });
-        }),
+      return await abortAndRespond(
+        400,
+        "id and cmp_id are required",
       );
     }
 
-    // ── Update Checkout ──
-    const checkout = await CheckOut.findOne({
-      cmp_id,
-      voucherNumber: sale.salesNumber,
-    }).session(session);
-
-    if (!checkout) {
-      await session.abortTransaction();
-      session.endSession();
-      return res
-        .status(404)
-        .json({ message: "Checkout not found for this sale" });
-    }
-
-    payments.forEach((payment, index) => {
-      const matchingPayment = checkout.checkoutpaymenttypedetails[index];
-      if (!matchingPayment) return;
-
-      matchingPayment.mode =
-        payment.sourceType?.toLowerCase() || matchingPayment.mode;
-      matchingPayment._id = payment.source || matchingPayment._id;
-      matchingPayment.customerName =
-        party.partyName || matchingPayment.customerName;
-    });
-
-    checkout.markModified("checkoutpaymenttypedetails");
-
-    // ── Payment totals for checkout ──
-    const paymentTotals = { cash: 0, bank: 0, upi: 0, credit: 0, card: 0 };
-
-    sale.paymentSplittingData.forEach((p) => {
-      const type = p.sourceType?.toLowerCase() || p.type?.toLowerCase();
-      const amount = parseFloat(p.amount?.toString() || "0");
-      if (type === "cash") paymentTotals.cash += amount;
-      else if (type === "bank") paymentTotals.bank += amount;
-      else if (type === "upi") paymentTotals.upi += amount;
-      else if (type === "credit") paymentTotals.credit += amount;
-      else if (type === "card") paymentTotals.card += amount;
-    });
-
-    checkout.paymenttypeDetails = paymentTotals;
-    checkout.markModified("paymenttypeDetails");
-
-    /// update guest info of checkout accriding to party
-
-    checkout.guestId = party._id || checkout.guestId;
-    checkout.guestName = party.partyName || checkout.guestName;
-    // checkout.guestCountry=party._id;
-    checkout.guestState =
-      statesData.find((el) => el?.stateCode === party?.state_reference) ||
-      checkout.guestState;
-    checkout.guestPinCode = party.guestPinCode || checkout.guestPinCode;
-    checkout.guestDetailedAddress = address || checkout.guestDetailedAddress;
-    checkout.guestMobileNumber =
-      party.mobileNumber || checkout.guestMobileNumber;
-    checkout.gstNo = gstNo || checkout.gstNo;
-
-    await checkout.save({ session });
-
-    // ── Update Settlements ──
-    // Fetch all settlements for receipt voucher numbers
-
-    const receiptVoucherNumbers = receipts
-      .map((r) => r.receiptNumber)
-      .filter(Boolean);
-
-    const settlements = await settlementModel
-      .find({
+    const sale = await salesModel
+      .findOne({
+        _id: id,
         cmp_id,
-        voucherNumber: { $in: receiptVoucherNumbers },
       })
       .session(session);
 
-    // console.log("receipts", receipts);
-    // console.log("receiptVoucherNumbers", receiptVoucherNumbers);
-    // console.log("settlements", settlements);
-
-    if (settlements.length > 0) {
-      await Promise.all(
-        settlements.map(async (settlement, index) => {
-          const matchedPayment = sale.paymentSplittingData[index] || null;
-
-          // Always update party info
-          settlement.partyId = party._id;
-          settlement.partyName = party.partyName;
-          settlement.partyType = party.partyType || "party"; // from Party document
-
-          if (matchedPayment) {
-            const rawType = matchedPayment.sourceType?.toLowerCase();
-
-            settlement.sourceId = matchedPayment.source || settlement.sourceId;
-            settlement.sourceType = toSourceType(rawType); // "cash" | "bank"
-            settlement.payment_mode = rawType || settlement.payment_mode; // "cash" | "bank" | "upi" | "card"
-          }
-
-          await settlement.save({ session });
-        }),
+    if (!sale) {
+      return await abortAndRespond(
+        404,
+        "Sale not found",
       );
     }
 
-    // console.log("sale party", sale.party); /* */
-    // console.log("sale paymentSplittingData", sale.paymentSplittingData); /* */
-    // console.log("receipts party", receipts.party);
-    // console.log(
-    //   "receipts party",
-    //   receipts.map((r) => r.party),
-    // );
-    // console.log(
-    //   "receipts paymentDetails",
-    //   receipts.map((r) => r.paymentDetails),
-    // );
-    // console.log(
-    //   "checkout checkoutpaymenttypedetails",
-    //   checkout.checkoutpaymenttypedetails,
-    // );
+    const {
+      partyId,
+      gstNo,
+      address,
+      payments = [],
+    } = req.body;
 
-    // /log settlements
-    console.log(
-      "settlements after update",
-      settlements.map((s) => ({
-        partyId: s.partyId,
-        partyName: s.partyName,
-        partyType: s.partyType,
-        sourceId: s.sourceId,
-        sourceType: s.sourceType,
-        payment_mode: s.payment_mode,
-      })),
+    if (!partyId) {
+      return await abortAndRespond(
+        400,
+        "partyId is required",
+      );
+    }
+
+    const party = await Party.findOne({
+      _id: partyId,
+      cmp_id,
+    }).session(session);
+
+    if (!party) {
+      return await abortAndRespond(
+        404,
+        "Party not found",
+      );
+    }
+
+    /*
+     * ======================================================
+     * 1. Clone old Sale payments before modifying the Sale.
+     * ======================================================
+     */
+const oldPayments = (sale.paymentSplittingData || []).map((payment) => ({
+  ...payment.toObject(),
+  paymentId: payment.paymentId,
+}));
+    console.log("oldPayments",oldPayments)
+
+    const oldPaymentMap =
+      createStrictPaymentMap(
+        oldPayments,
+        "old Sale paymentSplittingData",
+        {
+          paymentIdRequired: true,
+        },
+      );
+
+    /*`
+     * ======================================================
+     * 2. Update Sale payments using paymentId.
+     * ======================================================
+     */
+    const salePaymentMap =
+      createStrictPaymentMap(
+        sale.paymentSplittingData || [],
+        "Sale paymentSplittingData",
+        {
+          paymentIdRequired: true,
+        },
+      );
+
+    const incomingPaymentMap =
+      createStrictPaymentMap(
+        payments,
+        "request payments",
+        {
+          paymentIdRequired: true,
+        },
+      );
+
+    for (const [
+      paymentIdKey,
+      incomingPayment,
+    ] of incomingPaymentMap) {
+      const salePayment =
+        salePaymentMap.get(paymentIdKey);
+
+      /*
+       * Preserve existing behavior:
+       * ignore a request payment that does not belong to this Sale.
+       */
+      if (!salePayment) {
+        continue;
+      }
+
+      updateSalePayment({
+        salePayment,
+        incomingPayment,
+        party,
+      });
+    }
+
+    sale.party = buildEmbeddedParty(
+      party,
+      {
+        gstNo,
+        address,
+      },
     );
 
-    // ── Commit ──
-    await session.commitTransaction();
-    session.endSession();
+    sale.markModified("party");
+    sale.markModified(
+      "paymentSplittingData",
+    );
 
-    // console.log("receipt",rece);
+    await sale.save({ session });
+
+    const finalPaymentMap =
+      createStrictPaymentMap(
+        sale.paymentSplittingData || [],
+        "updated Sale paymentSplittingData",
+        {
+          paymentIdRequired: true,
+        },
+      );
+
+    const paymentIds =
+      sale.paymentSplittingData.map(
+        (payment) => payment.paymentId,
+      );
+
+    /*
+     * ======================================================
+     * 3. Load Checkout.
+     * ======================================================
+     */
+    const checkout =
+      await CheckOut.findOne({
+        cmp_id,
+        voucherNumber:
+          sale.salesNumber,
+      }).session(session);
+
+    if (!checkout) {
+      return await abortAndRespond(
+        404,
+        "Checkout not found for this sale",
+      );
+    }
+
+    const checkoutMap =
+      createStrictPaymentMap(
+        checkout.checkoutpaymenttypedetails ||
+          [],
+        "Checkout checkoutpaymenttypedetails",
+      );
+
+    /*
+     * ======================================================
+     * 4. Fetch active Receipts using paymentId.
+     *
+     * Cancelled Receipt history is intentionally excluded.
+     * ======================================================
+     */
+    const activeReceipts =
+      await ReceiptModel.find({
+        cmp_id,
+
+        paymentId: {
+          $in: paymentIds,
+        },
+
+        isCancelled: {
+          $ne: true,
+        },
+      }).session(session);
+
+    const activeReceiptMap =
+      createActiveDocumentMap(
+        activeReceipts,
+        "Receipt",
+      );
+
+    /*
+     * ======================================================
+     * 5. Fetch active Settlements using paymentId.
+     *
+     * Cancelled Settlement history is intentionally excluded.
+     * ======================================================
+     */
+    const activeSettlements =
+      await settlementModel
+        .find({
+          cmp_id,
+
+          paymentId: {
+            $in: paymentIds,
+          },
+
+          isCancelled: {
+            $ne: true,
+          },
+        })
+        .session(session);
+
+    const activeSettlementMap =
+      createActiveDocumentMap(
+        activeSettlements,
+        "Settlement",
+      );
+
+    /*
+     * ======================================================
+     * 6. Fetch Tally records using paymentId.
+     *
+     * Replace hotelTallyModel with the actual imported model name.
+     * ======================================================
+     */
+    const tallyRecords =
+      await TallyData
+        .find({
+          cmp_id,
+
+          paymentId: {
+            $in: paymentIds,
+          },
+        })
+        .session(session);
+
+    const tallyMap =
+      createStrictPaymentMap(
+        tallyRecords,
+        "Tally records",
+      );
+
+    /*
+     * Create a brand-new Receipt and Settlement for:
+     *
+     * Credit -> Immediate
+     *
+     * Cancelled Receipt/Settlement records are never reused.
+     */
+    const createFreshReceiptAndSettlement =
+      async ({
+        payment,
+        tally,
+      }) => {
+        const paymentIdKey =
+          getPaymentIdKey(
+            payment.paymentId,
+          );
+
+        const specificVoucherSeriesReceipt =
+          await hotelVoucherSeries(
+            cmp_id,
+            session,
+            "receipt",
+            false,
+          );
+
+        const specificVoucherSeriesReceiptRestaurant =
+          await hotelVoucherSeries(
+            cmp_id,
+            session,
+            "receipt",
+            true,
+          );
+
+        /*
+         * Pass only the payment currently being converted.
+         *
+         * This prevents the helper from recreating Receipts for other
+         * Sale payment splits.
+         */
+        const paymentData =
+          toPlainObject(payment);
+
+        const singlePaymentSale = {
+          ...toPlainObject(sale),
+
+          paymentSplittingData: [
+            paymentData,
+          ],
+        };
+
+        const mappedPartyData =
+          mapPartyData(party);
+
+        await createReceiptsAndSettlements({
+          paymentMode:
+            getPaymentType(payment),
+
+          /*
+           * Keep this as an array if your helper currently expects
+           * paymentDetails to be an array.
+           */
+          paymentDetails: [
+            paymentData,
+          ],
+
+          hotelSale:
+            singlePaymentSale,
+
+          hotelTallyData:
+            tally || null,
+
+          hotelSales: [
+            singlePaymentSale,
+          ],
+
+          hotelTallyDataList: tally
+            ? [tally]
+            : [],
+
+          restaurantBaseSaleData:[],
+
+          /*
+           * updateCheckout currently receives one Party.
+           *
+           * Replace these values with your existing customer/guest
+           * resolution if the creation flow distinguishes them.
+           */
+          customerPartyData:
+            mappedPartyData,
+
+          guestPartyData:
+            mappedPartyData,
+
+          cmp_id,
+
+          specificVoucherSeries:
+            specificVoucherSeriesReceipt,
+
+          specificVoucherSeriesRestaurant:
+            specificVoucherSeriesReceiptRestaurant,
+
+          req,
+          session,
+        });
+
+        /*
+         * A cancelled historical Receipt may have the same paymentId.
+         * Query only the newly active document.
+         */
+        const createdReceipt =
+          await ReceiptModel.findOne({
+            cmp_id,
+
+            paymentId:
+              payment.paymentId,
+
+            isCancelled: {
+              $ne: true,
+            },
+          })
+            .sort({
+              createdAt: -1,
+              _id: -1,
+            })
+            .session(session);
+
+        const createdSettlement =
+          await settlementModel
+            .findOne({
+              cmp_id,
+
+              paymentId:
+                payment.paymentId,
+
+              isCancelled: {
+                $ne: true,
+              },
+            })
+            .sort({
+              createdAt: -1,
+              _id: -1,
+            })
+            .session(session);
+
+        const refreshedTally =
+          await TallyData
+            .findOne({
+              cmp_id,
+
+              paymentId:
+                payment.paymentId,
+            })
+            .session(session);
+
+        if (!createdReceipt) {
+          throw new Error(
+            `Fresh Receipt was not created for paymentId ${paymentIdKey}`,
+          );
+        }
+
+        if (!createdSettlement) {
+          throw new Error(
+            `Fresh Settlement was not created for paymentId ${paymentIdKey}`,
+          );
+        }
+
+        if (
+          getPaymentIdKey(
+            createdReceipt.paymentId,
+          ) !== paymentIdKey
+        ) {
+          throw new Error(
+            `Created Receipt has an incorrect paymentId for payment ${paymentIdKey}`,
+          );
+        }
+
+        if (
+          getPaymentIdKey(
+            createdSettlement.paymentId,
+          ) !== paymentIdKey
+        ) {
+          throw new Error(
+            `Created Settlement has an incorrect paymentId for payment ${paymentIdKey}`,
+          );
+        }
+
+        return {
+          receipt: createdReceipt,
+          settlement:
+            createdSettlement,
+          tally: refreshedTally,
+        };
+      };
+
+    /*
+     * ======================================================
+     * 7. Process all transitions using paymentId.
+     * ======================================================
+     *
+     * Writes are sequential because concurrent operations using one
+     * transaction session should not be executed through Promise.all().
+     */
+    for (const newPayment of
+      sale.paymentSplittingData) {
+      const paymentIdKey =
+        getPaymentIdKey(
+          newPayment.paymentId,
+        );
+
+      if (!paymentIdKey) {
+        throw new Error(
+          "Updated Sale payment is missing paymentId",
+        );
+      }
+
+      const oldPayment =
+        oldPaymentMap.get(paymentIdKey);
+
+      if (!oldPayment) {
+        throw new Error(
+          `Old Sale payment was not found for paymentId ${paymentIdKey}`,
+        );
+      }
+
+      let receipt =
+        activeReceiptMap.get(
+          paymentIdKey,
+        );
+
+      let settlement =
+        activeSettlementMap.get(
+          paymentIdKey,
+        );
+
+      let tally =
+        tallyMap.get(paymentIdKey);
+
+      const oldPaymentType =
+        getPaymentType(oldPayment);
+
+      const newPaymentType =
+        getPaymentType(newPayment);
+
+      if (!oldPaymentType) {
+        throw new Error(
+          `Old payment mode is missing for paymentId ${paymentIdKey}`,
+        );
+      }
+
+      if (!newPaymentType) {
+        throw new Error(
+          `New payment mode is missing for paymentId ${paymentIdKey}`,
+        );
+      }
+
+      const oldIsCredit =
+        isCreditPayment(
+          oldPaymentType,
+        );
+
+      const oldIsImmediate =
+        isImmediatePayment(
+          oldPaymentType,
+        );
+
+      const newIsCredit =
+        isCreditPayment(
+          newPaymentType,
+        );
+
+      const newIsImmediate =
+        isImmediatePayment(
+          newPaymentType,
+        );
+
+      if (
+        !oldIsCredit &&
+        !oldIsImmediate
+      ) {
+        throw new Error(
+          `Unsupported old payment mode "${oldPaymentType}" for paymentId ${paymentIdKey}`,
+        );
+      }
+
+      if (
+        !newIsCredit &&
+        !newIsImmediate
+      ) {
+        throw new Error(
+          `Unsupported new payment mode "${newPaymentType}" for paymentId ${paymentIdKey}`,
+        );
+      }
+
+      /*
+       * ------------------------------------------------------
+       * CASE 1: Credit -> Credit
+       * ------------------------------------------------------
+       */
+      if (
+        oldIsCredit &&
+        newIsCredit
+      ) {
+        /*
+         * Credit must not have an active Receipt or Settlement.
+         *
+         * Do not silently cancel unexpected records because that would
+         * hide historical data corruption.
+         */
+        if (receipt) {
+          throw new Error(
+            `Active Receipt unexpectedly exists for Credit paymentId ${paymentIdKey}`,
+          );
+        }
+
+        if (settlement) {
+          throw new Error(
+            `Active Settlement unexpectedly exists for Credit paymentId ${paymentIdKey}`,
+          );
+        }
+
+        /*
+         * Existing Tally helper responsibilities:
+         *
+         * - update party/customer details
+         * - update ledger information
+         * - keep the outstanding pending
+         * - use paymentId to find the correct Tally entry
+         */
+        tally =
+          await updateTallyForCheckoutTransition({
+            transition:
+              "credit-to-credit",
+
+            tally,
+            oldPayment,
+            newPayment,
+
+            receipt: null,
+            settlement: null,
+
+            sale,
+            checkout,
+            party,
+            cmp_id,
+            session,
+
+            requestUserId:
+              req.sUserId,
+
+            requestUserName:
+              req.secUserName,
+          });
+
+        if (tally) {
+          tallyMap.set(
+            paymentIdKey,
+            tally,
+          );
+        }
+
+        continue;
+      }
+
+      /*
+       * ------------------------------------------------------
+       * CASE 2: Immediate -> Immediate
+       * ------------------------------------------------------
+       */
+      if (
+        oldIsImmediate &&
+        newIsImmediate
+      ) {
+        /*
+         * Never recreate documents in this transition.
+         */
+        if (!receipt) {
+          throw new Error(
+            `Active Receipt not found for immediate paymentId ${paymentIdKey}`,
+          );
+        }
+
+        if (!settlement) {
+          throw new Error(
+            `Active Settlement not found for immediate paymentId ${paymentIdKey}`,
+          );
+        }
+
+        updateReceipt({
+          receipt,
+          payment: newPayment,
+          party,
+          gstNo,
+          address,
+        });
+
+        await receipt.save({
+          session,
+        });
+
+        updateSettlement({
+          settlement,
+          payment: newPayment,
+          party,
+          receipt,
+        });
+
+        await settlement.save({
+          session,
+        });
+
+        /*
+         * Existing Tally helper responsibilities:
+         *
+         * - find the Tally entry using paymentId
+         * - update the exact payment source/mode
+         * - update the applied Receipt information
+         * - adjust applied amount if the payment amount changed
+         * - do not create or cancel Tally entries
+         */
+        tally =
+          await updateTallyForCheckoutTransition({
+            transition:
+              "immediate-to-immediate",
+
+            tally,
+            oldPayment,
+            newPayment,
+            receipt,
+            settlement,
+
+            sale,
+            checkout,
+            party,
+            cmp_id,
+            session,
+
+            requestUserId:
+              req.sUserId,
+
+            requestUserName:
+              req.secUserName,
+          });
+
+        if (tally) {
+          tallyMap.set(
+            paymentIdKey,
+            tally,
+          );
+        }
+
+        continue;
+      }
+
+      /*
+       * ------------------------------------------------------
+       * CASE 3: Immediate -> Credit
+       * ------------------------------------------------------
+       */
+      if (
+        oldIsImmediate &&
+        newIsCredit
+      ) {
+        if (!receipt) {
+          throw new Error(
+            `Active Receipt not found for immediate paymentId ${paymentIdKey}`,
+          );
+        }
+
+        if (!settlement) {
+          throw new Error(
+            `Active Settlement not found for immediate paymentId ${paymentIdKey}`,
+          );
+        }
+
+        cancelReceipt({
+          receipt,
+          party,
+          gstNo,
+          address,
+        });
+
+        await receipt.save({
+          session,
+        });
+
+        cancelSettlement({
+          settlement,
+          party,
+        });
+
+        await settlement.save({
+          session,
+        });
+
+        /*
+         * Existing Tally helper responsibilities:
+         *
+         * - remove the Receipt application using paymentId
+         * - restore the outstanding amount
+         * - increase bill_pending_amt by the previously applied amount
+         * - mark the outstanding as pending
+         * - update party/customer details
+         */
+        tally =
+          await updateTallyForCheckoutTransition({
+            transition:
+              "immediate-to-credit",
+
+            tally,
+            oldPayment,
+            newPayment,
+            receipt,
+            settlement,
+
+            sale,
+            checkout,
+            party,
+            cmp_id,
+            session,
+
+            requestUserId:
+              req.sUserId,
+
+            requestUserName:
+              req.secUserName,
+          });
+
+        /*
+         * The cancelled documents are no longer active.
+         */
+        activeReceiptMap.delete(
+          paymentIdKey,
+        );
+
+        activeSettlementMap.delete(
+          paymentIdKey,
+        );
+
+        if (tally) {
+          tallyMap.set(
+            paymentIdKey,
+            tally,
+          );
+        }
+
+        continue;
+      }
+
+      /*
+       * ------------------------------------------------------
+       * CASE 4: Credit -> Immediate
+       * ------------------------------------------------------
+       */
+      if (
+        oldIsCredit &&
+        newIsImmediate
+      ) {
+        /*
+         * A Credit payment must not already have active payment
+         * documents.
+         *
+         * Cancelled historical documents are allowed and are ignored.
+         */
+        if (receipt) {
+          throw new Error(
+            `Active Receipt already exists for Credit paymentId ${paymentIdKey}`,
+          );
+        }
+
+        if (settlement) {
+          throw new Error(
+            `Active Settlement already exists for Credit paymentId ${paymentIdKey}`,
+          );
+        }
+
+        /*
+         * This helper must:
+         *
+         * - reduce outstanding
+         * - update bill_pending_amt
+         * - create a fresh Receipt number
+         * - create a new Receipt
+         * - create a new Settlement
+         * - set Receipt.paymentId
+         * - set Settlement.paymentId
+         * - update Tally.appliedReceipts
+         *
+         * Everything receives the current MongoDB session.
+         */
+        const createdDocuments =
+          await createFreshReceiptAndSettlement({
+            payment: newPayment,
+            tally,
+          });
+
+        receipt =
+          createdDocuments.receipt;
+
+        settlement =
+          createdDocuments.settlement;
+
+        tally =
+          createdDocuments.tally;
+
+        activeReceiptMap.set(
+          paymentIdKey,
+          receipt,
+        );
+
+        activeSettlementMap.set(
+          paymentIdKey,
+          settlement,
+        );
+
+        if (tally) {
+          tallyMap.set(
+            paymentIdKey,
+            tally,
+          );
+        }
+
+        continue;
+      }
+
+      throw new Error(
+        `Unable to determine transition for paymentId ${paymentIdKey}`,
+      );
+    }
+
+    /*
+     * ======================================================
+     * 8. Completely rebuild Checkout payments from Sale.
+     * ======================================================
+     *
+     * The old Checkout Map is used only to preserve Checkout-specific
+     * fields and subdocument IDs.
+     */
+    checkout.checkoutpaymenttypedetails =
+      sale.paymentSplittingData.map(
+        (salePayment) => {
+          const paymentIdKey =
+            getPaymentIdKey(
+              salePayment.paymentId,
+            );
+
+          const existingCheckoutPayment =
+            checkoutMap.get(
+              paymentIdKey,
+            );
+
+          return buildCheckoutPaymentRow({
+            salePayment,
+            existingCheckoutPayment,
+            party,
+          });
+        },
+      );
+
+    checkout.markModified(
+      "checkoutpaymenttypedetails",
+    );
+
+    checkout.paymenttypeDetails =
+      calculatePaymentTotals(
+        sale.paymentSplittingData,
+      );
+
+    checkout.markModified(
+      "paymenttypeDetails",
+    );
+
+    checkout.guestId =
+      party._id ||
+      checkout.guestId;
+
+    checkout.guestName =
+      party.partyName ||
+      checkout.guestName;
+
+    checkout.guestState =
+      statesData.find(
+        (state) =>
+          state?.stateCode ===
+          party?.state_reference,
+      ) || checkout.guestState;
+
+    checkout.guestPinCode =
+      party.guestPinCode ||
+      checkout.guestPinCode;
+
+    checkout.guestDetailedAddress =
+      address ||
+      checkout.guestDetailedAddress;
+
+    checkout.guestMobileNumber =
+      party.mobileNumber ||
+      checkout.guestMobileNumber;
+
+    checkout.gstNo =
+      gstNo ||
+      checkout.gstNo;
+
+    await checkout.save({
+      session,
+    });
+
+    await session.commitTransaction();
 
     return res.status(200).json({
       success: true,
-      message: "Sale updated successfully",
+      message:
+        "Sale updated successfully",
       data: sale,
     });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
 
-    console.error("updateCheckout error:", error);
-    return res.status(500).json({
-      message: "Server error",
-      error: error.message,
-    });
+    console.error(
+      "updateCheckout error:",
+      error,
+    );
+
+    const isValidationOrIntegrityError =
+      error.message?.includes(
+        "paymentId",
+      ) ||
+      error.message?.includes(
+        "payment mode",
+      ) ||
+      error.message?.includes(
+        "sourceType",
+      ) ||
+      error.message?.includes(
+        "Duplicate",
+      ) ||
+      error.message?.includes(
+        "Multiple active",
+      ) ||
+      error.message?.includes(
+        "Unsupported",
+      );
+
+    return res
+      .status(
+        isValidationOrIntegrityError
+          ? 400
+          : 500,
+      )
+      .json({
+        message:
+          isValidationOrIntegrityError
+            ? error.message
+            : "Server error",
+
+        error: error.message,
+      });
+  } finally {
+    await session.endSession();
   }
 };
-
 export const getSalesByCheckInNumber = async (req, res) => {
   try {
     const { cmp_id, checkInNumber } = req.query;
@@ -8120,7 +9749,7 @@ export const getFOSalesSummary = async (req, res) => {
         checkout,
       );
       console.log(checkout);
-      const extraPersonCount = roomDetails?.additionalPaxCount
+      const extraPersonCount = roomDetails?.additionalPaxCount;
 
       const roomSaleAmount = Number(roomDetails?.taxableAmount || 0);
 
@@ -8154,7 +9783,7 @@ export const getFOSalesSummary = async (req, res) => {
       const billTotal =
         restaurantSaleAmount +
         Number(roomDetails?.taxableAmount || 0) +
-        Number(roomDetails?.roomTaxAmount || 0) + 
+        Number(roomDetails?.roomTaxAmount || 0) +
         Number(roomDetails?.specificFoodPlanTotal || 0) +
         Number(roomDetails?.additionalPaxWithTax || 0) -
         advance;
@@ -8195,8 +9824,12 @@ export const getFOSalesSummary = async (req, res) => {
         plan: checkout?.foodPlan?.[0]?.foodPlan || "",
         roomSaleAmount,
         planSaleAmount: Number(roomDetails?.taxableSpecificFoodPlan || 0),
-        additionalPaxTaxAmount: Number(roomDetails?.additionalPaxTaxAmount || 0),
-        additionalPaxWithOutTax: Number(roomDetails?.additionalPaxWithoutTax || 0),
+        additionalPaxTaxAmount: Number(
+          roomDetails?.additionalPaxTaxAmount || 0,
+        ),
+        additionalPaxWithOutTax: Number(
+          roomDetails?.additionalPaxWithoutTax || 0,
+        ),
         cgst,
         sgst,
         totalTax: roundedTotalTax,
@@ -8232,7 +9865,6 @@ export const getFOSalesSummary = async (req, res) => {
     });
   }
 };
-
 
 export const getFlashReportForDate = async (req, res) => {
   try {
@@ -9328,7 +10960,6 @@ export const getSpecificDataForPrint = async (req, res) => {
   }
 };
 
-
 export const loginReport = async (req, res) => {
   try {
     const { cmp_id } = req.params;
@@ -9440,11 +11071,7 @@ export const loginReport = async (req, res) => {
 
       if (status === "checkIn") {
         filter.$and.push({
-          $or: [
-            { status: "" },
-            { status: "checkIn" },
-            { status: null },
-          ],
+          $or: [{ status: "" }, { status: "checkIn" }, { status: null }],
         });
       } else if (status === "checkOut") {
         filter.$and.push({
@@ -9456,10 +11083,7 @@ export const loginReport = async (req, res) => {
         });
       } else if (status === "cancelled") {
         filter.$and.push({
-          $or: [
-            { status: "cancelled" },
-            { status: "Cancelled" },
-          ],
+          $or: [{ status: "cancelled" }, { status: "Cancelled" }],
         });
       }
     }
@@ -9507,11 +11131,7 @@ export const loginReport = async (req, res) => {
 
       summary.total += count;
 
-      if (
-        item._id === "" ||
-        item._id === "checkIn" ||
-        item._id === null
-      ) {
+      if (item._id === "" || item._id === "checkIn" || item._id === null) {
         summary.checkIn += count;
       } else if (
         item._id === "checkOut" ||
@@ -9519,10 +11139,7 @@ export const loginReport = async (req, res) => {
         item._id === "Checkout"
       ) {
         summary.checkOut += count;
-      } else if (
-        item._id === "cancelled" ||
-        item._id === "Cancelled"
-      ) {
+      } else if (item._id === "cancelled" || item._id === "Cancelled") {
         summary.cancelled += count;
       }
     });
@@ -9537,13 +11154,13 @@ export const loginReport = async (req, res) => {
 
     const totalPages = Math.ceil(totalBookings / limitNumber);
     console.log({
-  page: pageNumber,
-  limit: limitNumber,
-  returned: bookings.length,
-  total: totalBookings,
-  totalPages,
-  hasMore: pageNumber < totalPages,
-});
+      page: pageNumber,
+      limit: limitNumber,
+      returned: bookings.length,
+      total: totalBookings,
+      totalPages,
+      hasMore: pageNumber < totalPages,
+    });
 
     return res.status(200).json({
       success: true,
@@ -9651,11 +11268,7 @@ export const loginReportExport = async (req, res) => {
 
       if (status === "checkIn") {
         filter.$and.push({
-          $or: [
-            { status: "" },
-            { status: "checkIn" },
-            { status: null },
-          ],
+          $or: [{ status: "" }, { status: "checkIn" }, { status: null }],
         });
       } else if (status === "checkOut") {
         filter.$and.push({
@@ -9667,10 +11280,7 @@ export const loginReportExport = async (req, res) => {
         });
       } else if (status === "cancelled") {
         filter.$and.push({
-          $or: [
-            { status: "cancelled" },
-            { status: "Cancelled" },
-          ],
+          $or: [{ status: "cancelled" }, { status: "Cancelled" }],
         });
       }
     }
@@ -9682,76 +11292,68 @@ export const loginReportExport = async (req, res) => {
         _id: -1,
       })
       .lean();
-const processedBookings = bookings.map((booking) => {
-  const roomNameById = (id) => {
-    const room = booking.selectedRooms?.find(
-      (r) => String(r.roomId) === String(id)
-    );
+    const processedBookings = bookings.map((booking) => {
+      const roomNameById = (id) => {
+        const room = booking.selectedRooms?.find(
+          (r) => String(r.roomId) === String(id),
+        );
 
-    return room?.roomName || "-";
-  };
+        return room?.roomName || "-";
+      };
 
-  return {
-    ...booking,
+      return {
+        ...booking,
 
-    guestName: booking.guestName || booking.customerName || "-",
+        guestName: booking.guestName || booking.customerName || "-",
 
-    room:
-      booking.selectedRooms
-        ?.map((room) => room.roomName)
-        .join(", ") || "-",
+        room:
+          booking.selectedRooms?.map((room) => room.roomName).join(", ") || "-",
 
-    createdBy:
-      booking.Secondary_user_id?.username ||
-      booking.Secondary_user_id?.name ||
-      "-",
+        createdBy:
+          booking.Secondary_user_id?.username ||
+          booking.Secondary_user_id?.name ||
+          "-",
 
-    created: booking.createdAt
-      ? new Date(booking.createdAt).toLocaleString("en-IN")
-      : "-",
+        created: booking.createdAt
+          ? new Date(booking.createdAt).toLocaleString("en-IN")
+          : "-",
 
-    updated: booking.updatedAt
-      ? new Date(booking.updatedAt).toLocaleString("en-IN")
-      : "-",
+        updated: booking.updatedAt
+          ? new Date(booking.updatedAt).toLocaleString("en-IN")
+          : "-",
 
-    roomSwapHistory:
-      booking.roomSwapHistory?.length
-        ? booking.roomSwapHistory.map((swap) => ({
-            from: roomNameById(swap.fromRoomId),
-            to: roomNameById(swap.toRoomId),
-            reason: swap.reason || "-",
-            date: swap.swapDate
-              ? new Date(swap.swapDate).toLocaleString("en-IN")
-              : "-",
-          }))
-        : [],
+        roomSwapHistory: booking.roomSwapHistory?.length
+          ? booking.roomSwapHistory.map((swap) => ({
+              from: roomNameById(swap.fromRoomId),
+              to: roomNameById(swap.toRoomId),
+              reason: swap.reason || "-",
+              date: swap.swapDate
+                ? new Date(swap.swapDate).toLocaleString("en-IN")
+                : "-",
+            }))
+          : [],
 
-    partialCheckoutHistory:
-      booking.partialCheckoutHistory?.length
-        ? booking.partialCheckoutHistory.map((pc) => ({
-            saleVoucherNumber: pc.saleVoucherNumber || "-",
-            rooms:
-              pc.roomsCheckedOut
-                ?.map((r) => r.roomName)
-                .join(", ") || "-",
-            date: pc.date
-              ? new Date(pc.date).toLocaleString("en-IN")
-              : "-",
-          }))
-        : [],
-  };
-});
-    switch (type) {
-     case "excel":
-  try {
-    return await exportLoginReportExcel(res, processedBookings);
-  } catch (err) {
-    console.error("Excel Error:", err);
-    return res.status(500).json({
-      success: false,
-      message: err.message,
+        partialCheckoutHistory: booking.partialCheckoutHistory?.length
+          ? booking.partialCheckoutHistory.map((pc) => ({
+              saleVoucherNumber: pc.saleVoucherNumber || "-",
+              rooms:
+                pc.roomsCheckedOut?.map((r) => r.roomName).join(", ") || "-",
+              date: pc.date ? new Date(pc.date).toLocaleString("en-IN") : "-",
+            }))
+          : [],
+      };
     });
-  }
+    switch (type) {
+      case "excel":
+        try {
+          return await exportLoginReportExcel(res, processedBookings);
+        } catch (err) {
+          console.error("Excel Error:", err);
+          return res.status(500).json({
+            success: false,
+            message: err.message,
+          });
+        }
 
       case "pdf":
         return exportLoginReportPdf(res, processedBookings);
