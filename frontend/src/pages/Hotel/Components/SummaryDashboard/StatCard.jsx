@@ -2,13 +2,19 @@
 
 const StatCard = ({
   title,
+  taxTitle,
+  finalTitle,
   value,
+  totalTax,
+  finalRevenue,
   subtitle,
   bgColor,
   illustration: Illustration,
   onClick,
   cashTotal,
   bankTotal,
+  grossSalesHotel,
+  grossRestaurantSales,
   cashLabel = "Cash",
   bankLabel = "Bank",
   cashIcon = "cash",
@@ -105,6 +111,19 @@ const StatCard = ({
       <p className="text-[1rem] sm:text-[1.2rem] lg:text-[1.3rem] font-bold text-white z-10 leading-tight mt-1 tracking-tight break-all max-w-[68%] sm:max-w-[72%]">
         {value}
       </p>
+        <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.18em] sm:tracking-[0.2em] text-white/60 z-10 mt-2">
+        {taxTitle}
+      </p>
+      <p className="text-[1rem] sm:text-[1.2rem] lg:text-[1.3rem] font-bold text-white z-10 leading-tight mt-1 tracking-tight break-all max-w-[68%] sm:max-w-[72%]">
+        {totalTax}
+      </p>
+         <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.18em] sm:tracking-[0.2em] text-white/60 z-10 mt-2">
+        {finalTitle}
+      </p>
+      <p className="text-[1rem] sm:text-[1.2rem] lg:text-[1.3rem] font-bold text-white z-10 leading-tight mt-1 tracking-tight break-all max-w-[68%] sm:max-w-[72%]">
+        {finalRevenue}
+      </p>
+      
 
       {/* Subtitle */}
       <p className="text-[10px] sm:text-[11px] text-white/55 z-10 mt-1">{subtitle}</p>
@@ -118,7 +137,7 @@ const StatCard = ({
               <p className="text-[8px] sm:text-[9px] text-white uppercase tracking-wider leading-none">{cashLabel}</p>
             </div>
             <p className="text-[11px] sm:text-[12px] font-semibold text-white leading-tight mt-1 break-all">
-              {cashTotal}
+              {grossSalesHotel}
             </p>
           </div>
 
@@ -130,7 +149,7 @@ const StatCard = ({
               <p className="text-[8px] sm:text-[9px] text-white uppercase tracking-wider leading-none">{bankLabel}</p>
             </div>
             <p className="text-[11px] sm:text-[12px] font-semibold text-white leading-tight mt-1 break-all">
-              {bankTotal}
+              {grossRestaurantSales}
             </p>
           </div>
         </div>

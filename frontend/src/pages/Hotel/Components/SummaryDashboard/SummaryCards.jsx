@@ -14,6 +14,8 @@ import { useState } from "react";
 
 const SummaryCards = ({
   totalRevenue = "₹0",
+  totalTax = "₹0",
+  finalRevenue = "₹0",
   revenueBreakdown = [],
   dailyCollection = "₹0",
   dailyCollectionBreakdown = [],
@@ -24,7 +26,11 @@ const SummaryCards = ({
   totalBlockedRooms = "0",
   totalPropertySales = "₹0",
   totalHotelSales = "₹0",
+  totalHotelSalesTax = "₹0",
+  grossSalesHotel = "₹0",
   totalRestaurantSales = "₹0",
+  totalRestaurantSalesTax = "₹0",
+  grossRestaurantSales = "₹0",
   propertySalesBreakdown = [],
   roomCountBreakdown = [],
   dailyCash = "₹0",
@@ -39,14 +45,24 @@ const SummaryCards = ({
   const [propertySalesSheetOpen, setPropertySalesSheetOpen] = useState(false);
   const [roomSheetOpen, setRoomSheetOpen] = useState(false);
 
+  console.log(finalRevenue);
+
   const summaryCards = [
     {
       title: "Total Revenue",
+      taxTitle: "Tax Amount",
+      finalTitle: "Gross Revenue",
       value: totalPropertySales,
+      totalTax: totalTax,
+      finalRevenue: finalRevenue,
       subtitle: "Up to selected date",
       bgColor: "#1db974",
       illustration: RevenueIllustration,
       onClick: () => setPropertySalesSheetOpen(true),
+      totalHotelSalesTax,
+      grossSalesHotel,
+      totalRestaurantSalesTax,
+      grossRestaurantSales,
       cashTotal: totalHotelSales,
       bankTotal: totalRestaurantSales,
       cashLabel: "Hotel",
@@ -102,6 +118,8 @@ const SummaryCards = ({
     },
   ];
 
+  console.log(summaryCards);
+
   return (
     <>
       <div className="py-6 px-1 rounded-xl">
@@ -149,6 +167,8 @@ const SummaryCards = ({
         open={propertySalesSheetOpen}
         onOpenChange={setPropertySalesSheetOpen}
         totalPropertySales={totalPropertySales}
+        finalAmount={finalRevenue}
+        tax={totalTax}
         totalHotelSales={totalHotelSales}
         totalRestaurantSales={totalRestaurantSales}
         propertySalesBreakdown={propertySalesBreakdown}
