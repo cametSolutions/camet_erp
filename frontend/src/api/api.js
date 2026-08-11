@@ -3,9 +3,9 @@ import Swal from "sweetalert2";
 
 let baseUrl;
 
-const ENV = import.meta.env.VITE_ENV;
+const ENV = import.meta.env.VITE_ENV || "development";
 
-// console.log(ENV);
+console.log(ENV);
 if (ENV === "development") {
   baseUrl = "http://localhost:7000/";
 } else if (ENV === "erp") {
