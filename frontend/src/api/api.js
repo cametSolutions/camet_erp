@@ -9,11 +9,11 @@ const ENV = import.meta.env.VITE_ENV;
 if (ENV === "development") {
   baseUrl = "http://localhost:7000/";
 } else if (ENV === "erp") {
-  baseUrl = "https://www.erp.camet.in/";
+  baseUrl = "https://erp.camet.in/";
 } else if (ENV === "testing") {
-  baseUrl = "https://www.erptest.camet.in/";
+  baseUrl = "https://erptest.camet.in/";
 } else if (ENV === "app") {
-  baseUrl = "https://www.app.camet.in/";
+  baseUrl = "https://app.camet.in/";
 }
 
 console.log(`Base URL: ${baseUrl}`);
