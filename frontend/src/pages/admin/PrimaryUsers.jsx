@@ -5,7 +5,14 @@ import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom"; // Add this import
 import SecUserPopup from "../../components/admin/SecUserPopup";
 import { RingLoader } from "react-spinners";
-import { FiMail, FiPhone, FiUsers, FiCalendar, FiSearch } from "react-icons/fi";
+import { FiMail, FiPhone, FiUsers, FiCalendar, FiSearch , FiFileText,
+  FiDownload} from "react-icons/fi";
+
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+
 
 // Shadcn UI imports
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -175,6 +182,213 @@ function PrimaryUsers() {
       inactive: inactiveSecUsers.length,
     };
   };
+
+
+
+const formatDate = (date) => {
+  if (!date) return "-";
+
+  const parsedDate = dayjs(date);
+
+  return parsedDate.isValid()
+    ? parsedDate.format("DD/MM/YYYY")
+    : "-";
+};
+
+const getAmcStartDate = (user) => {
+  return user.createdAt;
+};
+
+const getAmcEndDate = (user) => {
+  if (!user.createdAt) return null;
+
+  const duration =
+    user.subscription === "yearly"
+      ? 1
+      : 0;
+
+  return dayjs(user.createdAt)
+    .add(duration, "year")
+    .format("DD/MM/YYYY");
+};
+
+const getExportRows = () => {
+  return filteredData.map((user, index) => {
+    const orgStats = getOrganizationStats(user._id);
+    const secUserStats = getSecondaryUserStats(user._id);
+
+    return {
+      "Sl. No.": index + 1,
+      Customer: user.userName || "-",
+      "Created Date": formatDate(user.createdAt),
+      "AMC Start Date": formatDate(getAmcStartDate(user)),
+      "AMC End Date": getAmcEndDate(user),
+      "No. of Companies": orgStats.total,
+      "No. of Users": secUserStats.total,
+      "Primary Mail ID": user.email || "-",
+      "Mobile No.": user.mobile ? String(user.mobile) : "-",
+      "Active / Blocked Status": user.isBlocked
+        ? "Blocked"
+        : "Active",
+    };
+  });
+};
+
+const exportToExcel = () => {
+  const exportRows = getExportRows();
+
+  if (exportRows.length === 0) {
+    alert("No user data available to export.");
+    return;
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(exportRows);
+
+  const columnWidths = [
+    { wch: 8 },
+    { wch: 25 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 18 },
+    { wch: 14 },
+    { wch: 32 },
+    { wch: 18 },
+    { wch: 22 },
+  ];
+
+  worksheet["!cols"] = columnWidths;
+
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(
+    workbook,
+    worksheet,
+    "Primary Users"
+  );
+
+  XLSX.writeFile(
+    workbook,
+    `primary-users-${dayjs().format("DD-MM-YYYY")}.xlsx`
+  );
+};
+
+const exportToPDF = () => {
+  const exportRows = getExportRows();
+
+  if (exportRows.length === 0) {
+    alert("No user data available to export.");
+    return;
+  }
+
+  const doc = new jsPDF({
+    orientation: "landscape",
+    unit: "mm",
+    format: "a4",
+  });
+
+  doc.setFontSize(16);
+  doc.setTextColor(30, 41, 59);
+  doc.text("Primary Users Report", 14, 15);
+
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text(
+    `Generated on: ${dayjs().format("DD/MM/YYYY HH:mm")}`,
+    14,
+    22
+  );
+
+  const tableHeaders = [
+    [
+      "Sl. No.",
+      "Customer",
+      "Created",
+      "AMC Start",
+      "AMC End",
+      "Companies",
+      "Users",
+      "Primary Mail ID",
+      "Mobile No.",
+      "Status",
+    ],
+  ];
+
+  const tableRows = exportRows.map((row) => [
+    row["Sl. No."],
+    row["Customer"],
+    row["Created Date"],
+    row["AMC Start Date"],
+    row["AMC End Date"],
+    row["No. of Companies"],
+    row["No. of Users"],
+    row["Primary Mail ID"],
+    row["Mobile No."],
+    row["Active / Blocked Status"],
+  ]);
+
+  autoTable(doc, {
+    head: tableHeaders,
+    body: tableRows,
+    startY: 28,
+    theme: "grid",
+    styles: {
+      fontSize: 7,
+      cellPadding: 2,
+      overflow: "linebreak",
+      valign: "middle",
+    },
+    headStyles: {
+      fillColor: [37, 99, 235],
+      textColor: 255,
+      fontStyle: "bold",
+      halign: "center",
+    },
+    bodyStyles: {
+      textColor: [51, 65, 85],
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
+    },
+    columnStyles: {
+      0: { cellWidth: 12, halign: "center" },
+      1: { cellWidth: 30 },
+      2: { cellWidth: 22 },
+      3: { cellWidth: 22 },
+      4: { cellWidth: 22 },
+      5: { cellWidth: 18, halign: "center" },
+      6: { cellWidth: 14, halign: "center" },
+      7: { cellWidth: 45 },
+      8: { cellWidth: 27 },
+      9: { cellWidth: 25, halign: "center" },
+    },
+    didParseCell: (data) => {
+      if (
+        data.section === "body" &&
+        data.column.index === 9
+      ) {
+        const status = data.cell.raw;
+
+        if (status === "Blocked") {
+          data.cell.styles.textColor = [220, 38, 38];
+          data.cell.styles.fontStyle = "bold";
+        }
+
+        if (status === "Active") {
+          data.cell.styles.textColor = [22, 163, 74];
+          data.cell.styles.fontStyle = "bold";
+        }
+      }
+    },
+  });
+
+  doc.save(`primary-users-${dayjs().format("DD-MM-YYYY")}.pdf`);
+};
+
+
+
+
+
 
   const getStatusColor = (user) => {
     if (user.isBlocked)
@@ -423,18 +637,42 @@ function PrimaryUsers() {
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* Search */}
-            <div className="relative group">
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 transition-colors duration-200 group-focus-within:text-blue-500" />
-              <Input
-                placeholder="Search users..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 w-64 transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-blue-300"
-              />
-            </div>
-          </div>
+        <div className="flex flex-wrap items-center justify-end gap-3">
+  {/* Search */}
+  <div className="relative group">
+    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4 transition-colors duration-200 group-focus-within:text-blue-500" />
+
+    <Input
+      placeholder="Search users..."
+      value={search}
+      onChange={(e) => {
+        setSearch(e.target.value);
+        setCurrentPage(1);
+      }}
+      className="w-64 pl-10 transition-all duration-300 focus:border-transparent focus:ring-2 focus:ring-blue-500 hover:border-blue-300"
+    />
+  </div>
+
+  {/* Excel Export Button */}
+  <Button
+    type="button"
+    onClick={exportToExcel}
+    className="gap-2 bg-green-600 text-white shadow-sm transition-all hover:bg-green-700 hover:shadow-md"
+  >
+    <FiDownload className="h-4 w-4" />
+    <span className="hidden sm:inline">Excel</span>
+  </Button>
+
+  {/* PDF Export Button */}
+  <Button
+    type="button"
+    onClick={exportToPDF}
+    className="gap-2 bg-red-600 text-white shadow-sm transition-all hover:bg-red-700 hover:shadow-md"
+  >
+    <FiFileText className="h-4 w-4" />
+    <span className="hidden sm:inline">PDF</span>
+  </Button>
+</div>
         </div>
 
         {/* User Cards */}
