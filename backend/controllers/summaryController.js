@@ -11,14 +11,15 @@ import RoomModel from "../models/roomModal.js";
 import VoucherSeriesModel from "../models/VoucherSeriesModel.js";
 import receiptModel from "../models/receiptModel.js";
 import mongoose from "mongoose";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
 
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
 const getSelectedISTDateParts = (selectedDateInput) => {
   if (selectedDateInput) {
-    const match = String(selectedDateInput).match(
-      /^(\d{4})-(\d{2})-(\d{2})$/,
-    );
+    const match = String(selectedDateInput).match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
     if (!match) {
       throw new Error("Invalid date format. Expected YYYY-MM-DD");
@@ -50,15 +51,8 @@ const getISTBoundaryDate = ({
   milliseconds = 0,
 }) =>
   new Date(
-    Date.UTC(
-      year,
-      monthIndex,
-      day,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-    ) - IST_OFFSET_MS,
+    Date.UTC(year, monthIndex, day, hours, minutes, seconds, milliseconds) -
+      IST_OFFSET_MS,
   );
 
 const getISTDateRanges = (selectedDateInput) => {
@@ -103,7 +97,6 @@ const getISTDateRanges = (selectedDateInput) => {
     monthEndIST,
   };
 };
-
 
 export const getSummary = async (req, res) => {
   const {
@@ -365,7 +358,7 @@ export const getSummary = async (req, res) => {
     const groupedByParty = new Map();
 
     for (const record of mergedResults) {
-      console.log("record", record)
+      console.log("record", record);
       const filtername =
         selectedOption === "Ledger"
           ? record._id.partyName
@@ -373,7 +366,9 @@ export const getSummary = async (req, res) => {
             ? record._id.categoryName
             : selectedOption === "Stock Group"
               ? record._id.groupName
-              : selectedOption === "voucher" ? record._id.voucherSeries : record._id.itemName;
+              : selectedOption === "voucher"
+                ? record._id.voucherSeries
+                : record._id.itemName;
 
       if (!groupedByParty.has(filtername)) {
         groupedByParty.set(filtername, {
@@ -637,139 +632,158 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
 
     const primaryUserObjectId = new mongoose.Types.ObjectId(primaryUserId);
 
-    const [salesResult, receiptResult, restaurantDirectSummary] = await Promise.all([
-      salesModel.aggregate([
-        {
-          $match: {
-            Primary_user_id: primaryUserObjectId,
-            isComplimentary: { $ne: true },
-            date: { $lte: selectedEndIST },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            totalRevenue: { $sum: "$finalAmount" },
-          },
-        },
-      ]),
-      receiptModel.aggregate([
-        {
-          $match: {
-            Primary_user_id: primaryUserObjectId,
-            isCancelled: { $ne: true },
-          },
-        },
-        {
-          $addFields: {
-            normalizedPaymentMethod: {
-              $toLower: { $ifNull: ["$paymentMethod", ""] },
+    const [salesResult, receiptResult, restaurantDirectSummary] =
+      await Promise.all([
+        salesModel.aggregate([
+          {
+            $match: {
+              Primary_user_id: primaryUserObjectId,
+              isComplimentary: { $ne: true },
+              date: { $lte: selectedEndIST },
             },
           },
-        },
-        {
-          $facet: {
-            monthlyTotal: [
-              {
-                $match: {
-                  date: { $gte: monthStartIST, $lte: selectedEndIST },
-                },
-              },
-              {
-                $group: {
-                  _id: null,
-                  total: { $sum: "$enteredAmount" },
-                },
-              },
-            ],
-            dailyTotal: [
-              {
-                $match: {
-                  date: { $gte: selectedStartIST, $lte: selectedEndIST },
-                },
-              },
-              {
-                $group: {
-                  _id: null,
-                  total: { $sum: "$enteredAmount" },
-                },
-              },
-            ],
-            cashBankDaily: [
-              {
-                $match: {
-                  date: { $gte: selectedStartIST, $lte: selectedEndIST },
-                  enteredAmount: { $gt: 0 },
-                  normalizedPaymentMethod: { $ne: "credit" },
-                },
-              },
-              {
-                $group: {
-                  _id: {
-                    $cond: [
-                      { $eq: ["$normalizedPaymentMethod", "cash"] },
-                      "cash",
-                      "bank",
-                    ],
-                  },
-                  total: { $sum: "$enteredAmount" },
-                },
-              },
-            ],
-            cashBankMonthly: [
-              {
-                $match: {
-                  date: { $gte: monthStartIST, $lte: selectedEndIST },
-                  enteredAmount: { $gt: 0 },
-                  normalizedPaymentMethod: { $ne: "credit" },
-                },
-              },
-              {
-                $group: {
-                  _id: {
-                    $cond: [
-                      { $eq: ["$normalizedPaymentMethod", "cash"] },
-                      "cash",
-                      "bank",
-                    ],
-                  },
-                  total: { $sum: "$enteredAmount" },
-                },
-              },
-            ],
-            cashBankAllTime: [
-              {
-                $match: {
-                  date: { $lte: selectedEndIST },
-                  enteredAmount: { $gt: 0 },
-                  normalizedPaymentMethod: { $ne: "credit" },
-                },
-              },
-              {
-                $group: {
-                  _id: {
-                    $cond: [
-                      { $eq: ["$normalizedPaymentMethod", "cash"] },
-                      "cash",
-                      "bank",
-                    ],
-                  },
-                  total: { $sum: "$enteredAmount" },
-                },
-              },
-            ],
-          },
-        },
-      ]),
-      getRestaurantDirectCollectionSummary({
-        primaryUserObjectId,
-        selectedStartIST,
-        selectedEndIST,
-        monthStartIST,
-      }),
-    ]);
+          {
+            $group: {
+              _id: null,
 
-    // ── Helper: [{_id: "cash", total: X}] → { cash: X, bank: Y } 
+              totalRevenue: {
+                $sum: "$finalAmount",
+              },
+
+              totalTax: {
+                $sum: {
+                  $reduce: {
+                    input: { $ifNull: ["$items", []] },
+                    initialValue: 0,
+                    in: {
+                      $add: [
+                        "$$value",
+                        { $ifNull: ["$$this.totalIgstAmt", 0] },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        ]),
+        receiptModel.aggregate([
+          {
+            $match: {
+              Primary_user_id: primaryUserObjectId,
+              isCancelled: { $ne: true },
+            },
+          },
+          {
+            $addFields: {
+              normalizedPaymentMethod: {
+                $toLower: { $ifNull: ["$paymentMethod", ""] },
+              },
+            },
+          },
+          {
+            $facet: {
+              monthlyTotal: [
+                {
+                  $match: {
+                    date: { $gte: monthStartIST, $lte: selectedEndIST },
+                  },
+                },
+                {
+                  $group: {
+                    _id: null,
+                    total: { $sum: "$enteredAmount" },
+                  },
+                },
+              ],
+              dailyTotal: [
+                {
+                  $match: {
+                    date: { $gte: selectedStartIST, $lte: selectedEndIST },
+                  },
+                },
+                {
+                  $group: {
+                    _id: null,
+                    total: { $sum: "$enteredAmount" },
+                  },
+                },
+              ],
+              cashBankDaily: [
+                {
+                  $match: {
+                    date: { $gte: selectedStartIST, $lte: selectedEndIST },
+                    enteredAmount: { $gt: 0 },
+                    normalizedPaymentMethod: { $ne: "credit" },
+                  },
+                },
+                {
+                  $group: {
+                    _id: {
+                      $cond: [
+                        { $eq: ["$normalizedPaymentMethod", "cash"] },
+                        "cash",
+                        "bank",
+                      ],
+                    },
+                    total: { $sum: "$enteredAmount" },
+                  },
+                },
+              ],
+              cashBankMonthly: [
+                {
+                  $match: {
+                    date: { $gte: monthStartIST, $lte: selectedEndIST },
+                    enteredAmount: { $gt: 0 },
+                    normalizedPaymentMethod: { $ne: "credit" },
+                  },
+                },
+                {
+                  $group: {
+                    _id: {
+                      $cond: [
+                        { $eq: ["$normalizedPaymentMethod", "cash"] },
+                        "cash",
+                        "bank",
+                      ],
+                    },
+                    total: { $sum: "$enteredAmount" },
+                  },
+                },
+              ],
+              cashBankAllTime: [
+                {
+                  $match: {
+                    date: { $lte: selectedEndIST },
+                    enteredAmount: { $gt: 0 },
+                    normalizedPaymentMethod: { $ne: "credit" },
+                  },
+                },
+                {
+                  $group: {
+                    _id: {
+                      $cond: [
+                        { $eq: ["$normalizedPaymentMethod", "cash"] },
+                        "cash",
+                        "bank",
+                      ],
+                    },
+                    total: { $sum: "$enteredAmount" },
+                  },
+                },
+              ],
+            },
+          },
+        ]),
+        getRestaurantDirectCollectionSummary({
+          primaryUserObjectId,
+          selectedStartIST,
+          selectedEndIST,
+          monthStartIST,
+        }),
+      ]);
+
+    // ── Helper: [{_id: "cash", total: X}] → { cash: X, bank: Y }
     const toMap = (arr) => {
       const map = { cash: 0, bank: 0 };
       (arr || []).forEach(({ _id, total }) => {
@@ -785,6 +799,9 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
 
     return res.status(200).json({
       totalRevenue: salesResult[0]?.totalRevenue ?? 0,
+      totalTax: salesResult[0]?.totalTax ?? 0,
+      finalRevenue:
+        Number(salesResult[0]?.totalRevenue) - Number(salesResult[0]?.totalTax),
       monthlyCollection:
         (receiptSummary.monthlyTotal?.[0]?.total ?? 0) +
         (restaurantDirectSummary.monthly.total ?? 0),
@@ -792,73 +809,269 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
         (receiptSummary.dailyTotal?.[0]?.total ?? 0) +
         (restaurantDirectSummary.daily.total ?? 0),
       cashCollection: {
-        allTime: allTime.cash + (restaurantDirectSummary.allTime.cashTotal ?? 0),
-        monthly: monthly.cash + (restaurantDirectSummary.monthly.cashTotal ?? 0),
+        allTime:
+          allTime.cash + (restaurantDirectSummary.allTime.cashTotal ?? 0),
+        monthly:
+          monthly.cash + (restaurantDirectSummary.monthly.cashTotal ?? 0),
         daily: daily.cash + (restaurantDirectSummary.daily.cashTotal ?? 0),
       },
       bankCollection: {
-        allTime: allTime.bank + (restaurantDirectSummary.allTime.bankTotal ?? 0),
-        monthly: monthly.bank + (restaurantDirectSummary.monthly.bankTotal ?? 0),
+        allTime:
+          allTime.bank + (restaurantDirectSummary.allTime.bankTotal ?? 0),
+        monthly:
+          monthly.bank + (restaurantDirectSummary.monthly.bankTotal ?? 0),
         daily: daily.bank + (restaurantDirectSummary.daily.bankTotal ?? 0),
       },
     });
-
   } catch (error) {
     console.log("error:", error.message);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
 
+// Enable dayjs timezone support
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 export const fetchDashboardCompanyRevenueBreakdown = async (req, res) => {
   try {
     const { primaryUserId } = req.params;
     const { date } = req.query;
-    const { selectedEndIST } = getISTDateRanges(date);
+
+    if (!primaryUserId) {
+      return res.status(400).json({
+        message: "Primary user ID is required",
+      });
+    }
+
+    if (!date) {
+      return res.status(400).json({
+        message: "Date is required",
+      });
+    }
+
     const primaryUserObjectId = new mongoose.Types.ObjectId(primaryUserId);
 
+    // =========================================================
+    // IST DATE RANGES
+    // =========================================================
+
+    const selectedDate = dayjs.tz(date, "YYYY-MM-DD", "Asia/Kolkata");
+
+    if (!selectedDate.isValid()) {
+      return res.status(400).json({
+        message: "Invalid date",
+      });
+    }
+
+    const startOfDayIST = selectedDate.startOf("day").toDate();
+
+    const endOfDayIST = selectedDate.endOf("day").toDate();
+
+    const startOfMonthIST = selectedDate.startOf("month").toDate();
+
+    const startOfYearIST = selectedDate.startOf("year").toDate();
+
+    console.log("Dashboard revenue date ranges:", {
+      requestedDate: date,
+
+      startOfDayIST,
+      endOfDayIST,
+
+      startOfMonthIST,
+      startOfYearIST,
+    });
+
+    // =========================================================
+    // COMPANY-WISE REVENUE
+    // =========================================================
+
     const companyWiseRevenue = await OrganizationModel.aggregate([
+      // -----------------------------------------------------
+      // Get companies belonging to the user
+      // -----------------------------------------------------
       {
         $match: {
           owner: primaryUserObjectId,
         },
       },
+
+      // -----------------------------------------------------
+      // Get sales for each company
+      // -----------------------------------------------------
       {
         $lookup: {
           from: salesModel.collection.name,
-          let: { companyId: "$_id" },
+
+          let: {
+            companyId: "$_id",
+          },
+
           pipeline: [
+            // ------------------------------------------------
+            // Get sales from beginning of current year
+            // until selected date
+            // ------------------------------------------------
             {
               $match: {
                 $expr: {
                   $and: [
-                    { $eq: ["$cmp_id", "$$companyId"] },
-                    { $eq: ["$Primary_user_id", primaryUserObjectId] },
-                    { $ne: ["$isComplimentary", true] },
-                    { $lte: ["$date", selectedEndIST] },
+                    {
+                      $eq: ["$cmp_id", "$$companyId"],
+                    },
+
+                    {
+                      $eq: ["$Primary_user_id", primaryUserObjectId],
+                    },
+
+                    {
+                      $ne: ["$isComplimentary", true],
+                    },
+
+                    {
+                      $gte: ["$date", startOfYearIST],
+                    },
+
+                    {
+                      $lte: ["$date", endOfDayIST],
+                    },
                   ],
                 },
               },
             },
+
+            // ------------------------------------------------
+            // Calculate daily/monthly/yearly revenue
+            // ------------------------------------------------
             {
               $group: {
                 _id: null,
-                revenue: { $sum: { $ifNull: ["$finalAmount", 0] } },
+
+                // ==========================================
+                // DAILY REVENUE
+                // ==========================================
+                dailyRevenue: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          {
+                            $gte: ["$date", startOfDayIST],
+                          },
+                          {
+                            $lte: ["$date", endOfDayIST],
+                          },
+                        ],
+                      },
+
+                      {
+                        $ifNull: ["$finalAmount", 0],
+                      },
+
+                      0,
+                    ],
+                  },
+                },
+
+                // ==========================================
+                // MONTHLY REVENUE
+                // ==========================================
+                monthlyRevenue: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          {
+                            $gte: ["$date", startOfMonthIST],
+                          },
+                          {
+                            $lte: ["$date", endOfDayIST],
+                          },
+                        ],
+                      },
+
+                      {
+                        $ifNull: ["$finalAmount", 0],
+                      },
+
+                      0,
+                    ],
+                  },
+                },
+
+                // ==========================================
+                // YEARLY REVENUE
+                // ==========================================
+                yearlyRevenue: {
+                  $sum: {
+                    $ifNull: ["$finalAmount", 0],
+                  },
+                },
               },
             },
           ],
+
           as: "revenueData",
         },
       },
+
+      // -----------------------------------------------------
+      // Format company result
+      // -----------------------------------------------------
       {
         $project: {
           _id: 0,
+
           cmp_id: "$_id",
-          companyName: { $ifNull: ["$name", "Unknown Company"] },
-          revenue: {
+
+          companyName: {
+            $ifNull: ["$name", "Unknown Company"],
+          },
+
+          // ================================================
+          // DAILY
+          // ================================================
+          dailyRevenue: {
             $round: [
               {
                 $ifNull: [
-                  { $arrayElemAt: ["$revenueData.revenue", 0] },
+                  {
+                    $arrayElemAt: ["$revenueData.dailyRevenue", 0],
+                  },
+                  0,
+                ],
+              },
+              2,
+            ],
+          },
+
+          // ================================================
+          // MONTHLY
+          // ================================================
+          monthlyRevenue: {
+            $round: [
+              {
+                $ifNull: [
+                  {
+                    $arrayElemAt: ["$revenueData.monthlyRevenue", 0],
+                  },
+                  0,
+                ],
+              },
+              2,
+            ],
+          },
+
+          // ================================================
+          // YEARLY
+          // ================================================
+          yearlyRevenue: {
+            $round: [
+              {
+                $ifNull: [
+                  {
+                    $arrayElemAt: ["$revenueData.yearlyRevenue", 0],
+                  },
                   0,
                 ],
               },
@@ -867,19 +1080,36 @@ export const fetchDashboardCompanyRevenueBreakdown = async (req, res) => {
           },
         },
       },
-      { $sort: { revenue: -1, companyName: 1 } },
+
+      // -----------------------------------------------------
+      // Sort companies by yearly revenue
+      // -----------------------------------------------------
+      {
+        $sort: {
+          yearlyRevenue: -1,
+          companyName: 1,
+        },
+      },
     ]);
+
+    // =========================================================
+    // RESPONSE
+    // =========================================================
 
     return res.status(200).json({
       message: "Company-wise revenue fetched successfully",
+
       companyWiseRevenue,
     });
   } catch (error) {
-    console.log("error:", error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error("fetchDashboardCompanyRevenueBreakdown error:", error);
+
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
-
 const buildRestaurantDirectSalesPipeline = ({
   primaryUserObjectId,
   dateMatch = null,
@@ -934,7 +1164,12 @@ const buildRestaurantDirectSalesPipeline = ({
                   as: "converted",
                   cond: {
                     $and: [
-                      { $ne: [{ $ifNull: ["$$converted.checkInNumber", null] }, null] },
+                      {
+                        $ne: [
+                          { $ifNull: ["$$converted.checkInNumber", null] },
+                          null,
+                        ],
+                      },
                       { $ne: ["$$converted.checkInNumber", ""] },
                     ],
                   },
@@ -1044,7 +1279,10 @@ const getRestaurantDirectCollectionSummary = async ({
   };
 };
 
-const getCompanyWiseCollectionBreakdown = async ({ primaryUserId, dateMatch }) => {
+const getCompanyWiseCollectionBreakdown = async ({
+  primaryUserId,
+  dateMatch,
+}) => {
   const primaryUserObjectId = new mongoose.Types.ObjectId(primaryUserId);
 
   return OrganizationModel.aggregate([
@@ -1188,7 +1426,9 @@ const getCompanyWiseCollectionBreakdown = async ({ primaryUserId, dateMatch }) =
                   $add: [
                     {
                       $ifNull: [
-                        { $arrayElemAt: ["$receiptCollectionData.cashTotal", 0] },
+                        {
+                          $arrayElemAt: ["$receiptCollectionData.cashTotal", 0],
+                        },
                         0,
                       ],
                     },
@@ -1209,7 +1449,9 @@ const getCompanyWiseCollectionBreakdown = async ({ primaryUserId, dateMatch }) =
                   $add: [
                     {
                       $ifNull: [
-                        { $arrayElemAt: ["$receiptCollectionData.bankTotal", 0] },
+                        {
+                          $arrayElemAt: ["$receiptCollectionData.bankTotal", 0],
+                        },
                         0,
                       ],
                     },
@@ -1237,7 +1479,10 @@ const getCompanyWiseCollectionBreakdown = async ({ primaryUserId, dateMatch }) =
   ]);
 };
 
-export const fetchDashboardCompanyDailyCollectionBreakdown = async (req, res) => {
+export const fetchDashboardCompanyDailyCollectionBreakdown = async (
+  req,
+  res,
+) => {
   try {
     const { primaryUserId } = req.params;
     const { date } = req.query;
@@ -1258,7 +1503,10 @@ export const fetchDashboardCompanyDailyCollectionBreakdown = async (req, res) =>
   }
 };
 
-export const fetchDashboardCompanyMonthlyCollectionBreakdown = async (req, res) => {
+export const fetchDashboardCompanyMonthlyCollectionBreakdown = async (
+  req,
+  res,
+) => {
   try {
     const { primaryUserId } = req.params;
     const { date } = req.query;
@@ -1334,11 +1582,7 @@ export const fetchDashboardRoomCountSummary = async (req, res) => {
                 },
                 blockedRooms: {
                   $push: {
-                    $cond: [
-                      { $eq: ["$status", "blocked"] },
-                      "$roomName",
-                      null,
-                    ],
+                    $cond: [{ $eq: ["$status", "blocked"] }, "$roomName", null],
                   },
                 },
               },
@@ -1395,15 +1639,15 @@ export const fetchDashboardRoomCountSummary = async (req, res) => {
 
     const totalRooms = companyWiseRoomCount.reduce(
       (sum, company) => sum + Number(company.roomCount || 0),
-      0
+      0,
     );
     const totalAvailableRooms = companyWiseRoomCount.reduce(
       (sum, company) => sum + Number(company.availableCount || 0),
-      0
+      0,
     );
     const totalBlockedRooms = companyWiseRoomCount.reduce(
       (sum, company) => sum + Number(company.blockedCount || 0),
-      0
+      0,
     );
 
     return res.status(200).json({
@@ -1483,6 +1727,7 @@ export const fetchDashboardPropertySalesSummary = async (req, res) => {
             {
               $group: {
                 _id: null,
+
                 hotelSales: {
                   $sum: {
                     $cond: [
@@ -1492,11 +1737,48 @@ export const fetchDashboardPropertySalesSummary = async (req, res) => {
                     ],
                   },
                 },
+
+                hotelTax: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ["$saleUnder", "hotel"] },
+                      {
+                        $sum: {
+                          $map: {
+                            input: { $ifNull: ["$items", []] },
+                            as: "item",
+                            in: { $ifNull: ["$$item.totalIgstAmt", 0] },
+                          },
+                        },
+                      },
+                      0,
+                    ],
+                  },
+                },
+
                 restaurantSales: {
                   $sum: {
                     $cond: [
                       { $eq: ["$saleUnder", "restaurant"] },
                       { $ifNull: ["$finalAmount", 0] },
+                      0,
+                    ],
+                  },
+                },
+
+                restaurantTax: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ["$saleUnder", "restaurant"] },
+                      {
+                        $sum: {
+                          $map: {
+                            input: { $ifNull: ["$items", []] },
+                            as: "item",
+                            in: { $ifNull: ["$$item.totalIgstAmt", 0] },
+                          },
+                        },
+                      },
                       0,
                     ],
                   },
@@ -1512,12 +1794,31 @@ export const fetchDashboardPropertySalesSummary = async (req, res) => {
           _id: 0,
           cmp_id: "$_id",
           companyName: { $ifNull: ["$name", "Unknown Company"] },
+
           hotelSales: {
             $round: [
-              { $ifNull: [{ $arrayElemAt: ["$propertySalesData.hotelSales", 0] }, 0] },
+              {
+                $ifNull: [
+                  { $arrayElemAt: ["$propertySalesData.hotelSales", 0] },
+                  0,
+                ],
+              },
               2,
             ],
           },
+
+          hotelTax: {
+            $round: [
+              {
+                $ifNull: [
+                  { $arrayElemAt: ["$propertySalesData.hotelTax", 0] },
+                  0,
+                ],
+              },
+              2,
+            ],
+          },
+
           restaurantSales: {
             $round: [
               {
@@ -1529,28 +1830,47 @@ export const fetchDashboardPropertySalesSummary = async (req, res) => {
               2,
             ],
           },
+
+          restaurantTax: {
+            $round: [
+              {
+                $ifNull: [
+                  { $arrayElemAt: ["$propertySalesData.restaurantTax", 0] },
+                  0,
+                ],
+              },
+              2,
+            ],
+          },
         },
       },
       {
         $addFields: {
           totalSales: {
-            $round: [
-              { $add: ["$hotelSales", "$restaurantSales"] },
-              2,
-            ],
+            $round: [{ $add: ["$hotelSales", "$restaurantSales"] }, 2],
           },
         },
       },
       { $sort: { totalSales: -1, companyName: 1 } },
     ]);
 
+    console.log("companyWisePropertySales", companyWisePropertySales);
+
     const totalHotelSales = companyWisePropertySales.reduce(
       (sum, company) => sum + Number(company.hotelSales || 0),
-      0
+      0,
+    );
+    const totalHotelTax = companyWisePropertySales.reduce(
+      (sum, company) => sum + Number(company.hotelTax || 0),
+      0,
     );
     const totalRestaurantSales = companyWisePropertySales.reduce(
       (sum, company) => sum + Number(company.restaurantSales || 0),
-      0
+      0,
+    );
+    const totalRestaurantTax = companyWisePropertySales.reduce(
+      (sum, company) => sum + Number(company.restaurantTax || 0),
+      0,
     );
     const totalPropertySales = totalHotelSales + totalRestaurantSales;
 
@@ -1558,7 +1878,14 @@ export const fetchDashboardPropertySalesSummary = async (req, res) => {
       message: "Property sales summary fetched successfully",
       totalPropertySales: Number(totalPropertySales.toFixed(2)),
       totalHotelSales: Number(totalHotelSales.toFixed(2)),
+      totalHotelTax: Number(totalHotelTax.toFixed(2)),
+      totalHotelSaleWithOutTax:
+        Number(totalHotelSales.toFixed(2)) - Number(totalHotelTax.toFixed(2)),
       totalRestaurantSales: Number(totalRestaurantSales.toFixed(2)),
+      totalRestaurantTax: Number(totalRestaurantTax.toFixed(2)),
+      totalRestaurantSaleWithOutTax:
+        Number(totalRestaurantSales.toFixed(2)) -
+        Number(totalRestaurantTax.toFixed(2)),
       companyWisePropertySales,
     });
   } catch (error) {

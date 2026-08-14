@@ -24,6 +24,27 @@ export const calculateStayDays = (doc, room) => {
   if (room.isSwapped) {
     start = arrival;
     end = swap;
+    let swappedRoomObject = doc?.roomSwapHistory.find(
+      (r) => r.fromRoomId == room.roomId,
+    );
+    console.log(swappedRoomObject);
+    if (swappedRoomObject?.toRoomId) {
+      let swappedRoomData = doc?.selectedRooms.find(
+        (r) => r.roomId == swappedRoomObject.toRoomId,
+      );
+      let isRoomSwappedData = doc?.roomSwapHistory.find(
+        (r) => r.toRoomId == room.roomId,
+      );
+
+      if (swappedRoomData?.isSwapped === false && isRoomSwappedData) {
+        start = normalizeUTCDate(swappedRoomData.swappingDateFrom);
+        start.setDate(start.getDate() - 1);
+      } else {
+        console.log(room);
+        start = normalizeUTCDate(doc.arrivalDate);
+        end = normalizeUTCDate(room.swappingDateFrom);
+      }
+    }
   } else {
     start = swap;
     end = checkout;
@@ -238,26 +259,28 @@ export const getFullRoomDetails = (roomData, doc) => {
   };
 };
 
-
-export const handleRecalculateCheckOut = async (selectedCheckOut, cmp_id, session) => {
+export const handleRecalculateCheckOut = async (
+  selectedCheckOut,
+  cmp_id,
+  session,
+) => {
   const updatedItems = [];
 
   for (const checkout of selectedCheckOut) {
     const roomDetails = getFullRoomDetails(checkout.selectedRooms, checkout);
 
-    console.log("roomsedf",roomDetails);
+    console.log("roomsedf", roomDetails);
     const roomTotal = round2(
-      roomDetails.taxableAmount + roomDetails.roomTaxAmount 
+      roomDetails.taxableAmount + roomDetails.roomTaxAmount,
     );
 
     const grandTotal = round2(
       roomTotal +
-      roomDetails.specificFoodPlanTotal +
-      roomDetails.additionalPaxWithTax
+        roomDetails.specificFoodPlanTotal +
+        roomDetails.additionalPaxWithTax,
     );
 
-
-    console.log("roomTotal",roomTotal,grandTotal);
+    console.log("roomTotal", roomTotal, grandTotal);
 
     updatedItems.push({
       ...checkout,

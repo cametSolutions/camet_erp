@@ -81,6 +81,7 @@ const RevenueBreakdownSheet = ({
                   <p className="text-xs font-semibold text-gray-800 tabular-nums mt-1 break-all">
                     {fmt(company.revenue)}
                   </p>
+                  
                 </div>
               </div>
 

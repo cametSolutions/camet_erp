@@ -34,6 +34,7 @@ import { CheckIn } from "../models/bookingModal.js";
 import { response } from "express";
 import receiptModel from "../models/receiptModel.js";
 import primaryUserModel from "../models/primaryUserModel.js";
+import ExcelJS from "exceljs";
 // Add Item Controller
 export const addItem = async (req, res) => {
   const session = await mongoose.startSession();
@@ -4603,3 +4604,202 @@ export const transferKotBills = async (req, res) => {
 };
 
 // function used to delete advance for hotel rooms
+
+
+export const exportItemsToExcel = async (req, res) => {
+  try {
+    const { cmp_id } = req.params;
+
+    const filter = {
+      cmp_id,
+    };
+
+   const items = await productModel
+  .find(filter)
+  .populate({
+    path: "Priceleveles.pricelevel",
+    model: "PriceLevel",
+    select: "pricelevel dineIn takeaway roomService delivery",
+  })
+  .populate({
+    path: "category",
+    model: "Category",
+    select: "category",
+  })
+  .populate({
+    path: "sub_category",
+    model: "Subcategory",
+    select: "subcategory",
+  })
+  .sort({ product_name: 1 })
+  .lean();
+
+
+    if (!items || items.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No items were found matching the criteria",
+      });
+    }
+
+    const workbook = new ExcelJS.Workbook();
+
+    const worksheet = workbook.addWorksheet("Items Price Levels");
+
+    worksheet.columns = [
+      {
+        header: "Item ID",
+        key: "itemId",
+        width: 28,
+      },
+      {
+        header: "Product Name",
+        key: "productName",
+        width: 30,
+      },
+      {
+        header: "Category",
+        key: "category",
+        width: 15,
+      },
+         {
+        header: "Sub Category",
+        key: "subCategory",
+        width: 15,
+      },
+         {
+        header: "HSN Code",
+        key: "hsnCode",
+        width: 15,
+      },
+      {
+        header: "Price Rate",
+        key: "priceRate",
+        width: 12,
+      },
+      {
+        header: "Dine In",
+        key: "dineIn",
+        width: 12,
+      },
+      {
+        header: "Take Away",
+        key: "takeAway",
+        width: 12,
+      },
+      {
+        header: "Room Service",
+        key: "roomService",
+        width: 15,
+      },
+      {
+        header: "Delivery",
+        key: "delivery",
+        width: 12,
+      },
+    ];
+
+    items.forEach((item) => {
+      let priceRate = 0;
+      let dineIn = 0;
+      let takeAway =0;
+      let roomService = 0;
+      let delivery = 0;
+
+
+      item.Priceleveles?.forEach((pl) => {
+        const level = pl?.pricelevel || {};
+        if(item.product_name == "WHITE GRAPE SEEDLESS 100GM"){
+          console.log("placed",pl)
+          console.log("placedThen",level)
+        }
+        if (
+          !level.dineIn &&
+          !level.takeaway &&
+          !level.roomService &&
+          !level.delivery
+        ) {
+          console.log("levelRound",level)
+          priceRate = pl?.pricerate ?? "";
+        }
+
+        if (level.dineIn === "enabled") {
+          dineIn = pl?.pricerate ?? "";
+        }
+
+        if (level.takeaway === "enabled") {
+          takeAway = pl?.pricerate ?? "";
+        }
+
+        if (level.roomService === "enabled") {
+          roomService = pl?.pricerate ?? "";
+        }
+
+        if (level.delivery === "enabled") {
+          delivery = pl?.pricerate ?? "";
+        }
+      });
+
+      worksheet.addRow({
+        itemId: item?._id?.toString() || "",
+        productName: item?.product_name || "",
+        hsnCode: item?.hsn_code || "",
+        category: item?.category?.category || "",
+        subCategory : item?.sub_category?.subcategory || "",
+        priceRate,
+        dineIn,
+        takeAway,
+        roomService,
+        delivery,
+      });
+    });
+
+    // Header styling
+    const headerRow = worksheet.getRow(1);
+
+    headerRow.font = {
+      bold: true,
+    };
+
+    headerRow.alignment = {
+      vertical: "middle",
+      horizontal: "center",
+    };
+
+    // Make price columns numeric
+    worksheet.getColumn("priceRate").numFmt = "0.00";
+    worksheet.getColumn("dineIn").numFmt = "0.00";
+    worksheet.getColumn("takeAway").numFmt = "0.00";
+    worksheet.getColumn("roomService").numFmt = "0.00";
+    worksheet.getColumn("delivery").numFmt = "0.00";
+
+    const timestamp = new Date()
+      .toISOString()
+      .split("T")[0];
+
+    const fileName = `Items_Price_Levels_${timestamp}.xlsx`;
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${fileName}"`
+    );
+
+    await workbook.xlsx.write(res);
+
+    res.end();
+  } catch (error) {
+    console.error("Export items Excel error:", error);
+
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to export items",
+      });
+    }
+  }
+}

@@ -24,16 +24,12 @@ export const calculateDiscountValues = ({
 
   if (additionalChargeIncludeTax) {
     // amount includes tax
-    taxAmt = Number(
-      ((discountAmount * taxRate) / (100 + taxRate)).toFixed(2)
-    );
+    taxAmt = Number(((discountAmount * taxRate) / (100 + taxRate)).toFixed(2));
 
     finalValue = discountAmount;
   } else {
     // amount excludes tax
-    taxAmt = Number(
-      ((discountAmount * taxRate) / 100).toFixed(2)
-    );
+    taxAmt = Number(((discountAmount * taxRate) / 100).toFixed(2));
 
     finalValue = Number((discountAmount + taxAmt).toFixed(2));
   }
@@ -98,7 +94,6 @@ export const calculateOtherCharges = async ({
       hsn: charge?.hsn || "",
       finalValue: Number(discountValue.toFixed(2)),
       amountType: inputType,
-
     };
   }
 
@@ -107,12 +102,11 @@ export const calculateOtherCharges = async ({
     const taxable = Number(
       room?.amountWithOutTax ??
         room?.baseAmount ??
-        (Number(room?.priceLevelRate || 0) * Number(room?.stayDays || 0))
+        Number(room?.priceLevelRate || 0) * Number(room?.stayDays || 0),
     );
 
     const taxRate = Number(room?.taxPercentage || 0);
-    const originalTax =
-      room?.taxAmount ?? (taxable * taxRate) / 100;
+    const originalTax = room?.taxAmount ?? (taxable * taxRate) / 100;
 
     return {
       roomId: room?.roomId,
@@ -182,12 +176,12 @@ export const calculateOtherCharges = async ({
 
   const totalTaxAmt = itemWiseDiscount.reduce(
     (sum, item) => sum + item.taxAmt,
-    0
+    0,
   );
 
   const totalDiscountImpact = itemWiseDiscount.reduce(
     (sum, item) => sum + item.discountImpact,
-    0
+    0,
   );
 
   return {
@@ -219,15 +213,12 @@ export const getTaxPercentage = (amount, hsnDetails) => {
     cgst: Number(matchedRow.cgstRate || 0),
     sgst: Number(matchedRow.sgstUtgstRate || 0),
     totalTax:
-      Number(matchedRow.cgstRate || 0) +
-      Number(matchedRow.sgstUtgstRate || 0),
+      Number(matchedRow.cgstRate || 0) + Number(matchedRow.sgstUtgstRate || 0),
   };
 };
 
-
-
 export const reArrangeFoodPlan = (foodPlan = [], roomId) => {
-  console.log("foodPlan",roomId);
+  console.log("foodPlan", roomId);
   return foodPlan.map((foodData) => ({
     ...foodData,
     roomId: roomId,
@@ -241,29 +232,48 @@ export const reArrangeAdditionalPaxDetails = (additionalPax = [], roomId) => {
   }));
 };
 
-
-
-export const calculateStayDays =  (doc, room , arrival,checkOut, days) => {
-  let fullDaysAre = days
-  console.log(room , arrival,checkOut, days);
+export const calculateStayDays = (doc, room, arrival, checkOut, days) => {
+  let fullDaysAre = days;
+  console.log(room, arrival, checkOut, days);
+  console.log(doc);
   const normalizeToDate = (d) => {
     const nd = new Date(d);
-    nd.setHours(0, 0, 0, 0);
+    nd.setUTCHours(0, 0, 0, 0);
     return nd;
   };
-
 
   const swapDate = room?.swappingDateFrom
     ? new Date(room.swappingDateFrom).toISOString().split("T")[0]
     : "";
   if (room.isSwapped && room.swappingDateFrom) {
-    const swappingDate = normalizeToDate(room.swappingDateFrom);
-    const arrivalDate = normalizeToDate(arrival);
-  console.log(swappingDate,arrivalDate);
+    let swappingDate = normalizeToDate(room.swappingDateFrom);
+    let arrivalDate = normalizeToDate(arrival);
+console.log(arrivalDate, checkOut, swappingDate)
+    let swappedRoomObject = doc?.roomSwapHistory.find(
+      (r) => r.fromRoomId == room.roomId,
+    );
+
+    if (swappedRoomObject?.toRoomId) {
+      let swappedRoomData = doc?.selectedRooms.find(
+        (r) => r.roomId == swappedRoomObject.toRoomId,
+      );
+      let isRoomSwappedData = doc?.roomSwapHistory.find(
+        (r) => r.toRoomId == room.roomId,
+      );
+
+      if (swappedRoomData?.isSwapped === false && isRoomSwappedData) {
+        arrivalDate = normalizeToDate(swappedRoomData.swappingDateFrom);
+        arrivalDate.setDate(arrivalDate.getDate() - 1);
+      } else {
+        console.log(room);
+           arrivalDate = normalizeToDate(arrivalDate);
+            swappingDate =  normalizeToDate(room.swappingDateFrom);
+      }
+    }
     fullDaysAre = Math.floor(
       (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24),
     );
- console.log(fullDaysAre);
+    console.log(fullDaysAre);
     if (fullDaysAre <= 0) {
       if (swapDate == doc.arrivalDate) {
         fullDaysAre = 0;
@@ -271,6 +281,7 @@ export const calculateStayDays =  (doc, room , arrival,checkOut, days) => {
         fullDaysAre = 1;
       }
     }
+      console.log(fullDaysAre);
   }
 
   if (!room.isSwapped && room.swappingDateFrom) {
@@ -295,7 +306,6 @@ export const calculateStayDays =  (doc, room , arrival,checkOut, days) => {
 
   return fullDaysAre;
 };
-
 
 export const makeItemComplimentary = (item) => ({
   ...item,
@@ -322,7 +332,7 @@ export const makeItemComplimentary = (item) => ({
 
   individualTotal: Number(item.basePrice),
 
-  GodownList: item.GodownList.map(godown => ({
+  GodownList: item.GodownList.map((godown) => ({
     ...godown,
     taxableAmount: Number(godown.quantity) * Number(godown.quantity),
 
