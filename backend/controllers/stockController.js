@@ -7,7 +7,17 @@ import salesModel from "../models/salesModel.js";
 import vanSaleModel from "../models/vanSaleModel.js";
 import debitNoteModel from "../models/debitNoteModel.js";
 export const getstockDetails = async (req, res) => {
-    const { start, tenureStart, tenureEnd } = req.query
+    const {
+        start,
+        tenureStart,
+        tenureEnd,
+        page = 1,
+        limit = 30,
+        brand = "All",
+        category = "All",
+        search = "",
+        export: exportAll
+    } = req.query
 
     const a = parseISO(start)
     const b = startOfDay(a)
@@ -148,7 +158,7 @@ export const getstockDetails = async (req, res) => {
                         if (!mapped[key]) {
                             mapped[key] = {
                                 itemName: item.product_name,
-                                batch: it?.batch || "Pimary Batch",
+                                batch: it?.batch || "Primary Batch",
                                 godown: it?.godown,
                                 category: it?.category?.category,
                                 brand: it?.brand?.brand,
@@ -326,11 +336,69 @@ export const getstockDetails = async (req, res) => {
 
     });
 
+    const filterOptions = {
+        brands: [...new Set(individualArray.map(item => item?.brand).filter(Boolean))],
+        categories: [...new Set(individualArray.map(item => item?.category).filter(Boolean))]
+    }
+
+    let filteredIndividualArray = individualArray
+
+    if (brand && brand !== "All") {
+        filteredIndividualArray = filteredIndividualArray.filter(item => item?.brand === brand)
+    }
+
+    if (category && category !== "All") {
+        filteredIndividualArray = filteredIndividualArray.filter(item => item?.category === category)
+    }
+
+    const normalizedSearch = search.trim().toLowerCase()
+    if (normalizedSearch) {
+        filteredIndividualArray = filteredIndividualArray.filter(item =>
+            item?.itemName?.toLowerCase().includes(normalizedSearch)
+        )
+    }
+
+    const filteredItemNames = new Set(filteredIndividualArray.map(item => item?.itemName))
+    const filteredMappedArray = mappedArray.filter(item => filteredItemNames.has(item?.itemName))
+
+    filteredIndividualArray = filteredIndividualArray.map((item, index) => ({
+        ...item,
+        _stockRegisterKey: `${item?.itemName || "item"}|${item?.brand || "brand"}|${item?.category || "category"}|${index}`
+    }))
+
+    const mappedArrayWithKeys = filteredMappedArray.map((item, index) => ({
+        ...item,
+        _stockRegisterKey: `${item?.itemName || "item"}|${item?.batch || "batch"}|${item?.godown || "godown"}|${index}`
+    }))
+
+    const shouldExportAll = exportAll === "true" || limit === "all"
+    const currentPage = Math.max(parseInt(page, 10) || 1, 1)
+    const parsedLimit = parseInt(limit, 10)
+    const pageLimit = Number.isFinite(parsedLimit)
+        ? Math.max(parsedLimit, 1)
+        : 30
+    const total = filteredIndividualArray.length
+    const totalPages = shouldExportAll ? 1 : Math.ceil(total / pageLimit)
+    const startIndex = (currentPage - 1) * pageLimit
+    const paginatedIndividualArray = shouldExportAll
+        ? filteredIndividualArray
+        : filteredIndividualArray.slice(startIndex, startIndex + pageLimit)
+    const paginatedItemNames = new Set(paginatedIndividualArray.map(item => item?.itemName))
+    const paginatedMappedArray = shouldExportAll
+        ? mappedArrayWithKeys
+        : mappedArrayWithKeys.filter(item => paginatedItemNames.has(item?.itemName))
+
     const result = {
-        individualArray,
-
-        mappedArray
-
+        individualArray: paginatedIndividualArray,
+        mappedArray: paginatedMappedArray,
+        filterOptions,
+        pagination: {
+            page: currentPage,
+            limit: shouldExportAll ? total : pageLimit,
+            total,
+            totalPages,
+            hasNextPage: shouldExportAll ? false : currentPage < totalPages
+        }
     };
 
     if (result) {
