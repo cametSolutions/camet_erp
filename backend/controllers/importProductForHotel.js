@@ -37,21 +37,21 @@ const cleanHsn = (value) => {
     .trim();
 };
 
-const parseExcelNumber = (value) => {
-  if (
-    value === undefined ||
-    value === null ||
-    String(value).trim() === ""
-  ) {
-    return null;
-  }
+// const parseExcelNumber = (value) => {
+//   if (
+//     value === undefined ||
+//     value === null ||
+//     String(value).trim() === ""
+//   ) {
+//     return null;
+//   }
 
-  const number = Number(value);
+//   const number = Number(value);
 
-  return Number.isFinite(number)
-    ? number
-    : null;
-};
+//   return Number.isFinite(number)
+//     ? number
+//     : null;
+// };
 
 const escapeRegex = (value) => {
   return String(value).replace(
@@ -214,6 +214,23 @@ const getSubCategory = (
    it will NOT be created.
 ============================================================ */
 
+const parseExcelNumber = (value) => {
+  if (
+    value === undefined ||
+    value === null ||
+    String(value).trim() === ""
+  ) {
+    return null;
+  }
+
+  const number = Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : null;
+};
+
+
 const buildExistingProductPriceLevels = ({
   priceLevels,
   existingPriceLevels,
@@ -224,12 +241,24 @@ const buildExistingProductPriceLevels = ({
   delivery,
 }) => {
   if (
-    !Array.isArray(existingPriceLevels)
+    !Array.isArray(existingPriceLevels) ||
+    existingPriceLevels.length === 0
   ) {
     return [];
   }
 
-  const hasValue = (value) => {
+  /*
+   * IMPORTANT:
+   *
+   * 0 is a VALID price.
+   *
+   * Therefore we cannot use:
+   *
+   * if (value)
+   *
+   * because 0 would be treated as false.
+   */
+  const hasExcelValue = (value) => {
     return (
       value !== null &&
       value !== undefined
@@ -237,13 +266,11 @@ const buildExistingProductPriceLevels = ({
   };
 
   /*
-   * Master PriceLevel lookup
+   * Create PriceLevel lookup
    */
   const priceLevelMap = new Map();
 
-  for (
-    const level of priceLevels || []
-  ) {
+  for (const level of priceLevels || []) {
     priceLevelMap.set(
       String(level._id),
       level
@@ -253,129 +280,216 @@ const buildExistingProductPriceLevels = ({
   /*
    * IMPORTANT:
    *
-   * Loop through the PRODUCT'S existing
-   * price levels, NOT all master price levels.
+   * Only loop through Priceleveles
+   * that already exist inside the product.
    */
   return existingPriceLevels.map(
     (existingLevel) => {
       const priceLevelId =
-        existingLevel?.pricelevel?._id ||
-        existingLevel?.pricelevel;
+        existingLevel?.pricelevel?._id
+          ? String(
+              existingLevel.pricelevel._id
+            )
+          : String(
+              existingLevel?.pricelevel
+            );
 
       const masterLevel =
         priceLevelMap.get(
-          String(priceLevelId)
+          priceLevelId
         );
 
       let newPrice =
-        existingLevel?.pricerate;
+        existingLevel.pricerate;
 
-      /* ======================================================
-         DINE IN
-      ====================================================== */
+      /*
+       * ============================================
+       * DINE IN
+       * ============================================
+       */
 
       if (
         masterLevel?.dineIn ===
         "enabled"
       ) {
-        if (hasValue(dineIn)) {
+        /*
+         * 0 IS VALID
+         */
+        if (hasExcelValue(dineIn)) {
           newPrice = dineIn;
         }
       }
 
-      /* ======================================================
-         TAKE AWAY
-      ====================================================== */
+      /*
+       * ============================================
+       * TAKE AWAY
+       * ============================================
+       */
 
       else if (
         masterLevel?.takeaway ===
         "enabled"
       ) {
-        if (hasValue(takeaway)) {
+        /*
+         * 0 IS VALID
+         */
+        if (hasExcelValue(takeaway)) {
           newPrice = takeaway;
         }
       }
 
-      /* ======================================================
-         ROOM SERVICE
-      ====================================================== */
+      /*
+       * ============================================
+       * ROOM SERVICE
+       * ============================================
+       */
 
       else if (
         masterLevel?.roomService ===
         "enabled"
       ) {
-        if (hasValue(roomService)) {
+        /*
+         * 0 IS VALID
+         *
+         * Excel:
+         * Room Service = 0
+         *
+         * Database:
+         * Room Service = 100
+         *
+         * Result:
+         * 100 → 0
+         */
+        if (
+          hasExcelValue(roomService)
+        ) {
           newPrice = roomService;
         }
       }
 
-      /* ======================================================
-         DELIVERY
-      ====================================================== */
+      /*
+       * ============================================
+       * DELIVERY
+       * ============================================
+       */
 
       else if (
         masterLevel?.delivery ===
         "enabled"
       ) {
-        if (hasValue(delivery)) {
+        /*
+         * 0 IS VALID
+         *
+         * Excel:
+         * Delivery = 0
+         *
+         * Database:
+         * Delivery = 100
+         *
+         * Result:
+         * 100 → 0
+         */
+        if (
+          hasExcelValue(delivery)
+        ) {
           newPrice = delivery;
         }
       }
 
-      /* ======================================================
-         OTHER PRICE LEVEL
-
-         Everything other than:
-
-         Dine In
-         Take Away
-         Room Service
-         Delivery
-
-         gets Excel Default Price.
-      ====================================================== */
+      /*
+       * ============================================
+       * OTHER PRICE LEVELS
+       * ============================================
+       *
+       * Example:
+       *
+       * Price Level = 25/26 Year
+       *
+       * It is not:
+       * Dine In
+       * Take Away
+       * Room Service
+       * Delivery
+       *
+       * Therefore use Excel Price Rate.
+       */
 
       else {
-        if (hasValue(defaultPrice)) {
+        if (
+          hasExcelValue(defaultPrice)
+        ) {
           newPrice = defaultPrice;
         }
       }
 
       /*
-       * Preserve old price if Excel doesn't
-       * contain a value.
+       * Debug
        */
-      if (
-        newPrice === null ||
-        newPrice === undefined
-      ) {
-        newPrice =
-          existingLevel?.pricerate;
-      }
+      console.log(
+        "PRICE LEVEL UPDATE:",
+        {
+          priceLevelId,
+
+          masterPriceLevel:
+            masterLevel?.pricelevel,
+
+          oldPrice:
+            existingLevel.pricerate,
+
+          newPrice,
+
+          excelDefaultPrice:
+            defaultPrice,
+
+          excelDineIn:
+            dineIn,
+
+          excelTakeaway:
+            takeaway,
+
+          excelRoomService:
+            roomService,
+
+          excelDelivery:
+            delivery,
+
+          dineInEnabled:
+            masterLevel?.dineIn,
+
+          takeawayEnabled:
+            masterLevel?.takeaway,
+
+          roomServiceEnabled:
+            masterLevel?.roomService,
+
+          deliveryEnabled:
+            masterLevel?.delivery,
+        }
+      );
 
       /*
-       * Preserve existing subdocument data.
+       * Preserve the existing subdocument _id
+       * and existing pricelevel reference.
        */
       return {
-        ...existingLevel,
+        _id:
+          existingLevel._id,
 
         pricelevel:
-          existingLevel?.pricelevel?._id ||
-          existingLevel?.pricelevel,
+          existingLevel.pricelevel,
 
-        pricerate: newPrice,
+        pricerate:
+          newPrice,
 
         priceDisc:
-          existingLevel?.priceDisc ?? 0,
+          existingLevel.priceDisc ?? 0,
 
         applicabledt:
-          existingLevel?.applicabledt ??
-          "",
+          existingLevel.applicabledt ?? "",
       };
     }
   );
 };
-
 /* ============================================================
    BUILD PRICE LEVEL FOR NEW PRODUCT
 
