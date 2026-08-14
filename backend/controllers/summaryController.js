@@ -800,7 +800,8 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
     return res.status(200).json({
       totalRevenue: salesResult[0]?.totalRevenue ?? 0,
       totalTax: salesResult[0]?.totalTax ?? 0,
-      finalRevenue: Number(salesResult[0]?.totalRevenue) - Number(salesResult[0]?.totalTax),
+      finalRevenue:
+        Number(salesResult[0]?.totalRevenue) - Number(salesResult[0]?.totalTax),
       monthlyCollection:
         (receiptSummary.monthlyTotal?.[0]?.total ?? 0) +
         (restaurantDirectSummary.monthly.total ?? 0),
@@ -828,8 +829,6 @@ export const fetchDashboardConsolidatedTotals = async (req, res) => {
   }
 };
 
-
-
 // Enable dayjs timezone support
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -851,18 +850,13 @@ export const fetchDashboardCompanyRevenueBreakdown = async (req, res) => {
       });
     }
 
-    const primaryUserObjectId =
-      new mongoose.Types.ObjectId(primaryUserId);
+    const primaryUserObjectId = new mongoose.Types.ObjectId(primaryUserId);
 
     // =========================================================
     // IST DATE RANGES
     // =========================================================
 
-    const selectedDate = dayjs.tz(
-      date,
-      "YYYY-MM-DD",
-      "Asia/Kolkata"
-    );
+    const selectedDate = dayjs.tz(date, "YYYY-MM-DD", "Asia/Kolkata");
 
     if (!selectedDate.isValid()) {
       return res.status(400).json({
@@ -870,21 +864,13 @@ export const fetchDashboardCompanyRevenueBreakdown = async (req, res) => {
       });
     }
 
-    const startOfDayIST = selectedDate
-      .startOf("day")
-      .toDate();
+    const startOfDayIST = selectedDate.startOf("day").toDate();
 
-    const endOfDayIST = selectedDate
-      .endOf("day")
-      .toDate();
+    const endOfDayIST = selectedDate.endOf("day").toDate();
 
-    const startOfMonthIST = selectedDate
-      .startOf("month")
-      .toDate();
+    const startOfMonthIST = selectedDate.startOf("month").toDate();
 
-    const startOfYearIST = selectedDate
-      .startOf("year")
-      .toDate();
+    const startOfYearIST = selectedDate.startOf("year").toDate();
 
     console.log("Dashboard revenue date ranges:", {
       requestedDate: date,
@@ -900,276 +886,223 @@ export const fetchDashboardCompanyRevenueBreakdown = async (req, res) => {
     // COMPANY-WISE REVENUE
     // =========================================================
 
-    const companyWiseRevenue =
-      await OrganizationModel.aggregate([
-        // -----------------------------------------------------
-        // Get companies belonging to the user
-        // -----------------------------------------------------
-        {
-          $match: {
-            owner: primaryUserObjectId,
-          },
+    const companyWiseRevenue = await OrganizationModel.aggregate([
+      // -----------------------------------------------------
+      // Get companies belonging to the user
+      // -----------------------------------------------------
+      {
+        $match: {
+          owner: primaryUserObjectId,
         },
+      },
 
-        // -----------------------------------------------------
-        // Get sales for each company
-        // -----------------------------------------------------
-        {
-          $lookup: {
-            from: salesModel.collection.name,
+      // -----------------------------------------------------
+      // Get sales for each company
+      // -----------------------------------------------------
+      {
+        $lookup: {
+          from: salesModel.collection.name,
 
-            let: {
-              companyId: "$_id",
+          let: {
+            companyId: "$_id",
+          },
+
+          pipeline: [
+            // ------------------------------------------------
+            // Get sales from beginning of current year
+            // until selected date
+            // ------------------------------------------------
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$cmp_id", "$$companyId"],
+                    },
+
+                    {
+                      $eq: ["$Primary_user_id", primaryUserObjectId],
+                    },
+
+                    {
+                      $ne: ["$isComplimentary", true],
+                    },
+
+                    {
+                      $gte: ["$date", startOfYearIST],
+                    },
+
+                    {
+                      $lte: ["$date", endOfDayIST],
+                    },
+                  ],
+                },
+              },
             },
 
-            pipeline: [
-              // ------------------------------------------------
-              // Get sales from beginning of current year
-              // until selected date
-              // ------------------------------------------------
-              {
-                $match: {
-                  $expr: {
-                    $and: [
+            // ------------------------------------------------
+            // Calculate daily/monthly/yearly revenue
+            // ------------------------------------------------
+            {
+              $group: {
+                _id: null,
+
+                // ==========================================
+                // DAILY REVENUE
+                // ==========================================
+                dailyRevenue: {
+                  $sum: {
+                    $cond: [
                       {
-                        $eq: [
-                          "$cmp_id",
-                          "$$companyId",
+                        $and: [
+                          {
+                            $gte: ["$date", startOfDayIST],
+                          },
+                          {
+                            $lte: ["$date", endOfDayIST],
+                          },
                         ],
                       },
 
                       {
-                        $eq: [
-                          "$Primary_user_id",
-                          primaryUserObjectId,
-                        ],
+                        $ifNull: ["$finalAmount", 0],
                       },
 
-                      {
-                        $ne: [
-                          "$isComplimentary",
-                          true,
-                        ],
-                      },
-
-                      {
-                        $gte: [
-                          "$date",
-                          startOfYearIST,
-                        ],
-                      },
-
-                      {
-                        $lte: [
-                          "$date",
-                          endOfDayIST,
-                        ],
-                      },
+                      0,
                     ],
                   },
                 },
-              },
 
-              // ------------------------------------------------
-              // Calculate daily/monthly/yearly revenue
-              // ------------------------------------------------
+                // ==========================================
+                // MONTHLY REVENUE
+                // ==========================================
+                monthlyRevenue: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          {
+                            $gte: ["$date", startOfMonthIST],
+                          },
+                          {
+                            $lte: ["$date", endOfDayIST],
+                          },
+                        ],
+                      },
+
+                      {
+                        $ifNull: ["$finalAmount", 0],
+                      },
+
+                      0,
+                    ],
+                  },
+                },
+
+                // ==========================================
+                // YEARLY REVENUE
+                // ==========================================
+                yearlyRevenue: {
+                  $sum: {
+                    $ifNull: ["$finalAmount", 0],
+                  },
+                },
+              },
+            },
+          ],
+
+          as: "revenueData",
+        },
+      },
+
+      // -----------------------------------------------------
+      // Format company result
+      // -----------------------------------------------------
+      {
+        $project: {
+          _id: 0,
+
+          cmp_id: "$_id",
+
+          companyName: {
+            $ifNull: ["$name", "Unknown Company"],
+          },
+
+          // ================================================
+          // DAILY
+          // ================================================
+          dailyRevenue: {
+            $round: [
               {
-                $group: {
-                  _id: null,
-
-                  // ==========================================
-                  // DAILY REVENUE
-                  // ==========================================
-                  dailyRevenue: {
-                    $sum: {
-                      $cond: [
-                        {
-                          $and: [
-                            {
-                              $gte: [
-                                "$date",
-                                startOfDayIST,
-                              ],
-                            },
-                            {
-                              $lte: [
-                                "$date",
-                                endOfDayIST,
-                              ],
-                            },
-                          ],
-                        },
-
-                        {
-                          $ifNull: [
-                            "$finalAmount",
-                            0,
-                          ],
-                        },
-
-                        0,
-                      ],
-                    },
+                $ifNull: [
+                  {
+                    $arrayElemAt: ["$revenueData.dailyRevenue", 0],
                   },
-
-                  // ==========================================
-                  // MONTHLY REVENUE
-                  // ==========================================
-                  monthlyRevenue: {
-                    $sum: {
-                      $cond: [
-                        {
-                          $and: [
-                            {
-                              $gte: [
-                                "$date",
-                                startOfMonthIST,
-                              ],
-                            },
-                            {
-                              $lte: [
-                                "$date",
-                                endOfDayIST,
-                              ],
-                            },
-                          ],
-                        },
-
-                        {
-                          $ifNull: [
-                            "$finalAmount",
-                            0,
-                          ],
-                        },
-
-                        0,
-                      ],
-                    },
-                  },
-
-                  // ==========================================
-                  // YEARLY REVENUE
-                  // ==========================================
-                  yearlyRevenue: {
-                    $sum: {
-                      $ifNull: [
-                        "$finalAmount",
-                        0,
-                      ],
-                    },
-                  },
-                },
+                  0,
+                ],
               },
+              2,
             ],
+          },
 
-            as: "revenueData",
+          // ================================================
+          // MONTHLY
+          // ================================================
+          monthlyRevenue: {
+            $round: [
+              {
+                $ifNull: [
+                  {
+                    $arrayElemAt: ["$revenueData.monthlyRevenue", 0],
+                  },
+                  0,
+                ],
+              },
+              2,
+            ],
+          },
+
+          // ================================================
+          // YEARLY
+          // ================================================
+          yearlyRevenue: {
+            $round: [
+              {
+                $ifNull: [
+                  {
+                    $arrayElemAt: ["$revenueData.yearlyRevenue", 0],
+                  },
+                  0,
+                ],
+              },
+              2,
+            ],
           },
         },
+      },
 
-        // -----------------------------------------------------
-        // Format company result
-        // -----------------------------------------------------
-        {
-          $project: {
-            _id: 0,
-
-            cmp_id: "$_id",
-
-            companyName: {
-              $ifNull: [
-                "$name",
-                "Unknown Company",
-              ],
-            },
-
-            // ================================================
-            // DAILY
-            // ================================================
-            dailyRevenue: {
-              $round: [
-                {
-                  $ifNull: [
-                    {
-                      $arrayElemAt: [
-                        "$revenueData.dailyRevenue",
-                        0,
-                      ],
-                    },
-                    0,
-                  ],
-                },
-                2,
-              ],
-            },
-
-            // ================================================
-            // MONTHLY
-            // ================================================
-            monthlyRevenue: {
-              $round: [
-                {
-                  $ifNull: [
-                    {
-                      $arrayElemAt: [
-                        "$revenueData.monthlyRevenue",
-                        0,
-                      ],
-                    },
-                    0,
-                  ],
-                },
-                2,
-              ],
-            },
-
-            // ================================================
-            // YEARLY
-            // ================================================
-            yearlyRevenue: {
-              $round: [
-                {
-                  $ifNull: [
-                    {
-                      $arrayElemAt: [
-                        "$revenueData.yearlyRevenue",
-                        0,
-                      ],
-                    },
-                    0,
-                  ],
-                },
-                2,
-              ],
-            },
-          },
+      // -----------------------------------------------------
+      // Sort companies by yearly revenue
+      // -----------------------------------------------------
+      {
+        $sort: {
+          yearlyRevenue: -1,
+          companyName: 1,
         },
-
-        // -----------------------------------------------------
-        // Sort companies by yearly revenue
-        // -----------------------------------------------------
-        {
-          $sort: {
-            yearlyRevenue: -1,
-            companyName: 1,
-          },
-        },
-      ]);
+      },
+    ]);
 
     // =========================================================
     // RESPONSE
     // =========================================================
 
     return res.status(200).json({
-      message:
-        "Company-wise revenue fetched successfully",
+      message: "Company-wise revenue fetched successfully",
 
       companyWiseRevenue,
     });
   } catch (error) {
-    console.error(
-      "fetchDashboardCompanyRevenueBreakdown error:",
-      error
-    );
+    console.error("fetchDashboardCompanyRevenueBreakdown error:", error);
 
     return res.status(500).json({
       message: "Internal server error",
@@ -1791,126 +1724,126 @@ export const fetchDashboardPropertySalesSummary = async (req, res) => {
                 saleUnder: { $arrayElemAt: ["$seriesMeta.under", 0] },
               },
             },
-       {
-  $group: {
-    _id: null,
+            {
+              $group: {
+                _id: null,
 
-    hotelSales: {
-      $sum: {
-        $cond: [
-          { $eq: ["$saleUnder", "hotel"] },
-          { $ifNull: ["$finalAmount", 0] },
-          0
-        ]
-      }
-    },
+                hotelSales: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ["$saleUnder", "hotel"] },
+                      { $ifNull: ["$finalAmount", 0] },
+                      0,
+                    ],
+                  },
+                },
 
-    hotelTax: {
-      $sum: {
-        $cond: [
-          { $eq: ["$saleUnder", "hotel"] },
-          {
-            $sum: {
-              $map: {
-                input: { $ifNull: ["$items", []] },
-                as: "item",
-                in: { $ifNull: ["$$item.totalIgstAmt", 0] }
-              }
-            }
-          },
-          0
-        ]
-      }
-    },
+                hotelTax: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ["$saleUnder", "hotel"] },
+                      {
+                        $sum: {
+                          $map: {
+                            input: { $ifNull: ["$items", []] },
+                            as: "item",
+                            in: { $ifNull: ["$$item.totalIgstAmt", 0] },
+                          },
+                        },
+                      },
+                      0,
+                    ],
+                  },
+                },
 
-    restaurantSales: {
-      $sum: {
-        $cond: [
-          { $eq: ["$saleUnder", "restaurant"] },
-          { $ifNull: ["$finalAmount", 0] },
-          0
-        ]
-      }
-    },
+                restaurantSales: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ["$saleUnder", "restaurant"] },
+                      { $ifNull: ["$finalAmount", 0] },
+                      0,
+                    ],
+                  },
+                },
 
-    restaurantTax: {
-      $sum: {
-        $cond: [
-          { $eq: ["$saleUnder", "restaurant"] },
-          {
-            $sum: {
-              $map: {
-                input: { $ifNull: ["$items", []] },
-                as: "item",
-                in: { $ifNull: ["$$item.totalIgstAmt", 0] }
-              }
-            }
-          },
-          0
-        ]
-      }
-    }
-  }
-}
+                restaurantTax: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ["$saleUnder", "restaurant"] },
+                      {
+                        $sum: {
+                          $map: {
+                            input: { $ifNull: ["$items", []] },
+                            as: "item",
+                            in: { $ifNull: ["$$item.totalIgstAmt", 0] },
+                          },
+                        },
+                      },
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
           ],
           as: "propertySalesData",
         },
       },
-    {
-  $project: {
-    _id: 0,
-    cmp_id: "$_id",
-    companyName: { $ifNull: ["$name", "Unknown Company"] },
+      {
+        $project: {
+          _id: 0,
+          cmp_id: "$_id",
+          companyName: { $ifNull: ["$name", "Unknown Company"] },
 
-    hotelSales: {
-      $round: [
-        {
-          $ifNull: [
-            { $arrayElemAt: ["$propertySalesData.hotelSales", 0] },
-            0,
-          ],
-        },
-        2,
-      ],
-    },
+          hotelSales: {
+            $round: [
+              {
+                $ifNull: [
+                  { $arrayElemAt: ["$propertySalesData.hotelSales", 0] },
+                  0,
+                ],
+              },
+              2,
+            ],
+          },
 
-    hotelTax: {
-      $round: [
-        {
-          $ifNull: [
-            { $arrayElemAt: ["$propertySalesData.hotelTax", 0] },
-            0,
-          ],
-        },
-        2,
-      ],
-    },
+          hotelTax: {
+            $round: [
+              {
+                $ifNull: [
+                  { $arrayElemAt: ["$propertySalesData.hotelTax", 0] },
+                  0,
+                ],
+              },
+              2,
+            ],
+          },
 
-    restaurantSales: {
-      $round: [
-        {
-          $ifNull: [
-            { $arrayElemAt: ["$propertySalesData.restaurantSales", 0] },
-            0,
-          ],
-        },
-        2,
-      ],
-    },
+          restaurantSales: {
+            $round: [
+              {
+                $ifNull: [
+                  { $arrayElemAt: ["$propertySalesData.restaurantSales", 0] },
+                  0,
+                ],
+              },
+              2,
+            ],
+          },
 
-    restaurantTax: {
-      $round: [
-        {
-          $ifNull: [
-            { $arrayElemAt: ["$propertySalesData.restaurantTax", 0] },
-            0,
-          ],
+          restaurantTax: {
+            $round: [
+              {
+                $ifNull: [
+                  { $arrayElemAt: ["$propertySalesData.restaurantTax", 0] },
+                  0,
+                ],
+              },
+              2,
+            ],
+          },
         },
-        2,
-      ],
-    },
-  },
-},
+      },
       {
         $addFields: {
           totalSales: {
@@ -1935,7 +1868,7 @@ export const fetchDashboardPropertySalesSummary = async (req, res) => {
       (sum, company) => sum + Number(company.restaurantSales || 0),
       0,
     );
-     const totalRestaurantTax = companyWisePropertySales.reduce(
+    const totalRestaurantTax = companyWisePropertySales.reduce(
       (sum, company) => sum + Number(company.restaurantTax || 0),
       0,
     );
@@ -1946,10 +1879,13 @@ export const fetchDashboardPropertySalesSummary = async (req, res) => {
       totalPropertySales: Number(totalPropertySales.toFixed(2)),
       totalHotelSales: Number(totalHotelSales.toFixed(2)),
       totalHotelTax: Number(totalHotelTax.toFixed(2)),
-      totalHotelSaleWithOutTax: Number(totalHotelSales.toFixed(2)) - Number(totalHotelTax.toFixed(2)),
+      totalHotelSaleWithOutTax:
+        Number(totalHotelSales.toFixed(2)) - Number(totalHotelTax.toFixed(2)),
       totalRestaurantSales: Number(totalRestaurantSales.toFixed(2)),
       totalRestaurantTax: Number(totalRestaurantTax.toFixed(2)),
-      totalRestaurantSaleWithOutTax: Number(totalRestaurantSales.toFixed(2)) - Number(totalRestaurantTax.toFixed(2)),
+      totalRestaurantSaleWithOutTax:
+        Number(totalRestaurantSales.toFixed(2)) -
+        Number(totalRestaurantTax.toFixed(2)),
       companyWisePropertySales,
     });
   } catch (error) {
