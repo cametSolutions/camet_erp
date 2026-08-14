@@ -473,6 +473,7 @@ router.get("/loginReportExport/:cmp_id",authSecondary , loginReportExport)
 router.get("/getItemsForExcel/:cmp_id",authSecondary , exportItemsToExcel)
 router.post(
   "/importItemsFromExcel/:cmp_id",
+  authSecondary,
   uploadExcel.single("file"),
   importItemsFromExcel
 );
