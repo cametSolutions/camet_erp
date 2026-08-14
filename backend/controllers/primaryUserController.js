@@ -33,6 +33,11 @@ import paymentModel from "../models/paymentModel.js";
 import ReceiptModel from "../models/receiptModel.js";
 import partyModel from "../models/partyModel.js";
 import subGroup from "../models/subGroup.js";
+import {
+  calculateSubscriptionExpiry,
+  getSubscriptionStatus,
+  normalizeSubscription,
+} from "../utils/subscription.js";
 
 const allowedPermissionKeys = new Set([
   "hotelManagement",
@@ -113,12 +118,15 @@ export const registerPrimaryUser = async (req, res) => {
     }
 
     // Create Primary User
+    const normalizedSubscription = normalizeSubscription(subscription);
+    const subscriptionStart = new Date();
     const primaryUser = new PrimaryUser({
       userName,
       mobile,
       email,
       password,
-      subscription,
+      subscription: normalizedSubscription,
+      subscriptionExpiry: calculateSubscriptionExpiry(subscriptionStart, normalizedSubscription),
     });
 
     const primaryUserResult = await primaryUser.save({ session });
@@ -190,12 +198,25 @@ export const login = async (req, res) => {
       primaryUser = await PrimaryUser.findOne({ mobile: email });
     }
 
+    if (!primaryUser) {
+      return res.status(404).json({ message: "Invalid email or password" });
+    }
+
     if (primaryUser.isApproved === false) {
       return res.status(401).json({ message: "User approval is pending" });
     }
 
     if (primaryUser.isBlocked) {
       return res.status(401).json({ message: "User is blocked" });
+    }
+
+    const subscriptionStatus = getSubscriptionStatus(primaryUser);
+    if (subscriptionStatus.isExpired) {
+      return res.status(403).json({
+        code: "SUBSCRIPTION_EXPIRED",
+        message: "Your subscription has expired. Please renew to continue.",
+        subscription: subscriptionStatus,
+      });
     }
 
     const isPasswordMatch = await bcrypt.compare(
@@ -221,7 +242,7 @@ export const login = async (req, res) => {
     return res.status(200).json({
       message: "Login successful",
       token,
-      data: { email, userName, _id, haveOut, sms },
+      data: { email, userName, _id, haveOut, sms, subscription: subscriptionStatus },
     });
   } catch (error) {
     console.log(error);

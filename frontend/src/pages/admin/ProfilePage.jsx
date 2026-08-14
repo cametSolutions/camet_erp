@@ -58,6 +58,24 @@ const ProfileCard = () => {
     },
   });
 
+  const renewSubscriptionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post(
+        `/api/admin/renewSubscription/${userId}`,
+        {},
+        { withCredentials: true }
+      );
+      return response.data;
+    },
+    onSuccess: (response) => {
+      toast.success(response.message);
+      queryClient.invalidateQueries(["primaryUserProfile", userId]);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to renew subscription");
+    },
+  });
+
   // const capacityMutation = useMutation({
   //   mutationFn: async ({ field, value }) => {
   //     const response = await api.patch(
@@ -276,7 +294,8 @@ const ProfileCard = () => {
         primaryUser={primaryUser}
         onToggle={handleToggle}
         onSubscriptionToggle={handleSubscriptionToggle}
-        isLoading={primaryUserMutation.isPending}
+        onRenewSubscription={() => renewSubscriptionMutation.mutate()}
+        isLoading={primaryUserMutation.isPending || renewSubscriptionMutation.isPending}
       />
 
       {/* Tab Navigation */}

@@ -3,17 +3,17 @@ import Swal from "sweetalert2";
 
 let baseUrl;
 
-const ENV = import.meta.env.VITE_ENV;
+const ENV = import.meta.env.VITE_ENV || "development";
 
-// console.log(ENV);
+console.log(ENV);
 if (ENV === "development") {
   baseUrl = "http://localhost:7000/";
 } else if (ENV === "erp") {
-  baseUrl = "https://www.erp.camet.in/";
+  baseUrl = "https://erp.camet.in/";
 } else if (ENV === "testing") {
-  baseUrl = "https://www.erptest.camet.in/";
+  baseUrl = "https://erptest.camet.in/";
 } else if (ENV === "app") {
-  baseUrl = "https://www.app.camet.in/";
+  baseUrl = "https://app.camet.in/";
 }
 
 console.log(`Base URL: ${baseUrl}`);
@@ -29,7 +29,19 @@ api.interceptors.response.use(
     return response;
   },
   function (error) {
-    if (
+    if (error?.response?.data?.code === "SUBSCRIPTION_EXPIRED") {
+      const isSecondary = error?.response?.config?.url?.includes("/sUsers/");
+      const redirectUrl = isSecondary ? "/sUsers/login" : "/pUsers/login";
+      const storageKey = isSecondary ? "sUserData" : "pUserData";
+      localStorage.removeItem(storageKey);
+      localStorage.removeItem("permissions");
+      showSwalAlert(
+        "Your subscription has expired. Please renew to continue.",
+        "warning",
+        redirectUrl,
+        storageKey
+      );
+    } else if (
       error?.response?.config?.url === "/api/sUsers/getSecUserData" ||
       error?.response?.data?.is_blocked
     ) {
