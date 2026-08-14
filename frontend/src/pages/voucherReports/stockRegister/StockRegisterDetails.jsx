@@ -1,17 +1,100 @@
-import React from "react"
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react"
 import TitleDiv from "@/components/common/TitleDiv"
 import * as XLSX from "xlsx-js-style"
 import { RiFileExcel2Fill } from "react-icons/ri"
 import SelectDate from "@/components/Filters/SelectDate"
 import { PropagateLoader } from "react-spinners"
-import { useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import api from "@/api/api"
-import { useEffect, useState } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import { addDate } from "../../../../slices/filterSlices/date"
+import { ChevronDown, ChevronRight, Search, X } from "lucide-react"
+
+const PAGE_LIMIT = 30
+
+const buildStockRegisterUrl = ({
+  cmp_id,
+  start,
+  end,
+  title,
+  tenure,
+  selectedBrand,
+  selectedCategory,
+  searchTerm,
+  page,
+  limit,
+  exportAll = false
+}) => {
+  const params = new URLSearchParams({
+    start,
+    end,
+    title: title || "",
+    tenureStart: tenure?.start || "",
+    tenureEnd: tenure?.end || "",
+    page: String(page),
+    limit: String(limit)
+  })
+
+  if (selectedBrand && selectedBrand !== "All") {
+    params.set("brand", selectedBrand)
+  }
+
+  if (selectedCategory && selectedCategory !== "All") {
+    params.set("category", selectedCategory)
+  }
+
+  if (searchTerm?.trim()) {
+    params.set("search", searchTerm.trim())
+  }
+
+  if (exportAll) {
+    params.set("export", "true")
+  }
+
+  return `/api/sUsers/stockregisterSummary/${cmp_id}?${params.toString()}`
+}
+
+const numberValue = (value) => Number(value || 0)
+
+const formatQuantity = (value) => {
+  const number = numberValue(value)
+  if (Number.isInteger(number)) return number.toString()
+  return number.toFixed(2).replace(/\.?0+$/, "")
+}
+
+const formatAmount = (value) => numberValue(value).toFixed(2)
+
+const getRowKey = (row, index) =>
+  row?._stockRegisterKey ||
+  `${row?.itemName || "stock-item"}-${row?.brand || "no-brand"}-${
+    row?.category || "no-category"
+  }-${index}`
+
+const getMappedRowKey = (row, index) =>
+  row?._stockRegisterKey ||
+  `${row?.itemName || "stock-item"}-${row?.batch || "batch"}-${
+    row?.godown || "godown"
+  }-${index}`
+
+const selectClassName =
+  "h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none shadow-sm transition focus:border-[rgb(51,98,135)] focus:ring-2 focus:ring-blue-100"
+
+const headerCellClassName =
+  "border border-blue-200 px-3 py-2 text-center text-xs font-semibold uppercase tracking-normal"
+
+const bodyNumberCellClassName =
+  "border-b border-r border-gray-100 px-3 py-2 text-right tabular-nums text-gray-700"
+
+const detailNumberCellClassName =
+  "border-b border-r border-blue-100 px-3 py-2 text-right tabular-nums text-gray-700"
 
 export default function StockRegisterDetails() {
-  const [mappedArray, setmappedArray] = useState([])
   const [tenure, setTenure] = useState({
     start: "",
     end: ""
@@ -20,9 +103,13 @@ export default function StockRegisterDetails() {
   const [selectedBrand, setSelectedBrand] = useState("All")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [category, setCategory] = useState([])
-  const [individualArray, setindividualArray] = useState([])
-  const dispatch = useDispatch()
+  const [searchTerm, setSearchTerm] = useState("")
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
   const [selectedItemName, setSelectedItemName] = useState(null)
+  const [isExporting, setIsExporting] = useState(false)
+  const tableScrollRef = useRef(null)
+  const loadMoreRef = useRef(null)
+  const dispatch = useDispatch()
 
   const { start, end, initial, title } = useSelector((state) => state.date)
 
@@ -30,24 +117,101 @@ export default function StockRegisterDetails() {
     (state) => state.secSelectedOrganization.secSelectedOrg._id
   )
 
-  const { data, isFetching, isLoading } = useQuery({
-    queryKey: ["stockRegister", cmp_id, start, end],
-    queryFn: async () => {
+  const queryFilters = useMemo(
+    () => ({
+      cmp_id,
+      start,
+      end,
+      title,
+      tenure,
+      selectedBrand,
+      selectedCategory,
+      searchTerm: debouncedSearchTerm
+    }),
+    [
+      cmp_id,
+      start,
+      end,
+      title,
+      tenure,
+      selectedBrand,
+      selectedCategory,
+      debouncedSearchTerm
+    ]
+  )
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+    isLoading
+  } = useInfiniteQuery({
+    queryKey: ["stockRegister", queryFilters],
+    queryFn: async ({ pageParam = 1 }) => {
       const res = await api.get(
-        `/api/sUsers/stockregisterSummary/${cmp_id}?start=${start}&end=${end}&title=${title}&tenureStart=${tenure.start}&tenureEnd=${tenure.end}`,
+        buildStockRegisterUrl({
+          ...queryFilters,
+          page: pageParam,
+          limit: PAGE_LIMIT
+        }),
         { withCredentials: true }
       )
       return res.data
     },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const pagination = lastPage?.result?.pagination
+      if (!pagination) return undefined
+
+      if (typeof pagination.hasNextPage === "boolean") {
+        return pagination.hasNextPage ? pagination.page + 1 : undefined
+      }
+
+      return pagination.page < pagination.totalPages
+        ? pagination.page + 1
+        : undefined
+    },
     enabled:
       !!cmp_id &&
       !!start &&
-      !!tenure &&
-      !!tenure.start !== "" &&
-      tenure.end !== "",
+      !!tenure?.start &&
+      !!tenure?.end,
     staleTime: 30000,
     retry: false
   })
+
+  const pages = data?.pages || []
+
+  const individualArray = useMemo(() => {
+    const seen = new Set()
+
+    return pages
+      .flatMap((page) => page?.result?.individualArray || [])
+      .filter((item, index) => {
+        const key = getRowKey(item, index)
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+  }, [pages])
+
+  const mappedArray = useMemo(() => {
+    const seen = new Set()
+
+    return pages
+      .flatMap((page) => page?.result?.mappedArray || [])
+      .filter((item, index) => {
+        const key = getMappedRowKey(item, index)
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+  }, [pages])
+
+  const pagination = pages[pages.length - 1]?.result?.pagination
+
   useEffect(() => {
     if (!initial) {
       const newstart = new Date(new Date().getFullYear(), 3, 1)
@@ -82,7 +246,8 @@ export default function StockRegisterDetails() {
         })
       )
     }
-  }, [])
+  }, [dispatch, initial])
+
   useEffect(() => {
     if (
       title !== "Current Financial Year" &&
@@ -163,394 +328,519 @@ export default function StockRegisterDetails() {
         start: startdate.toISOString(),
         end: enddate.toISOString()
       })
-    } else if (title === "Last Year") {
-      console.log("H")
     }
-  }, [initial])
+  }, [end, initial, start, title])
 
   useEffect(() => {
-    if (data) {
-      setindividualArray(data?.result?.individualArray)
-      const uniqueBrands = [
-        ...new Set(
-          data?.result?.individualArray.map((p) => p.brand).filter((b) => b) // removes null, undefined, empty string
-        )
-      ]
-      const uniqueCategory = [
-        ...new Set(
-          data?.result?.individualArray.map((p) => p.category).filter((b) => b)
-        )
-      ]
-      setBrand(uniqueBrands)
-      setCategory(uniqueCategory)
+    const filterOptions = pages[0]?.result?.filterOptions
+    const fallbackItems = pages.flatMap(
+      (page) => page?.result?.individualArray || []
+    )
 
-      setmappedArray(data.result.mappedArray)
-    }
-  }, [data])
- 
+    const uniqueBrands =
+      filterOptions?.brands ||
+      [...new Set(fallbackItems.map((p) => p?.brand).filter(Boolean))]
+    const uniqueCategory =
+      filterOptions?.categories ||
+      [...new Set(fallbackItems.map((p) => p?.category).filter(Boolean))]
+
+    setBrand(uniqueBrands)
+    setCategory(uniqueCategory)
+  }, [pages])
+
   useEffect(() => {
-    if (selectedBrand === "All" && selectedCategory !== "All") {
-      const filtredData = data?.result?.individualArray.filter(
-        (item) => item.category === selectedCategory
-      )
-   
-      setindividualArray(filtredData)
-    } else if (selectedBrand === "All" && selectedCategory === "All") {
-      const filteredData = data?.result?.individualArray
-      setindividualArray(filteredData)
-    } else if (selectedBrand !== "All" && selectedCategory === "All") {
-      const filteredData = data?.result?.individualArray?.filter(
-        (item) => item.brand === selectedBrand
-      )
-    
-      setindividualArray(filteredData)
-    } else if (selectedBrand !== "All" && selectedCategory !== "All") {
-      const filteredData = data?.result?.individualArray?.filter(
-        (item) =>
-          item?.brand === selectedBrand && item?.category === selectedCategory
-      )
-      setindividualArray(filteredData)
-    }
+    setSelectedItemName(null)
+    tableScrollRef.current?.scrollTo({ top: 0, left: 0 })
+  }, [
+    cmp_id,
+    start,
+    end,
+    title,
+    tenure,
+    selectedBrand,
+    selectedCategory,
+    debouncedSearchTerm
+  ])
 
-  }, [selectedBrand, selectedCategory])
- 
-  
-  const exportToExcel = () => {
-    if (!individualArray || individualArray?.length === 0) return
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 350)
 
-    const formatDate = (dateString) =>
-      dateString ? new Date(dateString).toISOString()?.split("T")[0] : "N/A"
+    return () => clearTimeout(debounceTimer)
+  }, [searchTerm])
 
-    const headerRow1 = [
-      "Item",
-      "Opening",
-      "",
-      "",
-      "Inward",
-      "",
-      "",
-      "Outward",
-      "",
-      "",
-      "Closing",
-      "",
-      ""
-    ]
+  const handleLoadMore = useCallback(() => {
+    if (!hasNextPage || isFetchingNextPage) return
+    fetchNextPage()
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage])
 
-    const headerRow2 = [
-      "",
-      "Quantity",
-      "Rate",
-      "Amount",
-      "Quantity",
-      "Rate",
-      "Amount",
-      "Quantity",
-      "Rate",
-      "Amount",
-      "Quantity",
-      "Rate",
-      "Amount"
-    ]
+  useEffect(() => {
+    const sentinel = loadMoreRef.current
+    const root = tableScrollRef.current
 
-    const worksheetData = [headerRow1, headerRow2]
+    if (!sentinel || !root || !hasNextPage) return undefined
 
-    individualArray.forEach((record) => {
-      const row = [
-        record.itemName,
-        record.opening.quantity,
-        record.opening.rate,
-        record.opening.amount,
-        record.inward.quantity,
-        record.inward.rate,
-        record.inward.amount,
-        record.outward.quantity,
-        record.outward.rate,
-        record.outward.amount,
-        record.closing.quantity,
-        record.closing.rate,
-        record.closing.amount
-      ]
-      worksheetData.push(row)
-    })
-
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.aoa_to_sheet(worksheetData)
-
-    // Merge cells for grouped headers
-    ws["!merges"] = [
-      { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
-      { s: { r: 0, c: 1 }, e: { r: 0, c: 3 } },
-      { s: { r: 0, c: 4 }, e: { r: 0, c: 6 } },
-      { s: { r: 0, c: 7 }, e: { r: 0, c: 9 } },
-      { s: { r: 0, c: 10 }, e: { r: 0, c: 12 } }
-    ]
-
-    // Column widths
-    const colWidths = worksheetData[1].map((_, colIdx) => {
-      let maxLen = 10
-      worksheetData.forEach((row) => {
-        const val = row[colIdx]
-        if (val !== null && val !== undefined) {
-          const str = val.toString()
-          if (str.length > maxLen) maxLen = str.length
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          handleLoadMore()
         }
+      },
+      {
+        root,
+        rootMargin: "180px 0px",
+        threshold: 0.1
+      }
+    )
+
+    observer.observe(sentinel)
+
+    return () => observer.disconnect()
+  }, [handleLoadMore, hasNextPage, individualArray.length])
+
+  const getExportRows = async () => {
+    const res = await api.get(
+      buildStockRegisterUrl({
+        ...queryFilters,
+        page: 1,
+        limit: "all",
+        exportAll: true
+      }),
+      { withCredentials: true }
+    )
+
+    return res?.data?.result?.individualArray || []
+  }
+
+  const exportToExcel = async () => {
+    try {
+      setIsExporting(true)
+      const exportRows = await getExportRows()
+
+      if (!exportRows || exportRows?.length === 0) return
+
+      const formatDate = (dateString) =>
+        dateString ? new Date(dateString).toISOString()?.split("T")[0] : "N/A"
+
+      const headerRow1 = [
+        "Item",
+        "Opening",
+        "",
+        "",
+        "Inward",
+        "",
+        "",
+        "Outward",
+        "",
+        "",
+        "Closing",
+        "",
+        ""
+      ]
+
+      const headerRow2 = [
+        "",
+        "Quantity",
+        "Rate",
+        "Amount",
+        "Quantity",
+        "Rate",
+        "Amount",
+        "Quantity",
+        "Rate",
+        "Amount",
+        "Quantity",
+        "Rate",
+        "Amount"
+      ]
+
+      const worksheetData = [headerRow1, headerRow2]
+
+      exportRows.forEach((record) => {
+        const row = [
+          record.itemName,
+          record.opening?.quantity,
+          record.opening?.rate,
+          record.opening?.amount,
+          record.inward?.quantity,
+          record.inward?.rate,
+          record.inward?.amount,
+          record.outward?.quantity,
+          record.outward?.rate,
+          record.outward?.amount,
+          record.closing?.quantity,
+          record.closing?.rate,
+          record.closing?.amount
+        ]
+        worksheetData.push(row)
       })
-      return { wch: maxLen + 2 }
-    })
-    ws["!cols"] = colWidths
 
-    // Define border
-    const borderAll = {
-      top: { style: "thin", color: { rgb: "000000" } },
-      bottom: { style: "thin", color: { rgb: "000000" } },
-      left: { style: "thin", color: { rgb: "000000" } },
-      right: { style: "thin", color: { rgb: "000000" } }
-    }
+      const wb = XLSX.utils.book_new()
+      const ws = XLSX.utils.aoa_to_sheet(worksheetData)
 
-    // Header style
-    const headerStyle = {
-      font: { bold: true, color: { rgb: "FFFFFF" } },
-      fill: { fgColor: { rgb: "336287" } },
-      alignment: { horizontal: "center", vertical: "center" },
-      border: borderAll
-    }
+      ws["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
+        { s: { r: 0, c: 1 }, e: { r: 0, c: 3 } },
+        { s: { r: 0, c: 4 }, e: { r: 0, c: 6 } },
+        { s: { r: 0, c: 7 }, e: { r: 0, c: 9 } },
+        { s: { r: 0, c: 10 }, e: { r: 0, c: 12 } }
+      ]
 
-    // Content style
-    const contentStyle = {
-      alignment: { horizontal: "center", vertical: "center" },
-      border: borderAll
-    }
+      const colWidths = worksheetData[1].map((_, colIdx) => {
+        let maxLen = 10
+        worksheetData.forEach((row) => {
+          const val = row[colIdx]
+          if (val !== null && val !== undefined) {
+            const str = val.toString()
+            if (str.length > maxLen) maxLen = str.length
+          }
+        })
+        return { wch: maxLen + 2 }
+      })
+      ws["!cols"] = colWidths
 
-    // Apply styles to header rows
-    for (let R = 0; R <= 1; R++) {
-      for (let C = 0; C < worksheetData[0].length; C++) {
-        const cellRef = XLSX.utils.encode_cell({ r: R, c: C })
-        if (ws[cellRef]) {
-          ws[cellRef].s = headerStyle
+      const borderAll = {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      }
+
+      const headerStyle = {
+        font: { bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "336287" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: borderAll
+      }
+
+      const contentStyle = {
+        alignment: { horizontal: "center", vertical: "center" },
+        border: borderAll
+      }
+
+      for (let R = 0; R <= 1; R++) {
+        for (let C = 0; C < worksheetData[0].length; C++) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C })
+          if (ws[cellRef]) {
+            ws[cellRef].s = headerStyle
+          }
         }
       }
-    }
 
-    // Apply styles to content rows
-    const range = XLSX.utils.decode_range(ws["!ref"])
-    for (let R = 2; R <= range.e.r; ++R) {
-      for (let C = 0; C <= range.e.c; ++C) {
-        const cellRef = XLSX.utils.encode_cell({ r: R, c: C })
-        if (ws[cellRef]) {
-          ws[cellRef].s = contentStyle
+      const range = XLSX.utils.decode_range(ws["!ref"])
+      for (let R = 2; R <= range.e.r; ++R) {
+        for (let C = 0; C <= range.e.c; ++C) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C })
+          if (ws[cellRef]) {
+            ws[cellRef].s = contentStyle
+          }
         }
       }
-    }
 
-    XLSX.utils.book_append_sheet(wb, ws, "Stock Summary")
-    XLSX.writeFile(wb, `Stock_Summary_Report_${formatDate(new Date())}.xlsx`)
+      XLSX.utils.book_append_sheet(wb, ws, "Stock Summary")
+      XLSX.writeFile(wb, `Stock_Summary_Report_${formatDate(new Date())}.xlsx`)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const renderMovementCells = (record, detail = false) => {
+    const cellClassName = detail
+      ? detailNumberCellClassName
+      : bodyNumberCellClassName
+
+    return (
+      <>
+        <td className={cellClassName}>{formatQuantity(record?.opening?.quantity)}</td>
+        <td className={cellClassName}>{formatAmount(record?.opening?.rate)}</td>
+        <td className={cellClassName}>{formatAmount(record?.opening?.amount)}</td>
+        <td className={cellClassName}>{formatQuantity(record?.inward?.quantity)}</td>
+        <td className={cellClassName}>{formatAmount(record?.inward?.rate)}</td>
+        <td className={cellClassName}>{formatAmount(record?.inward?.amount)}</td>
+        <td className={cellClassName}>{formatQuantity(record?.outward?.quantity)}</td>
+        <td className={cellClassName}>{formatAmount(record?.outward?.rate)}</td>
+        <td className={cellClassName}>{formatAmount(record?.outward?.amount)}</td>
+        <td className={cellClassName}>{formatQuantity(record?.closing?.quantity)}</td>
+        <td className={cellClassName}>{formatAmount(record?.closing?.rate)}</td>
+        <td className={cellClassName}>{formatAmount(record?.closing?.amount)}</td>
+      </>
+    )
   }
 
   return (
-    <div className="h-[calc(100vh-10px)] overflow-hidden">
-      {/* <TitleDiv title="Stock Details" /> */}
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-gray-50">
       <TitleDiv
         title="Stock Details"
-      
-        rightSideContent={<RiFileExcel2Fill size={20} />}
-        rightSideContentOnClick={exportToExcel}
+        rightSideContent={
+          <div className="flex items-center gap-2">
+            {isExporting && (
+              <span className="hidden text-xs font-medium text-gray-500 sm:inline">
+                Exporting
+              </span>
+            )}
+            <RiFileExcel2Fill size={20} />
+          </div>
+        }
+        rightSideContentOnClick={isExporting ? undefined : exportToExcel}
       />
-      <SelectDate />
 
-      <div className="flex justify-between mx-3 border border-gray-100 shadow-xl px-3 pb-2 gap-4">
-        {/* Brand Select */}
-        <div className="flex flex-col">
-          <label htmlFor="brand" className="text-sm font-medium mb-1">
-            Brand
-          </label>
-          <select
-            id="brand"
-            onChange={(e) => setSelectedBrand(e.target.value)}
-            className="outline-none shadow-md p-1 px-2 min-w-[120px]"
-          >
-            <option value="All">All</option>
-            {brand.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="shrink-0 bg-white">
+        <SelectDate />
 
-        {/* Another Select */}
-        <div className="flex flex-col">
-          <label htmlFor="another" className="text-sm font-medium mb-1">
-            Category
-          </label>
-          <select
-            id="category"
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="outline-none shadow-md p-1 px-2 min-w-[120px]"
-          >
-            <option value="All">All</option>
-            {category.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
+        <div className="mx-3 mb-3 rounded-md border border-gray-100 bg-white p-3 shadow-sm">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="flex flex-col gap-1.5 sm:col-span-2 lg:col-span-2">
+              <label
+                htmlFor="stock-search"
+                className="text-sm font-medium text-gray-700"
+              >
+                Search Item
+              </label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  id="stock-search"
+                  type="search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search item name"
+                  className="h-10 w-full rounded-md border border-gray-200 bg-white pl-9 pr-9 text-sm text-gray-700 outline-none shadow-sm transition placeholder:text-gray-400 focus:border-[rgb(51,98,135)] focus:ring-2 focus:ring-blue-100"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                    aria-label="Clear item search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="brand" className="text-sm font-medium text-gray-700">
+                Brand
+              </label>
+              <select
+                id="brand"
+                value={selectedBrand}
+                onChange={(e) => setSelectedBrand(e.target.value)}
+                className={selectClassName}
+              >
+                <option value="All">All</option>
+                {brand.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="category"
+                className="text-sm font-medium text-gray-700"
+              >
+                Category
+              </label>
+              <select
+                id="category"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className={selectClassName}
+              >
+                <option value="All">All</option>
+                {category.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-end text-xs text-gray-500 lg:justify-end">
+              {pagination?.total ? (
+                <span>
+                  Showing {individualArray.length} of {pagination.total} records
+                </span>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="px-3 rounded-md overflow-auto">
-        <table className="w-full min-w-max border-collapse text-sm rounded-md">
-          {/* <thead className={`sticky top-0 z-20 bg-white}> */}
-          <thead className="text-sm sticky top-0 z-20 bg-[rgb(51,98,135)] rounded-md shadow-xl text-white">
-            <tr>
-              <th
-                rowSpan="2"
-                className="border border-gray-400"
-
-                // className={`border border-gray-300 p-2 sticky ${ !modalOpen&&left-0  z-10 }bg-gray-100`}
-              >
-                Item
-              </th>
-              <th colSpan="3" className="border  border-gray-400 p-1">
-                Opening
-              </th>
-              <th colSpan="3" className="border border-gray-400 p-1">
-                Inward
-              </th>
-              <th colSpan="3" className="border border-gray-400 p-1">
-                Outward
-              </th>
-
-              <th colSpan="3" className="border border-gray-400 p-1">
-                Closing
-              </th>
-            </tr>
-            <tr>
-              <th className="border border-gray-400 p-1">Quantity</th>
-              <th className="border  border-gray-400 p-1">Rate</th>
-              <th className="border  border-gray-400 p-1">Amount</th>
-              <th className="border border-gray-400 p-1">Quantity</th>
-              <th className="border  border-gray-400 p-1">Rate</th>
-              <th className="border  border-gray-400 p-1">Amount</th>
-              <th className="border border-gray-400 p-1">Quantity</th>
-              <th className="border  border-gray-400 p-1">Rate</th>
-              <th className="border  border-gray-400 p-1">Amount</th>
-              <th className="border border-gray-400 p-1">Quantity</th>
-              <th className="border  border-gray-400 p-1">Rate</th>
-              <th className="border  border-gray-400 p-1">Amount</th>
-            </tr>
-          </thead>
-          <tbody className="text-center">
-            {individualArray && individualArray.length > 0 ? (
-              individualArray.map((row) => (
-                <React.Fragment key={row.itemName}>
-                  <tr
-                    onClick={() =>
-                      setSelectedItemName((prev) =>
-                        prev === row.itemName ? null : row.itemName
-                      )
-                    }
-                    className="cursor-pointer hover:bg-gray-100"
-                  >
-                    {/* Item Name */}
-                    <td className="border p-1  bg-white text-left">
-                      {row.itemName}
-                    </td>
-
-                    {/* Opening */}
-                    <td className="border p-1">{row.opening.quantity}</td>
-                    <td className="border p-1">
-                      {row.opening.rate?.toFixed?.(2) || "-"}
-                    </td>
-                    <td className="border p-1">{row.opening.amount}</td>
-
-                    {/* Inward */}
-                    <td className="border p-1">{row.inward.quantity}</td>
-                    <td className="border p-1">
-                      {row.inward.rate?.toFixed?.(2) || "-"}
-                    </td>
-                    <td className="border p-1">{row.inward.amount}</td>
-
-                    {/* Outward */}
-                    <td className="border p-1">{row.outward.quantity}</td>
-                    <td className="border p-1">
-                      {row.outward.rate?.toFixed?.(2) || "-"}
-                    </td>
-                    <td className="border p-1">{row.outward.amount}</td>
-
-                    {/* Closing */}
-                    <td className="border p-1">{row.closing.quantity}</td>
-                    <td className="border p-1">
-                      {row.closing.rate?.toFixed?.(2) || "-"}
-                    </td>
-                    <td className="border p-1">{row.closing.amount}</td>
-                  </tr>
-
-                  {/* if this row is expanded, show mapped rows */}
-                  {selectedItemName === row.itemName &&
-                    mappedArray
-                      .filter((m) => m.itemName === row.itemName)
-                      .map((m, idx) => (
-                        <tr
-                          key={`${m.itemName}-${idx}`}
-                          className="bg-yellow-200"
-                        >
-                          {/* indent & show batch + godown */}
-                          <td className="border p-1 pl-4">
-                            ({m.batch} | {m.godown})
-                          </td>
-
-                          {/* Opening */}
-                          <td className="border p-1">{m.opening.quantity}</td>
-                          <td className="border p-1">
-                            {m.opening.rate?.toFixed?.(2) || "-"}
-                          </td>
-                          <td className="border p-1">{m.opening.amount}</td>
-
-                          {/* Inward */}
-                          <td className="border p-1">{m.inward.quantity}</td>
-                          <td className="border p-1">
-                            {m.inward.rate?.toFixed?.(2) || "-"}
-                          </td>
-                          <td className="border p-1">{m.inward.amount}</td>
-
-                          {/* Outward */}
-                          <td className="border p-1">{m.outward.quantity}</td>
-                          <td className="border p-1">
-                            {m.outward.rate?.toFixed?.(2) || "-"}
-                          </td>
-                          <td className="border p-1">{m.outward.amount}</td>
-
-                          {/* Closing */}
-                          <td className="border p-1">{m.closing.quantity}</td>
-                          <td className="border p-1">
-                            {m.closing.rate?.toFixed?.(2) || "-"}
-                          </td>
-                          <td className="border p-1">{m.closing.amount}</td>
-                        </tr>
-                      ))}
-                </React.Fragment>
-              ))
-            ) : (
+      <div className="min-h-0 flex-1 px-2 pb-2 sm:px-3 sm:pb-3">
+        <div
+          ref={tableScrollRef}
+          className="h-full overflow-x-auto overflow-y-auto overscroll-contain rounded-md border border-gray-200 bg-white shadow-sm scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-400"
+          style={{
+            WebkitOverflowScrolling: "touch",
+            scrollbarGutter: "stable both-edges"
+          }}
+        >
+          <table className="w-full min-w-[1180px] border-collapse text-sm">
+            <thead className="sticky top-0 z-30 bg-[rgb(51,98,135)] text-white shadow-sm">
               <tr>
-                <td colSpan={13} className="text-center p-2">
-                  <div className="flex justify-center items-center">
-                    {isFetching ? (
+                <th
+                  rowSpan="2"
+                  className={`${headerCellClassName} min-w-[260px] bg-[rgb(51,98,135)]`}
+                >
+                  Item
+                </th>
+                <th colSpan="3" className={headerCellClassName}>
+                  Opening
+                </th>
+                <th colSpan="3" className={headerCellClassName}>
+                  Inward
+                </th>
+                <th colSpan="3" className={headerCellClassName}>
+                  Outward
+                </th>
+                <th colSpan="3" className={headerCellClassName}>
+                  Closing
+                </th>
+              </tr>
+              <tr>
+                {["Quantity", "Rate", "Amount"].map((label) => (
+                  <React.Fragment key={`opening-${label}`}>
+                    <th className={`${headerCellClassName} min-w-[92px]`}>
+                      {label}
+                    </th>
+                  </React.Fragment>
+                ))}
+                {["Quantity", "Rate", "Amount"].map((label) => (
+                  <React.Fragment key={`inward-${label}`}>
+                    <th className={`${headerCellClassName} min-w-[92px]`}>
+                      {label}
+                    </th>
+                  </React.Fragment>
+                ))}
+                {["Quantity", "Rate", "Amount"].map((label) => (
+                  <React.Fragment key={`outward-${label}`}>
+                    <th className={`${headerCellClassName} min-w-[92px]`}>
+                      {label}
+                    </th>
+                  </React.Fragment>
+                ))}
+                {["Quantity", "Rate", "Amount"].map((label) => (
+                  <React.Fragment key={`closing-${label}`}>
+                    <th className={`${headerCellClassName} min-w-[92px]`}>
+                      {label}
+                    </th>
+                  </React.Fragment>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={13} className="h-56 p-4 text-center">
+                    <div className="flex h-full items-center justify-center">
                       <PropagateLoader
                         color="#3b82f6"
                         size={10}
                         speedMultiplier={1}
-                        className="mb-3"
                       />
+                    </div>
+                  </td>
+                </tr>
+              ) : individualArray.length > 0 ? (
+                individualArray.map((row, rowIndex) => {
+                  const isExpanded = selectedItemName === row.itemName
+                  const itemDetails = mappedArray.filter(
+                    (m) => m?.itemName === row?.itemName
+                  )
+
+                  return (
+                    <React.Fragment key={getRowKey(row, rowIndex)}>
+                      <tr
+                        onClick={() =>
+                          setSelectedItemName((prev) =>
+                            prev === row.itemName ? null : row.itemName
+                          )
+                        }
+                        className={`group cursor-pointer transition hover:bg-blue-50 ${
+                          rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"
+                        }`}
+                      >
+                        <td
+                          className={`border-b border-r border-gray-100 px-3 py-2 text-left font-medium text-gray-800 ${
+                            rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"
+                          } group-hover:bg-blue-50`}
+                        >
+                          <span className="flex items-center gap-2">
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4 shrink-0 text-gray-500" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 shrink-0 text-gray-500" />
+                            )}
+                            <span className="break-words">{row.itemName}</span>
+                          </span>
+                        </td>
+                        {renderMovementCells(row)}
+                      </tr>
+
+                      {isExpanded &&
+                        itemDetails.map((m, idx) => (
+                          <tr
+                            key={getMappedRowKey(m, idx)}
+                            className="bg-blue-50/70"
+                          >
+                            <td className="border-b border-r border-blue-100 bg-blue-50 px-3 py-2 text-left text-xs font-medium text-gray-700">
+                              <span className="block pl-6">
+                                {m?.batch || "Primary Batch"} |{" "}
+                                {m?.godown || "Godown"}
+                              </span>
+                            </td>
+                            {renderMovementCells(m, true)}
+                          </tr>
+                        ))}
+                    </React.Fragment>
+                  )
+                })
+              ) : (
+                <tr>
+                  <td colSpan={13} className="h-56 p-4 text-center">
+                    <div className="flex h-full items-center justify-center text-sm font-medium text-gray-500">
+                      No stock records found
+                    </div>
+                  </td>
+                </tr>
+              )}
+
+              {individualArray.length > 0 && (
+                <tr ref={loadMoreRef}>
+                  <td colSpan={13} className="p-3 text-center text-xs text-gray-500">
+                    {isFetchingNextPage ? (
+                      <div className="flex items-center justify-center py-2">
+                        <PropagateLoader
+                          color="#3b82f6"
+                          size={8}
+                          speedMultiplier={1}
+                        />
+                      </div>
+                    ) : hasNextPage ? (
+                      "Loading more records..."
                     ) : (
-                      <div>No Data found</div>
+                      "All records loaded"
                     )}
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  </td>
+                </tr>
+              )}
+
+              {isFetching && !isFetchingNextPage && !isLoading && (
+                <tr>
+                  <td colSpan={13} className="p-2 text-center text-xs text-gray-400">
+                    Refreshing stock records...
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
