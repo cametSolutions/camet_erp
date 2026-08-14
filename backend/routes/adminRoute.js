@@ -20,6 +20,7 @@ import {
   getCompanyDataCount,
   getPrimaryUserProfileById,
   updatePrimaryUserStatus,
+  renewPrimaryUserSubscription,
   updateOrganizationStatus,
   updateSecondaryUserStatus,
   updateUserCapacity,
@@ -51,6 +52,7 @@ router.post('/syncIndexes',syncIndexes);
 router.get('/getPrimaryUserProfileById/:userId',authAdmin, getPrimaryUserProfileById);
 // Update status routes - note the correct paths matching frontend
 router.patch('/updatePrimaryUserStatus/:userId', authAdmin,updatePrimaryUserStatus);
+router.post('/renewSubscription/:userId', authAdmin, renewPrimaryUserSubscription);
 router.patch('/updateOrganizationStatus/:organizationId',authAdmin, updateOrganizationStatus);
 router.patch('/updateSecondaryUserStatus/:secondaryUserId',authAdmin, updateSecondaryUserStatus);
 router.patch('/updateUserCapacity/:userId', authAdmin, updateUserCapacity);

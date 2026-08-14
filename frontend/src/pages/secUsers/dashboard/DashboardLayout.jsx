@@ -9,6 +9,7 @@ import { useState } from "react";
 import TodaysTransaction from "./TodaysTransaction";
 import { toast } from "sonner";
 import { IoIosRefresh } from "react-icons/io";
+import SubscriptionExpiryAlert from "@/components/common/SubscriptionExpiryAlert";
 function DashBoardLayout({
   handleToggleSidebar,
   org,
@@ -16,6 +17,7 @@ function DashBoardLayout({
   handleLinkClick,
   type,
 }) {
+  const user = JSON.parse(localStorage.getItem("sUserData"));
   const [tab, setTab] = useState("transactions");
   console.log("hdd");
   return (
@@ -28,6 +30,8 @@ function DashBoardLayout({
           />
           <p>Dashboard</p>
         </div>
+
+        <SubscriptionExpiryAlert user={user} />
 
         {/* company name */}
 

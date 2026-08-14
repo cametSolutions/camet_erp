@@ -64,6 +64,8 @@ import bankModel from "../models/bankModel.js";
 import cashModel from "../models/cashModel.js";
 import receiptModel from "../models/receiptModel.js";
 import paymentModel from "../models/paymentModel.js";
+import PrimaryUser from "../models/primaryUserModel.js";
+import { getSubscriptionStatus } from "../utils/subscription.js";
 import partyModel from "../models/partyModel.js";
 
 // @desc Login secondary user
@@ -98,6 +100,18 @@ export const login = async (req, res) => {
     if (secUser.isBlocked) {
       return res.status(401).json({ message: "User is blocked" });
     }
+    const primaryUser = await PrimaryUser.findById(secUser.primaryUser);
+    if (!primaryUser) {
+      return res.status(401).json({ message: "Primary account not found" });
+    }
+    const subscriptionStatus = getSubscriptionStatus(primaryUser);
+    if (subscriptionStatus.isExpired) {
+      return res.status(403).json({
+        code: "SUBSCRIPTION_EXPIRED",
+        message: "The primary user's subscription has expired. Please renew to continue.",
+        subscription: subscriptionStatus,
+      });
+    }
     // console.log("secUser", secUser);
     const isPasswordMatch = await bcrypt.compare(password, secUser.password);
 
@@ -117,7 +131,7 @@ export const login = async (req, res) => {
       data: { email, name, _id, mobile, role: secUser.role || "user", userType: secUser.userType || secUser.role || "user",
         permissions: secUser.permissions || {},
         primaryUser: secUser.primaryUser || null,
-        organization: secUser.organization || [], },
+        organization: secUser.organization || [], subscription: subscriptionStatus },
     });
   } catch (error) {
     return res.status(500).json({ status: false, message: "Failed to login!" });

@@ -13,7 +13,7 @@ if (ENV === "development") {
 } else if (ENV === "testing") {
   baseUrl = "https://erptest.camet.in/";
 } else if (ENV === "app") {
-  baseUrl = "https://www.app.camet.in/";
+  baseUrl = "https://app.camet.in/";
 }
 
 console.log(`Base URL: ${baseUrl}`);
@@ -29,7 +29,19 @@ api.interceptors.response.use(
     return response;
   },
   function (error) {
-    if (
+    if (error?.response?.data?.code === "SUBSCRIPTION_EXPIRED") {
+      const isSecondary = error?.response?.config?.url?.includes("/sUsers/");
+      const redirectUrl = isSecondary ? "/sUsers/login" : "/pUsers/login";
+      const storageKey = isSecondary ? "sUserData" : "pUserData";
+      localStorage.removeItem(storageKey);
+      localStorage.removeItem("permissions");
+      showSwalAlert(
+        "Your subscription has expired. Please renew to continue.",
+        "warning",
+        redirectUrl,
+        storageKey
+      );
+    } else if (
       error?.response?.config?.url === "/api/sUsers/getSecUserData" ||
       error?.response?.data?.is_blocked
     ) {
