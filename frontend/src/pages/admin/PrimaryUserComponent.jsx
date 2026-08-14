@@ -15,6 +15,7 @@ const PrimaryUserComponent = ({
   primaryUser,
   onToggle,
   onSubscriptionToggle,
+  onRenewSubscription,
   isLoading,
 }) => {
   const [localLoading, setLocalLoading] = useState(false);
@@ -408,7 +409,7 @@ const PrimaryUserComponent = ({
                       Subscription Expires
                     </p>
                     <p className="text-lg font-semibold text-slate-800">
-                      {calculateExpirationDate(user?.createdAt, user?.subscriptionType) ? formatDate(calculateExpirationDate(user?.createdAt, user?.subscriptionType)) : "N/A"}
+                      {formatDate(user?.expiredAt || calculateExpirationDate(user?.createdAt, user?.subscriptionType))}
                     </p>
                   </div>
                 </div>
@@ -423,6 +424,14 @@ const PrimaryUserComponent = ({
                   }
                   loading={isLoading || localLoading}
                 />
+                <button
+                  type="button"
+                  onClick={onRenewSubscription}
+                  disabled={isLoading}
+                  className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isLoading ? "Renewing..." : `Renew ${user?.subscriptionType || "monthly"} subscription`}
+                </button>
               </div>
             </div>
           </div>

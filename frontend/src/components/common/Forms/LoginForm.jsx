@@ -47,6 +47,10 @@ function LoginForm({ user }) {
       apiPath = "/api/sUsers/login";
       storageKey = "sUserData";
       dashboardPath = "/sUsers/dashboard";
+    } else if (user === "primary") {
+      apiPath = "/api/pUsers/login";
+      storageKey = "pUserData";
+      dashboardPath = "/pUsers/dashboard";
     } else {
       toast.error("Invalid user type");
       setLoader(false);

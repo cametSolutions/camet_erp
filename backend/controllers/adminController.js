@@ -1,5 +1,6 @@
 import Admin from "../models/adminModel.js";
 import PrimaryUsers from "../models/primaryUserModel.js";
+import { calculateSubscriptionExpiry, normalizeSubscription } from "../utils/subscription.js";
 import generateAdminToken from "../utils/generateAdminToken.js";
 import Organization from "../models/OragnizationModel.js";
 import SecondaryUser from "../models/secondaryUserModel.js";
@@ -820,7 +821,7 @@ export const getPrimaryUserProfileById = async (req, res) => {
     // Fetch primary user details
     const primaryUser = await PrimaryUsers.findById(userId)
       .select(
-        "userName email mobile subscription createdAt updatedAt sms whatsApp isBlocked  isApproved role"
+        "userName email mobile subscription subscriptionExpiry createdAt updatedAt sms whatsApp isBlocked isApproved role"
       )
       .lean();
 
@@ -850,7 +851,7 @@ export const getPrimaryUserProfileById = async (req, res) => {
         phoneNumber: primaryUser.mobile,
         subscriptionType: primaryUser.subscription,
         createdAt: primaryUser.createdAt,
-        expiredAt: primaryUser.updatedAt,
+        expiredAt: primaryUser.subscriptionExpiry || calculateSubscriptionExpiry(primaryUser.createdAt, primaryUser.subscription),
         sms: primaryUser.sms || false,
         whatsApp: primaryUser.whatsApp || false,
         isBlocked: primaryUser.isBlocked || false,
@@ -935,9 +936,16 @@ export const updatePrimaryUserStatus = async (req, res) => {
 
     console.log(field, value);
 
+    const changes = { [field]: value };
+    if (field === "subscription") {
+      // An admin plan update is a renewal: it starts a fresh plan from today.
+      changes.subscription = normalizeSubscription(value);
+      changes.subscriptionExpiry = calculateSubscriptionExpiry(new Date(), changes.subscription);
+    }
+
     const update = await PrimaryUsers.updateOne(
       { _id: userId },
-      { $set: { [field]: value } }
+      { $set: changes }
     );
 
     if (update.matchedCount === 0) {
@@ -957,6 +965,34 @@ export const updatePrimaryUserStatus = async (req, res) => {
       success: false,
       message: "Internal server error",
     });
+  }
+};
+
+// @desc Renew a primary user's current subscription plan
+// @route POST /api/admin/renewSubscription/:userId
+export const renewPrimaryUserSubscription = async (req, res) => {
+  try {
+    const user = await PrimaryUsers.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const subscription = normalizeSubscription(user.subscription);
+    const subscriptionExpiry = calculateSubscriptionExpiry(new Date(), subscription);
+    // Use updateOne so renewing never triggers the legacy password pre-save hook.
+    await PrimaryUsers.updateOne(
+      { _id: user._id },
+      { $set: { subscription, subscriptionExpiry } }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Subscription renewed until ${subscriptionExpiry.toLocaleDateString()}`,
+      subscriptionExpiry,
+    });
+  } catch (error) {
+    console.error("Error renewing subscription:", error);
+    return res.status(500).json({ success: false, message: "Unable to renew subscription" });
   }
 };
 // Update Organization Status

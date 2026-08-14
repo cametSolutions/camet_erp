@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import secondaryUserModel from "../models/secondaryUserModel.js";
+import { requireActiveSubscription } from "./subscriptionAccess.js";
 
 export const  authSecondary = async (req, res, next) => {
   let token;
@@ -25,11 +26,14 @@ export const  authSecondary = async (req, res, next) => {
     const secUser = await secondaryUserModel.findById(req.sUserId);
 
     console.log("secUser", secUser);
+    if (!secUser) {
+      return res.status(401).json({ success: false, message: "No token, authorization denied" });
+    }
     const owner=secUser?.primaryUser;
     req.owner=owner;
     req.secUserName = secUser?.name;
 
-    next();
+    return requireActiveSubscription(req, res, next);
   } catch (error) {
     console.log(error);
     if (error.name === "TokenExpiredError") {
