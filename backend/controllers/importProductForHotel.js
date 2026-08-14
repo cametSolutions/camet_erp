@@ -11,7 +11,6 @@ import {
 
 import hsnModel from "../models/hsnModel.js";
 
-
 /* ============================================================
    HELPERS
 ============================================================ */
@@ -61,11 +60,10 @@ const escapeRegex = (value) => {
   );
 };
 
-
 /* ============================================================
    FIND PRODUCT BY ITEM ID
 
-   Excel Item ID = Product._id
+   Item ID from Excel = Product._id
 ============================================================ */
 
 const findProductByItemId = async ({
@@ -77,7 +75,9 @@ const findProductByItemId = async ({
   }
 
   if (
-    !mongoose.Types.ObjectId.isValid(itemId)
+    !mongoose.Types.ObjectId.isValid(
+      itemId
+    )
   ) {
     return null;
   }
@@ -88,7 +88,6 @@ const findProductByItemId = async ({
   });
 };
 
-
 /* ============================================================
    FIND PRODUCT BY PRODUCT NAME
 ============================================================ */
@@ -97,6 +96,10 @@ const findProductsByName = async ({
   productName,
   cmp_id,
 }) => {
+  if (!productName) {
+    return [];
+  }
+
   const regex = new RegExp(
     `^${escapeRegex(productName)}$`,
     "i"
@@ -108,16 +111,17 @@ const findProductsByName = async ({
   });
 };
 
-
 /* ============================================================
    FIND CATEGORY
 
-   Category schema:
+   Excel:
+      Category = "Indian"
 
-   {
-      category: String,
-      cmp_id: ObjectId
-   }
+   Mongo:
+      category = "Indian"
+
+   Result:
+      Category._id
 ============================================================ */
 
 const getCategory = (
@@ -135,17 +139,22 @@ const getCategory = (
   );
 };
 
-
 /* ============================================================
-   FIND SUB CATEGORY
+   FIND SUBCATEGORY
 
-   Subcategory schema:
+   Excel:
+      Category = Indian
+      Sub Category = Snacks
 
-   {
-      subcategory: String,
-      category_id: ObjectId,
-      cmp_id: ObjectId
-   }
+   Mongo:
+
+   Category:
+      _id = ABC
+
+   Subcategory:
+      category_id = ABC
+      subcategory = Snacks
+
 ============================================================ */
 
 const getSubCategory = (
@@ -171,19 +180,41 @@ const getSubCategory = (
   );
 };
 
-
 /* ============================================================
-   BUILD PRICE LEVEL DATA
+   BUILD PRICE LEVEL DATA FOR EXISTING PRODUCT
 
-   IMPORTANT:
-   Only called when at least one price exists
-   in Excel.
+   IMPORTANT RULE:
 
-   Existing price levels are preserved when
-   an individual Excel price cell is empty.
+   Only price levels already inside the product
+   will be updated.
+
+   Example product:
+
+   Priceleveles:
+      25/26 year
+      Dine In
+      Take Away
+      Delivery
+
+   Excel:
+
+      Price Rate = 100
+      Dine In = 120
+      Take Away = 130
+      Delivery = 140
+
+   Result:
+
+      25/26 year → 100
+      Dine In     → 120
+      Take Away   → 130
+      Delivery    → 140
+
+   If Room Service does NOT exist in the product,
+   it will NOT be created.
 ============================================================ */
 
-const buildPriceLevelData = ({
+const buildExistingProductPriceLevels = ({
   priceLevels,
   existingPriceLevels,
   defaultPrice,
@@ -192,140 +223,222 @@ const buildPriceLevelData = ({
   roomService,
   delivery,
 }) => {
-  const result = [];
-
-  const getExistingPrice = (
-    priceLevelId
-  ) => {
-    const existing =
-      existingPriceLevels.find(
-        (item) =>
-          String(
-            item.pricelevel?._id ||
-              item.pricelevel
-          ) ===
-          String(priceLevelId)
-      );
-
-    return existing?.pricerate ?? null;
-  };
-
-
-  for (const level of priceLevels) {
-    let excelPrice = null;
-
-    /* -----------------------------------------
-       DEFAULT PRICE
-    ----------------------------------------- */
-
-    if (
-      level.dineIn === "" &&
-      level.takeaway === "" &&
-      level.roomService === "" &&
-      level.delivery === ""
-    ) {
-      excelPrice =
-        defaultPrice;
-    }
-
-    /* -----------------------------------------
-       DINE IN
-    ----------------------------------------- */
-
-    else if (
-      level.dineIn === "enabled"
-    ) {
-      excelPrice =
-        dineIn;
-    }
-
-    /* -----------------------------------------
-       TAKE AWAY
-    ----------------------------------------- */
-
-    else if (
-      level.takeaway === "enabled"
-    ) {
-      excelPrice =
-        takeaway;
-    }
-
-    /* -----------------------------------------
-       ROOM SERVICE
-    ----------------------------------------- */
-
-    else if (
-      level.roomService === "enabled"
-    ) {
-      excelPrice =
-        roomService;
-    }
-
-    /* -----------------------------------------
-       DELIVERY
-    ----------------------------------------- */
-
-    else if (
-      level.delivery === "enabled"
-    ) {
-      excelPrice =
-        delivery;
-    }
-
-
-    /* -----------------------------------------
-       Excel value is empty.
-
-       Preserve existing value if this is
-       an existing product.
-    ----------------------------------------- */
-
-    if (excelPrice === null) {
-      excelPrice =
-        getExistingPrice(level._id);
-    }
-
-
-    /*
-     * If there is still no price, don't add
-     * this price level.
-     */
-
-    if (excelPrice === null) {
-      continue;
-    }
-
-
-    const existing =
-      existingPriceLevels.find(
-        (item) =>
-          String(
-            item.pricelevel?._id ||
-              item.pricelevel
-          ) ===
-          String(level._id)
-      );
-
-
-    result.push({
-      pricelevel:
-        level._id,
-
-      pricerate:
-        excelPrice,
-
-      priceDisc:
-        existing?.priceDisc ?? 0,
-
-      applicabledt:
-        existing?.applicabledt ?? "",
-    });
+  if (
+    !Array.isArray(existingPriceLevels)
+  ) {
+    return [];
   }
 
+  const hasValue = (value) => {
+    return (
+      value !== null &&
+      value !== undefined
+    );
+  };
 
-  return result;
+  /*
+   * Master PriceLevel lookup
+   */
+  const priceLevelMap = new Map();
+
+  for (
+    const level of priceLevels || []
+  ) {
+    priceLevelMap.set(
+      String(level._id),
+      level
+    );
+  }
+
+  /*
+   * IMPORTANT:
+   *
+   * Loop through the PRODUCT'S existing
+   * price levels, NOT all master price levels.
+   */
+  return existingPriceLevels.map(
+    (existingLevel) => {
+      const priceLevelId =
+        existingLevel?.pricelevel?._id ||
+        existingLevel?.pricelevel;
+
+      const masterLevel =
+        priceLevelMap.get(
+          String(priceLevelId)
+        );
+
+      let newPrice =
+        existingLevel?.pricerate;
+
+      /* ======================================================
+         DINE IN
+      ====================================================== */
+
+      if (
+        masterLevel?.dineIn ===
+        "enabled"
+      ) {
+        if (hasValue(dineIn)) {
+          newPrice = dineIn;
+        }
+      }
+
+      /* ======================================================
+         TAKE AWAY
+      ====================================================== */
+
+      else if (
+        masterLevel?.takeaway ===
+        "enabled"
+      ) {
+        if (hasValue(takeaway)) {
+          newPrice = takeaway;
+        }
+      }
+
+      /* ======================================================
+         ROOM SERVICE
+      ====================================================== */
+
+      else if (
+        masterLevel?.roomService ===
+        "enabled"
+      ) {
+        if (hasValue(roomService)) {
+          newPrice = roomService;
+        }
+      }
+
+      /* ======================================================
+         DELIVERY
+      ====================================================== */
+
+      else if (
+        masterLevel?.delivery ===
+        "enabled"
+      ) {
+        if (hasValue(delivery)) {
+          newPrice = delivery;
+        }
+      }
+
+      /* ======================================================
+         OTHER PRICE LEVEL
+
+         Everything other than:
+
+         Dine In
+         Take Away
+         Room Service
+         Delivery
+
+         gets Excel Default Price.
+      ====================================================== */
+
+      else {
+        if (hasValue(defaultPrice)) {
+          newPrice = defaultPrice;
+        }
+      }
+
+      /*
+       * Preserve old price if Excel doesn't
+       * contain a value.
+       */
+      if (
+        newPrice === null ||
+        newPrice === undefined
+      ) {
+        newPrice =
+          existingLevel?.pricerate;
+      }
+
+      /*
+       * Preserve existing subdocument data.
+       */
+      return {
+        ...existingLevel,
+
+        pricelevel:
+          existingLevel?.pricelevel?._id ||
+          existingLevel?.pricelevel,
+
+        pricerate: newPrice,
+
+        priceDisc:
+          existingLevel?.priceDisc ?? 0,
+
+        applicabledt:
+          existingLevel?.applicabledt ??
+          "",
+      };
+    }
+  );
 };
 
+/* ============================================================
+   BUILD PRICE LEVEL FOR NEW PRODUCT
+
+   New product has no existing Priceleveles.
+
+   Therefore create ONLY the normal/default price level.
+
+   Do NOT automatically create:
+      Dine In
+      Take Away
+      Room Service
+      Delivery
+
+   because your requirement is to update those only when
+   they already exist inside the product.
+============================================================ */
+
+const buildNewProductPriceLevels = ({
+  priceLevels,
+  defaultPrice,
+}) => {
+  if (
+    defaultPrice === null ||
+    defaultPrice === undefined
+  ) {
+    return [];
+  }
+
+  /*
+   * Find a normal/default price level.
+   *
+   * It is a price level where none of the
+   * special flags are enabled.
+   */
+  const defaultPriceLevel =
+    priceLevels.find(
+      (level) =>
+        level.dineIn !== "enabled" &&
+        level.takeaway !==
+          "enabled" &&
+        level.roomService !==
+          "enabled" &&
+        level.delivery !== "enabled"
+    );
+
+  if (!defaultPriceLevel) {
+    return [];
+  }
+
+  return [
+    {
+      pricelevel:
+        defaultPriceLevel._id,
+
+      pricerate:
+        defaultPrice,
+
+      priceDisc: 0,
+
+      applicabledt: "",
+    },
+  ];
+};
 
 /* ============================================================
    IMPORT EXCEL
@@ -339,9 +452,8 @@ export const importItemsFromExcel = async (
     const { cmp_id } =
       req.params;
 
-
     /* ========================================================
-       1. BASIC VALIDATION
+       1. VALIDATE COMPANY
     ======================================================== */
 
     if (
@@ -356,6 +468,9 @@ export const importItemsFromExcel = async (
       });
     }
 
+    /* ========================================================
+       2. VALIDATE FILE
+    ======================================================== */
 
     if (!req.file) {
       return res.status(400).json({
@@ -365,9 +480,8 @@ export const importItemsFromExcel = async (
       });
     }
 
-
     /* ========================================================
-       2. LOAD EXCEL
+       3. LOAD EXCEL
     ======================================================== */
 
     const workbook =
@@ -377,10 +491,8 @@ export const importItemsFromExcel = async (
       req.file.buffer
     );
 
-
     const worksheet =
       workbook.worksheets[0];
-
 
     if (!worksheet) {
       return res.status(400).json({
@@ -390,9 +502,8 @@ export const importItemsFromExcel = async (
       });
     }
 
-
     /* ========================================================
-       3. READ EXCEL HEADERS
+       4. READ HEADERS
     ======================================================== */
 
     const headerMap = {};
@@ -413,12 +524,6 @@ export const importItemsFromExcel = async (
         }
       );
 
-
-    /*
-     * Product Name is the ONLY required
-     * Excel column.
-     */
-
     if (
       !headerMap["product name"]
     ) {
@@ -429,9 +534,8 @@ export const importItemsFromExcel = async (
       });
     }
 
-
     /* ========================================================
-       4. GET CELL VALUE
+       5. GET CELL VALUE
     ======================================================== */
 
     const getCellValue = (
@@ -449,19 +553,15 @@ export const importItemsFromExcel = async (
         return "";
       }
 
-
       const cell =
         row.getCell(column);
 
-
-      const value =
+      let value =
         cell.value;
 
-
       /*
-       * Handle formula / rich values.
+       * Formula / rich text
        */
-
       if (
         value &&
         typeof value === "object"
@@ -485,30 +585,22 @@ export const importItemsFromExcel = async (
         }
       }
 
-
       return value ?? "";
     };
 
-
     /* ========================================================
-       5. READ EXCEL ROWS
+       6. READ EXCEL ROWS
     ======================================================== */
 
     const excelRows = [];
 
     let ignoredRows = 0;
 
-
     worksheet.eachRow(
       (row, rowNumber) => {
-        /*
-         * Header
-         */
-
         if (rowNumber === 1) {
           return;
         }
-
 
         const productName =
           cleanText(
@@ -518,18 +610,13 @@ export const importItemsFromExcel = async (
             )
           );
 
-
         /*
-         * PRODUCT NAME EMPTY
-         *
-         * Ignore the row.
+         * Product name is required.
          */
-
         if (!productName) {
           ignoredRows++;
           return;
         }
-
 
         const itemId =
           cleanText(
@@ -539,7 +626,6 @@ export const importItemsFromExcel = async (
             )
           );
 
-
         const categoryName =
           cleanText(
             getCellValue(
@@ -547,7 +633,6 @@ export const importItemsFromExcel = async (
               "Category"
             )
           );
-
 
         const subCategoryName =
           cleanText(
@@ -557,7 +642,6 @@ export const importItemsFromExcel = async (
             )
           );
 
-
         const hsn =
           cleanHsn(
             getCellValue(
@@ -565,7 +649,6 @@ export const importItemsFromExcel = async (
               "HSN Code"
             )
           );
-
 
         const defaultPrice =
           parseExcelNumber(
@@ -575,7 +658,6 @@ export const importItemsFromExcel = async (
             )
           );
 
-
         const dineIn =
           parseExcelNumber(
             getCellValue(
@@ -583,7 +665,6 @@ export const importItemsFromExcel = async (
               "Dine In"
             )
           );
-
 
         const takeaway =
           parseExcelNumber(
@@ -593,7 +674,6 @@ export const importItemsFromExcel = async (
             )
           );
 
-
         const roomService =
           parseExcelNumber(
             getCellValue(
@@ -602,7 +682,6 @@ export const importItemsFromExcel = async (
             )
           );
 
-
         const delivery =
           parseExcelNumber(
             getCellValue(
@@ -610,7 +689,6 @@ export const importItemsFromExcel = async (
               "Delivery"
             )
           );
-
 
         excelRows.push({
           rowNumber,
@@ -638,9 +716,8 @@ export const importItemsFromExcel = async (
       }
     );
 
-
     /* ========================================================
-       6. LOAD MASTER DATA ONCE
+       7. LOAD MASTER DATA
     ======================================================== */
 
     const [
@@ -668,14 +745,12 @@ export const importItemsFromExcel = async (
       hsnModel.find({}).lean(),
     ]);
 
-
     /* ========================================================
-       7. CREATE LOOKUP MAPS
+       8. CATEGORY MAP
     ======================================================== */
 
     const categoryMap =
       new Map();
-
 
     for (
       const category of categories
@@ -688,15 +763,29 @@ export const importItemsFromExcel = async (
       );
     }
 
+    /* ========================================================
+       9. SUBCATEGORY MAP
+
+       IMPORTANT:
+
+       subcategory.subcategory
+       NOT
+       subcategory.subCategory
+    ======================================================== */
 
     const subCategoryMap =
       new Map();
-
 
     for (
       const subCategory of
         subCategories
     ) {
+      if (
+        !subCategory.category_id
+      ) {
+        continue;
+      }
+
       const key =
         `${String(
           subCategory.category_id
@@ -710,10 +799,12 @@ export const importItemsFromExcel = async (
       );
     }
 
+    /* ========================================================
+       10. HSN MAP
+    ======================================================== */
 
     const hsnMap =
       new Map();
-
 
     for (
       const hsnItem of hsnList
@@ -726,9 +817,8 @@ export const importItemsFromExcel = async (
       );
     }
 
-
     /* ========================================================
-       8. RESULT
+       11. RESULT
     ======================================================== */
 
     const result = {
@@ -744,12 +834,17 @@ export const importItemsFromExcel = async (
 
       failed: 0,
 
+      matchedByItemId: 0,
+
+      matchedByProductName: 0,
+
       errors: [],
+
+      ignoredDetails: [],
     };
 
-
     /* ========================================================
-       9. PROCESS EACH EXCEL ROW
+       12. PROCESS EACH ROW
     ======================================================== */
 
     for (
@@ -759,11 +854,21 @@ export const importItemsFromExcel = async (
         let existingProduct =
           null;
 
+        let matchedBy =
+          null;
 
         /* ====================================================
            STEP A
            
-           FIRST CHECK ITEM ID
+           ITEM ID EXISTS
+           
+           IMPORTANT:
+           
+           If Item ID is supplied, ONLY search by Item ID.
+           
+           If it isn't found, IGNORE.
+           
+           Do NOT fall back to product name.
         ==================================================== */
 
         if (row.itemId) {
@@ -774,16 +879,42 @@ export const importItemsFromExcel = async (
 
               cmp_id,
             });
-        }
 
+          if (!existingProduct) {
+            result.ignored++;
+
+            result.ignoredDetails.push({
+              row:
+                row.rowNumber,
+
+              product:
+                row.productName,
+
+              itemId:
+                row.itemId,
+
+              reason:
+                "Item ID not found in database",
+            });
+
+            continue;
+          }
+
+          matchedBy =
+            "itemId";
+        }
 
         /* ====================================================
            STEP B
-
-           IF ID NOT FOUND → CHECK PRODUCT NAME
+           
+           ITEM ID EMPTY
+           
+           SEARCH BY PRODUCT NAME
         ==================================================== */
 
-        if (!existingProduct) {
+        if (
+          !row.itemId
+        ) {
           const products =
             await findProductsByName({
               productName:
@@ -792,39 +923,52 @@ export const importItemsFromExcel = async (
               cmp_id,
             });
 
+          /* ==================================================
+             PRODUCT NAME NOT FOUND
 
-          /*
-           * One product with this name
-           */
+             CREATE NEW PRODUCT
+          ================================================== */
 
           if (
+            products.length === 0
+          ) {
+            existingProduct =
+              null;
+
+            matchedBy =
+              "newProduct";
+          }
+
+          /* ==================================================
+             EXACTLY ONE PRODUCT
+          ================================================== */
+
+          else if (
             products.length === 1
           ) {
             existingProduct =
               products[0];
+
+            matchedBy =
+              "productName";
           }
 
+          /* ==================================================
+             MULTIPLE PRODUCTS
+             
+             Try Category + Subcategory
+          ================================================== */
 
-          /*
-           * Multiple products with same name.
-           *
-           * Try Category + Subcategory.
-           */
-
-          else if (
-            products.length > 1
-          ) {
+          else {
             let matches =
               products;
-
-
-            /*
-             * Resolve Excel Category
-             */
 
             let excelCategory =
               null;
 
+            /*
+             * Resolve category
+             */
             if (
               row.categoryName
             ) {
@@ -833,14 +977,23 @@ export const importItemsFromExcel = async (
                   categoryMap,
                   row.categoryName
                 );
+
+              /*
+               * If Excel category doesn't
+               * exist, fail instead of guessing.
+               */
+              if (
+                !excelCategory
+              ) {
+                throw new Error(
+                  `Category "${row.categoryName}" not found`
+                );
+              }
             }
 
-
             /*
-             * If Category supplied,
-             * filter products by category.
+             * Filter by category
              */
-
             if (
               excelCategory
             ) {
@@ -856,11 +1009,9 @@ export const importItemsFromExcel = async (
                 );
             }
 
-
             /*
-             * Resolve Excel Subcategory.
+             * Filter by subcategory
              */
-
             if (
               row.subCategoryName &&
               excelCategory
@@ -872,34 +1023,43 @@ export const importItemsFromExcel = async (
                   excelCategory._id
                 );
 
-
               if (
-                excelSubCategory
+                !excelSubCategory
               ) {
-                matches =
-                  matches.filter(
-                    (product) =>
-                      String(
-                        product.sub_category
-                      ) ===
-                      String(
-                        excelSubCategory._id
-                      )
-                  );
+                throw new Error(
+                  `Sub Category "${row.subCategoryName}" not found under Category "${row.categoryName}"`
+                );
               }
+
+              matches =
+                matches.filter(
+                  (product) =>
+                    String(
+                      product.sub_category
+                    ) ===
+                    String(
+                      excelSubCategory._id
+                    )
+                );
             }
 
-
             /*
-             * Exactly one product remains.
+             * Exactly one match
              */
-
             if (
               matches.length === 1
             ) {
               existingProduct =
                 matches[0];
-            } else {
+
+              matchedBy =
+                "productName";
+            }
+
+            /*
+             * Still multiple
+             */
+            else {
               throw new Error(
                 `Multiple products found with name "${row.productName}". Item ID is required to identify the correct product.`
               );
@@ -907,19 +1067,15 @@ export const importItemsFromExcel = async (
           }
         }
 
-
         /* ====================================================
            STEP C
-
+           
            RESOLVE CATEGORY
-
-           OPTIONAL
         ==================================================== */
 
         let categoryId =
           existingProduct?.category ||
           null;
-
 
         if (
           row.categoryName
@@ -930,46 +1086,38 @@ export const importItemsFromExcel = async (
               row.categoryName
             );
 
-
           if (!category) {
             throw new Error(
               `Category "${row.categoryName}" not found`
             );
           }
 
-
           categoryId =
             category._id;
         }
 
-
         /* ====================================================
            STEP D
-
+           
            RESOLVE SUBCATEGORY
-
-           OPTIONAL
         ==================================================== */
 
         let subCategoryId =
           existingProduct?.sub_category ||
           null;
 
-
         if (
           row.subCategoryName
         ) {
           /*
-           * To find a subcategory correctly,
-           * we need its Category.
+           * Category is required to resolve
+           * subcategory.
            */
-
           if (!categoryId) {
             throw new Error(
               `Sub Category "${row.subCategoryName}" cannot be used because Category is empty`
             );
           }
-
 
           const subCategory =
             getSubCategory(
@@ -978,31 +1126,25 @@ export const importItemsFromExcel = async (
               categoryId
             );
 
-
           if (!subCategory) {
             throw new Error(
               `Sub Category "${row.subCategoryName}" not found under Category "${row.categoryName}"`
             );
           }
 
-
           subCategoryId =
             subCategory._id;
         }
 
-
         /* ====================================================
            STEP E
-
-           VALIDATE HSN
-
-           OPTIONAL
+           
+           HSN
         ==================================================== */
 
         let hsnCode =
           existingProduct?.hsn_code ||
           "";
-
 
         if (row.hsn) {
           const hsnExists =
@@ -1010,89 +1152,105 @@ export const importItemsFromExcel = async (
               row.hsn
             );
 
-
           if (!hsnExists) {
             throw new Error(
               `HSN "${row.hsn}" not found`
             );
           }
 
-
           hsnCode =
             row.hsn;
         }
 
-
         /* ====================================================
            STEP F
-
-           CHECK WHETHER EXCEL HAS PRICE DATA
+           
+           PRICE DATA
         ==================================================== */
 
         const hasPriceData =
-          row.defaultPrice !== null ||
+          row.defaultPrice !==
+            null ||
           row.dineIn !== null ||
           row.takeaway !== null ||
           row.roomService !== null ||
           row.delivery !== null;
 
-
         let priceLevelData =
           null;
-
 
         if (
           hasPriceData
         ) {
-          priceLevelData =
-            buildPriceLevelData({
-              priceLevels,
+          /* ==================================================
+             EXISTING PRODUCT
 
-              existingPriceLevels:
-                existingProduct
-                  ?.Priceleveles || [],
+             Only update price levels already inside
+             the product.
+          ================================================== */
 
-              defaultPrice:
-                row.defaultPrice,
+          if (
+            existingProduct
+          ) {
+            priceLevelData =
+              buildExistingProductPriceLevels({
+                priceLevels,
 
-              dineIn:
-                row.dineIn,
+                existingPriceLevels:
+                  existingProduct.Priceleveles ||
+                  [],
 
-              takeaway:
-                row.takeaway,
+                defaultPrice:
+                  row.defaultPrice,
 
-              roomService:
-                row.roomService,
+                dineIn:
+                  row.dineIn,
 
-              delivery:
-                row.delivery,
-            });
+                takeaway:
+                  row.takeaway,
+
+                roomService:
+                  row.roomService,
+
+                delivery:
+                  row.delivery,
+              });
+          }
+
+          /* ==================================================
+             NEW PRODUCT
+
+             Create default price level only.
+          ================================================== */
+
+          else {
+            priceLevelData =
+              buildNewProductPriceLevels({
+                priceLevels,
+
+                defaultPrice:
+                  row.defaultPrice,
+              });
+          }
         }
-
 
         /* ====================================================
            STEP G
-
+           
            EXISTING PRODUCT → UPDATE
         ==================================================== */
 
-        if (existingProduct) {
+        if (
+          existingProduct
+        ) {
           const updateData = {
-            /*
-             * Product name from Excel is always
-             * used because it is required.
-             */
-
             product_name:
               row.productName,
           };
 
-
           /*
-           * Category only changes if Excel
-           * contains a Category value.
+           * Category
            */
-
           if (
             row.categoryName
           ) {
@@ -1100,12 +1258,9 @@ export const importItemsFromExcel = async (
               categoryId;
           }
 
-
           /*
-           * Subcategory only changes if
-           * Excel contains Subcategory.
+           * Subcategory
            */
-
           if (
             row.subCategoryName
           ) {
@@ -1113,69 +1268,81 @@ export const importItemsFromExcel = async (
               subCategoryId;
           }
 
-
           /*
-           * HSN only changes if Excel
-           * contains HSN.
+           * HSN
            */
-
           if (row.hsn) {
             updateData.hsn_code =
               hsnCode;
           }
 
-
           /*
-           * Price levels only change if
-           * Excel contains at least one
-           * price.
+           * Price levels
            */
-
           if (
-            priceLevelData !== null
+            priceLevelData !==
+            null
           ) {
             updateData.Priceleveles =
               priceLevelData;
           }
 
+          await productModel.findOneAndUpdate(
+            {
+              _id:
+                existingProduct._id,
 
-          await productModel.findByIdAndUpdate(
-            existingProduct._id,
+              cmp_id,
+            },
 
             {
-              $set: updateData,
+              $set:
+                updateData,
             },
 
             {
               new: true,
 
-              runValidators: true,
+              runValidators:
+                true,
             }
           );
 
-
           result.updated++;
+
+          if (
+            matchedBy ===
+            "itemId"
+          ) {
+            result.matchedByItemId++;
+          }
+
+          if (
+            matchedBy ===
+            "productName"
+          ) {
+            result.matchedByProductName++;
+          }
 
           continue;
         }
 
-
         /* ====================================================
            STEP H
-
+           
            PRODUCT DOESN'T EXIST → CREATE
+           
+           This happens ONLY when:
+           
+           Item ID was empty
+           AND
+           Product Name wasn't found.
         ==================================================== */
 
-        /*
-         * Product Name is already guaranteed
-         * to exist here.
-         */
-
         const primaryUserId =
-          req.user?.Primary_user_id ||
+          req.owner ||
           req.user?.primary_user_id ||
           req.user?.primaryUserId;
-
 
         if (!primaryUserId) {
           throw new Error(
@@ -1183,18 +1350,18 @@ export const importItemsFromExcel = async (
           );
         }
 
-
         /*
-         * Generate unique itemCode because
          * Product.itemCode is unique.
+         *
+         * Generate one for imported
+         * products because your Excel doesn't
+         * contain Item Code.
          */
-
         const generatedItemCode =
           `IMP-${Date.now()}-${Math.random()
             .toString(36)
             .substring(2, 10)
             .toUpperCase()}`;
-
 
         const newProductData = {
           product_name:
@@ -1215,16 +1382,21 @@ export const importItemsFromExcel = async (
             0,
 
           Primary_user_id:
-            primaryUserId,
+           primaryUserId,
 
+          /*
+           * Required by Product schema.
+           *
+           * Since the Excel file doesn't have
+           * Unit, use NOS.
+           */
           unit:
             "NOS",
         };
 
-
-        /*
-         * Category is optional.
-         */
+        /* ==================================================
+           CATEGORY
+        ================================================== */
 
         if (
           categoryId
@@ -1233,10 +1405,9 @@ export const importItemsFromExcel = async (
             categoryId;
         }
 
-
-        /*
-         * Subcategory is optional.
-         */
+        /* ==================================================
+           SUBCATEGORY
+        ================================================== */
 
         if (
           subCategoryId
@@ -1245,10 +1416,9 @@ export const importItemsFromExcel = async (
             subCategoryId;
         }
 
-
-        /*
-         * HSN is optional.
-         */
+        /* ==================================================
+           HSN
+        ================================================== */
 
         if (
           hsnCode
@@ -1257,23 +1427,25 @@ export const importItemsFromExcel = async (
             hsnCode;
         }
 
-
-        /*
-         * Prices are optional.
-         */
+        /* ==================================================
+           PRICE LEVEL
+        ================================================== */
 
         if (
-          priceLevelData !== null
+          priceLevelData !==
+          null
         ) {
           newProductData.Priceleveles =
             priceLevelData;
         }
 
+        /* ==================================================
+           CREATE PRODUCT
+        ================================================== */
 
         await productModel.create(
           newProductData
         );
-
 
         result.created++;
       } catch (error) {
@@ -1291,7 +1463,6 @@ export const importItemsFromExcel = async (
         });
       }
     }
-
 
     /* ========================================================
        FINAL RESPONSE
@@ -1318,8 +1489,21 @@ export const importItemsFromExcel = async (
       failed:
         result.failed,
 
+      matched:
+        result.matchedByItemId +
+        result.matchedByProductName,
+
+      matchedByItemId:
+        result.matchedByItemId,
+
+      matchedByProductName:
+        result.matchedByProductName,
+
       errors:
         result.errors,
+
+      ignoredDetails:
+        result.ignoredDetails,
     });
   } catch (error) {
     console.error(
