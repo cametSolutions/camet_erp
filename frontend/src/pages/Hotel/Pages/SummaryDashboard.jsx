@@ -9,7 +9,11 @@ import api from "@/api/api";
 import { AlertCircle, CalendarIcon, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 
@@ -24,7 +28,7 @@ const SummaryDashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const company = useSelector(
-    (state) => state.secSelectedOrganization.secSelectedOrg
+    (state) => state.secSelectedOrganization.secSelectedOrg,
   );
 
   const cmp_id = company?._id;
@@ -56,7 +60,6 @@ const SummaryDashboard = () => {
     );
     return response.data;
   };
-
 
   const fetchDashboardCompanyRevenueBreakdown = async () => {
     const response = await api.get(
@@ -106,7 +109,12 @@ const SummaryDashboard = () => {
     refetch: refetchTotals,
     isFetching: isTotalsFetching,
   } = useQuery({
-    queryKey: ["dashboardSummary", "consolidatedTotals", cmp_id, selectedDateParam],
+    queryKey: [
+      "dashboardSummary",
+      "consolidatedTotals",
+      cmp_id,
+      selectedDateParam,
+    ],
     queryFn: fetchDashboardConsolidatedTotals,
     enabled: !!cmp_id && !!primaryUserId,
     staleTime: 30 * 60 * 1000, // 30 minutes
@@ -122,7 +130,12 @@ const SummaryDashboard = () => {
     refetch: refetchRevenueBreakdown,
     isFetching: isRevenueBreakdownFetching,
   } = useQuery({
-    queryKey: ["dashboardSummary", "companyRevenueBreakdown", primaryUserId, selectedDateParam],
+    queryKey: [
+      "dashboardSummary",
+      "companyRevenueBreakdown",
+      primaryUserId,
+      selectedDateParam,
+    ],
     queryFn: fetchDashboardCompanyRevenueBreakdown,
     enabled: !!cmp_id && !!primaryUserId,
     staleTime: 30 * 60 * 1000, // 30 minutes
@@ -130,7 +143,7 @@ const SummaryDashboard = () => {
     refetchOnWindowFocus: false,
   });
 
-  console.log(revenueBreakdownData)
+  console.log(revenueBreakdownData);
 
   const {
     data: dailyCollectionBreakdownData,
@@ -140,7 +153,12 @@ const SummaryDashboard = () => {
     refetch: refetchDailyCollectionBreakdown,
     isFetching: isDailyCollectionBreakdownFetching,
   } = useQuery({
-    queryKey: ["dashboardSummary", "dailyCollectionBreakdown", primaryUserId, selectedDateParam],
+    queryKey: [
+      "dashboardSummary",
+      "dailyCollectionBreakdown",
+      primaryUserId,
+      selectedDateParam,
+    ],
     queryFn: fetchDashboardCompanyDailyCollectionBreakdown,
     enabled: !!cmp_id && !!primaryUserId,
     staleTime: 30 * 60 * 1000,
@@ -156,7 +174,12 @@ const SummaryDashboard = () => {
     refetch: refetchMonthlyCollectionBreakdown,
     isFetching: isMonthlyCollectionBreakdownFetching,
   } = useQuery({
-    queryKey: ["dashboardSummary", "monthlyCollectionBreakdown", primaryUserId, selectedDateParam],
+    queryKey: [
+      "dashboardSummary",
+      "monthlyCollectionBreakdown",
+      primaryUserId,
+      selectedDateParam,
+    ],
     queryFn: fetchDashboardCompanyMonthlyCollectionBreakdown,
     enabled: !!cmp_id && !!primaryUserId,
     staleTime: 30 * 60 * 1000,
@@ -172,7 +195,12 @@ const SummaryDashboard = () => {
     refetch: refetchRoomCountSummary,
     isFetching: isRoomCountSummaryFetching,
   } = useQuery({
-    queryKey: ["dashboardSummary", "roomCountSummary", primaryUserId, selectedDateParam],
+    queryKey: [
+      "dashboardSummary",
+      "roomCountSummary",
+      primaryUserId,
+      selectedDateParam,
+    ],
     queryFn: fetchDashboardRoomCountSummary,
     enabled: !!cmp_id && !!primaryUserId,
     staleTime: 30 * 60 * 1000,
@@ -188,7 +216,12 @@ const SummaryDashboard = () => {
     refetch: refetchPropertySalesSummary,
     isFetching: isPropertySalesSummaryFetching,
   } = useQuery({
-    queryKey: ["dashboardSummary", "propertySalesSummary", primaryUserId, selectedDateParam],
+    queryKey: [
+      "dashboardSummary",
+      "propertySalesSummary",
+      primaryUserId,
+      selectedDateParam,
+    ],
     queryFn: fetchDashboardPropertySalesSummary,
     enabled: !!cmp_id && !!primaryUserId,
     staleTime: 30 * 60 * 1000,
@@ -236,7 +269,7 @@ const SummaryDashboard = () => {
     ]);
   };
 
-  console.log(propertySalesSummaryData)
+  console.log(propertySalesSummaryData);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -245,7 +278,6 @@ const SummaryDashboard = () => {
       </div>
 
       <div className="px-3 py-4 sm:px-4 sm:py-5 md:px-5 md:py-6 max-w-7xl mx-auto">
-
         {/* Header row */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-5 sm:mb-6 bg-slate-100 px-4 py-4 sm:px-5 sm:py-5 rounded-xl">
           <div className="min-w-0">
@@ -265,7 +297,10 @@ const SummaryDashboard = () => {
               disabled={isFetching}
               className="flex items-center gap-2 rounded-xl border-gray-200 bg-white text-sm text-gray-700 hover:bg-gray-50"
             >
-              <RefreshCw size={14} className={isFetching ? "animate-spin" : ""} />
+              <RefreshCw
+                size={14}
+                className={isFetching ? "animate-spin" : ""}
+              />
               {isFetching ? "Refreshing..." : "Refresh Dashboard"}
             </Button>
 
@@ -291,15 +326,25 @@ const SummaryDashboard = () => {
             </Popover>
 
             <button className="flex items-center gap-2 px-3 py-2 sm:px-4 rounded-xl bg-[#0f172a] text-sm text-white font-medium hover:bg-[#1e293b] active:bg-[#0a101e] transition">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M8 3v10M3 8h10"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
               </svg>
               <span className="hidden sm:inline">Export Report</span>
             </button>
           </div>
         </div>
 
-      
         {/* Loading */}
         {isLoading && <SummaryCardsSkeleton />}
 
@@ -319,7 +364,10 @@ const SummaryDashboard = () => {
                 disabled={isFetching}
                 className="w-fit flex items-center gap-2"
               >
-                <RefreshCw size={13} className={isFetching ? "animate-spin" : ""} />
+                <RefreshCw
+                  size={13}
+                  className={isFetching ? "animate-spin" : ""}
+                />
                 {isFetching ? "Retrying…" : "Retry"}
               </Button>
             </AlertDescription>
@@ -332,7 +380,10 @@ const SummaryDashboard = () => {
             <SummaryCards
               totalRevenue={fmt(data.totalRevenue)}
               totalTax={fmt(data.totalTax)}
-              finalRevenue={fmt(Number(propertySalesSummaryData?.totalPropertySales) - Number(data.totalTax)   )}
+              finalRevenue={fmt(
+                Number(propertySalesSummaryData?.totalPropertySales) -
+                  Number(data.totalTax),
+              )}
               revenueBreakdown={revenueBreakdownData?.companyWiseRevenue ?? []}
               dailyCollection={fmt(data.dailyCollection)}
               dailyCollectionBreakdown={
@@ -342,20 +393,38 @@ const SummaryDashboard = () => {
               monthlyCollectionBreakdown={
                 monthlyCollectionBreakdownData?.companyWiseCollection ?? []
               }
-              totalPropertySales={fmt(propertySalesSummaryData?.totalPropertySales)}
+              totalPropertySales={fmt(
+                propertySalesSummaryData?.totalPropertySales,
+              )}
               totalHotelSales={fmt(propertySalesSummaryData?.totalHotelSales)}
-              totalHotelSalesTax={fmt(propertySalesSummaryData?.totalHotelSalesTax)}
-              grossSalesHotel={fmt(propertySalesSummaryData?.totalHotelSaleWithOutTax)}
-              totalRestaurantSales={fmt(propertySalesSummaryData?.totalRestaurantSales)}
-              totalRestaurantSalesTax={fmt(propertySalesSummaryData?.totalRestaurantTax)}
-              grossRestaurantSales={fmt(propertySalesSummaryData?.totalRestaurantSaleWithOutTax)}
+              totalHotelSalesTax={fmt(
+                propertySalesSummaryData?.totalHotelSalesTax,
+              )}
+              grossSalesHotel={fmt(
+                propertySalesSummaryData?.totalHotelSaleWithOutTax,
+              )}
+              totalRestaurantSales={fmt(
+                propertySalesSummaryData?.totalRestaurantSales,
+              )}
+              totalRestaurantSalesTax={fmt(
+                propertySalesSummaryData?.totalRestaurantTax,
+              )}
+              grossRestaurantSales={fmt(
+                propertySalesSummaryData?.totalRestaurantSaleWithOutTax,
+              )}
               propertySalesBreakdown={
                 propertySalesSummaryData?.companyWisePropertySales ?? []
               }
               totalRooms={String(roomCountSummaryData?.totalRooms ?? 0)}
-              totalAvailableRooms={String(roomCountSummaryData?.totalAvailableRooms ?? 0)}
-              totalBlockedRooms={String(roomCountSummaryData?.totalBlockedRooms ?? 0)}
-              roomCountBreakdown={roomCountSummaryData?.companyWiseRoomCount ?? []}
+              totalAvailableRooms={String(
+                roomCountSummaryData?.totalAvailableRooms ?? 0,
+              )}
+              totalBlockedRooms={String(
+                roomCountSummaryData?.totalBlockedRooms ?? 0,
+              )}
+              roomCountBreakdown={
+                roomCountSummaryData?.companyWiseRoomCount ?? []
+              }
               dailyCash={fmt(data.cashCollection?.daily)}
               dailyBank={fmt(data.bankCollection?.daily)}
               monthlyCash={fmt(data.cashCollection?.monthly)}

@@ -9,6 +9,7 @@ import ReceiptModel from "../models/receiptModel.js";
 import Party from "../models/partyModel.js";
 import { formatToLocalDate } from "./helper.js";
 
+
 export const buildDatabaseFilterForRoom = (params) => {
   const filter = {
     cmp_id: params.cmp_id,
@@ -399,3 +400,6 @@ export const buildSplitReceiptsForRestaurant = async ({
 
   return createdReceipts;
 };
+
+
+;
