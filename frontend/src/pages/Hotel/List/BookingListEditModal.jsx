@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import HotelTabContent from "./HotelTabContent";
 import RestaurantTabContent from "./RestaurantTabContent";
 
-
+   
 // ── Helpers ──
 const getPaymentMethod = (sourceType) => {
   switch (sourceType?.toLowerCase()) {
@@ -67,12 +67,14 @@ const {
 
   const restaurantSales = restaurantSalesResponse?.data ?? [];
 
+  console.log(sourcesResponse)
+
   const combinedSources = (() => {
     if (!sourcesResponse?.data) return [];
     const { banks = [], cashs = [] } = sourcesResponse.data;
     return [
-      ...cashs.map((c) => ({ id: c._id, name: c.cash_ledname, type: c.under })),
-      ...banks.map((b) => ({ id: b._id, name: b.bank_ledname, type: b.under })),
+      ...cashs.map((c) => ({ id: c._id, name: c.cash_ledname, type: c.under || "cash" })),
+      ...banks.map((b) => ({ id: b._id, name: b.bank_ledname, type: b.under || "bank" })),
     ];
   })();
 
@@ -116,6 +118,7 @@ const {
             ? { _id: p.customer || p.source || "", partyName: p.customerName || "" }
             : null,
           creditPartyId: isCredit ? (p.customer || p.source || "") : "",
+          paymentId:     p.paymentId,
         };
       });
 
@@ -154,70 +157,97 @@ const {
   };
 
   // ── Handler: ledger source change (non-credit rows) ──
-  const handleSourceChange = (index, sourceId) => {
-    const selected = combinedSources.find((s) => s.id === sourceId);
-    setPayments((prev) =>
-      prev.map((row, i) =>
-        i === index
-          ? {
-              ...row,
-              source:        sourceId,
-              sourceType:    selected?.type || "cash",
-              type:          selected?.type || "cash",
-              subsource:     selected?.name || "",
-              paymentMethod: getPaymentMethod(selected?.type || "cash"),
-            }
-          : row
-      )
-    );
-  };
+const handleSourceChange = (index, sourceId) => {
+  const selected = combinedSources.find((s) => s.id === sourceId);
+
+  setPayments((prev) =>
+    prev.map((row, i) =>
+      i === index
+        ? {
+            ...row,
+
+            source: sourceId,
+            sourceType: selected?.type?.toLowerCase() || "cash",
+            type: selected?.type?.toLowerCase() || "cash",
+
+            subsource: selected?.name || "",
+
+            paymentMethod: getPaymentMethod(
+              selected?.type?.toLowerCase()
+            ),
+          }
+        : row
+    )
+  );
+};
 
   // ── Handler: payment type change (e.g. Cash → Credit) ──
-  const handleSourceTypeChange = (index, newType) => {
-    const isCredit = newType.toLowerCase() === "credit";
+const handleSourceTypeChange = (index, newType) => {
+  const type = newType.toLowerCase();
+  const isCredit = type === "credit";
 
- 
-    
-    setPayments((prev) =>
-      prev.map((row, i) =>
-        i === index
-          ? {
-              ...row,
-              sourceType:    newType.toLowerCase(),
-              type:          newType.toLowerCase(),
-              paymentMethod: getPaymentMethod(newType),
-              source:        isCredit ? "" : row.source,
-              subsource:     isCredit ? "credit" : row.subsource,
-              creditParty:   isCredit ? row.creditParty : null,
-              creditPartyId: isCredit ? row.creditPartyId : "",
-            }
-          : row
-      )
-    );
-  };
+  setPayments((prev) =>
+    prev.map((row, i) => {
+      if (i !== index) return row;
+
+      return {
+        ...row,
+
+        sourceType: type,
+        type,
+        paymentMethod: getPaymentMethod(type),
+
+        source: "",
+        subsource: isCredit ? "credit" : "",
+
+        creditParty: isCredit ? row.creditParty : null,
+        creditPartyId: isCredit ? row.creditPartyId : "",
+
+        customerName: isCredit
+          ? row.customerName
+          : "",
+      };
+    })
+  );
+};
 
   // ── Handler: select credit party for a row ──
-  const handleCreditPartyChange = (index, party) => {
-    setPayments((prev) =>
-      prev.map((row, i) =>
-        i === index
-          ? {
-              ...row,
-              source:        party?._id || "",
-              subsource:     "credit",
-              creditParty:   party
-                ? { _id: party._id, partyName: party.partyName, mobileNumber: party.mobileNumber || "" }
-                : null,
-              creditPartyId: party?._id || "",
-              customerName:  party?.partyName || row.customerName,
-            }
-          : row
-      )
-    );
-  };
+const handleCreditPartyChange = (index, party) => {
+  setPayments((prev) =>
+    prev.map((row, i) =>
+      i === index
+        ? {
+            ...row,
+
+            sourceType: "credit",
+            type: "credit",
+
+            source: party?._id || "",
+            subsource: "credit",
+
+            paymentMethod: "Credit",
+
+            creditParty: party
+              ? {
+                  _id: party._id,
+                  partyName: party.partyName,
+                  mobileNumber: party.mobileNumber || "",
+                }
+              : null,
+
+            creditPartyId: party?._id || "",
+
+            customerName: party?.partyName || "",
+          }
+        : row
+    )
+  );
+};
 
   const handleSave = async () => {
     setSaveLoading(true);
+    console.log(payments)
+
     try {
       const formattedPayments = payments.map((p) => {
         const isCredit = p.sourceType?.toLowerCase() === "credit";
@@ -232,6 +262,7 @@ const {
           underCategory: p.underCategory,
           transactionNo: p.transactionNo,
           upiNo:         p.upiNo,
+          paymentId:     p.paymentId,
           ...(isCredit && { creditPartyId: p.creditPartyId }),
         };
       });

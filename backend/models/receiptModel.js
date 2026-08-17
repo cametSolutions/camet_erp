@@ -66,7 +66,7 @@ const receiptSchema = new mongoose.Schema(
       newAddress: { type: Object },
     },
 
-     guest: {
+    guest: {
       _id: { type: Schema.Types.ObjectId, ref: "Party" },
       partyName: { type: String },
       partyType: { type: String },
@@ -119,7 +119,16 @@ const receiptSchema = new mongoose.Schema(
     paymentMethod: {
       type: String,
       required: true,
-      enum: ["Online", "Cash", "Cheque","credit","Bank","upi","card","bank"],
+      enum: [
+        "Online",
+        "Cash",
+        "Cheque",
+        "credit",
+        "Bank",
+        "upi",
+        "card",
+        "bank",
+      ],
     },
 
     // Payment details with references
@@ -138,7 +147,7 @@ const receiptSchema = new mongoose.Schema(
     note: { type: String },
 
     isCancelled: { type: Boolean, default: false },
-      cancelledAt: {
+    cancelledAt: {
       type: Date,
     },
     cancelledBy: {
@@ -153,12 +162,14 @@ const receiptSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    
-    uniqueReceiptNumber: {type: Number,default: null,},
+    paymentId: {
+      type: mongoose.Schema.Types.ObjectId,
+    },
+    uniqueReceiptNumber: { type: Number, default: null },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 receiptSchema.pre("save", async function (next) {
@@ -183,7 +194,7 @@ receiptSchema.pre("save", async function (next) {
 // 1. Primary unique identifier (receiptNumber per company)
 receiptSchema.index(
   { cmp_id: 1, series_id: 1, receiptNumber: 1 },
-  { unique: true, name: "unique_receipt_number_per_series" }
+  { unique: true, name: "unique_receipt_number_per_series" },
 );
 
 // 3. Most common query pattern (company + date sorting)
@@ -215,7 +226,7 @@ receiptSchema.index(
   {
     name: "series_number_validation_idx",
     background: true,
-  }
+  },
 );
 
 export default mongoose.model("Receipt", receiptSchema);

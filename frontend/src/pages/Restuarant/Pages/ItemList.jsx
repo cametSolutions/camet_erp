@@ -131,6 +131,9 @@ const handleExcelExport = async () => {
       {
         withCredentials: true,
         responseType: "blob",
+        params: {
+          under: "restaurant",
+        },
       }
     );
 
@@ -182,6 +185,9 @@ const handleExcelImport = async (event) => {
       formData,
       {
         withCredentials: true,
+        params: {
+          under: "restaurant",
+        },
       }
     );
 

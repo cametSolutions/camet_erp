@@ -90,7 +90,7 @@ function ItemRegistration() {
         <div className="">
           <TitleDiv
             loading={loading}
-            title="Add Room"
+            title="Add Item"
             from="/sUsers/itemList"
           />
           <ItemRegisterComponent

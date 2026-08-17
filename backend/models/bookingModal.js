@@ -228,6 +228,7 @@ const bookingSchema = new mongoose.Schema(
     paymentMetaData:{type: Object},
     checkoutpaymenttypedetails: [
       {
+        paymentId: { type: mongoose.Schema.Types.ObjectId },
         customerName: { type: String },
         mode: { type: String },
         amount: { type: Number },
