@@ -12,7 +12,7 @@ function ItemRegisterComponent({
   sendToParent,
   editData
 }) {
-
+console.log(optionsData)
   const [priceLevelRows, setPriceLevelRows] = useState([
     { pricelevel: "", pricerate: "" }
   ])
@@ -401,7 +401,7 @@ function ItemRegisterComponent({
   optionsData?.subcategory
     ?.filter(
       (option) =>
-        String(option?.category_id) ===
+        String(option?.category) ===
         String(roomData.foodCategory)
     )
     .map((option, index) => (
