@@ -1021,6 +1021,8 @@ function AvailableRooms({
     }
   };
 
+  console.log(bookings)
+
   const bookedRoomIds = bookings.map((b) => b.roomId);
   return showHistory ? (
     <TariffHistory
@@ -1517,21 +1519,22 @@ function AvailableRooms({
                         : "₹" + Number(totalAmount).toFixed(2)}
                     </td>
                     <td colSpan={3}></td>
+
                     <td className="px-1 py-2 font-bold text-blue-700 text-center text-xs">
                       <div className="flex gap-2">
-                        {formData?.paxTotal && (
+                        {bookings.length > 0  && (
                           <span>
                             Pax ₹
                             {Number(
-                              formData.paxTotal * formData.stayDays,
+                              bookings.reduce((acc, item) => acc + item.additionalPaxAmountWithTax, 0)
                             ).toFixed(0)}
                           </span>
                         )}
-                        {formData?.foodPlanTotal && (
+                        {bookings.length > 0 && (
                           <span>
                             Food ₹
                             {Number(
-                              formData.foodPlanTotal * formData.stayDays,
+                               bookings.reduce((acc, item) => acc + item.foodPlanAmountWithTax, 0)
                             ).toFixed(0)}
                           </span>
                         )}

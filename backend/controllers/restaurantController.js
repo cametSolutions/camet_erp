@@ -131,7 +131,7 @@ export const addItem = async (req, res) => {
 export const getItems = async (req, res) => {
   try {
     const params = extractRequestParams(req);
-    const filter = buildDatabaseFilterForRoom(params);
+    const filter = await buildDatabaseFilterForRoom(params);
 
     const { items, totalItems } = await fetchRoomsFromDatabase(filter, params);
 
@@ -155,7 +155,7 @@ export const getItems = async (req, res) => {
 export const getAllItems = async (req, res) => {
   try {
     const params = extractRequestParams(req);
-    const filter = buildDatabaseFilterForRoom(params);
+    const filter = await buildDatabaseFilterForRoom(params);
 
     // Pagination
     const page = parseInt(req.query.page) || 1;
@@ -4609,10 +4609,29 @@ export const transferKotBills = async (req, res) => {
 export const exportItemsToExcel = async (req, res) => {
   try {
     const { cmp_id } = req.params;
+    const { under } = req.query;
 
     const filter = {
       cmp_id,
     };
+
+    if (req.owner) {
+      filter.Primary_user_id = req.owner;
+    }
+
+    if (under) {
+      const categories = await Category.find({
+        cmp_id,
+        ...(req.owner && { Primary_user_id: req.owner }),
+        under,
+      })
+        .select("_id")
+        .lean();
+
+      filter.category = {
+        $in: categories.map((category) => category._id),
+      };
+    }
 
    const items = await productModel
   .find(filter)

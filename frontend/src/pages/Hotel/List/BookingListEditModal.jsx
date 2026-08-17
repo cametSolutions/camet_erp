@@ -67,12 +67,14 @@ const {
 
   const restaurantSales = restaurantSalesResponse?.data ?? [];
 
+  console.log(sourcesResponse)
+
   const combinedSources = (() => {
     if (!sourcesResponse?.data) return [];
     const { banks = [], cashs = [] } = sourcesResponse.data;
     return [
-      ...cashs.map((c) => ({ id: c._id, name: c.cash_ledname, type: c.under })),
-      ...banks.map((b) => ({ id: b._id, name: b.bank_ledname, type: b.under })),
+      ...cashs.map((c) => ({ id: c._id, name: c.cash_ledname, type: c.under || "cash" })),
+      ...banks.map((b) => ({ id: b._id, name: b.bank_ledname, type: b.under || "bank" })),
     ];
   })();
 
