@@ -1041,7 +1041,7 @@ export const calculateStayDays = async (doc, room) => {
       let swappedRoomData = doc?.selectedRooms.find(
         (r) => r.roomId == swappedRoomObject.toRoomId,
       );
-      let isRoomSwappedData = doc?.roomSwapHistory.find(
+      let isRoomSwappedData = doc?.roomSwapHistory?.find(
         (r) => r.toRoomId == room.roomId,
       );
 

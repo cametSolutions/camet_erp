@@ -249,7 +249,7 @@ export const calculateStayDays = (doc, room, arrival, checkOut, days) => {
     let swappingDate = normalizeToDate(room.swappingDateFrom);
     let arrivalDate = normalizeToDate(arrival);
 console.log(arrivalDate, checkOut, swappingDate)
-    let swappedRoomObject = doc?.roomSwapHistory.find(
+    let swappedRoomObject = doc?.roomSwapHistory?.find(
       (r) => r.fromRoomId == room.roomId,
     );
 
@@ -257,7 +257,7 @@ console.log(arrivalDate, checkOut, swappingDate)
       let swappedRoomData = doc?.selectedRooms.find(
         (r) => r.roomId == swappedRoomObject.toRoomId,
       );
-      let isRoomSwappedData = doc?.roomSwapHistory.find(
+      let isRoomSwappedData = doc?.roomSwapHistory?.find(
         (r) => r.toRoomId == room.roomId,
       );
 

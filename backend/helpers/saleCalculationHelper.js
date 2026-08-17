@@ -24,7 +24,7 @@ export const calculateStayDays = (doc, room) => {
   if (room.isSwapped) {
     start = arrival;
     end = swap;
-    let swappedRoomObject = doc?.roomSwapHistory.find(
+    let swappedRoomObject = doc?.roomSwapHistory?.find(
       (r) => r.fromRoomId == room.roomId,
     );
     console.log(swappedRoomObject);
@@ -32,7 +32,7 @@ export const calculateStayDays = (doc, room) => {
       let swappedRoomData = doc?.selectedRooms.find(
         (r) => r.roomId == swappedRoomObject.toRoomId,
       );
-      let isRoomSwappedData = doc?.roomSwapHistory.find(
+      let isRoomSwappedData = doc?.roomSwapHistory?.find(
         (r) => r.toRoomId == room.roomId,
       );
 
