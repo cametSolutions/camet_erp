@@ -29,7 +29,7 @@ import {
 } from "react-icons/md";
 import uploadImageToCloudinary from "../../../../utils/uploadCloudinary";
 import { calculateStayDays } from "../Helper/hotelHelper";
-import { set } from "mongoose";
+
 
 const nextIsoDate = (value) => {
   const date = new Date(value);
@@ -431,6 +431,8 @@ function BookingForm({
             checkOutDate,
             diffDays,
           );
+
+          console.log(stayDays);
 
           return {
             ...room,

@@ -14,6 +14,8 @@ export const taxCalculator = (
       return null;
     }
 
+    console.log(data)
+
     const { hsnDetails } = data;
 
     console.log("data", data);

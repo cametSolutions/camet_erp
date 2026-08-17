@@ -12,7 +12,7 @@ function ItemRegisterComponent({
   sendToParent,
   editData
 }) {
-
+console.log(optionsData)
   const [priceLevelRows, setPriceLevelRows] = useState([
     { pricelevel: "", pricerate: "" }
   ])
@@ -171,6 +171,7 @@ function ItemRegisterComponent({
 
   const handleChange = (e) => {
     const { name, value } = e.target
+    console.log(name, value)
     if (name === "itemCode") {
       setRoomData({ ...roomData, itemCode: value })
     } else if (name === "roomName") {
@@ -395,11 +396,19 @@ function ItemRegisterComponent({
                 onChange={handleChange}
               >
                 <option value="">Select food type</option>
-                {optionsData?.subcategory?.map((option, index) => (
-                  <option key={index} value={option?._id}>
-                    {option?.name}
-                  </option>
-                ))}
+
+{roomData.foodCategory &&
+  optionsData?.subcategory
+    ?.filter(
+      (option) =>
+        String(option?.category) ===
+        String(roomData.foodCategory)
+    )
+    .map((option, index) => (
+      <option key={index} value={option?._id}>
+        {option?.name}
+      </option>
+    ))}
               </select>
             </div>
           </div>

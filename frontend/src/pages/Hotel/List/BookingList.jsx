@@ -203,7 +203,7 @@ function BookingList() {
   );
   const permission = useSelector((state) => state.permissionData?.permissions);
 
-console.log(permission);
+  console.log(permission);
 
   const secondaryUserRole =
     JSON.parse(localStorage.getItem("sUserData"))?.role || "user";
@@ -311,7 +311,7 @@ console.log(permission);
 
         const normalizeToDate = (d) => {
           const nd = new Date(d);
-          nd.setHours(0, 0, 0, 0);
+          nd.setUTCHours(0, 0, 0, 0);
           return nd;
         };
         const swapDate = room?.swappingDateFrom
@@ -320,9 +320,31 @@ console.log(permission);
 
         // Old room before swap: from arrival to day BEFORE swap
         if (room?.isSwapped && room?.swappingDateFrom) {
-          const swappingDate = normalizeToDate(room.swappingDateFrom);
-          const arrivalDate = normalizeToDate(checkout?.arrivalDate);
+          let swappingDate = normalizeToDate(room.swappingDateFrom);
+          let arrivalDate = normalizeToDate(checkout?.arrivalDate);
 
+        let swappedRoomObject = checkout?.roomSwapHistory.find(
+          (r) => r.fromRoomId == room.roomId,
+        );
+        console.log(swappedRoomObject);
+        if (swappedRoomObject?.toRoomId) {
+          let swappedRoomData = checkout?.selectedRooms.find(
+            (r) => r.roomId == swappedRoomObject.toRoomId,
+          );
+          let isRoomSwappedData = checkout?.roomSwapHistory.find(
+            (r) => r.toRoomId == room.roomId,
+          )
+      
+          if (swappedRoomData?.isSwapped === false  && isRoomSwappedData) {
+            arrivalDate = normalizeToDate(swappedRoomData.swappingDateFrom);
+            arrivalDate.setDate(arrivalDate.getDate() - 1);
+          }else{
+            console.log(room)
+            arrivalDate = normalizeToDate(checkout.arrivalDate);
+            swappingDate =  normalizeToDate(room.swappingDateFrom);
+          }
+
+        }
           stayDays = Math.floor(
             (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24),
           );
@@ -2453,7 +2475,7 @@ console.log(permission);
                 </div>
               ) : null}
 
-              {location.pathname === "/sUsers/bookingList"  &&
+              {location.pathname === "/sUsers/bookingList" &&
                 el?.status !== "checkIn" &&
                 el?.status !== "cancelled" && (
                   <button
@@ -2762,8 +2784,11 @@ console.log(permission);
                   </div> */}
                 </div>
               ) : null}
-              {((location.pathname === "/sUsers/bookingList" && (secondaryUserRole === "admin"   || permission?.cancelBooking)) ||
-               ( location.pathname === "/sUsers/checkInList" && (secondaryUserRole === "admin"   || permission?.cancelChecking))) &&
+              {((location.pathname === "/sUsers/bookingList" &&
+                (secondaryUserRole === "admin" || permission?.cancelBooking)) ||
+                (location.pathname === "/sUsers/checkInList" &&
+                  (secondaryUserRole === "admin" ||
+                    permission?.cancelChecking))) &&
                 el?.status !== "cancelled" && (
                   <button
                     onClick={(e) => {
@@ -3088,24 +3113,24 @@ console.log(permission);
                         Reopen Audit
                       </button>
                     )}
-                  {(permission?.nightAudit || secondaryUserRole === "admin")
-                   && (
-                      <button
-                        type="button"
-                        onClick={handleCompleteNightAudit}
-                        disabled={
-                          !isSingleAuditDateSelected ||
-                          isNightAuditLocked ||
-                          nightAuditLoading ||
-                          nightAuditActionLoading
-                        }
-                        className="rounded-md mr-2 bg-[#0f766e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#115e59] disabled:cursor-not-allowed disabled:bg-slate-300"
-                      >
-                        {nightAuditActionLoading
-                          ? "Processing..."
-                          : "Night Audit"}
-                      </button>
-                    )}
+                  {(permission?.nightAudit ||
+                    secondaryUserRole === "admin") && (
+                    <button
+                      type="button"
+                      onClick={handleCompleteNightAudit}
+                      disabled={
+                        !isSingleAuditDateSelected ||
+                        isNightAuditLocked ||
+                        nightAuditLoading ||
+                        nightAuditActionLoading
+                      }
+                      className="rounded-md mr-2 bg-[#0f766e] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#115e59] disabled:cursor-not-allowed disabled:bg-slate-300"
+                    >
+                      {nightAuditActionLoading
+                        ? "Processing..."
+                        : "Night Audit"}
+                    </button>
+                  )}
                 </div>
               )
             }
