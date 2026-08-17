@@ -1033,7 +1033,7 @@ export const calculateStayDays = async (doc, room) => {
     let swappingDate = normalizeToDate(room.swappingDateFrom);
     let arrivalDate = normalizeToDate(doc.arrivalDate);
 
-    let swappedRoomObject = doc?.roomSwapHistory.find(
+    let swappedRoomObject = doc?.roomSwapHistory?.find(
       (r) => r.fromRoomId == room.roomId,
     );
 
