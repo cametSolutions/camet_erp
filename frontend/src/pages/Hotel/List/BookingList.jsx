@@ -47,6 +47,8 @@ import useFetch from "@/customHook/useFetch";
 import PrintModal from "../Components/PrintModal";
 import { calculateDiscountValues } from "../Helper/hotelHelper.js";
 import BookingListEditModal from "./BookingListEditModal";
+import { isAdminUser } from "@/utils/permissions";
+const secUserData = JSON.parse(localStorage.getItem("sUserData"));
 
 const normalizeAuditDate = (value) => {
   if (!value || typeof value !== "string") return "";
@@ -203,7 +205,8 @@ function BookingList() {
   );
   const permission = useSelector((state) => state.permissionData?.permissions);
 
-  console.log(permission);
+  console.log(permission?.editPaymentTypes);
+
 
   const secondaryUserRole =
     JSON.parse(localStorage.getItem("sUserData"))?.role || "user";
@@ -2616,7 +2619,7 @@ function BookingList() {
             </div>
 
             {/* 🔹 ACTION BUTTONS */}
-            <div className="w-32 flex items-center justify-center gap-1">
+            <div className="w-32 flex items-center justify-center  gap-1">
               {((location.pathname === "/sUsers/bookingList" &&
                 el?.status != "checkIn") ||
                 (el?.status != "checkOut" &&
@@ -2721,7 +2724,7 @@ function BookingList() {
                   Print
                 </button>
               )}
-              {location.pathname === "/sUsers/checkOutList" && (
+              {location.pathname === "/sUsers/checkOutList" &&  (isAdminUser(secUserData) || permission?.editPaymentTypes) && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
