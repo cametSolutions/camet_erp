@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/select";
 import CustomerSearchInputBox from "../Components/CustomerSearchInPutBox";
 
-
 const capitalize = (str) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
 
@@ -30,6 +29,8 @@ const HotelTabContent = ({
   onSourceTypeChange,
   onCreditPartyChange,
 }) => {
+
+  console.log(payments);
   return (
     <div className="px-6 py-5 space-y-5">
       {/* Read-only sale summary */}
@@ -51,53 +52,42 @@ const HotelTabContent = ({
       </div>
 
       {/* Party Section — disabled when ANY payment row is credit */}
-      {(() => {
-        const hasCredit = payments.some(
-          (p) => p.sourceType?.toLowerCase() === "credit",
-        );
-        return (
-          <div>
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Party
-            </h4>
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-sm">Party Name</Label>
-                <div
-                  className={hasCredit ? "pointer-events-none opacity-60" : ""}
-                >
-                  <CustomerSearchInputBox
-                    selectedParty={selectedParty}
-                    onSelect={onPartySelect}
-                    placeholder="Search party..."
-                    disabled={hasCredit}
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm">GST Number</Label>
-                <Input
-                  value={gstNo}
-                  onChange={(e) => onGstNoChange(e.target.value)}
-                  placeholder="e.g. 27AAAPA1234A1Z5"
-                  className="h-9 text-sm"
-                  disabled={hasCredit}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm">Billing Address</Label>
-                <Input
-                  value={address}
-                  onChange={(e) => onAddressChange(e.target.value)}
-                  placeholder="Enter billing address"
-                  className="h-9 text-sm"
-                  disabled={hasCredit}
-                />
-              </div>
+
+      <div>
+        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+          Party
+        </h4>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-sm">Party Name</Label>
+            <div>
+              <CustomerSearchInputBox
+                selectedParty={selectedParty}
+                onSelect={onPartySelect}
+                placeholder="Search party..."
+              />
             </div>
           </div>
-        );
-      })()}
+          <div className="space-y-1.5">
+            <Label className="text-sm">GST Number</Label>
+            <Input
+              value={gstNo}
+              onChange={(e) => onGstNoChange(e.target.value)}
+              placeholder="e.g. 27AAAPA1234A1Z5"
+              className="h-9 text-sm"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm">Billing Address</Label>
+            <Input
+              value={address}
+              onChange={(e) => onAddressChange(e.target.value)}
+              placeholder="Enter billing address"
+              className="h-9 text-sm"
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Payment Details */}
       <div>
@@ -123,11 +113,11 @@ const HotelTabContent = ({
                       Payment {index + 1}
                     </span>
                     <span
-                      className={`text-xs border rounded-full px-2 py-0.5 font-medium ${
-                        isCredit
-                          ? "bg-amber-50 border-amber-200 text-amber-700"
-                          : "bg-gray-100 border-gray-200 text-gray-600"
-                      }`}
+                     className={`text-xs border rounded-full px-2 py-0.5 font-medium ${
+  isCredit
+    ? "bg-amber-50 border-amber-200 text-amber-700"
+    : "bg-gray-100 border-gray-200 text-gray-600"
+}`}
                     >
                       {capitalize(row.sourceType)}
                     </span>
@@ -141,29 +131,13 @@ const HotelTabContent = ({
                     <Select
                       value={capitalize(row.sourceType) || "Cash"}
                       onValueChange={(val) => onSourceTypeChange(index, val)}
-                      disabled={isCredit} // ✅ keeps it locked when credit
                     >
-                      <SelectTrigger
-                        className={`h-9 text-sm bg-white ${
-                          isCredit
-                            ? "opacity-70 cursor-not-allowed pointer-events-none bg-amber-50 border-amber-200 text-amber-700"
-                            : ""
-                        }`}
-                      >
+                      <SelectTrigger className={`h-9 text-sm bg-white `}>
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
                         {PAYMENT_TYPES.map((type) => (
-                          <SelectItem
-                            key={type}
-                            value={type}
-                            disabled={type === "Credit"}
-                            className={
-                              type === "Credit"
-                                ? "opacity-40 cursor-not-allowed"
-                                : ""
-                            }
-                          >
+                          <SelectItem key={type} value={type}>
                             {type}
                           </SelectItem>
                         ))}
@@ -181,7 +155,7 @@ const HotelTabContent = ({
 
                 {/* Credit party picker OR Ledger source dropdown */}
                 {isCredit ? (
-                  <div className="space-y-1.5 pointer-events-none opacity-60">
+                  <div className="space-y-1.5">
                     <Label className="text-xs">
                       Credit Party
                       <span className="ml-1 text-amber-600 font-normal text-[11px]">
@@ -237,7 +211,7 @@ const HotelTabContent = ({
                 )}
 
                 {/* Customer name (non-credit only) */}
-                {row.customerName && !isCredit && (
+                {row.customerName && (
                   <p className="text-xs text-muted-foreground">
                     Customer:{" "}
                     <span className="font-medium text-gray-700">

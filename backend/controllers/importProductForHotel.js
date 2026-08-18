@@ -565,6 +565,8 @@ export const importItemsFromExcel = async (
   try {
     const { cmp_id } =
       req.params;
+    const { under } =
+      req.query;
 
     /* ========================================================
        1. VALIDATE COMPANY
@@ -842,10 +844,16 @@ export const importItemsFromExcel = async (
     ] = await Promise.all([
       Category.find({
         cmp_id,
+        ...(under && {
+          under,
+        }),
       }).lean(),
 
       Subcategory.find({
         cmp_id,
+        ...(under && {
+          under,
+        }),
       }).lean(),
 
       PriceLevel.find({

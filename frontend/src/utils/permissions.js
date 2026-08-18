@@ -23,6 +23,7 @@ export const permissionSections = [
       { key: "cancelSale", label: "Cancel Sale" },
       { key: "cancelReceipt", label: "Cancel Receipt" },
       { key: "loginReport", label: "Login Report" },
+      { key: "editPaymentTypes", label: "Edit Payment Types" },
     ],
   },
   {
@@ -196,6 +197,7 @@ export const getRequiredPermissionForPath = (pathname) =>
 
 export const isAdminUser = (user) =>
   user?.role === "admin" || user?.userType === "admin";
+
 
 export const canAccessPath = ({ pathname, user, permissions }) => {
   console.log(pathname, permissions);
