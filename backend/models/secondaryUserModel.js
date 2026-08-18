@@ -62,6 +62,7 @@ const secondaryUserSchema = new mongoose.Schema(
         cancelReceipt: true,
         settings: true,
         loginReport: true,
+        editPaymentTypes: false,
       }),
     },
     userType: {

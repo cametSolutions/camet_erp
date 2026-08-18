@@ -281,9 +281,10 @@ export const convertCheckOutToSale = async (req, res) => {
         // ── Checkout amount types (for display) ──────────────────────────
         let checkoutamounttypes = [];
         if (paymentMode !== "credit") {
-          checkoutamounttypes = split
+          checkoutamounttypes = paymentSplittingArray
             .filter((s) => s.underCategory !== "food")
             .map((s) => ({
+              paymentId: s.paymentId,
               customerName: s.customerName,
               mode: s.subsource,
               amount: Number(s.amount || 0),
@@ -291,6 +292,7 @@ export const convertCheckOutToSale = async (req, res) => {
         } else {
           checkoutamounttypes = [
             {
+              paymentId: paymentSplittingArray[0]?.paymentId || null,
               customerName: paymentDetails.selectedCreditor?.partyName,
               mode: "credit",
               amount: Number(paymentDetails.cashAmount || 0),
@@ -412,6 +414,7 @@ export const convertCheckOutToSale = async (req, res) => {
                   : 0, // pending only for credit
                 session,
                 "checkout",
+                 splitEntry.paymentId
               );
               tallyRows.push(...rows);
             }
@@ -427,6 +430,7 @@ export const convertCheckOutToSale = async (req, res) => {
               amount, // bill_pending_amt ← createReceiptsAndSettlements reduces this
               session,
               "checkout",
+            null
             );
             tallyRows.push(...rows);
           }
@@ -984,6 +988,7 @@ async function createPaymentSplittingArray(
       }
 
       const splitObj = {
+        paymentId: new mongoose.Types.ObjectId(),
         type: splitSourceType,
         amount: Number(split.amount || 0),
         ref_id: resolvedSourceId,
@@ -1027,6 +1032,7 @@ async function createPaymentSplittingArray(
       transactionNo: "",
       underCategory: "room",
       upiNo: "",
+      paymentId: new mongoose.Types.ObjectId(),
     });
 
     restaurantSplitArray.push({
@@ -1043,6 +1049,7 @@ async function createPaymentSplittingArray(
       transactionNo: "",
       underCategory: "food",
       upiNo: "",
+        paymentId: new mongoose.Types.ObjectId(),
     });
   } else {
     const split = paymentDetails?.splitDetails?.[0] ?? {};
@@ -1066,6 +1073,7 @@ async function createPaymentSplittingArray(
           transactionNo: split?.transactionNo ?? "",
           underCategory: "room",
           upiNo: split?.upiNo ?? "",
+            paymentId: new mongoose.Types.ObjectId(),
         });
       }
 
@@ -1084,6 +1092,7 @@ async function createPaymentSplittingArray(
           transactionNo: split?.transactionNo ?? "",
           underCategory: "food",
           upiNo: split?.upiNo ?? "",
+            paymentId: new mongoose.Types.ObjectId(),
         });
       }
     }
@@ -1115,6 +1124,7 @@ async function createPaymentSplittingArray(
           transactionNo: split?.transactionNo ?? "",
           underCategory: "room",
           upiNo: split?.upiNo ?? "",
+            paymentId: new mongoose.Types.ObjectId(),
         });
       }
 
@@ -1133,6 +1143,7 @@ async function createPaymentSplittingArray(
           transactionNo: split?.transactionNo ?? "",
           underCategory: "food",
           upiNo: split?.upiNo ?? "",
+            paymentId: new mongoose.Types.ObjectId(),
         });
       }
     }
@@ -1163,6 +1174,7 @@ async function createPaymentSplittingArray(
         underCategory: "food",
         upiNo: "",
         splitSaleId: null,
+          paymentId: new mongoose.Types.ObjectId(),
       });
     } else {
       splitsToDistribute = restaurantSplitArray.map((s) => ({ ...s }));
@@ -1380,6 +1392,7 @@ async function createTallyEntry(
   pendingAmt, // bill_pending_amt  ← NEW param
   session,
   from = "other",
+  paymentId
 ) {
   const selectedOne = await Party.findOne({ _id: selectedParty }).session(
     session,
@@ -1404,6 +1417,7 @@ async function createTallyEntry(
         advanceDate: new Date(),
         classification: "Dr",
         source: "sales",
+        paymentId,
         ...(from === "checkout" ? { cantChange: true } : {}),
       },
     ],

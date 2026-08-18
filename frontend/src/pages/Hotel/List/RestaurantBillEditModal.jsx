@@ -66,6 +66,7 @@ const RestaurantBillEditModal = ({
       const rows = (sale.paymentSplittingData || []).map((p) => {
         const isCredit = p.sourceType?.toLowerCase() === "credit";
         return {
+          paymentId: p.paymentId || "",
           source: p.source || "",
           sourceType: p.sourceType || "cash",
           type: p.type || p.sourceType || "cash",
@@ -100,6 +101,7 @@ const RestaurantBillEditModal = ({
                 remarks: "",
                 customerName: "",
                 paymentMethod: "Cash",
+                paymentId: "",
                 underCategory: "food",
                 transactionNo: "",
                 upiNo: "",
@@ -119,16 +121,17 @@ const RestaurantBillEditModal = ({
   // ── Handler: ledger source change (non-credit rows) ──
   const handleSourceChange = (index, sourceId) => {
     const selected = combinedSources.find((s) => s.id === sourceId);
+    const selectedType = selected?.type?.toLowerCase() || "cash";
     setPayments((prev) =>
       prev.map((row, i) =>
         i === index
           ? {
               ...row,
               source: sourceId,
-              sourceType: selected?.type || "cash",
-              type: selected?.type || "cash",
+              sourceType: selectedType,
+              type: selectedType,
               subsource: selected?.name || "",
-              paymentMethod: getPaymentMethod(selected?.type || "cash"),
+              paymentMethod: getPaymentMethod(selectedType),
             }
           : row,
       ),
@@ -146,8 +149,8 @@ const RestaurantBillEditModal = ({
               sourceType: newType.toLowerCase(),
               type: newType.toLowerCase(),
               paymentMethod: getPaymentMethod(newType),
-              source: isCredit ? "" : row.source,
-              subsource: isCredit ? "credit" : row.subsource,
+              source: isCredit ? row.creditPartyId || "" : "",
+              subsource: isCredit ? "credit" : "",
               creditParty: isCredit ? row.creditParty : null,
               creditPartyId: isCredit ? row.creditPartyId : "",
             }
@@ -186,6 +189,7 @@ const RestaurantBillEditModal = ({
       const formattedPayments = payments.map((p) => {
         const isCredit = p.sourceType?.toLowerCase() === "credit";
         return {
+          paymentId: p.paymentId,
           source: isCredit ? p.creditPartyId || p.source : p.source,
           sourceType: capitalize(p.sourceType),
           type: p.sourceType?.toLowerCase(),
@@ -315,29 +319,13 @@ const RestaurantBillEditModal = ({
                               onValueChange={(val) =>
                                 handleSourceTypeChange(index, val)
                               }
-                              disabled={isCredit} // ✅ lock the whole select for credit rows
                             >
-                              <SelectTrigger
-                                className={`h-9 text-sm bg-white ${
-                                  isCredit
-                                    ? "opacity-70 cursor-not-allowed pointer-events-none bg-amber-50 border-amber-200 text-amber-700"
-                                    : ""
-                                }`}
-                              >
+                              <SelectTrigger className="h-9 text-sm bg-white">
                                 <SelectValue placeholder="Select type" />
                               </SelectTrigger>
                               <SelectContent>
                                 {PAYMENT_TYPES.map((type) => (
-                                  <SelectItem
-                                    key={type}
-                                    value={type}
-                                    disabled={type === "Credit"} // ✅ Credit visible but unclickable
-                                    className={
-                                      type === "Credit"
-                                        ? "opacity-40 cursor-not-allowed"
-                                        : ""
-                                    }
-                                  >
+                                  <SelectItem key={type} value={type}>
                                     {type}
                                   </SelectItem>
                                 ))}
@@ -355,7 +343,7 @@ const RestaurantBillEditModal = ({
 
                         {/* Credit party picker OR Ledger source dropdown */}
                         {isCredit ? (
-                          <div className="space-y-1.5 pointer-events-none opacity-60">
+                          <div className="space-y-1.5">
                             <Label className="text-xs">
                               Credit Party
                               <span className="ml-1 text-amber-600 font-normal text-[11px]">
