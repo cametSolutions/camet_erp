@@ -171,7 +171,7 @@ function BookingList() {
   const [selectedSaleDate, setSelectedSaleDate] = useState(
     new Date().toISOString().split("T")[0],
   );
-
+const checkoutRequestIdRef = useRef(null);
   console.log(selectedEditBooking?.checkInId?.voucherNumber);
 
   const [
@@ -1441,12 +1441,14 @@ function BookingList() {
     }
   };
   const handleSavePayment = async () => {
-    console.log("hddd");
-    console.log(selectedCheckOut);
-    console.log(selectedCheckOut.length);
-    console.log(paymentMode);
+    if (saveLoader) return; 
 
     setSaveLoader(true);
+
+    if (!checkoutRequestIdRef.current) {
+  checkoutRequestIdRef.current = crypto.randomUUID();
+}
+    
     let paymentDetails;
 
     if (paymentMode === "split") {
@@ -1734,7 +1736,7 @@ function BookingList() {
       console.log("Hhhh");
       console.log(additionalChargeDataBasedOnSelection);
 
-      restaurantSideDiscountAdjustmentArray.length > 0 &&
+      restaurantSideDiscountAdjustmentArray?.length > 0 &&
         (paymentDetails.restaurantSideDiscountAdjustmentArray =
           restaurantSideDiscountAdjustmentArray);
 
@@ -1747,6 +1749,8 @@ function BookingList() {
       dispatch(setOnlineType(selectedOnlinetype));
       dispatch(setRestaurantTag(additionalChargeDataBasedOnSelection));
       setIsPartial(false);
+      setSaveLoader(false);
+      checkoutRequestIdRef.current = null;
       proceedToCheckout(dateandstaysdata, processedCheckoutData);
     } else {
       console.log(restaurantSideDiscountAdjustmentArray);
@@ -1754,6 +1758,7 @@ function BookingList() {
         const response = await api.post(
           `/api/sUsers/convertCheckOutToSale/${cmp_id}`,
           {
+            checkoutRequestId: checkoutRequestIdRef.current,
             selectedSaleDate: selectedSaleDate,
             paymentMethod: paymentMethod,
             paymentDetails: paymentDetails,
@@ -1802,8 +1807,10 @@ function BookingList() {
         setShowPaymentModal(false);
         fetchBookings(1, searchTerm);
         setShowPrintConfirmModal(true);
+        checkoutRequestIdRef.current = null;
       }
     }
+
   };
 
   const handleEnhancedCheckoutConfirm = async (roomAssignments, data) => {
@@ -1907,11 +1914,7 @@ function BookingList() {
   };
   console.log(bookings);
   const proceedToCheckout = (roomAssignments, data) => {
-    console.log(roomAssignments);
-    console.log(data);
 
-    console.log("hhhhhh");
-    setSaveLoader(true);
     const hasPrint1 = configurations[0]?.defaultPrint?.print1;
     let checkoutData;
     let checkinids = null;
@@ -3269,6 +3272,7 @@ function BookingList() {
                   />
                   <button
                     onClick={() => {
+                      if (saveLoader) return;
                       setShowPaymentModal(false);
                       setPaymentMode("single");
                       setCashAmount(0);
@@ -3287,6 +3291,7 @@ function BookingList() {
                       ]);
                       window.location.reload();
                     }}
+                          disabled={saveLoader}
                     className="w-7 h-7 rounded-lg border border-gray-200 dark:border-neutral-700 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -4407,9 +4412,8 @@ function BookingList() {
                   </div>
 
                   <button
-                    onClick={() => {
-                      handleSavePayment();
-                    }}
+              onClick={handleSavePayment}
+  disabled={saveLoader}
                     className={`mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
                       saveLoader
                         ? "bg-gray-100 dark:bg-neutral-700 text-gray-400 cursor-not-allowed"
