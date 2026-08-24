@@ -171,7 +171,7 @@ function BookingList() {
   const [selectedSaleDate, setSelectedSaleDate] = useState(
     new Date().toISOString().split("T")[0],
   );
-const checkoutRequestIdRef = useRef(null);
+  const checkoutRequestIdRef = useRef(null);
   console.log(selectedEditBooking?.checkInId?.voucherNumber);
 
   const [
@@ -206,7 +206,6 @@ const checkoutRequestIdRef = useRef(null);
   const permission = useSelector((state) => state.permissionData?.permissions);
 
   console.log(permission?.editPaymentTypes);
-
 
   const secondaryUserRole =
     JSON.parse(localStorage.getItem("sUserData"))?.role || "user";
@@ -326,28 +325,27 @@ const checkoutRequestIdRef = useRef(null);
           let swappingDate = normalizeToDate(room.swappingDateFrom);
           let arrivalDate = normalizeToDate(checkout?.arrivalDate);
 
-        let swappedRoomObject = checkout?.roomSwapHistory.find(
-          (r) => r.fromRoomId == room.roomId,
-        );
-        console.log(swappedRoomObject);
-        if (swappedRoomObject?.toRoomId) {
-          let swappedRoomData = checkout?.selectedRooms.find(
-            (r) => r.roomId == swappedRoomObject.toRoomId,
+          let swappedRoomObject = checkout?.roomSwapHistory.find(
+            (r) => r.fromRoomId == room.roomId,
           );
-          let isRoomSwappedData = checkout?.roomSwapHistory.find(
-            (r) => r.toRoomId == room.roomId,
-          )
-      
-          if (swappedRoomData?.isSwapped === false  && isRoomSwappedData) {
-            arrivalDate = normalizeToDate(swappedRoomData.swappingDateFrom);
-            arrivalDate.setDate(arrivalDate.getDate() - 1);
-          }else{
-            console.log(room)
-            arrivalDate = normalizeToDate(checkout.arrivalDate);
-            swappingDate =  normalizeToDate(room.swappingDateFrom);
-          }
+          console.log(swappedRoomObject);
+          if (swappedRoomObject?.toRoomId) {
+            let swappedRoomData = checkout?.selectedRooms.find(
+              (r) => r.roomId == swappedRoomObject.toRoomId,
+            );
+            let isRoomSwappedData = checkout?.roomSwapHistory.find(
+              (r) => r.toRoomId == room.roomId,
+            );
 
-        }
+            if (swappedRoomData?.isSwapped === false && isRoomSwappedData) {
+              arrivalDate = normalizeToDate(swappedRoomData.swappingDateFrom);
+              arrivalDate.setDate(arrivalDate.getDate() - 1);
+            } else {
+              console.log(room);
+              arrivalDate = normalizeToDate(checkout.arrivalDate);
+              swappingDate = normalizeToDate(room.swappingDateFrom);
+            }
+          }
           stayDays = Math.floor(
             (swappingDate - arrivalDate) / (1000 * 60 * 60 * 24),
           );
@@ -1441,14 +1439,14 @@ const checkoutRequestIdRef = useRef(null);
     }
   };
   const handleSavePayment = async () => {
-    if (saveLoader) return; 
+    if (saveLoader) return;
 
     setSaveLoader(true);
 
     if (!checkoutRequestIdRef.current) {
-  checkoutRequestIdRef.current = crypto.randomUUID();
-}
-    
+      checkoutRequestIdRef.current = crypto.randomUUID();
+    }
+
     let paymentDetails;
 
     if (paymentMode === "split") {
@@ -1810,7 +1808,6 @@ const checkoutRequestIdRef = useRef(null);
         checkoutRequestIdRef.current = null;
       }
     }
-
   };
 
   const handleEnhancedCheckoutConfirm = async (roomAssignments, data) => {
@@ -1914,7 +1911,6 @@ const checkoutRequestIdRef = useRef(null);
   };
   console.log(bookings);
   const proceedToCheckout = (roomAssignments, data) => {
-
     const hasPrint1 = configurations[0]?.defaultPrint?.print1;
     let checkoutData;
     let checkinids = null;
@@ -1925,8 +1921,24 @@ const checkoutRequestIdRef = useRef(null);
         return group.checkIns.map((checkIn) => {
           const originalCheckIn = checkIn.originalCheckIn;
           const id = checkIn?.checkInId;
+          const selectedRoomIds = new Set(
+            checkIn.rooms.map((r) => String(r.selectedRoom || r.roomId)),
+          );
+
+          originalCheckIn.roomSwapHistory?.forEach((swap) => {
+            if (selectedRoomIds.has(String(swap.toRoomId))) {
+              const fromRoom = originalCheckIn.selectedRooms.find(
+                (room) => String(room.roomId) === String(swap.fromRoomId),
+              );
+
+              if (fromRoom) {
+                selectedRoomIds.add(String(fromRoom.roomId));
+              }
+            }
+          });
+
           const roomsToCheckout = originalCheckIn.selectedRooms.filter((room) =>
-            checkIn.rooms.some((r) => r.roomId === room._id),
+            selectedRoomIds.has(String(room.roomId)),
           );
           const originalCustomerId = originalCheckIn.customerId?._id;
           const isPartialCheckout =
@@ -1944,7 +1956,7 @@ const checkoutRequestIdRef = useRef(null);
             originalCheckInId: checkIn.checkInId,
             originalCustomerId: originalCustomerId,
             remainingRooms: originalCheckIn.selectedRooms.filter(
-              (room) => !checkIn.rooms.some((r) => r.roomId === room._id),
+              (room) => !selectedRoomIds.has(String(room.roomId)),
             ),
           };
         });
@@ -1957,10 +1969,25 @@ const checkoutRequestIdRef = useRef(null);
         return group.checkIns.map((checkIn) => {
           const originalCheckIn = checkIn.originalCheckIn;
 
-          const roomsToCheckout = originalCheckIn.selectedRooms.filter((room) =>
-            checkIn.rooms.some((r) => r.roomId === room._id),
+          const selectedRoomIds = new Set(
+            checkIn.rooms.map((r) => String(r.selectedRoom || r.roomId)),
           );
 
+          originalCheckIn.roomSwapHistory?.forEach((swap) => {
+            if (selectedRoomIds.has(String(swap.toRoomId))) {
+              const fromRoom = originalCheckIn.selectedRooms.find(
+                (room) => String(room.roomId) === String(swap.fromRoomId),
+              );
+
+              if (fromRoom) {
+                selectedRoomIds.add(String(fromRoom.roomId));
+              }
+            }
+          });
+
+          const roomsToCheckout = originalCheckIn.selectedRooms.filter((room) =>
+            selectedRoomIds.has(String(room.roomId)),
+          );
           const originalCustomerId = originalCheckIn.customerId?._id;
 
           const isPartialCheckout =
@@ -1979,7 +2006,7 @@ const checkoutRequestIdRef = useRef(null);
             originalCheckInId: checkIn.checkInId,
             originalCustomerId,
             remainingRooms: originalCheckIn.selectedRooms.filter(
-              (room) => !checkIn.rooms.some((r) => r.roomId === room._id),
+              (room) => !selectedRoomIds.has(String(room.roomId)),
             ),
           };
         });
@@ -2727,18 +2754,19 @@ const checkoutRequestIdRef = useRef(null);
                   Print
                 </button>
               )}
-              {location.pathname === "/sUsers/checkOutList" &&  (isAdminUser(secUserData) || permission?.editPaymentTypes) && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditModalOpen(true);
-                    setSelectedEditBooking(el);
-                  }}
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
-                >
-                  Edit
-                </button>
-              )}
+              {location.pathname === "/sUsers/checkOutList" &&
+                (isAdminUser(secUserData) || permission?.editPaymentTypes) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditModalOpen(true);
+                      setSelectedEditBooking(el);
+                    }}
+                    className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1 px-3 rounded text-xs transition duration-300"
+                  >
+                    Edit
+                  </button>
+                )}
               {(el?.status != "checkIn" &&
                 location.pathname == "/sUsers/bookingList") ||
               (el?.status != "checkOut" &&
@@ -3291,7 +3319,7 @@ const checkoutRequestIdRef = useRef(null);
                       ]);
                       window.location.reload();
                     }}
-                          disabled={saveLoader}
+                    disabled={saveLoader}
                     className="w-7 h-7 rounded-lg border border-gray-200 dark:border-neutral-700 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -4412,8 +4440,8 @@ const checkoutRequestIdRef = useRef(null);
                   </div>
 
                   <button
-              onClick={handleSavePayment}
-  disabled={saveLoader}
+                    onClick={handleSavePayment}
+                    disabled={saveLoader}
                     className={`mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
                       saveLoader
                         ? "bg-gray-100 dark:bg-neutral-700 text-gray-400 cursor-not-allowed"

@@ -1094,6 +1094,17 @@ export const roomBooking = async (req, res) => {
         .session(session);
     }
 
+    const bookingRequestId = req.body?.bookingRequestId;
+const checkInRequestId = req.body?.checkInRequestId;
+
+if (isFor === "bookingPage" && !bookingRequestId) {
+  throw new Error("Missing booking request id");
+}
+
+if (isFor === "checkIn" && !checkInRequestId) {
+  throw new Error("Missing check-in request id");
+}
+
     let selectedModal;
     let voucherType;
     let under = "hotel";
@@ -1104,6 +1115,7 @@ export const roomBooking = async (req, res) => {
       voucherType = "saleOrder";
     } else if (isFor === "checkIn") {
       if (bookingData?.bookingId) {
+        
         const updateBookingData = await Booking.findByIdAndUpdate(
           bookingData.bookingId,
           { status: "checkIn" },
@@ -1164,7 +1176,8 @@ export const roomBooking = async (req, res) => {
         Secondary_user_id: req.sUserId,
         paymenttypeDetails,
         paymentMetaData: req?.body?.paymentData?.payments || [],
-
+ bookingRequestId: isFor === "bookingPage" ? bookingRequestId : undefined,
+  checkInRequestId: isFor === "checkIn" ? checkInRequestId : undefined,
         isHotelAgent,
         currentDate: new Date().toISOString().split("T")[0],
         advanceTracking: {

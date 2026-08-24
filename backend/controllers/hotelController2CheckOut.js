@@ -265,6 +265,8 @@ export const convertCheckOutToSale = async (req, res) => {
           );
         }
 
+        console.log("roomsBeingCheckedOut",roomsBeingCheckedOut)
+
         if (
           !Array.isArray(roomsBeingCheckedOut) ||
           roomsBeingCheckedOut.length === 0
