@@ -364,6 +364,8 @@ const bookingSchema = new mongoose.Schema(
       taxPercentage: Number,
     },
     checkoutRequestId: String,
+    bookingRequestId: String,
+    checkInRequestId: String,
   },
   { timestamps: true },
 );
@@ -376,6 +378,24 @@ bookingSchema.index(
     name: "unique_checkout_request_per_company",
   }
 );
+bookingSchema.index(
+  { cmp_id: 1, bookingRequestId: 1 },
+  {
+    unique: true,
+    sparse: true,
+    name: "unique_booking_request_per_company",
+  }
+);
+
+bookingSchema.index(
+  { cmp_id: 1, checkInRequestId: 1 },
+  {
+    unique: true,
+    sparse: true,
+    name: "unique_checkin_request_per_company",
+  }
+);
+
 
 export const Booking = mongoose.model("Booking", bookingSchema, "bookings");
 export const CheckIn = mongoose.model("CheckIn", bookingSchema, "checkins");

@@ -196,7 +196,18 @@ export const getFullRoomDetails = (roomData, doc) => {
 
   for (const room of roomData || []) {
     const roomStayDays = calculateStayDays(doc, room);
-    if (roomStayDays <= 0) continue;
+   if (roomStayDays <= 0) {
+  if (room?.isSwapped || room?.swappingDateFrom) {
+    updatedRooms.push({
+      ...room,
+      stayDays: 0,
+      amountWithOutTax: 0,
+      amountAfterTax: 0,
+      taxAmount: 0,
+    });
+  }
+  continue;
+}
 
     const effectiveRoomPrice = getEffectiveRoomPrice(room, roomStayDays);
 
