@@ -324,17 +324,38 @@ function BookingList() {
         if (room?.isSwapped && room?.swappingDateFrom) {
           let swappingDate = normalizeToDate(room.swappingDateFrom);
           let arrivalDate = normalizeToDate(checkout?.arrivalDate);
+          const currentSelectedRoomId = String(room?._id || "");
+          const currentRoomId = String(room?.roomId?._id || room?.roomId || "");
 
           let swappedRoomObject = checkout?.roomSwapHistory.find(
-            (r) => r.fromRoomId == room.roomId,
+            (swap) =>
+              swap?.fromSelectedRoomId
+                ? String(swap.fromSelectedRoomId) === currentSelectedRoomId
+                : String(swap?.fromRoomId?._id || swap?.fromRoomId || "") ===
+                  currentRoomId,
           );
           console.log(swappedRoomObject);
           if (swappedRoomObject?.toRoomId) {
             let swappedRoomData = checkout?.selectedRooms.find(
-              (r) => r.roomId == swappedRoomObject.toRoomId,
+              (selectedRoom) =>
+                swappedRoomObject?.toSelectedRoomId
+                  ? String(selectedRoom?._id || "") ===
+                    String(swappedRoomObject.toSelectedRoomId)
+                  : String(
+                      selectedRoom?.roomId?._id || selectedRoom?.roomId || "",
+                    ) ===
+                    String(
+                      swappedRoomObject?.toRoomId?._id ||
+                        swappedRoomObject?.toRoomId ||
+                        "",
+                    ),
             );
             let isRoomSwappedData = checkout?.roomSwapHistory.find(
-              (r) => r.toRoomId == room.roomId,
+              (swap) =>
+                swap?.toSelectedRoomId
+                  ? String(swap.toSelectedRoomId) === currentSelectedRoomId
+                  : String(swap?.toRoomId?._id || swap?.toRoomId || "") ===
+                    currentRoomId,
             );
 
             if (swappedRoomData?.isSwapped === false && isRoomSwappedData) {
@@ -1910,6 +1931,72 @@ function BookingList() {
     console.log("HH");
   };
   console.log(bookings);
+  const getCheckoutRoomSegmentIds = (originalCheckIn, roomAssignments) => {
+    const getId = (value) => String(value?._id || value || "");
+    const selectedRoomIds = new Set();
+    const selectedRooms = originalCheckIn?.selectedRooms || [];
+
+    roomAssignments.forEach((assignment) => {
+      const selectedRoomId = getId(assignment?.roomId);
+      const isSelectedRoomId = selectedRooms.some(
+        (room) => getId(room?._id) === selectedRoomId,
+      );
+
+      if (isSelectedRoomId) {
+        selectedRoomIds.add(selectedRoomId);
+        return;
+      }
+
+      // Older checkout assignments identify rooms only by their master room ID.
+      const roomMasterId = getId(assignment?.selectedRoom || assignment?.roomId);
+      selectedRooms
+        .filter((room) => getId(room?.roomId) === roomMasterId)
+        .forEach((room) => selectedRoomIds.add(getId(room?._id)));
+    });
+
+    // Add every earlier segment required by the selected swap chain.
+    let addedRoom = true;
+    while (addedRoom) {
+      addedRoom = false;
+      (originalCheckIn?.roomSwapHistory || []).forEach((swap) => {
+        const isNewSwap = Boolean(swap?.toSelectedRoomId);
+        const toSelectedRoomId = getId(swap?.toSelectedRoomId);
+        const toRoomId = getId(swap?.toRoomId);
+        const includesDestination = isNewSwap
+          ? selectedRoomIds.has(toSelectedRoomId)
+          : selectedRooms.some(
+              (room) =>
+                selectedRoomIds.has(getId(room?._id)) &&
+                getId(room?.roomId) === toRoomId,
+            );
+
+        if (!includesDestination) return;
+
+        if (swap?.fromSelectedRoomId) {
+          const fromSelectedRoomId = getId(swap.fromSelectedRoomId);
+          if (!selectedRoomIds.has(fromSelectedRoomId)) {
+            selectedRoomIds.add(fromSelectedRoomId);
+            addedRoom = true;
+          }
+          return;
+        }
+
+        // Legacy swap history has no segment IDs, so retain the master-room fallback.
+        selectedRooms
+          .filter((room) => getId(room?.roomId) === getId(swap?.fromRoomId))
+          .forEach((room) => {
+            const fromSelectedRoomId = getId(room?._id);
+            if (!selectedRoomIds.has(fromSelectedRoomId)) {
+              selectedRoomIds.add(fromSelectedRoomId);
+              addedRoom = true;
+            }
+          });
+      });
+    }
+
+    return selectedRoomIds;
+  };
+
   const proceedToCheckout = (roomAssignments, data) => {
     const hasPrint1 = configurations[0]?.defaultPrint?.print1;
     let checkoutData;
@@ -1921,24 +2008,13 @@ function BookingList() {
         return group.checkIns.map((checkIn) => {
           const originalCheckIn = checkIn.originalCheckIn;
           const id = checkIn?.checkInId;
-          const selectedRoomIds = new Set(
-            checkIn.rooms.map((r) => String(r.selectedRoom || r.roomId)),
+          const selectedRoomIds = getCheckoutRoomSegmentIds(
+            originalCheckIn,
+            checkIn.rooms,
           );
 
-          originalCheckIn.roomSwapHistory?.forEach((swap) => {
-            if (selectedRoomIds.has(String(swap.toRoomId))) {
-              const fromRoom = originalCheckIn.selectedRooms.find(
-                (room) => String(room.roomId) === String(swap.fromRoomId),
-              );
-
-              if (fromRoom) {
-                selectedRoomIds.add(String(fromRoom.roomId));
-              }
-            }
-          });
-
           const roomsToCheckout = originalCheckIn.selectedRooms.filter((room) =>
-            selectedRoomIds.has(String(room.roomId)),
+            selectedRoomIds.has(String(room._id)),
           );
           const originalCustomerId = originalCheckIn.customerId?._id;
           const isPartialCheckout =
@@ -1956,7 +2032,7 @@ function BookingList() {
             originalCheckInId: checkIn.checkInId,
             originalCustomerId: originalCustomerId,
             remainingRooms: originalCheckIn.selectedRooms.filter(
-              (room) => !selectedRoomIds.has(String(room.roomId)),
+              (room) => !selectedRoomIds.has(String(room._id)),
             ),
           };
         });
@@ -1969,24 +2045,13 @@ function BookingList() {
         return group.checkIns.map((checkIn) => {
           const originalCheckIn = checkIn.originalCheckIn;
 
-          const selectedRoomIds = new Set(
-            checkIn.rooms.map((r) => String(r.selectedRoom || r.roomId)),
+          const selectedRoomIds = getCheckoutRoomSegmentIds(
+            originalCheckIn,
+            checkIn.rooms,
           );
 
-          originalCheckIn.roomSwapHistory?.forEach((swap) => {
-            if (selectedRoomIds.has(String(swap.toRoomId))) {
-              const fromRoom = originalCheckIn.selectedRooms.find(
-                (room) => String(room.roomId) === String(swap.fromRoomId),
-              );
-
-              if (fromRoom) {
-                selectedRoomIds.add(String(fromRoom.roomId));
-              }
-            }
-          });
-
           const roomsToCheckout = originalCheckIn.selectedRooms.filter((room) =>
-            selectedRoomIds.has(String(room.roomId)),
+            selectedRoomIds.has(String(room._id)),
           );
           const originalCustomerId = originalCheckIn.customerId?._id;
 
@@ -2006,7 +2071,7 @@ function BookingList() {
             originalCheckInId: checkIn.checkInId,
             originalCustomerId,
             remainingRooms: originalCheckIn.selectedRooms.filter(
-              (room) => !selectedRoomIds.has(String(room.roomId)),
+              (room) => !selectedRoomIds.has(String(room._id)),
             ),
           };
         });
@@ -2310,12 +2375,28 @@ function BookingList() {
     // console.log(el.voucherNumber);
 
     const findSwappedRooms = (room) => {
+      const currentSelectedRoomId = String(room?._id || "");
+      const currentRoomId = String(room?.roomId?._id || room?.roomId || "");
       let specifcSwap = el.roomSwapHistory.find(
-        (swap) => swap.fromRoomId === room.roomId,
+        (swap) =>
+          swap?.fromSelectedRoomId
+            ? String(swap.fromSelectedRoomId) === currentSelectedRoomId
+            : String(swap?.fromRoomId?._id || swap?.fromRoomId || "") ===
+              currentRoomId,
       );
       let toRoom =
         specifcSwap &&
-        el.selectedRooms.find((room) => room.roomId === specifcSwap.toRoomId);
+        el.selectedRooms.find((selectedRoom) =>
+          specifcSwap?.toSelectedRoomId
+            ? String(selectedRoom?._id || "") ===
+              String(specifcSwap.toSelectedRoomId)
+            : String(
+                selectedRoom?.roomId?._id || selectedRoom?.roomId || "",
+              ) ===
+              String(
+                specifcSwap?.toRoomId?._id || specifcSwap?.toRoomId || "",
+              ),
+        );
       return toRoom ? toRoom.roomName : "";
     };
     const isCheckOutSelected = (order) => {

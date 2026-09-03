@@ -147,6 +147,7 @@ function AvailableRooms({
           formData.selectedRooms.map(async (booking) => {
             console.log(booking);
             const normalizedBooking = {
+              _id: booking._id,
               roomId: booking.roomId || booking._id,
               roomName: booking.roomName,
               priceLevel: booking.priceLevel || [],
@@ -398,18 +399,39 @@ const recalculateBookingTotals = useCallback(
     if (booking?.isSwapped && booking?.swappingDateFrom) {
       let swappingDate = normalizeToDate(booking.swappingDateFrom);
       let arrivalDate = normalizeToDate(checkInDate);
+      const currentSelectedRoomId = String(booking?._id || "");
+      const currentRoomId = String(
+        booking?.roomId?._id || booking?.roomId || "",
+      );
 
       const swappedRoomObject = formData?.roomSwapHistory?.find(
-        (r) => r.fromRoomId == booking.roomId,
+        (swap) =>
+          swap?.fromSelectedRoomId
+            ? String(swap.fromSelectedRoomId) === currentSelectedRoomId
+            : String(swap?.fromRoomId?._id || swap?.fromRoomId || "") ===
+              currentRoomId,
       );
 
       if (swappedRoomObject?.toRoomId) {
         const swappedRoomData = formData?.selectedRooms?.find(
-          (r) => r.roomId == swappedRoomObject.toRoomId,
+          (selectedRoom) =>
+            swappedRoomObject?.toSelectedRoomId
+              ? String(selectedRoom?._id || "") ===
+                String(swappedRoomObject.toSelectedRoomId)
+              : String(selectedRoom?.roomId?._id || selectedRoom?.roomId || "") ===
+                String(
+                  swappedRoomObject?.toRoomId?._id ||
+                    swappedRoomObject?.toRoomId ||
+                    "",
+                ),
         );
 
         const isRoomSwappedData = formData?.roomSwapHistory?.find(
-          (r) => r.toRoomId == booking.roomId,
+          (swap) =>
+            swap?.toSelectedRoomId
+              ? String(swap.toSelectedRoomId) === currentSelectedRoomId
+              : String(swap?.toRoomId?._id || swap?.toRoomId || "") ===
+                currentRoomId,
         );
 
         if (
@@ -765,7 +787,6 @@ const recalculateBookingTotals = useCallback(
         .map((b) => String(b.fromRoomId));
 
       console.log(fromRoomIds);
-
       if (fromRoomIds.length === 0) return;
       console.log(fromRoomIds);
       const updatedBookings = bookings.map((booking) => {

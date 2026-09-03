@@ -21,6 +21,8 @@ const paxDetailSchema = new mongoose.Schema({
 });
 
 const roomSwapHistorySchema = new mongoose.Schema({
+  fromSelectedRoomId: mongoose.Schema.Types.ObjectId,
+  toSelectedRoomId: mongoose.Schema.Types.ObjectId,
   fromRoomId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Room",
@@ -225,7 +227,7 @@ const bookingSchema = new mongoose.Schema(
       card: { type: Number, default: 0 },
     },
 
-    paymentMetaData:{type: Object},
+    paymentMetaData: { type: Object },
     checkoutpaymenttypedetails: [
       {
         paymentId: { type: mongoose.Schema.Types.ObjectId },
@@ -376,7 +378,7 @@ bookingSchema.index(
     unique: true,
     sparse: true,
     name: "unique_checkout_request_per_company",
-  }
+  },
 );
 bookingSchema.index(
   { cmp_id: 1, bookingRequestId: 1 },
@@ -384,7 +386,7 @@ bookingSchema.index(
     unique: true,
     sparse: true,
     name: "unique_booking_request_per_company",
-  }
+  },
 );
 
 bookingSchema.index(
@@ -393,9 +395,8 @@ bookingSchema.index(
     unique: true,
     sparse: true,
     name: "unique_checkin_request_per_company",
-  }
+  },
 );
-
 
 export const Booking = mongoose.model("Booking", bookingSchema, "bookings");
 export const CheckIn = mongoose.model("CheckIn", bookingSchema, "checkins");
