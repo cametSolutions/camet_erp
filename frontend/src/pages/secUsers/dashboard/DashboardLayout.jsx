@@ -28,7 +28,6 @@ function DashBoardLayout({
           />
           <p>Dashboard</p>
         </div>
-
         {/* company name */}
 
         <div className="  bg-white shadow-lg p-2  flex items-center gap-3 mb-2 ">

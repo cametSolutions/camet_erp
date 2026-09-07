@@ -2,15 +2,18 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { canAccessPath } from "@/utils/permissions";
 import { toast } from "sonner";
+import { subscriptionHasExpired } from "@/components/common/SubscriptionExpiryAlert";
 
 function ProtectedSecRoute({ children }) {
   const secUserData = JSON.parse(localStorage.getItem("sUserData"));
   const storedPermissions = JSON.parse(localStorage.getItem("permissions"));
   const location = useLocation();
 
-  if (secUserData == null) {
+  if (secUserData == null || subscriptionHasExpired(secUserData)) {
+    localStorage.removeItem("sUserData");
+    localStorage.removeItem("permissions");
     // Use Navigate component within a returned JSX expression
-    return <Navigate to={"/sUsers/login"} />;
+    return <Navigate to={"/sUsers/login"} replace />;
   }
 
   let selectedPath = location.pathname;

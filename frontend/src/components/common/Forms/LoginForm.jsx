@@ -47,6 +47,10 @@ function LoginForm({ user }) {
       apiPath = "/api/sUsers/login";
       storageKey = "sUserData";
       dashboardPath = "/sUsers/dashboard";
+    } else if (user === "primary") {
+      apiPath = "/api/pUsers/login";
+      storageKey = "pUserData";
+      dashboardPath = "/pUsers/dashboard";
     } else {
       toast.error("Invalid user type");
       setLoader(false);
@@ -68,6 +72,11 @@ function LoginForm({ user }) {
       setTimeout(() => {
         setLoader(false);
         toast.success(res.data.message);
+        // A dismissal only applies to the current login. Start every new login
+        // with the subscription warning visible again when it is due.
+        Object.keys(sessionStorage)
+          .filter((key) => key.startsWith("subscription-alert-dismissed:"))
+          .forEach((key) => sessionStorage.removeItem(key));
         localStorage.setItem(storageKey, JSON.stringify(res.data.data));
         if (user === "secondary") {
           dispatch(storingPermissions(res?.data?.data?.permissions || {}));
