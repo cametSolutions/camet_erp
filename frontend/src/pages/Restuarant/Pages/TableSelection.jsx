@@ -268,7 +268,7 @@ const TableTiles = ({
       customerName: data?.customer?.name,
       type: data?.type,
     };
-    generateAndPrintKOT(orderData, true, false, companyName);
+    generateAndPrintKOT(orderData, true, false, companyName ,org?.configurations?.[0]?.kotPrinter);
   };
 
   // Handle print data

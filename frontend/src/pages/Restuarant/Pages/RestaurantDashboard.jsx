@@ -45,6 +45,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import ParentKotPage from "../components/ParentKotPage";
 import { applyBatchEdit } from "@/pages/Restuarant/Helper/RestaurantDashBoardHelper.jsx";
 import RestaurantReportsMenu from "../components/RestaurantReports";
+import qz from "qz-tray";
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
@@ -266,6 +267,7 @@ const RestaurantPOS = () => {
   );
   const config = configurations?.[0] || {};
   const orderTypesConfig = config.orderTypes || {};
+  const selectedKotPrinter = configurations?.[0]?.kotPrinter || "";
 
   const getDefaultOrderType = () => {
     if (orderTypesConfig?.dineIn) return "dine-in";
@@ -1309,7 +1311,7 @@ const RestaurantPOS = () => {
       guestName: roomDetails?.guestName,
       foodPlan: roomDetails?.foodPlan || [],
     };
-    generateAndPrintKOT(orderData, true, false, companyName);
+    generateAndPrintKOT(orderData, true, false, companyName ,selectedKotPrinter);
   };
 
   const handleSelectedPriceLevel = (value) => {
