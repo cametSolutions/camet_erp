@@ -373,9 +373,10 @@ const CancellationReport = () => {
         roomName: data?.roomId?.roomName,
         isCancelled: true,
       };
-      generateAndPrintKOT(orderData, true, false, name);
+      generateAndPrintKOT(orderData, true, false, name , owner?.configurations?.[0]?.kotPrinter);
     }
   };
+
 
   return (
     <>

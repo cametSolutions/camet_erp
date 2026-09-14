@@ -4822,3 +4822,80 @@ export const exportItemsToExcel = async (req, res) => {
     }
   }
 }
+
+
+export const savePrinter = async (req, res) => {
+  try {
+    const { printer, printerType, remove } = req.body;
+    const removingPrinter = remove === true;
+    const { cmp_id } = req.params;
+
+    // Validate company id
+    if (!cmp_id || cmp_id === "undefined") {
+      return res.status(400).json({
+        success: false,
+        message: "Company id not found",
+      });
+    }
+
+    // Validate printer
+    if (!removingPrinter && (typeof printer !== "string" || !printer.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select printer",
+      });
+    }
+
+    // Validate printer type
+    if (!printerType) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select printer type",
+      });
+    }
+
+    let updatedOrganization;
+
+    if (printerType === "kot") {
+      updatedOrganization = await Organization.findByIdAndUpdate(
+        cmp_id,
+        {
+          $set: {
+            "configurations.0.kotPrinter": removingPrinter ? "" : printer.trim(),
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid printer type",
+      });
+    }
+
+    // Company not found
+    if (!updatedOrganization) {
+      return res.status(404).json({
+        success: false,
+        message: "Organization not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: removingPrinter ? "Printer removed successfully" : "Printer saved successfully",
+      data: updatedOrganization,
+    });
+  } catch (error) {
+    console.error("savePrinter error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to save printer",
+      error: error.message,
+    });
+  }
+};

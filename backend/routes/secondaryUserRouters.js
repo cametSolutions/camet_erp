@@ -99,7 +99,7 @@ import {
     updateTableStatus, getKotDataByTable, updateConfigurationForKotApproval, getSummaryDashboard, cancelKot, directSale, searchItems,getComplementaryCashOrBank
 ,addComplementaryCashOrBank,getRestaurantCategoryWiseSalesReport,getRestaurantDateWiseItemReport,
 getKotRegister,getRestaurantBillsDetails,getAllChecking,transferKotBills,
-getSalesRegister , exportItemsToExcel} from '../controllers/restaurantController.js'
+getSalesRegister , exportItemsToExcel , savePrinter} from '../controllers/restaurantController.js'
 
 import { uploadExcel } from '../middlewares/uploadExcel.js';
 import { importItemsFromExcel } from '../controllers/importProductForHotel.js';
@@ -476,6 +476,11 @@ router.post(
   authSecondary,
   uploadExcel.single("file"),
   importItemsFromExcel
+);
+router.post(
+  "/savePrinter/:cmp_id",
+  authSecondary,
+  savePrinter
 );
 // Route to get detailed booking information for a specific room and date
 

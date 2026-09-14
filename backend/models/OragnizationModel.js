@@ -82,7 +82,9 @@ const organizationSchema = new mongoose.Schema(
             guest: false,
           },
         },
-
+        kotPrinter : {
+          type: String,
+        },
         defaultPrint: {
           type: Object,
           default: {

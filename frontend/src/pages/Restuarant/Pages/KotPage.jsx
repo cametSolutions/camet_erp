@@ -576,7 +576,7 @@ const permission = useSelector((state) => state.permissionData?.permissions);
     setSelectedMode(null);
     setShowBatchWiseKotPrint(false);
     setDataForBatchWisePrint(null);
-    generateAndPrintKOT(orderData, true, false, companyName);
+    generateAndPrintKOT(orderData, true, false, companyName ,org?.configurations?.[0]?.kotPrinter);
   };
 
   const handleKotCancel = async () => {
