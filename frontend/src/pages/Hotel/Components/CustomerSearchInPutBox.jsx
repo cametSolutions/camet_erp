@@ -6,7 +6,8 @@ import api from "@/api/api";
 import { toast } from "sonner";
 
 
-function CustomerSearchInputBox({ 
+function CustomerSearchInputBox({
+  inputComponent: InputComponent = "input",
   onSelect = () => {}, 
   placeholder = "Search and select a party...",
   isAgent=false,
@@ -171,7 +172,7 @@ const duplicateCheckRef = useRef(null);
   return (
     <div className={`relative w-full ${className}`} ref={dropdownRef}>
       <div className="relative">
-        <input
+        <InputComponent
           type="text"
           value={selectedValue ? selectedValue.partyName : search}
           onChange={(e) => handleInputChange(e.target.value)}
