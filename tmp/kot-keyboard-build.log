@@ -1,0 +1,345 @@
+▲ [WARNING] Unrecognized target environment "ES2024" [tsconfig.json]
+
+    ../jsconfig.json:5:18:
+      5 │         "target": "ES2024",
+        ╵                   ~~~~~~~~
+
+vite v5.0.11 building for production...
+transforming...
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 4354 modules transformed.
+rendering chunks...
+warnings when minifying css:
+▲ [WARNING] Unexpected "/" [css-syntax-error]
+
+    <stdin>:283:30:
+      283 │   Hide everything by default */ body * {
+          ╵                               ^
+
+
+[plugin:vite:reporter] 
+(!) C:/Users/T480s/OneDrive/Desktop/camet_erp/frontend/src/pages/errorPages/Notfound.jsx is dynamically imported by C:/Users/T480s/OneDrive/Desktop/camet_erp/frontend/src/routes/Routers.jsx, C:/Users/T480s/OneDrive/Desktop/camet_erp/frontend/src/routes/Routers.jsx but also statically imported by C:/Users/T480s/OneDrive/Desktop/camet_erp/frontend/src/App.jsx, dynamic import will not move module into another chunk.
+
+[plugin:vite:reporter] 
+(!) C:/Users/T480s/OneDrive/Desktop/camet_erp/frontend/src/pages/errorPages/ServerError.jsx is dynamically imported by C:/Users/T480s/OneDrive/Desktop/camet_erp/frontend/src/routes/Routers.jsx but also statically imported by C:/Users/T480s/OneDrive/Desktop/camet_erp/frontend/src/App.jsx, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/registerSW.js                                                   0.13 kB
+dist/manifest.webmanifest                                            0.34 kB
+dist/index.html                                                      1.43 kB │ gzip:   0.67 kB
+dist/assets/oderSummary-yFLt7gFm.png                                 5.04 kB
+dist/assets/paymentIn-Dlf3jt7Y.png                                   5.13 kB
+dist/assets/hotel--IHDVArq.png                                       5.98 kB
+dist/assets/quotation-hD7dNRfO.png                                   6.27 kB
+dist/assets/Daybook-8ipf2Atw.png                                     7.18 kB
+dist/assets/customers-xdwW8qg_.png                                   7.62 kB
+dist/assets/outstanding-v8BbFwHV.png                                 8.53 kB
+dist/assets/statement-IKbXVHlO.png                                   8.61 kB
+dist/assets/transactions-cxu9PAqB.png                                8.91 kB
+dist/assets/bank-otetzvRK.png                                        9.65 kB
+dist/assets/debitNote-8mjZ8arE.png                                   9.66 kB
+dist/assets/reports-XPBRsBfF.png                                    10.08 kB
+dist/assets/controll-NZbUTsKR.png                                   10.18 kB
+dist/assets/reciptsandpayments-IPgI1bEr.png                         10.45 kB
+dist/assets/paymentout-mK7pxqSZ.png                                 10.53 kB
+dist/assets/gmail-d65JCr2G.png                                      11.19 kB
+dist/assets/vanSale-kyJAcL9x.png                                    11.55 kB
+dist/assets/creditNote-yCkYZN99.png                                 11.60 kB
+dist/assets/purchaseSummary-dP_njfiT.png                            11.77 kB
+dist/assets/bill-a7UYX3--.png                                       11.95 kB
+dist/assets/expense-1FmJqTIw.png                                    12.61 kB
+dist/assets/Untitled Project-yl065F7Z.jpg                           13.10 kB
+dist/assets/error-HU0j8YIz.jpg                                      13.16 kB
+dist/assets/stockTransfer-ZKvaPEXl.png                              17.14 kB
+dist/assets/application-TyK2otuh.png                                17.15 kB
+dist/assets/dashboard-LIYknZhu.png                                  17.17 kB
+dist/assets/clipboard-mai6SpvS.png                                  17.26 kB
+dist/assets/restaurant-0ruDnX9B.png                                 20.59 kB
+dist/assets/product-uqr1rr-s.png                                    22.74 kB
+dist/assets/sale-cBydApuf.png                                       28.51 kB
+dist/assets/pending-z7LZKBS0.png                                    31.23 kB
+dist/assets/space-GRw3l8P3.png                                      51.27 kB
+dist/assets/TouchInput-UAz8GGOW.css                                  1.59 kB │ gzip:   0.64 kB
+dist/assets/react-datepicker-GyJCs6WY.css                           21.32 kB │ gzip:   3.03 kB
+dist/assets/index-F-cqGgVx.css                                     195.07 kB │ gzip:  27.71 kB
+dist/assets/SecHome-mJ5D_pmr.js                                      0.15 kB │ gzip:   0.14 kB
+dist/assets/endOfYear-T5wSdgIp.js                                    0.16 kB │ gzip:   0.16 kB
+dist/assets/formatVoucherType-rt9cXjmq.js                            0.21 kB │ gzip:   0.16 kB
+dist/assets/dateHelpers-y9K-pMxh.js                                  0.23 kB │ gzip:   0.17 kB
+dist/assets/uploadCloudinary-ZxeRcvjD.js                             0.29 kB │ gzip:   0.25 kB
+dist/assets/chevron-down-btP412P1.js                                 0.30 kB │ gzip:   0.25 kB
+dist/assets/chevron-up-C9z72Y14.js                                   0.30 kB │ gzip:   0.25 kB
+dist/assets/chevron-left-LoxnLkIW.js                                 0.30 kB │ gzip:   0.25 kB
+dist/assets/plus-3BZkTsVc.js                                         0.33 kB │ gzip:   0.26 kB
+dist/assets/arrow-right-Zb9ZJPBn.js                                  0.34 kB │ gzip:   0.27 kB
+dist/assets/search-tTghcxw1.js                                       0.35 kB │ gzip:   0.27 kB
+dist/assets/defaultConfigurations-fjw8u9DC.js                        0.35 kB │ gzip:   0.20 kB
+dist/assets/BarcodePrintOn-4ZiUVw2e.js                               0.36 kB │ gzip:   0.27 kB
+dist/assets/BarcodePrintOff-Lr3inC1G.js                              0.36 kB │ gzip:   0.27 kB
+dist/assets/AddGodown-q_Aygf1g.js                                    0.37 kB │ gzip:   0.30 kB
+dist/assets/AddPriceLevel-i-T49Jwm.js                                0.38 kB │ gzip:   0.30 kB
+dist/assets/trending-up-lnwqr2lK.js                                  0.38 kB │ gzip:   0.29 kB
+dist/assets/credit-card-vigwH9oO.js                                  0.38 kB │ gzip:   0.30 kB
+dist/assets/___vite-browser-external_commonjs-proxy-zfXKaH9V.js      0.41 kB │ gzip:   0.31 kB
+dist/assets/SalesSummaryTransactions-LqQsV0wS.js                     0.41 kB │ gzip:   0.28 kB
+dist/assets/SelectedBarcode-2tuzpbyw.js                              0.43 kB │ gzip:   0.32 kB
+dist/assets/utensils-j2e7N41O.js                                     0.43 kB │ gzip:   0.31 kB
+dist/assets/AddSecUsers-IxRrKHLg.js                                  0.44 kB │ gzip:   0.32 kB
+dist/assets/download-95Xu_Y_a.js                                     0.44 kB │ gzip:   0.32 kB
+dist/assets/pencil-kaNhCILV.js                                       0.45 kB │ gzip:   0.33 kB
+dist/assets/startOfYear-QI86QuC8.js                                  0.46 kB │ gzip:   0.26 kB
+dist/assets/receipt-Lk1G9pPf.js                                      0.47 kB │ gzip:   0.31 kB
+dist/assets/DeleteDialog-kfr-A3l8.js                                 0.47 kB │ gzip:   0.27 kB
+dist/assets/setPrototypeOf-nP9B_PnE.js                               0.49 kB │ gzip:   0.31 kB
+dist/assets/printer-wRYxJ3g3.js                                      0.49 kB │ gzip:   0.34 kB
+dist/assets/tag-nU8yKRKW.js                                          0.50 kB │ gzip:   0.35 kB
+dist/assets/defineProperty-rK5Nmm1l.js                               0.50 kB │ gzip:   0.34 kB
+dist/assets/file-text-R7ELh-Ot.js                                    0.51 kB │ gzip:   0.32 kB
+dist/assets/layout-grid-p6To5MXE.js                                  0.52 kB │ gzip:   0.30 kB
+dist/assets/trash-2-FGJL4whu.js                                      0.53 kB │ gzip:   0.36 kB
+dist/assets/utensils-crossed-CWYKXZE5.js                             0.53 kB │ gzip:   0.36 kB
+dist/assets/label-lUy9BYQL.js                                        0.56 kB │ gzip:   0.38 kB
+dist/assets/Reports-zvl1QAD2.js                                      0.62 kB │ gzip:   0.39 kB
+dist/assets/FindUserAndCompany-amziCZPf.js                           0.62 kB │ gzip:   0.34 kB
+dist/assets/EditSecUsers-F7w0CWNA.js                                 0.67 kB │ gzip:   0.46 kB
+dist/assets/AddRestuarentCategory-N-T4L3ad.js                        0.68 kB │ gzip:   0.43 kB
+dist/assets/SearchParty-zyLfnIg9.js                                  0.68 kB │ gzip:   0.44 kB
+dist/assets/AddBrand--BkFMw3e.js                                     0.68 kB │ gzip:   0.42 kB
+dist/assets/Demo-daC7Z10M.js                                         0.69 kB │ gzip:   0.42 kB
+dist/assets/AddSubCategory-q0CX2ORu.js                               0.70 kB │ gzip:   0.43 kB
+dist/assets/PrintConfiguration-FwGzcr69.js                           0.72 kB │ gzip:   0.43 kB
+dist/assets/VoucherTypeFilter-2QtBp6OR.js                            0.73 kB │ gzip:   0.41 kB
+dist/assets/AddCategory-Yyi0XTdF.js                                  0.73 kB │ gzip:   0.43 kB
+dist/assets/SelectVouchers-hDIUlSDL.js                               0.74 kB │ gzip:   0.42 kB
+dist/assets/SelectDate-OJBQEp6Z.js                                   0.76 kB │ gzip:   0.40 kB
+dist/assets/index.esm-p_6Q-CX5.js                                    0.76 kB │ gzip:   0.37 kB
+dist/assets/AddWarrantyCard-5Fqv0Qrd.js                              0.77 kB │ gzip:   0.52 kB
+dist/assets/StatusFilterList-koOfcpjn.js                             0.78 kB │ gzip:   0.45 kB
+dist/assets/index-XX84j9xd.js                                        0.80 kB │ gzip:   0.51 kB
+dist/assets/EditWarrantyCard -JBmFY_BB.js                            0.83 kB │ gzip:   0.56 kB
+dist/assets/DateEntrySettings-rXACxaEx.js                            0.84 kB │ gzip:   0.41 kB
+dist/assets/AddsubRestuarentCategory-RqW4jjEE.js                     0.85 kB │ gzip:   0.55 kB
+dist/assets/OutstandingSettings-Pje_fDOf.js                          0.86 kB │ gzip:   0.44 kB
+dist/assets/BarcodeCreationDetails-3632rBjM.js                       0.90 kB │ gzip:   0.48 kB
+dist/assets/package-7IN5o4Wv.js                                      0.97 kB │ gzip:   0.46 kB
+dist/assets/SummaryDropdown-dKW1Odq2.js                              1.00 kB │ gzip:   0.57 kB
+dist/assets/OutstandingListOfAccVoucher-8_-P_zEG.js                  1.06 kB │ gzip:   0.68 kB
+dist/assets/upload-BVYlQh6q.js                                       1.13 kB │ gzip:   0.49 kB
+dist/assets/AddOrganisation-d7-KaDso.js                              1.15 kB │ gzip:   0.67 kB
+dist/assets/EditPartySecondary-9-kUlXZl.js                           1.17 kB │ gzip:   0.67 kB
+dist/assets/ProtectedSecRoute-fzPmOKOo.js                            1.17 kB │ gzip:   0.55 kB
+dist/assets/VouchersList-c1ILDA3k.js                                 1.25 kB │ gzip:   0.64 kB
+dist/assets/PrintModal-bYt5YZhY.js                                   1.28 kB │ gzip:   0.58 kB
+dist/assets/EditProductSecondary-NEskaq5O.js                         1.35 kB │ gzip:   0.74 kB
+dist/assets/PartySettings-t9gIrq6s.js                                1.37 kB │ gzip:   0.54 kB
+dist/assets/EditOrg-RokP3qSq.js                                      1.37 kB │ gzip:   0.74 kB
+dist/assets/AddProductSecondary-Mawuk2vr.js                          1.44 kB │ gzip:   0.82 kB
+dist/assets/PartyListSecondary-nljstuVo.js                           1.47 kB │ gzip:   0.83 kB
+dist/assets/RoomRegistration-G9pdeJNg.js                             1.47 kB │ gzip:   0.79 kB
+dist/assets/AddPartySecondary-D36wxZLz.js                            1.47 kB │ gzip:   0.82 kB
+dist/assets/SettingsList-o5bkZ1Rw.js                                 1.47 kB │ gzip:   0.70 kB
+dist/assets/states-Dgv7Knry.js                                       1.51 kB │ gzip:   0.45 kB
+dist/assets/ItemRegistration-STCfXBtk.js                             1.54 kB │ gzip:   0.83 kB
+dist/assets/PaymentPrintOut-q7gxOE2O.js                              1.56 kB │ gzip:   0.85 kB
+dist/assets/ReceiptPrintOut-50kNQr1t.js                              1.57 kB │ gzip:   0.85 kB
+dist/assets/EditRoom-mT3g2SM4.js                                     1.57 kB │ gzip:   0.83 kB
+dist/assets/PrintOnOffTextArea-JWKQNqTW.js                           1.61 kB │ gzip:   0.91 kB
+dist/assets/SearchGodown-i-wD7k9n.js                                 1.66 kB │ gzip:   0.82 kB
+dist/assets/ConfigureRetailer-_ayTpF49.js                            1.66 kB │ gzip:   0.72 kB
+dist/assets/EditItem-bV_7i6SS.js                                     1.75 kB │ gzip:   0.90 kB
+dist/assets/OrganisationList-d0msXusF.js                             1.82 kB │ gzip:   0.81 kB
+dist/assets/index.esm-QvNhyAAY.js                                    1.90 kB │ gzip:   0.83 kB
+dist/assets/units-f3wX0yMN.js                                        1.94 kB │ gzip:   0.55 kB
+dist/assets/ComplementaryCashOrBank-z0GCRL92.js                      1.95 kB │ gzip:   0.92 kB
+dist/assets/IdProof-92SMS_fd.js                                      2.01 kB │ gzip:   1.01 kB
+dist/assets/AllocationSeriesList-sYwSy5Rq.js                         2.05 kB │ gzip:   0.62 kB
+dist/assets/AddAdditionalPax-ktDIarDr.js                             2.05 kB │ gzip:   1.01 kB
+dist/assets/FoodPlan-FpMTv08u.js                                     2.06 kB │ gzip:   1.03 kB
+dist/assets/VisitOfPurpose-GEOs0sKA.js                               2.07 kB │ gzip:   1.01 kB
+dist/assets/HsnList-_WiUew5_.js                                      2.09 kB │ gzip:   1.00 kB
+dist/assets/VoucherSeriesSettings-ypB0WjkO.js                        2.11 kB │ gzip:   0.59 kB
+dist/assets/PrintTitleModal-IyZCGh5B.js                              2.11 kB │ gzip:   1.02 kB
+dist/assets/dialog-HYFucGHe.js                                       2.12 kB │ gzip:   0.83 kB
+dist/assets/house-3crFCtUc.js                                        2.17 kB │ gzip:   0.72 kB
+dist/assets/sheet-LCtVUEa_.js                                        2.19 kB │ gzip:   0.87 kB
+dist/assets/SourceTransactions-seWylfHY.js                           2.23 kB │ gzip:   1.01 kB
+dist/assets/BalancePage-raQHzGuM.js                                  2.24 kB │ gzip:   1.10 kB
+dist/assets/EditBooking-XrA33qfn.js                                  2.24 kB │ gzip:   1.20 kB
+dist/assets/BookingPage-JcRupNEO.js                                  2.26 kB │ gzip:   1.20 kB
+dist/assets/EditCheckOut--kgkZZYg.js                                 2.27 kB │ gzip:   1.17 kB
+dist/assets/WarrantyCardList-3vfUQnxA.js                             2.34 kB │ gzip:   1.12 kB
+dist/assets/TermsAndConditionSettings-OdzuIsMT.js                    2.36 kB │ gzip:   1.13 kB
+dist/assets/SourceList-BrG5mqPi.js                                   2.37 kB │ gzip:   1.23 kB
+dist/assets/debounce-nnk3zr32.js                                     2.48 kB │ gzip:   1.25 kB
+dist/assets/AddChargesListSecondary-4suCs_OH.js                      2.51 kB │ gzip:   1.09 kB
+dist/assets/CheckInPage-aydrp76p.js                                  2.57 kB │ gzip:   1.35 kB
+dist/assets/VoucherSeriesList-jjMI_e89.js                            2.63 kB │ gzip:   1.17 kB
+dist/assets/CheckOut-kf6kmpdJ.js                                     2.65 kB │ gzip:   1.29 kB
+dist/assets/numberToWords.min-TO3txJ3P.js                            2.73 kB │ gzip:   1.34 kB
+dist/assets/DespatchTitleSettings-rx1zCbdh.js                        2.75 kB │ gzip:   1.30 kB
+dist/assets/BarcodeFormat-cTprJQ_Y.js                                2.76 kB │ gzip:   1.32 kB
+dist/assets/FooterButton-BxxDXxxJ.js                                 2.76 kB │ gzip:   1.06 kB
+dist/assets/OutstandingDetails-LdTqMIRJ.js                           2.77 kB │ gzip:   1.19 kB
+dist/assets/PartyFilterList-NwEg61sP.js                              3.12 kB │ gzip:   1.31 kB
+dist/assets/tabs-kpynJAz4.js                                         3.18 kB │ gzip:   1.34 kB
+dist/assets/index.esm-9xeXVWTS.js                                    3.24 kB │ gzip:   1.17 kB
+dist/assets/OrderSettings-UxUYuhNS.js                                3.24 kB │ gzip:   1.32 kB
+dist/assets/index.esm-VVDHX-4p.js                                    3.35 kB │ gzip:   1.41 kB
+dist/assets/VoucherPdfInitiatorThreeInch-ih5DVQof.js                 3.36 kB │ gzip:   1.29 kB
+dist/assets/OrderSummary-NKbewsEG.js                                 3.44 kB │ gzip:   1.23 kB
+dist/assets/AddCash-MEtRgUXs.js                                      3.47 kB │ gzip:   1.38 kB
+dist/assets/BalanceDetails-X50Ow51a.js                               3.50 kB │ gzip:   1.54 kB
+dist/assets/Hsn-mlkWMraj.js                                          3.62 kB │ gzip:   1.33 kB
+dist/assets/BarcodeModal-uuyKLKmv.js                                 3.68 kB │ gzip:   1.33 kB
+dist/assets/SearchBar-_cAOeiRf.js                                    3.69 kB │ gzip:   1.54 kB
+dist/assets/DashboardTransaction-84oWrqXl.js                         3.70 kB │ gzip:   1.41 kB
+dist/assets/EditChecking-YE4h4J0X.js                                 3.98 kB │ gzip:   1.86 kB
+dist/assets/BarcodeList-U6gi9bhR.js                                  4.04 kB │ gzip:   1.71 kB
+dist/assets/CustomerSearchInPutBox-lzm7daMy.js                       4.05 kB │ gzip:   1.83 kB
+dist/assets/SettingsCard-pT78px80.js                                 4.08 kB │ gzip:   1.81 kB
+dist/assets/InvoiceSettings-tcDlBJ9H.js                              4.20 kB │ gzip:   1.54 kB
+dist/assets/AdditionalChargesSecondary-Tzqx6P3l.js                   4.21 kB │ gzip:   1.45 kB
+dist/assets/AccVoucherInitialPage-Kyq3B0D4.js                        4.26 kB │ gzip:   1.76 kB
+dist/assets/TableMaster-ltlyE6u5.js                                  4.29 kB │ gzip:   1.62 kB
+dist/assets/EditHsn-tLIMDoiW.js                                      4.45 kB │ gzip:   1.61 kB
+dist/assets/StockItemSettings-nKWwDMo_.js                            4.50 kB │ gzip:   1.51 kB
+dist/assets/ProductDetails-GxBZw_DQ.js                               4.50 kB │ gzip:   1.59 kB
+dist/assets/taxCalculator-ubn33rBa.js                                4.53 kB │ gzip:   1.59 kB
+dist/assets/EmailSettings-FAJLq3Kq.js                                4.56 kB │ gzip:   1.79 kB
+dist/assets/RemoveReduxData-5w3PuOZB.js                              4.56 kB │ gzip:   1.52 kB
+dist/assets/PendingOrders-i2-g6kEL.js                                4.67 kB │ gzip:   1.91 kB
+dist/assets/index.esm-HmN-jw4R.js                                    4.82 kB │ gzip:   1.33 kB
+dist/assets/StockItem-Z5J-4Y8z.js                                    4.94 kB │ gzip:   1.64 kB
+dist/assets/SalesSummary-ggJmBDFr.js                                 4.97 kB │ gzip:   1.80 kB
+dist/assets/AccVoucherInitialPageEdit-qXbFqkYB.js                    4.99 kB │ gzip:   2.08 kB
+dist/assets/SaleOrderPrintConfiguration-9A75C5um.js                  5.01 kB │ gzip:   1.47 kB
+dist/assets/AddSubGroup-ZNbqVl2W.js                                  5.11 kB │ gzip:   2.03 kB
+dist/assets/RoomList-xGNC6f52.js                                     5.11 kB │ gzip:   2.04 kB
+dist/assets/SecUserCreationForm-_QAcPgeG.js                          5.14 kB │ gzip:   1.54 kB
+dist/assets/AccVoucherDetails-K1ngala_.js                            5.18 kB │ gzip:   1.56 kB
+dist/assets/TouchInput-5AYuYZuD.js                                   5.20 kB │ gzip:   2.24 kB
+dist/assets/DateRange-wbskyCvL.js                                    5.42 kB │ gzip:   1.98 kB
+dist/assets/PartyStatement-gHyvjJjA.js                               5.51 kB │ gzip:   1.58 kB
+dist/assets/AllocateTransaction-H2SUUxW_.js                          5.54 kB │ gzip:   2.00 kB
+dist/assets/PartyListComponent-Fs8qv0gn.js                           5.93 kB │ gzip:   2.12 kB
+dist/assets/VoucherSettings-hQkgJ0OE.js                              6.04 kB │ gzip:   2.40 kB
+dist/assets/StockRegister-_8-gc_al.js                                6.05 kB │ gzip:   2.15 kB
+dist/assets/hotelHelper-6zIWy6KL.js                                  6.05 kB │ gzip:   1.74 kB
+dist/assets/RoomSubDetailsManagement-lHe8JzSb.js                     6.09 kB │ gzip:   2.16 kB
+dist/assets/RestuarentSettings-lJWxI4r8.js                           6.29 kB │ gzip:   1.95 kB
+dist/assets/ReceiptPrintOutForm-Wj_7ecyz.js                          6.33 kB │ gzip:   1.47 kB
+dist/assets/OutstandingSummary-WSBzP7g2.js                           6.37 kB │ gzip:   1.98 kB
+dist/assets/accordion-quD4Se0g.js                                    6.59 kB │ gzip:   2.46 kB
+dist/assets/WarrantyCard-DlYTOrjX.js                                 6.63 kB │ gzip:   2.57 kB
+dist/assets/VoucherDetailsActionButtons-Xg50CxFX.js                  6.96 kB │ gzip:   2.74 kB
+dist/assets/TouristReport -0NP5oEyW.js                               7.10 kB │ gzip:   2.42 kB
+dist/assets/voucherInitialPage-JM0qFbp5.js                           7.18 kB │ gzip:   2.92 kB
+dist/assets/Payment-apxRJxWi.js                                      7.41 kB │ gzip:   2.30 kB
+dist/assets/OutstandingListOfPaymentForEdit-uGFhjA8m.js              7.52 kB │ gzip:   2.85 kB
+dist/assets/OrderConfigurationsSecondary-S42t42_U.js                 7.53 kB │ gzip:   2.67 kB
+dist/assets/ItemList-JhLaGPOx.js                                     7.66 kB │ gzip:   2.91 kB
+dist/assets/voucherInitialPageEdit-8uQJHWKX.js                       7.73 kB │ gzip:   3.21 kB
+dist/assets/Itemwisereport-J_4qj54V.js                               7.83 kB │ gzip:   2.62 kB
+dist/assets/BankingManagement-DIoZfxzI.js                            7.84 kB │ gzip:   1.97 kB
+dist/assets/PaymentModeTile-TYd9qOH6.js                              7.93 kB │ gzip:   2.21 kB
+dist/assets/ReceiptInvoicepage-rHdHEkM3.js                           7.96 kB │ gzip:   2.63 kB
+dist/assets/FoodPlanReportPage -H1P7h3I9.js                          8.24 kB │ gzip:   2.57 kB
+dist/assets/popover-jgnENus7.js                                      8.57 kB │ gzip:   3.11 kB
+dist/assets/RoomRegisterComponent-zW2rOZx-.js                        8.65 kB │ gzip:   2.12 kB
+dist/assets/HeaderTile-_AV1alFx.js                                   8.95 kB │ gzip:   3.19 kB
+dist/assets/Outstanding-6SgqHzKK.js                                  8.96 kB │ gzip:   2.79 kB
+dist/assets/AllocateCompany-UN14aVh7.js                              9.01 kB │ gzip:   2.95 kB
+dist/assets/ProductSubDetailsForm-Ssgo-Wc9.js                        9.75 kB │ gzip:   3.12 kB
+dist/assets/VoucherSection-EmidirkT.js                               9.85 kB │ gzip:   4.03 kB
+dist/assets/AllocatePriceLevel-7EiPvUrg.js                          10.00 kB │ gzip:   3.17 kB
+dist/assets/SummaryReport-oVuP6dwA.js                               10.02 kB │ gzip:   3.62 kB
+dist/assets/Categoryreportres-nI06zyRe.js                           10.41 kB │ gzip:   3.23 kB
+dist/assets/AllocateGodown-qbL4atXb.js                              10.58 kB │ gzip:   3.36 kB
+dist/assets/ProductListSecondary-ut_1soA0.js                        11.03 kB │ gzip:   4.44 kB
+dist/assets/index.esm-3UoFsEUJ.js                                   11.07 kB │ gzip:   3.78 kB
+dist/assets/AllocateVoucherSeries-1HTn6VzV.js                       11.12 kB │ gzip:   3.52 kB
+dist/assets/AllocateSubGroup-HYqzB4QT.js                            11.20 kB │ gzip:   3.33 kB
+dist/assets/ItemRegisterComponent-dyS4BZVm.js                       11.31 kB │ gzip:   3.18 kB
+dist/assets/PaymentSplitting-vC1oHkY1.js                            11.35 kB │ gzip:   4.03 kB
+dist/assets/VoucherDetails--Xfqufil.js                              11.45 kB │ gzip:   3.06 kB
+dist/assets/viewReport-2XyXMj4U.js                                  11.60 kB │ gzip:   3.57 kB
+dist/assets/KotRegisterPage-BAnWjITg.js                             11.69 kB │ gzip:   3.48 kB
+dist/assets/KotPrinterSetting-WdLsIbKz.js                           11.78 kB │ gzip:   3.53 kB
+dist/assets/AdditionalChargesModal-X2xvsUQa.js                      11.98 kB │ gzip:   3.36 kB
+dist/assets/VoucherSeriesForm-xVKdEKvN.js                           12.03 kB │ gzip:   2.58 kB
+dist/assets/TravelAgentReport-cbqmt0wH.js                           12.07 kB │ gzip:   3.73 kB
+dist/assets/CancellationReport-hOHjnair.js                          12.14 kB │ gzip:   3.68 kB
+dist/assets/LoginReport-gFBOy-IE.js                                 12.26 kB │ gzip:   3.64 kB
+dist/assets/AddOpening-3NGtowBt.js                                  12.27 kB │ gzip:   3.20 kB
+dist/assets/RetailersList-qurSVPC1.js                               12.37 kB │ gzip:   3.95 kB
+dist/assets/BillToVoucher-lQFOHM9J.js                               12.52 kB │ gzip:   2.74 kB
+dist/assets/SalesSummaryTable-3-fR46AW.js                           12.88 kB │ gzip:   3.54 kB
+dist/assets/HsnForm-CD0qdTrJ.js                                     13.03 kB │ gzip:   2.38 kB
+dist/assets/VoucherThreeInchPdf-XhBxPDZY.js                         14.30 kB │ gzip:   3.45 kB
+dist/assets/FoSalesSummary-LhiMdFRO.js                              15.36 kB │ gzip:   4.34 kB
+dist/assets/kotPrintHelper-XlEIyDfI.js                              15.63 kB │ gzip:   4.06 kB
+dist/assets/StockRegisterDetails-dndpolsC.js                        16.09 kB │ gzip:   5.00 kB
+dist/assets/Checkoutpdf-oW2Of7KB.js                                 16.21 kB │ gzip:   4.08 kB
+dist/assets/OccupancyCheckoutReport-WzBJqu_m.js                     16.58 kB │ gzip:   4.23 kB
+dist/assets/PaymentAllocation-XIEC4ZtM.js                           16.59 kB │ gzip:   5.43 kB
+dist/assets/CheckInPrint-EmKBTJZX.js                                16.62 kB │ gzip:   3.89 kB
+dist/assets/LetterHeadUploadPage-S4IwBk43.js                        17.52 kB │ gzip:   5.53 kB
+dist/assets/AddbatchInPurchase-Df5w3m4C.js                          17.76 kB │ gzip:   4.69 kB
+dist/assets/AddProductsForm-PPlI7pnd.js                             19.19 kB │ gzip:   4.41 kB
+dist/assets/SalePrintConfiguration-RGhAT2cK.js                      19.96 kB │ gzip:   5.82 kB
+dist/assets/EditItemVoucher-8MGRWPgg.js                             20.02 kB │ gzip:   5.26 kB
+dist/assets/AddOrgForm-2jzIz30s.js                                  20.83 kB │ gzip:   4.38 kB
+dist/assets/Dashboard-BiCYVBo0.js                                   21.24 kB │ gzip:   6.16 kB
+dist/assets/purify.es-zeYmSgJQ.js                                   21.93 kB │ gzip:   8.62 kB
+dist/assets/purify.es-RUfPDVfR.js                                   21.97 kB │ gzip:   8.74 kB
+dist/assets/isBefore-X-rzwpJb.js                                    22.58 kB │ gzip:   6.38 kB
+dist/assets/index-BEhVo9A2.js                                       23.29 kB │ gzip:   8.11 kB
+dist/assets/SaleRegisterPage-TC_mqSl7.js                            23.62 kB │ gzip:   6.36 kB
+dist/assets/VoucherPdfInitiator-OuF7d9lH.js                         23.81 kB │ gzip:   6.16 kB
+dist/assets/Receiptreport-eYp5EAyB.js                               24.78 kB │ gzip:   6.72 kB
+dist/assets/VoucherThreeInchPdfFormat2-4CHmBpkW.js                  25.50 kB │ gzip:   7.51 kB
+dist/assets/Transaction-GJajycqc.js                                 27.36 kB │ gzip:   9.20 kB
+dist/assets/WarrantyCardForm -O3-YAuGh.js                           30.30 kB │ gzip:  10.66 kB
+dist/assets/index.esm-BGD3kz5f.js                                   31.15 kB │ gzip:   9.89 kB
+dist/assets/qz-tray-FJtNNV6l.js                                     31.78 kB │ gzip:   9.54 kB
+dist/assets/CheckOutPrint-376w7ZWk.js                               38.11 kB │ gzip:   8.76 kB
+dist/assets/BillSummary-E7qG6nDf.js                                 38.95 kB │ gzip:   8.47 kB
+dist/assets/select-i_D1Zy_P.js                                      39.02 kB │ gzip:  13.31 kB
+dist/assets/TableSelection-4rPS0FIr.js                              40.39 kB │ gzip:  12.31 kB
+dist/assets/FoodPlanComponent-PhMrk1_k.js                           40.82 kB │ gzip:  10.25 kB
+dist/assets/VoucherPdf-LrnCULtH.js                                  45.91 kB │ gzip:  11.96 kB
+dist/assets/SummaryDashboard-aupj3y8k.js                            51.01 kB │ gzip:  10.88 kB
+dist/assets/VoucherAddCount-EWoHRh5E.js                             58.38 kB │ gzip:  21.36 kB
+dist/assets/HotelDashboard-KOkcqm43.js                              61.08 kB │ gzip:  15.34 kB
+dist/assets/BillPrint-SGLqp_it.js                                   71.11 kB │ gzip:  17.61 kB
+dist/assets/RestaurantDashboard-NTmdXXQl.js                         73.30 kB │ gzip:  18.31 kB
+dist/assets/BookingForm-6pRBjfJ4.js                                 78.56 kB │ gzip:  18.10 kB
+dist/assets/KotPage-NH-ZC5rN.js                                     83.13 kB │ gzip:  21.20 kB
+dist/assets/ReceiveAmount-L-d5RjFT.js                               90.93 kB │ gzip:  31.64 kB
+dist/assets/AddPartyForm--XlLE25Y.js                               108.26 kB │ gzip:  35.41 kB
+dist/assets/proxy-SffZ3HAS.js                                      113.49 kB │ gzip:  37.51 kB
+dist/assets/index-crqVgqm8.js                                      137.79 kB │ gzip:  31.41 kB
+dist/assets/index.es-WGGgJ74Z.js                                   149.60 kB │ gzip:  51.14 kB
+dist/assets/BookingList-y_bErHLi.js                                163.45 kB │ gzip:  37.52 kB
+dist/assets/html2canvas.esm-wcJJHsxy.js                            201.54 kB │ gzip:  48.12 kB
+dist/assets/BarcodeScan-HCkfjiKH.js                                339.15 kB │ gzip: 101.71 kB
+dist/assets/MobilePdfViewer-YeXKlQy7.js                            428.20 kB │ gzip: 135.70 kB
+dist/assets/xlsx.min-q84iFt2G.js                                   626.86 kB │ gzip: 322.55 kB
+dist/assets/helper-87i4RSi6.js                                     893.76 kB │ gzip: 260.71 kB
+dist/assets/index-vIHJtHNc.js                                    1,580.85 kB │ gzip: 490.05 kB
+dist/assets/HotelFlashReport-vPV56Bfk.js                         1,590.75 kB │ gzip: 532.04 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+PWA v0.20.0
+mode      generateSW
+precache  274 entries (8795.24 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-3e911b1d.js
+✓ built in 2m 35s

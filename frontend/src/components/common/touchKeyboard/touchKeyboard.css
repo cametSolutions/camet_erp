@@ -1,0 +1,22 @@
+.kot-touch-scope { --kot-keyboard-height: 0px; --kot-launcher-height: 48px; --kot-launcher-bottom: max(10px, env(safe-area-inset-bottom)); --kot-launcher-clearance: calc(var(--kot-launcher-height) + var(--kot-launcher-bottom) + 16px); padding-bottom: var(--kot-keyboard-height); }
+.kot-touch-scope[data-launcher-visible="true"] .kot-details-modal { padding-bottom: var(--kot-launcher-clearance); }
+.kot-touch-scope[data-launcher-visible="true"] .kot-details-modal > div { max-height: calc(100dvh - var(--kot-launcher-clearance) - 8px); overflow-y: auto; }
+.kot-touch-scope[data-keyboard-open="true"] .h-screen { height: calc(100dvh - var(--kot-keyboard-height)); overflow-y: auto; }
+.kot-touch-scope[data-keyboard-open="true"] .fixed:not(.kot-touch-keyboard) { bottom: var(--kot-keyboard-height); max-height: calc(100dvh - var(--kot-keyboard-height)); }
+.kot-touch-scope[data-keyboard-open="true"] .fixed.inset-0 { overflow-y: auto; }
+.kot-touch-scope[data-keyboard-open="true"] .fixed.inset-0 > div { max-height: calc(100dvh - var(--kot-keyboard-height) - 1rem); overflow-y: auto; }
+.kot-touch-keyboard { position: fixed; inset: auto 0 0; z-index: 10050; background: #f8fafc; border-top: 1px solid #c7d2fe; box-shadow: 0 -8px 30px #0f172a26; padding: 8px max(8px, calc((100vw - 920px) / 2)) max(8px, env(safe-area-inset-bottom)); max-height: 55dvh; overflow-y: auto; user-select: none; }
+.kot-touch-key { flex: 1; min-width: 0; min-height: 44px; padding: 6px 2px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; color: #334155; font-size: clamp(12px, 2.5vw, 18px); font-weight: 600; touch-action: manipulation; }
+.kot-touch-key:hover, .kot-touch-key[aria-pressed="true"] { background: #e0e7ff; border-color: #818cf8; }
+.kot-touch-key:active { background: #c7d2fe; transform: translateY(1px); }
+.kot-touch-key:focus-visible { outline: 2px solid #4f46e5; outline-offset: 1px; }
+.kot-touch-done { background: #4f46e5; color: white; border-color: #4f46e5; }
+.kot-touch-done:hover { background: #4338ca; }
+.kot-touch-keyboard > div:first-child > button { flex: none; }
+.kot-touch-keyboard.kot-touch-launcher { left: 50%; right: auto; width: max-content; transform: translateX(-50%); padding: 8px 8px var(--kot-launcher-bottom); background: transparent; border: 0; box-shadow: none; overflow: visible; }
+.kot-touch-launcher .kot-touch-launcher-button { display: grid; place-items: center; width: 54px; height: var(--kot-launcher-height); padding: 0; border: 1px solid #a5b4fc; border-radius: 16px; color: white; background: linear-gradient(135deg, #3b82f6, #4f46e5 55%, #7c3aed); box-shadow: 0 5px 16px #4f46e540, inset 0 1px 0 #ffffff55; cursor: pointer; touch-action: manipulation; transition: transform 150ms ease, box-shadow 150ms ease; }
+.kot-touch-launcher .kot-touch-launcher-button:hover { transform: translateY(-2px); box-shadow: 0 7px 20px #4f46e560, inset 0 1px 0 #ffffff55; }
+.kot-touch-launcher .kot-touch-launcher-button:active { transform: translateY(0) scale(.95); }
+.kot-touch-launcher .kot-touch-launcher-button:focus-visible { outline: 3px solid #818cf8; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .kot-touch-launcher .kot-touch-launcher-button { transition: none; } }
+@media print { .kot-touch-keyboard { display: none; } .kot-touch-scope { padding-bottom: 0; } }
