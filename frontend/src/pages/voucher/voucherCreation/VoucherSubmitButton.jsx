@@ -46,7 +46,7 @@ function VoucherSubmitButton({
 
   return (
     <div>
-      {title === "Sales" && enablePaymentSplittingAsCompulsory ? (
+      {title === "Sales" && enablePaymentSplittingAsCompulsory && !label ? (
         // Special case → link button
         <div
           onClick={handleNavigate}
