@@ -13,6 +13,7 @@ import { useLocation } from "react-router-dom";
 import { SiCashapp } from "react-icons/si";
 import { TiPrinter } from "react-icons/ti";
 import { IoCalculator } from "react-icons/io5";
+import { BsFillPrinterFill } from "react-icons/bs";
 
 import api from "@/api/api";
 
@@ -97,12 +98,21 @@ const restuarentSettings = () => {
 
   if (industry === 7 || industry === 6 || industry === 8) {
     settingsOptions.unshift({
-      title: " food Types",
+      title: "Kot Default Print",
+      description: "Select a default print format for kot",
+      icon: <BsFillPrinterFill />,
+      to: "/sUsers/kotPrinterSetting",
+      active: true,
+    });
+
+    settingsOptions.unshift({
+      title: "food Types",
       description: "Create different region wise category",
       icon: <IoFastFood />,
       to: "/sUsers/AddRestuarentCategory",
       active: true,
     });
+    
     settingsOptions.push({
       title: "Auto approval for kot kitchen",
       description: "For better kot management",

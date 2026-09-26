@@ -1,10 +1,12 @@
 import jsPDF from "jspdf";
+import {toast} from "sonner";
+import qz from "qz-tray";
 
 // Constants - Optimized for thermal printers
 const THERMAL_WIDTH = 58; // Reduced to 58mm for better fit
 const PRINT_MARGINS = {
-  left: 2,    // Minimal left margin
-  right: 56,  // Adjusted right margin
+  left: 2, // Minimal left margin
+  right: 56, // Adjusted right margin
   center: 29, // Center position
 };
 
@@ -18,7 +20,7 @@ const formatDateTime = (date) => {
     time: orderDate.toLocaleTimeString("en-GB", {
       hour: "2-digit",
       minute: "2-digit",
-      hour12: true  // Changed to 12-hour format
+      hour12: true, // Changed to 12-hour format
     }),
   };
 };
@@ -58,20 +60,69 @@ const addDashedLine = (pdf, y) => {
       currentX,
       y,
       Math.min(currentX + dashLength, PRINT_MARGINS.right),
-      y
+      y,
     );
     currentX += dashLength + gapLength;
   }
 };
 
+async function printKot(pdf, printerName, jobName = "KOT") {
+  if (!printerName) {
+    throw new Error("Select and save a KOT printer in settings first.");
+  }
+
+    await connectQz();
+
+    const config = qz.configs.create(printerName, { jobName });
+    const base64 = pdf.output("datauristring").split(",")[1];
+
+    await qz.print(config, [
+      {
+        type: "pixel",
+        format: "pdf",
+        flavor: "base64",
+        data: base64,
+      },
+    ]);
+
+}
+
+let qzConnection;
+async function connectQz() {
+  if (qz.websocket.isActive()) return;
+  if (!qzConnection) {
+    qzConnection = qz.websocket.connect().finally(() => {
+      qzConnection = null;
+    });
+  }
+  await qzConnection;
+}
+
+async function printHtmlWithQz(html, printerName) {
+  if (!printerName) {
+    throw new Error("Select a KOT printer first.");
+  }
+
+  await connectQz();
+
+  const config = qz.configs.create(printerName);
+
+  await qz.print(config, [
+    {
+      type: "pixel",
+      format: "html",
+      flavor: "plain",
+      data: html,
+    },
+  ]);
+
+}
+
 // PDF Generation Functions
 export const generateKitchenOrderTicket = (
   orderData,
-  restaurantName = "ABC RESTAURANT"
+  restaurantName = "ABC RESTAURANT",
 ) => {
-
-
-
   validateOrderData(orderData);
 
   const pdf = new jsPDF({
@@ -121,14 +172,15 @@ export const generateKitchenOrderTicket = (
     if (item?.product_name || item?.name) {
       const itemName = item.product_name || item.name;
       // Truncate long item names
-      const shortName = itemName.length > 15 ? itemName.substring(0, 15) + "..." : itemName;
+      const shortName =
+        itemName.length > 15 ? itemName.substring(0, 15) + "..." : itemName;
       const itemText = `${index + 1} ${shortName}`;
       addJustifiedText(
         pdf,
         itemText,
         item.quantity?.toString() || "1",
         yPos,
-        5
+        5,
       );
       yPos += 4;
     }
@@ -152,7 +204,7 @@ export const generateKitchenOrderTicket = (
 export const generateCustomerBill = (
   orderData,
   restaurantName = "ABC RESTAURANT",
-  restaurantInfo = {}
+  restaurantInfo = {},
 ) => {
   validateOrderData(orderData);
 
@@ -222,7 +274,8 @@ export const generateCustomerBill = (
   orderData.items.forEach((item) => {
     if (item?.name || item?.product_name) {
       const itemName = item.name || item.product_name;
-      const displayName = itemName.length > 12 ? itemName.substring(0, 12) : itemName;
+      const displayName =
+        itemName.length > 12 ? itemName.substring(0, 12) : itemName;
       const price = item.price || 0;
       const quantity = item.quantity || 1;
       const itemTotal = price * quantity;
@@ -268,9 +321,22 @@ export const generateCustomerBill = (
   return pdf;
 };
 
+
+
 // Print Functions
-export const printThermalReceipt = (pdf, filename = "receipt") => {
+export const printThermalReceipt = async (
+  pdf,
+  filename = "receipt",
+  selectedKotPrinter,
+) => {
   if (!pdf) return;
+
+  console.log("org?.configurations?.[0]?.kotPrinter",selectedKotPrinter)
+
+  if (selectedKotPrinter && pdf) {
+    await printKot(pdf, selectedKotPrinter, filename);
+    return
+  }
 
   const pdfBlob = pdf.output("blob");
   const blobUrl = URL.createObjectURL(pdfBlob);
@@ -295,13 +361,15 @@ export const downloadReceipt = (pdf, filename = "receipt.pdf") => {
   }
 };
 
+
+
 // HTML Print Function - Optimized for thermal printers
-export const printDirectHTML = (
+export const printDirectHTML = async (
   orderData,
   restaurantName = "ABC RESTAURANT",
-  isKOT = true
+  isKOT = true,
+  selectedKotPrinter
 ) => {
-
   if (!orderData) return;
 
   const { date, time } = formatDateTime(orderData.createdAt);
@@ -351,44 +419,45 @@ export const printDirectHTML = (
         <div>KOT: ${orderData.kotNo}</div>
         <div>${date}</div>
       </div>
-      ${orderData.customerName ? `<div class="order-info"><div>Name: ${orderData.customerName}</div><div>Type: ${orderData.type || ''}</div></div>` : ''}
-      ${loggedUser.name ? `<div class="order-info"><div>Staff: ${loggedUser.name}</div></div>` : ''}
+      ${orderData.customerName ? `<div class="order-info"><div>Name: ${orderData.customerName}</div><div>Type: ${orderData.type || ""}</div></div>` : ""}
+      ${loggedUser.name ? `<div class="order-info"><div>Staff: ${loggedUser.name}</div></div>` : ""}
       <div class="order-info">
         <div>${time}</div>
-        ${orderData.tableNo ? `<div>T:${orderData.tableNo}</div>` : '<div></div>'}
+        ${orderData.tableNo ? `<div>T:${orderData.tableNo}</div>` : "<div></div>"}
       </div>
 
         <div class="order-info">
-        ${orderData.roomName ? `<div>Room:${orderData.roomName}</div>` : '<div></div>'}
+        ${orderData.roomName ? `<div>Room:${orderData.roomName}</div>` : "<div></div>"}
       </div>
           <div class="order-info">
-        ${orderData.guestName ? `<div>Guest:${orderData.guestName}</div>` : '<div></div>'}
+        ${orderData.guestName ? `<div>Guest:${orderData.guestName}</div>` : "<div></div>"}
       </div>
         </div>
          <div class="order-info"> Food Plan :
   ${
     orderData?.foodPlan?.length > 0
       ? orderData.foodPlan
-          .map(
-            (plan) => `<div> ${plan?.planType || ""}</div>`
-          )
+          .map((plan) => `<div> ${plan?.planType || ""}</div>`)
           .join("")
       : "<div></div>"
   }
 </div>
       <div class="items-header"><span>SL ITEM</span><span>QTY</span></div>
       <div class="divider"></div>
-      ${orderData.items.map((item, index) => 
-        item?.product_name || item?.name ? 
-        `<div class="item-row"><span>${index + 1} ${(item.product_name || item.name).substring(0, 15)}</span><span>${item.quantity || 1}</span></div>` : ''
-      ).join('')}
+      ${orderData.items
+        .map((item, index) =>
+          item?.product_name || item?.name
+            ? `<div class="item-row"><span>${index + 1} ${(item.product_name || item.name).substring(0, 15)}</span><span>${item.quantity || 1}</span></div>`
+            : "",
+        )
+        .join("")}
       <div class="divider"></div>
       <div class="footer">** KITCHEN COPY **<br>Prepare items as per order</div>
     `;
   } else {
     const subtotal = orderData.items.reduce(
       (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
-      0
+      0,
     );
     const taxAmount = subtotal * TAX_RATE;
     const grandTotal = subtotal + taxAmount;
@@ -406,21 +475,24 @@ export const printDirectHTML = (
         <div>${date}</div>
       </div>
       <div class="order-info">
-        <div>${orderData.tableNo ? `T:${orderData.tableNo}` : ''}</div>
+        <div>${orderData.tableNo ? `T:${orderData.tableNo}` : ""}</div>
         <div>${time}</div>
       </div>
       <div class="divider"></div>
       <div class="grid-header"><span>ITEM</span><span>Q</span><span>RT</span><span>AMT</span></div>
       <div class="divider"></div>
-      ${orderData.items.map(item => 
-        item?.name || item?.product_name ? 
-        `<div class="grid-row">
+      ${orderData.items
+        .map((item) =>
+          item?.name || item?.product_name
+            ? `<div class="grid-row">
           <span>${(item.name || item.product_name).substring(0, 10)}</span>
           <span>${item.quantity || 1}</span>
           <span>₹${item.price || 0}</span>
           <span>₹${((item.price || 0) * (item.quantity || 1)).toFixed(0)}</span>
-        </div>` : ''
-      ).join('')}
+        </div>`
+            : "",
+        )
+        .join("")}
       <div class="divider"></div>
       <div class="totals">
         <div class="total-row"><span>SUBTOTAL:</span><span>₹${subtotal.toFixed(0)}</span></div>
@@ -432,13 +504,28 @@ export const printDirectHTML = (
     `;
   }
 
+  if (selectedKotPrinter) {
+  await printHtmlWithQz(
+    `<!DOCTYPE html>
+     <html>
+       <head><meta charset="UTF-8" /></head>
+       <body>${content}</body>
+     </html>`,
+    selectedKotPrinter,
+  );
+  return;
+}
+
   const iframe = document.createElement("iframe");
-  iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:none;";
+  iframe.style.cssText =
+    "position:fixed;right:0;bottom:0;width:0;height:0;border:none;";
   document.body.appendChild(iframe);
 
   const doc = iframe.contentDocument;
   doc.open();
-  doc.write(`<!DOCTYPE html><html><head><title>${isKOT ? "KOT" : "Bill"}</title></head><body>${content}</body></html>`);
+  doc.write(
+    `<!DOCTYPE html><html><head><title>${isKOT ? "KOT" : "Bill"}</title></head><body>${content}</body></html>`,
+  );
   doc.close();
 
   iframe.onload = () => {
@@ -447,12 +534,12 @@ export const printDirectHTML = (
   };
 };
 
-export const printCancelDirectHTML = (
+export const  printCancelDirectHTML =async (
   orderData,
   restaurantName = "ABC RESTAURANT",
-  isKOT = true
+  isKOT = true,
+  selectedKotPrinter
 ) => {
-
   if (!orderData) return;
 
   const { date, time } = formatDateTime(orderData.createdAt);
@@ -584,7 +671,9 @@ export const printCancelDirectHTML = (
             <div>
               ${
                 orderData?.foodPlan?.length > 0
-                  ? orderData.foodPlan.map((plan) => `${plan?.planType || ""}`).join(", ")
+                  ? orderData.foodPlan
+                      .map((plan) => `${plan?.planType || ""}`)
+                      .join(", ")
                   : ""
               }
             </div>
@@ -596,11 +685,13 @@ export const printCancelDirectHTML = (
           <div class="divider"></div>
 
           ${
-            orderData.items?.map((item, index) =>
-              item?.product_name || item?.name
-                ? `<div class="item-row"><span>${index + 1} ${(item.product_name || item.name).substring(0, 15)}</span><span>${item.quantity || 1}</span></div>`
-                : ""
-            ).join("") || ""
+            orderData.items
+              ?.map((item, index) =>
+                item?.product_name || item?.name
+                  ? `<div class="item-row"><span>${index + 1} ${(item.product_name || item.name).substring(0, 15)}</span><span>${item.quantity || 1}</span></div>`
+                  : "",
+              )
+              .join("") || ""
           }
 
           <div class="divider"></div>
@@ -618,7 +709,7 @@ export const printCancelDirectHTML = (
   } else {
     const subtotal = (orderData.items || []).reduce(
       (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
-      0
+      0,
     );
     const taxAmount = subtotal * TAX_RATE;
     const grandTotal = subtotal + taxAmount;
@@ -653,16 +744,18 @@ export const printCancelDirectHTML = (
           <div class="divider"></div>
 
           ${
-            orderData.items?.map((item) =>
-              item?.name || item?.product_name
-                ? `<div class="grid-row">
+            orderData.items
+              ?.map((item) =>
+                item?.name || item?.product_name
+                  ? `<div class="grid-row">
                     <span>${(item.name || item.product_name).substring(0, 10)}</span>
                     <span>${item.quantity || 1}</span>
                     <span>₹${item.price || 0}</span>
                     <span>₹${((item.price || 0) * (item.quantity || 1)).toFixed(0)}</span>
                   </div>`
-                : ""
-            ).join("") || ""
+                  : "",
+              )
+              .join("") || ""
           }
 
           <div class="divider"></div>
@@ -687,10 +780,24 @@ export const printCancelDirectHTML = (
     `;
   }
 
+  if (selectedKotPrinter) {
+  await printHtmlWithQz(
+    `<!DOCTYPE html>
+     <html>
+       <head><meta charset="UTF-8" /></head>
+       <body>${content}</body>
+     </html>`,
+    selectedKotPrinter,
+  );
+  return;
+}
+
   const iframe = document.createElement("iframe");
   iframe.style.cssText =
     "position:fixed;right:0;bottom:0;width:0;height:0;border:none;";
   document.body.appendChild(iframe);
+
+  
 
   const doc = iframe.contentDocument || iframe.contentWindow.document;
   doc.open();
@@ -707,6 +814,8 @@ export const printCancelDirectHTML = (
   `);
   doc.close();
 
+
+
   iframe.onload = () => {
     iframe.contentWindow.focus();
     iframe.contentWindow.print();
@@ -716,36 +825,62 @@ export const printCancelDirectHTML = (
       }
     }, 1000);
   };
-}
+};
 
 // Main Export Functions
-export const generateAndPrintKOT = (
+export const generateAndPrintKOT = async (
   orderData,
   autoPrint = true,
   download = false,
   restaurantName = "ABC RESTAURANT",
-  useHTML = true
+  selectedKotPrinter,
+  useHTML = true,
 ) => {
 
+  let toastId;
   try {
     validateOrderData(orderData);
+    if (autoPrint && selectedKotPrinter) {
+      toastId = toast.loading(`Sending KOT ${orderData.kotNo} to ${selectedKotPrinter}…`, {
+        duration: Infinity,
+        dismissible: false,
+        closeButton: false,
+      });
+    }
 
+    let pdf = null;
     if (useHTML && autoPrint && orderData.isCancelled) {
-      printCancelDirectHTML(orderData, restaurantName, true);
-      return null;
-    }
-    if (useHTML && autoPrint) {
-      printDirectHTML(orderData, restaurantName, true);
-      return null;
+      await printCancelDirectHTML(orderData, restaurantName, true ,selectedKotPrinter);
+    } else if (useHTML && autoPrint) {
+      await printDirectHTML(orderData, restaurantName, true ,selectedKotPrinter);
+    } else {
+      pdf = generateKitchenOrderTicket(orderData, restaurantName);
+      if (download) downloadReceipt(pdf, `KOT_${orderData.kotNo}.pdf`);
+      if (autoPrint) await printThermalReceipt(pdf, "KOT", selectedKotPrinter);
     }
 
-    const pdf = generateKitchenOrderTicket(orderData, restaurantName);
-    if (download) downloadReceipt(pdf, `KOT_${orderData.kotNo}.pdf`);
-    if (autoPrint) printThermalReceipt(pdf, "KOT");
+    if (toastId !== undefined) {
+      toast.success(`KOT ${orderData.kotNo} sent to ${selectedKotPrinter}.`, {
+        id: toastId,
+        description: "QZ Tray accepted the job. Check the printer for the printed ticket.",
+        duration: 5000,
+        dismissible: true,
+        closeButton: true,
+      });
+    }
     return pdf;
   } catch (error) {
-    console.error("Error generating KOT:", error);
-    throw error;
+    console.error("Error generating or printing KOT:", error);
+    toast.error("Could not send KOT to the printer.", {
+      ...(toastId !== undefined ? { id: toastId } : {}),
+      description: "Check QZ Tray, allow its connection prompt, and verify the selected printer before retrying.",
+      duration: 7000,
+      dismissible: true,
+      closeButton: true,
+    });
+    // Print buttons use this shared UI handler without awaiting it.
+    // Handle failures here so every entry point gets feedback without an unhandled rejection.
+    return null;
   }
 };
 
@@ -755,9 +890,8 @@ export const generateAndPrintBill = (
   download = false,
   restaurantName = "ABC RESTAURANT",
   restaurantInfo,
-  useHTML = true
+  useHTML = true,
 ) => {
-
   try {
     validateOrderData(orderData);
 

@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import { ChevronDown, CircleDot } from "lucide-react";
 import TitleDiv from "@/components/common/TitleDiv";
@@ -25,7 +26,7 @@ const fetchBankAndCashSources = async (cmp_id) => {
   return response.data.data;
 };
 
-function PaymentSplitting() {
+function PaymentSplitting({ embedded = false, onSaved, onTransactionSaved } = {}) {
   // Store payment splits in the required format directly
   const [paymentSplits, setPaymentSplits] = useState([
     { type: "cash", amount: 0, ref_id: null, ref_collection: "Cash" },
@@ -101,10 +102,10 @@ function PaymentSplitting() {
   });
 
   useEffect(() => {
-    if (!totalWithAdditionalCharges) {
+    if (!embedded && !totalWithAdditionalCharges) {
       navigate(-1, { replace: true });
     }
-  }, [totalWithAdditionalCharges, navigate]);
+  }, [totalWithAdditionalCharges, navigate, embedded]);
 
   useEffect(() => {
     if (paymentSplittingData) {
@@ -318,7 +319,21 @@ function PaymentSplitting() {
     });
   };
 
+  const validateEmbeddedPayment = () => {
+    if (!embedded) return true;
+    if (additionalChargesFromRedux.some(row => row.value === "" || !Number.isFinite(Number(row.value)) || Number(row.value) < 0)) {
+      toast.error("Enter a valid, non-negative value for each additional charge.");
+      return false;
+    }
+    if (paymentSplits.some(split => !Number.isFinite(Number(split.amount)) || Number(split.amount) < 0)) {
+      toast.error("Enter valid, non-negative payment amounts.");
+      return false;
+    }
+    return true;
+  };
+
   const handleSavePaymentSplit = () => {
+    if (!validateEmbeddedPayment()) return;
     const validSplits = getValidPaymentSplits();
     const data = {
       changeFinalAmount: true,
@@ -331,10 +346,12 @@ function PaymentSplitting() {
       updateTotalValue({ field: "totalPaymentSplits", value: totalAmount }),
     );
 
-    navigate(-1, { replace: true });
+    if (embedded) onSaved?.();
+    else navigate(-1, { replace: true });
   };
 
   const handleSavePaymentSplitAndSubmit = () => {
+    if (!validateEmbeddedPayment()) return;
     const validSplits = getValidPaymentSplits();
     const data = {
       changeFinalAmount: true,
@@ -441,8 +458,7 @@ function PaymentSplitting() {
         /// these values are not getting latest data,so we need to take it directly form store
         finalAmount: Number(reduxData?.finalAmount?.toFixed(2) || 0),
         finalOutstandingAmount: Number(
-          reduxData?.finalOutstandingAmount?.toFixed(2) ||
-            Number(reduxData?.finalAmount?.toFixed(2) || 0),
+          (reduxData?.finalOutstandingAmount ?? reduxData?.finalAmount ?? 0).toFixed(2),
         ),
         subTotal: Number(reduxData?.subTotal?.toFixed(2) || 0),
         totalPaymentSplits: Number(
@@ -484,9 +500,13 @@ function PaymentSplitting() {
       );
       toast.success(res.data.message);
 
-      navigate(`/sUsers/${voucherTypeFromRedux}Details/${res.data.data._id}`, {
-        state: { from: location?.state?.from || "null" },
-      });
+      if (embedded && onTransactionSaved) {
+        onTransactionSaved();
+      } else {
+        navigate(`/sUsers/${voucherTypeFromRedux}Details/${res.data.data._id}`, {
+          state: { from: location?.state?.from || "null" },
+        });
+      }
 
       queryClient.invalidateQueries({
         queryKey: ["todaysTransaction", cmp_id, isAdmin],
@@ -510,12 +530,12 @@ function PaymentSplitting() {
   console.log(paymentSplittingData);
 
   return (
-    <div className="min-h-screen bg-gray-50 w-full">
-      <TitleDiv
+    <div className={embedded ? "sales-payment-embedded" : "min-h-screen bg-gray-50 w-full"}>
+      {!embedded && <TitleDiv
         title="Payment Splitting"
         loading={isLoading || submitLoading}
         customNavigate={customNavigate}
-      />
+      />}
       <div className={`${isLoading && "opacity-75 animate-pulse"}`}></div>
       <div className="">
         {/* Main Card */}
@@ -673,7 +693,7 @@ function PaymentSplitting() {
               {enablePaymentSplittingAsCompulsory ? (
                 <button
                   type="button"
-                  disabled={submitLoading}
+                  disabled={submitLoading || (embedded && (isLoading || !!error || !party?._id || totalWithAdditionalCharges <= 0))}
                   onClick={handleSavePaymentSplitAndSubmit}
                   className={`w-full px-8 py-3 rounded-md font-medium transition-all duration-200 text-center text-white 
         bg-violet-700 hover:bg-violet-800 
@@ -684,7 +704,7 @@ function PaymentSplitting() {
               ) : (
                 <button
                   type="button"
-                  disabled={submitLoading}
+                  disabled={submitLoading || (embedded && (isLoading || !!error || !party?._id || totalWithAdditionalCharges <= 0))}
                   onClick={handleSavePaymentSplit}
                   className={`w-full px-8 py-3 rounded-md font-medium transition-all duration-200 text-center text-white 
         bg-pink-500 hover:bg-pink-600 

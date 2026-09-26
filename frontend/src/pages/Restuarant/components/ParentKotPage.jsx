@@ -1,3 +1,4 @@
+import TouchInput from "@/components/common/touchKeyboard/TouchInput";
 import React, { useState, useEffect } from "react";
 import useFetch from "@/customHook/useFetch";
 import {
@@ -136,7 +137,7 @@ const filtered = kotData.filter((kot) => {
       <div className="px-4 py-2.5 border-b border-slate-100">
         <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus-within:border-indigo-300 focus-within:bg-white transition-all">
           <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          <input
+          <TouchInput
             type="text"
             placeholder="Search voucher, table, type…"
             value={searchQuery}

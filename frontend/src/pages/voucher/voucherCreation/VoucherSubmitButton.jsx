@@ -11,6 +11,8 @@ function VoucherSubmitButton({
   submitHandler,
   mode,
   titleText,
+  label,
+  onReceivePayment,
 }) {
   const { additionalCharges: additionalChargesFromRedux = [] } = useSelector(
     (state) => state.commonVoucherSlice
@@ -38,7 +40,8 @@ function VoucherSubmitButton({
         }
       }
 
-     navigate("/sUsers/sales/paymentSplitting")
+     if (onReceivePayment) onReceivePayment();
+     else navigate("/sUsers/sales/paymentSplitting")
   };
 
   return (
@@ -67,9 +70,9 @@ function VoucherSubmitButton({
             <p>{mode === "create" ? "Transfer Stock" : "Edit Transfer"}</p>
           ) : (
             <p>
-              {mode === "create"
+              {label || (mode === "create"
                 ? `Generate ${titleText}`
-                : `Edit ${titleText}`}
+                : `Edit ${titleText}`)}
             </p>
           )}
         </button>

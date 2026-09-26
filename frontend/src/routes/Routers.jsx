@@ -483,6 +483,10 @@ const Checkoutpdf = lazy(() => import("@/pages/Hotel/Pages/Checkoutpdf"))
 const ReceiptInvoicepage = lazy(
   () => import("@/pages/Hotel/Pages/ReceiptInvoicepage"),
 );
+
+const KotPrinterSetting = lazy(
+  () => import("@/pages/secUsers/settilngs/KotPrinterSetting"),
+)
 const Routers = () => {
   return (
     <Suspense fallback={<SuspenseLoader />}>
@@ -2297,6 +2301,14 @@ const Routers = () => {
           element={
             <ProtectedSecRoute>
               <ViewReport />
+            </ProtectedSecRoute>
+          }
+        />
+           <Route
+          path="/sUsers/kotPrinterSetting"
+          element={
+            <ProtectedSecRoute>
+              <KotPrinterSetting />
             </ProtectedSecRoute>
           }
         />

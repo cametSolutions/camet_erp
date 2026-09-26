@@ -1,3 +1,5 @@
+import TouchKeyboardScope from "@/components/common/touchKeyboard/TouchKeyboardScope";
+import TouchInput from "@/components/common/touchKeyboard/TouchInput";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { FaUtensils, FaCircle } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
@@ -268,7 +270,7 @@ const TableTiles = ({
       customerName: data?.customer?.name,
       type: data?.type,
     };
-    generateAndPrintKOT(orderData, true, false, companyName);
+    generateAndPrintKOT(orderData, true, false, companyName ,org?.configurations?.[0]?.kotPrinter);
   };
 
   // Handle print data
@@ -489,7 +491,7 @@ const TableTiles = ({
               {/* Dropdown */}
               {roomData?.length > 0 && (
                 <div className="relative mb-2">
-                  <input
+                  <TouchInput
                     type="text"
                     placeholder="Search room..."
                     className="px-3 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-violet-500"
@@ -1381,7 +1383,7 @@ const TableTiles = ({
                               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
                                 ₹
                               </span>
-                              <input
+                              <TouchInput
                                 type="number"
                                 value={cashAmount}
                                 onChange={(e) => {
@@ -1447,7 +1449,7 @@ const TableTiles = ({
                               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
                                 ₹
                               </span>
-                              <input
+                              <TouchInput
                                 type="number"
                                 value={onlineAmount}
                                 onChange={(e) => {
@@ -1656,4 +1658,6 @@ const TableTiles = ({
     </>
   );
 };
-export default TableTiles;
+export default function TableTilesWithKeyboard(props) {
+  return <TouchKeyboardScope><TableTiles {...props} /></TouchKeyboardScope>;
+}

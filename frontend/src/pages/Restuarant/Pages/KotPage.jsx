@@ -1,3 +1,5 @@
+import TouchKeyboardScope from "@/components/common/touchKeyboard/TouchKeyboardScope";
+import TouchInput from "@/components/common/touchKeyboard/TouchInput";
 import { useState, useEffect, useCallback, useRef } from "react";
 import dayjs from "dayjs";
 import useFetch from "@/customHook/useFetch";
@@ -576,7 +578,7 @@ const permission = useSelector((state) => state.permissionData?.permissions);
     setSelectedMode(null);
     setShowBatchWiseKotPrint(false);
     setDataForBatchWisePrint(null);
-    generateAndPrintKOT(orderData, true, false, companyName);
+    generateAndPrintKOT(orderData, true, false, companyName ,org?.configurations?.[0]?.kotPrinter);
   };
 
   const handleKotCancel = async () => {
@@ -1476,7 +1478,7 @@ const permission = useSelector((state) => state.permissionData?.permissions);
             )}
             <div className="flex items-center gap-2">
               <MenuIcon />
-              <input
+              <TouchInput
                 type="text"
                 className="px-3 py-1.5 border border-gray-300 rounded-md w-64 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Search name, order ID, or items..."
@@ -2345,7 +2347,7 @@ const permission = useSelector((state) => state.permissionData?.permissions);
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">
                                 {discountType === "percentage" ? "%" : "₹"}
                               </span>
-                              <input
+                              <TouchInput
                                 type="number"
                                 value={discountValue || ""}
                                 onChange={(e) => {
@@ -2479,7 +2481,7 @@ const permission = useSelector((state) => state.permissionData?.permissions);
                         <label className="block text-xs font-semibold text-green-800 mb-1">
                           Remarks
                         </label>
-                        <input
+                        <TouchInput
                           type="text"
                           placeholder="Enter note (optional)"
                           className="w-full px-3 py-2 text-sm border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
@@ -2978,7 +2980,7 @@ const permission = useSelector((state) => state.permissionData?.permissions);
                                         >
                                           ₹
                                         </span>
-                                        <input
+                                        <TouchInput
                                           type="number"
                                           disabled={rowLocked}
                                           value={row.amount}
@@ -3048,7 +3050,7 @@ const permission = useSelector((state) => state.permissionData?.permissions);
                                       <label className="block text-[11px] text-gray-500 mb-1">
                                         Remarks
                                       </label>
-                                      <input
+                                      <TouchInput
                                         type="text"
                                         disabled={rowLocked}
                                         value={row.remarks || ""}
@@ -3074,6 +3076,7 @@ const permission = useSelector((state) => state.permissionData?.permissions);
                                         Creditor
                                       </label>
                                       <CustomerSearchInputBox
+                        inputComponent={TouchInput}
                                         onSelect={(party) => {
                                           updateSplitPaymentRow(
                                             index,
@@ -3099,7 +3102,7 @@ const permission = useSelector((state) => state.permissionData?.permissions);
                                               ? "Ref. No"
                                               : "Remarks"}
                                           </label>
-                                          <input
+                                          <TouchInput
                                             type="text"
                                             disabled={rowLocked}
                                             value={row[field] || ""}
@@ -3249,6 +3252,7 @@ const permission = useSelector((state) => state.permissionData?.permissions);
                         Select Creditor
                       </label>
                       <CustomerSearchInputBox
+                        inputComponent={TouchInput}
                         onSelect={(party) => {
                           setSelectedCreditor(party);
                         }}
@@ -3404,7 +3408,7 @@ const permission = useSelector((state) => state.permissionData?.permissions);
                       Reason for Cancellation{" "}
                       <span className="text-red-500">*</span>
                     </label>
-                    <textarea
+                    <TouchInput as="textarea"
                       value={cancelReason}
                       onChange={(e) => {
                         setCancelReason(e.target.value);
@@ -3511,4 +3515,6 @@ const permission = useSelector((state) => state.permissionData?.permissions);
   );
 };
 
-export default OrdersDashboard;
+export default function OrdersDashboardWithKeyboard() {
+  return <TouchKeyboardScope><OrdersDashboard /></TouchKeyboardScope>;
+}

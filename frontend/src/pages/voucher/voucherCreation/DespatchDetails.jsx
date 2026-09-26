@@ -6,7 +6,7 @@ import _ from "lodash";
 import { addDespatchDetails } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import { useDispatch, useSelector } from "react-redux";
 
-function DespatchDetails() {
+function DespatchDetails({ embedded = false } = {}) {
   const { despatchDetails, voucherType } = useSelector(
     (state) => state?.commonVoucherSlice
   );
@@ -68,7 +68,8 @@ function DespatchDetails() {
 
     if (validateFormValues(newFormValues)) {
       setFormValues(newFormValues);
-      debouncedDispatch(newFormValues);
+      if (embedded) dispatch(addDespatchDetails(newFormValues));
+      else debouncedDispatch(newFormValues);
     } else {
       return;
     }
@@ -101,7 +102,7 @@ function DespatchDetails() {
 
   return (
     <div>
-      <div className="p-4 bg-white mt-3 shadow-lg">
+      {!embedded && <div className="p-4 bg-white mt-3 shadow-lg">
         <div className="flex items-center mb-2 gap-2 ">
           <p className="font-bold uppercase text-xs">Details</p>
           <span className="text-red-500 font-bold"> *</span>
@@ -116,9 +117,9 @@ function DespatchDetails() {
             <p className="text-md font-semibold">Despatch Details</p>
           </div>
         </div>
-      </div>
+      </div>}
 
-      {open && (
+      {(embedded || open) && (
         <div className="py-3 px-3">
           <div className="bg-white pt-10 pb-6 px-4 md:px-7 mx-auto">
             <form>

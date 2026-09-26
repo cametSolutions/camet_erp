@@ -18,10 +18,23 @@ import {
   addIsNoteOpen,
   updateTotalValue,
   resetPaymentSplit,
+  addPaymentSplits,
+  addMode,
+  addVoucherNumber,
+  addParty,
+  setItem,
+  setAdditionalCharges,
+  setPriceLevel,
+  addDespatchDetails,
+  saveId,
+  addSelectedVoucherSeries,
 } from "../../../../slices/voucherSlices/commonVoucherSlice";
 import DespatchDetails from "./DespatchDetails";
 import HeaderTile from "./HeaderTile";
 import AddPartyTile from "./AddPartyTile";
+import DesktopPartySearch from "./DesktopPartySearch";
+import DesktopPriceLevel from "./DesktopPriceLevel";
+import { Home } from "lucide-react";
 import AddItemTile from "./AddItemTile";
 import FooterButton from "./FooterButton";
 import TitleDiv from "../../../components/common/TitleDiv";
@@ -31,13 +44,25 @@ import AddGodownTile from "./AddGodownTile";
 import AddNoteTile from "./AddNoteTile";
 import { useQueryClient } from "@tanstack/react-query";
 import ReceiveAmount from "./ReceiveAmount";
+import { DesktopSalesItems, DesktopSalesTotals, DesktopRecentSales } from "./DesktopSalesPanels";
+import "./desktopSales.css";
+import DesktopSalesOptions from "./DesktopSalesOptions";
 
 function VoucherInitialPage() {
+  const [optionsTab, setOptionsTab] = useState(null);
+  const [recentSalesVersion, setRecentSalesVersion] = useState(0);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const isMounted = useRef(true);
   const queryClient = useQueryClient();
+  const [desktopViewport, setDesktopViewport] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    const update = () => setDesktopViewport(media.matches);
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   //// check if the user is admin
   const isAdmin =
@@ -79,7 +104,7 @@ function VoucherInitialPage() {
   const { enablePaymentSplittingAsCompulsory = false } = configurations[0];
 
 
-  
+
 
 
   const {
@@ -108,10 +133,12 @@ function VoucherInitialPage() {
     note: noteFromRedux,
     isNoteOpen: isNoteOpenFromRedux,
     paymentSplittingData: paymentSplittingDataFromRedux,
+    id: idFromRedux,
   } = useSelector((state) => state.commonVoucherSlice);
 
   const getApiEndPoint = () => {
     if (voucherTypeFromRedux) {
+      if (mode === "edit" && idFromRedux) return `editSales/${idFromRedux}`;
       return `create${voucherTypeFromRedux
         ?.split("")[0]
         ?.toUpperCase()}${voucherTypeFromRedux?.split("")?.slice(1).join("")}`;
@@ -232,7 +259,7 @@ function VoucherInitialPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [cmp_id, voucherTypeFromRedux, allAdditionalChargesFromRedux]);
+  }, [cmp_id, voucherTypeFromRedux, allAdditionalChargesFromRedux, voucherSeriesFromRedux, voucherNumberFromRedux]);
 
   // Initialize component
   useEffect(() => {
@@ -268,6 +295,85 @@ function VoucherInitialPage() {
     }
     dispatch(resetPaymentSplit());
     navigate("/sUsers/addItemSales");
+  };
+
+  const handleDesktopTransactionSaved = () => {
+    setOptionsTab(null);
+    setOpenAdditionalTile(false);
+    dispatch(removeAll());
+    dispatch(addVoucherType("sales"));
+    dispatch(changeDate(JSON.stringify(selectedDate)));
+    setVoucherNumber("");
+    setRecentSalesVersion(version => version + 1);
+    queryClient.invalidateQueries({ queryKey: ["todaysTransaction", cmp_id, isAdmin] });
+    queryClient.invalidateQueries({ queryKey: ["desktop-sale-products", cmp_id] });
+  };
+
+  const handleDesktopReceivedAmount = ({ cash, upi, cheque, cashSource, upiSource, chequeSource }) => {
+    const received = Math.min(Math.max((Number(cash) || 0) + (Number(upi) || 0) + (Number(cheque) || 0), 0), Number(totalAmount) || 0);
+    const balance = Math.max((Number(totalAmount) || 0) - received, 0);
+    dispatch(addPaymentSplits({
+      changeFinalAmount: true,
+      totalPaymentSplits: received + balance,
+      paymentSplits: [
+        { type: "cash", amount: Number(cash) || 0, ref_id: cashSource || null, ref_collection: "Cash" },
+        { type: "upi", amount: Number(upi) || 0, ref_id: upiSource || null, ref_collection: "BankDetails" },
+        { type: "cheque", amount: Number(cheque) || 0, ref_id: chequeSource || null, ref_collection: "BankDetails" },
+        { type: "credit", amount: balance, ref_id: party?._id || null, ref_collection: "Party", reference_name: party?.partyName || party?.name || "", credit_reference_type: party?.partyType || "" },
+      ],
+    }));
+  };
+
+  const loadDesktopSaleForEdit = async (sale) => {
+    try {
+      setIsLoading(true);
+      const response = await api.get(`/api/sUsers/getSalesDetails/${sale._id}`, { withCredentials: true });
+      const data = response.data.data;
+      if (data.isCancelled) {
+        toast.error("Cancelled sales cannot be edited.");
+        return;
+      }
+      dispatch(removeAll());
+      dispatch(addVoucherType("sales"));
+      dispatch(addMode("edit"));
+      dispatch(saveId(data._id));
+      dispatch(addVoucherNumber(data.salesNumber));
+      dispatch(changeDate(JSON.stringify(new Date(data.date))));
+      dispatch(addParty(data.party || {}));
+      dispatch(setItem(data.items || []));
+      dispatch(setPriceLevel(data.selectedPriceLevel || ""));
+      dispatch(setAdditionalCharges(data.additionalCharges || []));
+      dispatch(addDespatchDetails(data.despatchDetails || {}));
+      dispatch(addNote(data.note || null));
+      dispatch(addPaymentSplits({
+        changeFinalAmount: true,
+        paymentSplits: data.paymentSplittingData || [],
+        totalPaymentSplits: (data.paymentSplittingData || []).reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
+      }));
+      if (data.seriesDetails) dispatch(addSelectedVoucherSeries(data.seriesDetails));
+      setVoucherNumber(data.salesNumber || "");
+      setSelectedDate(new Date(data.date));
+      toast.success(`Editing sale ${data.salesNumber}`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to load sale for editing.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const cancelDesktopSale = async () => {
+    if (!idFromRedux) return;
+    if (!window.confirm("Cancel this sale? Stock and outstanding balance will be reversed.")) return;
+    try {
+      setSubmitLoading(true);
+      const response = await api.put(`/api/sUsers/cancelSales/${idFromRedux}`, { cancelReason: "Cancelled from desktop sales" }, { withCredentials: true });
+      toast.success(response.data.message || "Sale cancelled.");
+      handleDesktopTransactionSaved();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to cancel sale.");
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   const submitHandler = async () => {
@@ -348,7 +454,7 @@ function VoucherInitialPage() {
           usedSeriesNumber: selectedVoucherSeriesFromRedux?.currentNumber,
           orgId: cmp_id,
           finalAmount: Number(totalAmount.toFixed(2)),
-          finalOutstandingAmount: Number(finalOutstandingAmountFromRedux.toFixed(2)) || Number(totalAmount.toFixed(2)),
+          finalOutstandingAmount: Number((finalOutstandingAmountFromRedux ?? totalAmount).toFixed(2)),
           subTotal: Number(subTotalFromRedux.toFixed(2)),
           totalAdditionalCharges: Number(totalAdditionalChargesFromRedux.toFixed(2)),
           totalWithAdditionalCharges: Number(totalWithAdditionalChargesFromRedux.toFixed(2)),
@@ -384,10 +490,14 @@ function VoucherInitialPage() {
       );
 
       toast.success(res.data.message);
-      navigate(`/sUsers/${voucherTypeFromRedux}Details/${res.data.data._id}`, {
-        state: { from: location?.state?.from || "null" },
-      });
-      dispatch(removeAll());
+      if (desktopSales) {
+        handleDesktopTransactionSaved();
+      } else {
+        navigate(`/sUsers/${voucherTypeFromRedux}Details/${res.data.data._id}`, {
+          state: { from: location?.state?.from || "null" },
+        });
+        dispatch(removeAll());
+      }
       queryClient.invalidateQueries({
         queryKey: ["todaysTransaction", cmp_id, isAdmin],
       });
@@ -399,19 +509,24 @@ function VoucherInitialPage() {
     }
   };
 
+  const desktopSales = desktopViewport && voucherTypeFromRedux === "sales";
+
   return (
-    <div className="mb-14 sm:mb-0">
+    <div className={`mb-14 sm:mb-0 ${desktopSales ? "desktop-sales" : ""}`}>
       <div className="flex-1 bg-slate-100 h -screen ">
         <TitleDiv
-          title={formatVoucherType(voucherTypeFromRedux)}
+          title={desktopSales ? "New Sale" : formatVoucherType(voucherTypeFromRedux)}
+          rightSideContent={desktopSales ? <span className="flex items-center gap-2"><Home size={20} aria-hidden="true" />Home</span> : null}
+          rightSideContentOnClick={desktopSales ? () => navigate("/sUsers/dashboard") : null}
           // from={`/sUsers/selectVouchers`}
           loading={isLoading || submitLoading}
         />
 
-        <div className={`${isLoading ? "pointer-events-none opacity-70" : ""}`}>
+        <div className={`sales-workspace ${isLoading ? "pointer-events-none opacity-70" : ""}`}>
+          <div className="sales-form">
           {/* invoiec date */}
 
-          <HeaderTile
+          <div className="sales-header"><HeaderTile
             title={formatVoucherType(voucherTypeFromRedux)}
             number={voucherNumberFromRedux}
             selectedDate={selectedDate}
@@ -430,11 +545,14 @@ function VoucherInitialPage() {
               enablePaymentSplittingAsCompulsory
             }
             openAdditionalTile={openAdditionalTile}
-          />
+          /></div>
           {/* adding party */}
 
+          <div className="sales-party">
           {voucherTypeFromRedux === "stockTransfer" ? (
             <AddGodownTile />
+          ) : desktopSales ? (
+            <DesktopPartySearch cmpId={cmp_id} party={party} locked={convertedFrom.length > 0} />
           ) : (
             <AddPartyTile
               party={party}
@@ -445,16 +563,18 @@ function VoucherInitialPage() {
               convertedFrom={convertedFrom}
             />
           )}
+          {desktopSales && <div className="sales-party-values"><DesktopPriceLevel cmpId={cmp_id} locked={convertedFrom.length > 0} /></div>}
+          </div>
 
           {/* Despatch details */}
 
-          {voucherTypeFromRedux !== "stockTransfer" && (
+          {!desktopSales && voucherTypeFromRedux !== "stockTransfer" && (
             <DespatchDetails tab={"sales"} />
           )}
 
           {/* adding items */}
 
-          <AddItemTile
+          {desktopSales ? <DesktopSalesItems items={items} convertedFrom={convertedFrom} /> : <AddItemTile
             items={items}
             handleAddItem={handleAddItem}
             dispatch={dispatch}
@@ -467,7 +587,16 @@ function VoucherInitialPage() {
             convertedFrom={convertedFrom}
             urlToAddItem="/sUsers/addItemSales"
             urlToEditItem="/sUsers/editItemVoucher"
-          />
+          />}
+
+          {desktopSales ? <DesktopSalesOptions
+            tab={optionsTab} onTabChange={setOptionsTab}
+            onTransactionSaved={handleDesktopTransactionSaved}
+            openAdditionalTile={openAdditionalTile} setOpenAdditionalTile={setOpenAdditionalTile}
+          /> : (<>          <div className={desktopSales ? "sales-options" : undefined}>
+          <details open={desktopSales ? undefined : true}>
+          <summary className={desktopSales ? "sales-options-toggle" : "hidden"}>More options · Charges, payment, despatch and note</summary>
+          <div className={desktopSales ? "sales-options-content" : undefined}>
 
           <AdditionalChargesTile
             type={"sale"}
@@ -488,8 +617,11 @@ function VoucherInitialPage() {
             addNote={addNote}
             addIsNoteOpen={addIsNoteOpen}
           />
+          </div>
+          </details>
+          </div></>)}
 
-          <div className="flex justify-between items-center bg-white mt-2 p-3">
+          {desktopSales ? <DesktopSalesTotals onEditCharges={() => setOptionsTab("charges")} onOpenOptions={() => setOptionsTab("charges")} onApplyReceived={handleDesktopReceivedAmount} subtotal={subTotal} charges={totalAdditionalChargesFromRedux} total={totalAmount} received={{ cash: Number((paymentSplittingDataFromRedux || []).find(payment => payment.type === "cash")?.amount || 0), cashSource: (paymentSplittingDataFromRedux || []).find(payment => payment.type === "cash")?.ref_id || "", upi: Number((paymentSplittingDataFromRedux || []).find(payment => payment.type === "upi")?.amount || 0), upiSource: (paymentSplittingDataFromRedux || []).find(payment => payment.type === "upi")?.ref_id || "", cheque: Number((paymentSplittingDataFromRedux || []).find(payment => payment.type === "cheque")?.amount || 0), chequeSource: (paymentSplittingDataFromRedux || []).find(payment => payment.type === "cheque")?.ref_id || "" }} balance={Math.max(Number(totalAmount || 0) - (paymentSplittingDataFromRedux || []).filter(payment => payment.type !== "credit").reduce((sum, payment) => sum + Number(payment.amount || 0), 0), 0)} /> : <div className="flex justify-between items-center bg-white mt-2 p-3">
             <p className="font-bold text-md">Total Amount</p>
             <div className="flex flex-col items-center">
               <p className="font-bold text-md">
@@ -497,8 +629,10 @@ function VoucherInitialPage() {
               </p>
               <p className="text-[9px] text-gray-400">(rounded)</p>
             </div>
-          </div>
+          </div>}
 
+          <div className="sales-footer">
+          {desktopSales && <button type="button" className="sales-cancel" disabled={submitLoading} onClick={mode === "edit" && idFromRedux ? cancelDesktopSale : () => dispatch(removeAll())}>{mode === "edit" && idFromRedux ? "× Cancel Sale" : "× Clear"}</button>}
           <FooterButton
             submitHandler={submitHandler}
             title={formatVoucherType(voucherTypeFromRedux)}
@@ -508,7 +642,13 @@ function VoucherInitialPage() {
               enablePaymentSplittingAsCompulsory
             }
             openAdditionalTile={openAdditionalTile}
+            onReceivePayment={desktopSales ? () => setOptionsTab("payment") : undefined}
+            desktopLabel={desktopSales ? "Save Transaction" : undefined}
+            loading={desktopSales ? submitLoading || isLoading : undefined}
           />
+          </div>
+          </div>
+          {desktopSales && <DesktopRecentSales key={recentSalesVersion} cmpId={cmp_id} isAdmin={isAdmin} onEdit={loadDesktopSaleForEdit} />}
         </div>
       </div>
     </div>

@@ -1,3 +1,5 @@
+import TouchKeyboardScope from "@/components/common/touchKeyboard/TouchKeyboardScope";
+import TouchInput from "@/components/common/touchKeyboard/TouchInput";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useReactToPrint } from "react-to-print";
 
@@ -45,6 +47,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import ParentKotPage from "../components/ParentKotPage";
 import { applyBatchEdit } from "@/pages/Restuarant/Helper/RestaurantDashBoardHelper.jsx";
 import RestaurantReportsMenu from "../components/RestaurantReports";
+import qz from "qz-tray";
 const RestaurantPOS = () => {
   const [selectedCuisine, setSelectedCuisine] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
@@ -266,6 +269,7 @@ const RestaurantPOS = () => {
   );
   const config = configurations?.[0] || {};
   const orderTypesConfig = config.orderTypes || {};
+  const selectedKotPrinter = configurations?.[0]?.kotPrinter || "";
 
   const getDefaultOrderType = () => {
     if (orderTypesConfig?.dineIn) return "dine-in";
@@ -1309,7 +1313,7 @@ const RestaurantPOS = () => {
       guestName: roomDetails?.guestName,
       foodPlan: roomDetails?.foodPlan || [],
     };
-    generateAndPrintKOT(orderData, true, false, companyName);
+    generateAndPrintKOT(orderData, true, false, companyName ,selectedKotPrinter);
   };
 
   const handleSelectedPriceLevel = (value) => {
@@ -1812,7 +1816,7 @@ const RestaurantPOS = () => {
             <div className="p-3 bg-white/90 backdrop-blur-sm border-b border-gray-200/50">
               <div className="mb-2 relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-500 w-5 h-5" />
-                <input
+                <TouchInput
                   type="text"
                   placeholder="Search items..."
                   value={searchTerm}
@@ -2075,11 +2079,11 @@ const RestaurantPOS = () => {
 
                         <div className="flex items-center gap-1 mt-0.5">
                           <span className="text-xs text-gray-500">₹</span>
-                          <input
+                          <TouchInput
                             type="number"
                             value={item.price}
                             onChange={(e) => {
-                              const newPrice = parseFloat(e.target.value);
+                              const newPrice = parseFloat(e.target.value) || 0;
                               setOrderItems(
                                 orderItems.map((orderItem) =>
                                   orderItem._id === item._id
@@ -2119,7 +2123,7 @@ const RestaurantPOS = () => {
                         </button>
 
                         <div className="relative">
-                          <input
+                          <TouchInput
                             className="text-sm font-bold w-14 text-center bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             type="number"
                             inputMode="decimal"
@@ -2323,7 +2327,7 @@ const RestaurantPOS = () => {
 
       {/* Compact KOT Modal */}
       {showKOTModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2">
+        <div className="kot-details-modal fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2">
           <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-4 max-w-sm w-full mx-2 transform transition-all duration-300 scale-100 max-h-[85vh] overflow-y-auto border border-white/20 shadow-2xl animate-in zoom-in-95">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -2371,7 +2375,7 @@ const RestaurantPOS = () => {
                     </label>
 
                     <div className="relative w-full">
-                      <input
+                      <TouchInput
                         type="text"
                         placeholder="Search room..."
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
@@ -2428,7 +2432,7 @@ const RestaurantPOS = () => {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Guest Name
                     </label>
-                    <input
+                    <TouchInput
                       type="text"
                       value={roomDetails.guestName}
                       onChange={(e) =>
@@ -2445,7 +2449,7 @@ const RestaurantPOS = () => {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Check-In Number
                     </label>
-                    <input
+                    <TouchInput
                       type="text"
                       value={roomDetails.CheckInNumber || ""}
                       readOnly
@@ -2461,7 +2465,7 @@ const RestaurantPOS = () => {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Customer Name
                     </label>
-                    <input
+                    <TouchInput
                       type="text"
                       value={customerDetails.name}
                       onChange={(e) =>
@@ -2477,8 +2481,9 @@ const RestaurantPOS = () => {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Phone Number
                     </label>
-                    <input
+                    <TouchInput
                       type="text"
+                      keyboardType="number"
                       value={customerDetails.phone}
                       onChange={(e) =>
                         setCustomerDetails({
@@ -2494,7 +2499,7 @@ const RestaurantPOS = () => {
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Delivery Address
                       </label>
-                      <textarea
+                      <TouchInput as="textarea"
                         rows={3}
                         value={customerDetails.address}
                         onChange={(e) =>
@@ -2504,7 +2509,7 @@ const RestaurantPOS = () => {
                           })
                         }
                         className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 text-sm resize-none bg-white transition-all duration-200"
-                      ></textarea>
+                      ></TouchInput>
                     </div>
                   )}
                 </>
@@ -2722,9 +2727,11 @@ const RestaurantPOS = () => {
                       </option>
                     ))}
                   </select>
-                  <input
+                  <TouchInput
                     type="text"
                     min="0"
+                    keyboardType="number"
+                    allowDecimal
                     value={discountValue}
                     onChange={(e) =>
                       handleDiscountChange(e.target.value, discountType)
@@ -2867,4 +2874,6 @@ const RestaurantPOS = () => {
   );
 };
 
-export default RestaurantPOS;
+export default function RestaurantPOSWithKeyboard() {
+  return <TouchKeyboardScope><RestaurantPOS /></TouchKeyboardScope>;
+}
