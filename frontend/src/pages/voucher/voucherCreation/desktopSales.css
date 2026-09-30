@@ -22,7 +22,7 @@
   .desktop-sales .sales-product-fields label { display: block; font-size: 11px; margin-bottom: 4px; }
   .desktop-sales .sales-product-fields > div > input, .desktop-sales .sales-product-fields select, .desktop-sales .sales-product-fields output { display: block; width: 100%; min-width: 0; height: 30px; border: 1px solid #cbd5e1; border-radius: 3px; padding: 4px 6px; font-size: 12px; }
   .desktop-sales .sales-product-fields output { background: #e3e8ef; overflow: hidden; }
-  .desktop-sales .sales-product-add { display: flex; align-items: center; justify-content: center; gap: 4px; height: 30px; padding: 0 10px; background: #009c90; color: white; border-radius: 4px; }
+  .desktop-sales .sales-product-add { display: flex; align-items: center; justify-content: center; gap: 4px; height: 30px; padding: 0 10px; background: #009c90; color: white; border-radius: 4px; }
   .desktop-sales .sales-product-hint { color: #64748b; font-size: 11px; margin-top: 5px; }
   .desktop-sales .sales-product-hint button { color: #2563eb; margin-left: 8px; }
   .desktop-sales .sales-options { position: relative; }
@@ -232,3 +232,20 @@
 .sales-receive-dialog footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 .sales-receive-dialog footer button { height: 32px; padding: 4px 14px; border: 1px solid #cbd5e1; border-radius: 2px; font-size: 12px; }
 .sales-receive-dialog footer button[type="submit"] { border-color: #195cff; background: #195cff; color: white; }
+
+@media (min-width: 1024px) {
+  .desktop-purchase .sales-header > div > div:first-child > div:first-child > p { display: flex; color: #253750; font-size: 12px; }
+  .desktop-purchase .sales-header > div > div:first-child > div:first-child { gap: 8px; }
+  .desktop-sales .sales-party-control { display: flex; align-items: end; gap: 6px; }
+  .desktop-sales .sales-party-control > div:first-child { flex: 1 1 auto; min-width: 0; }
+  .desktop-party-actions { display: flex; flex: 0 0 auto; flex-wrap: nowrap; gap: 6px; }
+  .desktop-party-actions button { height: 26px; border: 1px solid #cbd5e1; border-radius: 3px; padding: 3px 7px; background: #f8fafc; color: #2563eb; font-size: 11px; }
+  .desktop-party-actions button:hover { background: #eff6ff; border-color: #93c5fd; }
+  .desktop-sales .sales-add-batch { flex: 0 0 auto; color: #2563eb; font-size: 10px; white-space: nowrap; }
+}
+
+@media (min-width: 1024px) {
+  .desktop-purchase .sales-party { grid-template-columns: minmax(0, 1fr); }
+  .desktop-party-actions a { display: inline-flex; height: 26px; align-items: center; border: 1px solid #cbd5e1; border-radius: 3px; padding: 3px 7px; background: #f8fafc; color: #2563eb; font-size: 11px; }
+  .desktop-party-actions a:hover { background: #eff6ff; border-color: #93c5fd; }
+}
