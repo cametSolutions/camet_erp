@@ -98,6 +98,8 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading, ite
     showDescription,
   } = configuration || {};
 
+  const showActualQuantity = enableActualAndBilledQuantity || item?.batchEnabled === true;
+
   const normalizedVoucherType = {
     sales: "sale",
     saleOrder: "saleOrder",
@@ -270,7 +272,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading, ite
       setDescription(selectedGodown?.description || "");
       setWarrantyCard(selectedGodown?.warrantyCard || null);
 
-      if (enableActualAndBilledQuantity) {
+      if (enableActualAndBilledQuantity || selectedItem[0]?.batchEnabled) {
         setActualQuantity(
           selectedGodown?.actualCount || selectedGodown?.count || 1
         );
@@ -403,7 +405,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading, ite
 
   const handleDirectQuantityChange = (value) => {
     if (
-      enableActualAndBilledQuantity &&
+      showActualQuantity &&
       Number(value) > Number(actualQuantity)
     ) {
       return;
@@ -771,7 +773,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading, ite
                       )}
                     <div
                       className={`edit-item-quantities grid grid-cols-1 ${
-                        enableActualAndBilledQuantity
+                        showActualQuantity
                           ? "sm:grid-cols-1"
                           : "sm:grid-cols-2"
                       } gap-4`}
@@ -779,7 +781,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading, ite
                       <div className="edit-item-quantity-values flex flex-row-reverse gap-8">
                         <div className="flex flex-col">
                           <label className="leading-loose">
-                            {enableActualAndBilledQuantity
+                            {showActualQuantity
                               ? "Billed Quantity"
                               : "Quantity"}
                           </label>
@@ -796,7 +798,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading, ite
                           </div>
                         </div>
 
-                        {enableActualAndBilledQuantity && (
+                        {showActualQuantity && (
                           <div className="flex flex-col">
                             <label className="leading-loose">
                               Actual Quantity

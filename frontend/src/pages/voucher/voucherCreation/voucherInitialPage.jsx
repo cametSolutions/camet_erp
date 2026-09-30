@@ -138,7 +138,7 @@ function VoucherInitialPage() {
 
   const getApiEndPoint = () => {
     if (voucherTypeFromRedux) {
-      if (mode === "edit" && idFromRedux) return `editSales/${idFromRedux}`;
+      if (mode === "edit" && idFromRedux) return `edit${voucherTypeFromRedux?.split("")[0]?.toUpperCase()}${voucherTypeFromRedux?.slice(1)}/${idFromRedux}`;
       return `create${voucherTypeFromRedux
         ?.split("")[0]
         ?.toUpperCase()}${voucherTypeFromRedux?.split("")?.slice(1).join("")}`;
@@ -301,7 +301,7 @@ function VoucherInitialPage() {
     setOptionsTab(null);
     setOpenAdditionalTile(false);
     dispatch(removeAll());
-    dispatch(addVoucherType("sales"));
+    dispatch(addVoucherType(voucherTypeFromRedux));
     dispatch(changeDate(JSON.stringify(selectedDate)));
     setVoucherNumber("");
     setRecentSalesVersion(version => version + 1);
@@ -324,20 +324,23 @@ function VoucherInitialPage() {
     }));
   };
 
-  const loadDesktopSaleForEdit = async (sale) => {
+  const loadDesktopTransactionForEdit = async (transaction) => {
+    const isPurchase = voucherTypeFromRedux === "purchase";
+    const transactionName = isPurchase ? "purchase" : "sale";
     try {
       setIsLoading(true);
-      const response = await api.get(`/api/sUsers/getSalesDetails/${sale._id}`, { withCredentials: true });
+      const response = await api.get(`/api/sUsers/${isPurchase ? "getPurchaseDetails" : "getSalesDetails"}/${transaction._id}`, { withCredentials: true });
       const data = response.data.data;
-      if (data.isCancelled) {
-        toast.error("Cancelled sales cannot be edited.");
+      if (data.isCancelled || data.isEditable === false) {
+        toast.error(data.isEditable === false ? "This purchase has payments applied and cannot be edited." : `Cancelled ${transactionName}s cannot be edited.`);
         return;
       }
+      const documentNumber = data.purchaseNumber || data.salesNumber || "";
       dispatch(removeAll());
-      dispatch(addVoucherType("sales"));
+      dispatch(addVoucherType(isPurchase ? "purchase" : "sales"));
       dispatch(addMode("edit"));
       dispatch(saveId(data._id));
-      dispatch(addVoucherNumber(data.salesNumber));
+      dispatch(addVoucherNumber(documentNumber));
       dispatch(changeDate(JSON.stringify(new Date(data.date))));
       dispatch(addParty(data.party || {}));
       dispatch(setItem(data.items || []));
@@ -351,16 +354,15 @@ function VoucherInitialPage() {
         totalPaymentSplits: (data.paymentSplittingData || []).reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
       }));
       if (data.seriesDetails) dispatch(addSelectedVoucherSeries(data.seriesDetails));
-      setVoucherNumber(data.salesNumber || "");
+      setVoucherNumber(documentNumber);
       setSelectedDate(new Date(data.date));
-      toast.success(`Editing sale ${data.salesNumber}`);
+      toast.success(`Editing ${transactionName} ${documentNumber}`);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Unable to load sale for editing.");
+      toast.error(error.response?.data?.message || `Unable to load ${transactionName} for editing.`);
     } finally {
       setIsLoading(false);
     }
   };
-
   const cancelDesktopSale = async () => {
     if (!idFromRedux) return;
     if (!window.confirm("Cancel this sale? Stock and outstanding balance will be reversed.")) return;
@@ -509,13 +511,13 @@ function VoucherInitialPage() {
     }
   };
 
-  const desktopSales = desktopViewport && voucherTypeFromRedux === "sales";
+  const desktopSales = desktopViewport && ["sales", "purchase"].includes(voucherTypeFromRedux);
 
   return (
-    <div className={`mb-14 sm:mb-0 ${desktopSales ? "desktop-sales" : ""}`}>
+    <div className={`mb-14 sm:mb-0 ${desktopSales ? `desktop-sales ${voucherTypeFromRedux === "purchase" ? "desktop-purchase" : ""}` : ""}`}>
       <div className="flex-1 bg-slate-100 h -screen ">
         <TitleDiv
-          title={desktopSales ? "New Sale" : formatVoucherType(voucherTypeFromRedux)}
+          title={desktopSales ? `${mode === "edit" ? "Edit" : "New"} ${formatVoucherType(voucherTypeFromRedux)}` : formatVoucherType(voucherTypeFromRedux)}
           rightSideContent={desktopSales ? <span className="flex items-center gap-2"><Home size={20} aria-hidden="true" />Home</span> : null}
           rightSideContentOnClick={desktopSales ? () => navigate("/sUsers/dashboard") : null}
           // from={`/sUsers/selectVouchers`}
@@ -552,7 +554,7 @@ function VoucherInitialPage() {
           {voucherTypeFromRedux === "stockTransfer" ? (
             <AddGodownTile />
           ) : desktopSales ? (
-            <DesktopPartySearch cmpId={cmp_id} party={party} locked={convertedFrom.length > 0} />
+            <DesktopPartySearch cmpId={cmp_id} party={party} locked={convertedFrom.length > 0} voucherType={voucherTypeFromRedux} />
           ) : (
             <AddPartyTile
               party={party}
@@ -563,7 +565,7 @@ function VoucherInitialPage() {
               convertedFrom={convertedFrom}
             />
           )}
-          {desktopSales && <div className="sales-party-values"><DesktopPriceLevel cmpId={cmp_id} locked={convertedFrom.length > 0} /></div>}
+          {desktopSales && voucherTypeFromRedux === "sales" && <div className="sales-party-values"><DesktopPriceLevel cmpId={cmp_id} locked={convertedFrom.length > 0} /></div>}
           </div>
 
           {/* Despatch details */}
@@ -574,7 +576,7 @@ function VoucherInitialPage() {
 
           {/* adding items */}
 
-          {desktopSales ? <DesktopSalesItems items={items} convertedFrom={convertedFrom} /> : <AddItemTile
+          {desktopSales ? <DesktopSalesItems items={items} convertedFrom={convertedFrom} voucherType={voucherTypeFromRedux} /> : <AddItemTile
             items={items}
             handleAddItem={handleAddItem}
             dispatch={dispatch}
@@ -643,12 +645,12 @@ function VoucherInitialPage() {
             }
             openAdditionalTile={openAdditionalTile}
             onReceivePayment={desktopSales ? () => setOptionsTab("payment") : undefined}
-            desktopLabel={desktopSales ? "Save Transaction" : undefined}
+            desktopLabel={desktopSales ? (mode === "edit" ? "Update Transaction" : "Save Transaction") : undefined}
             loading={desktopSales ? submitLoading || isLoading : undefined}
           />
           </div>
           </div>
-          {desktopSales && <DesktopRecentSales key={recentSalesVersion} cmpId={cmp_id} isAdmin={isAdmin} onEdit={loadDesktopSaleForEdit} />}
+          {desktopSales && <DesktopRecentSales key={recentSalesVersion} cmpId={cmp_id} isAdmin={isAdmin} voucherType={voucherTypeFromRedux} onEdit={loadDesktopTransactionForEdit} />}
         </div>
       </div>
     </div>

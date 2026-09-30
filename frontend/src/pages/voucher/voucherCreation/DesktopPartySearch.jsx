@@ -3,15 +3,18 @@ import { useEffect, useRef, useState } from "react";
 import CreatableSelect from "react-select/creatable";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import api from "../../../api/api";
 import { createDesktopCustomer } from "./createDesktopCustomer";
 import { addParty, addBillToParty, addShipToParty, removeParty } from "../../../../slices/voucherSlices/commonVoucherSlice";
 
-export default function DesktopPartySearch({ cmpId, party, locked }) {
+export default function DesktopPartySearch({ cmpId, party, locked, voucherType = "sales" }) {
+  const isPurchase = voucherType === "purchase";
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
   const creatingRef = useRef(false);
+  const partySelectRef = useRef(null);
   const [creating, setCreating] = useState(false);
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
@@ -20,10 +23,10 @@ export default function DesktopPartySearch({ cmpId, party, locked }) {
     return () => clearTimeout(timer);
   }, [input]);
   const { data = [], isFetching, isError } = useQuery({
-    queryKey: ["desktop-sale-parties", cmpId, search],
+    queryKey: ["desktop-sale-parties", cmpId, voucherType, search],
     queryFn: async ({ signal }) => {
       const response = await api.get(`/api/sUsers/PartyList/${cmpId}`, {
-        params: { voucher: "sale", page: 1, limit: 60, search },
+        params: { voucher: isPurchase ? "purchase" : "sale", page: 1, limit: 60, search },
         withCredentials: true, signal,
       });
       return response.data.partyList || [];
@@ -39,7 +42,7 @@ export default function DesktopPartySearch({ cmpId, party, locked }) {
     }
   };
   const createCustomer = async enteredName => {
-    if (creatingRef.current || locked) return;
+    if (creatingRef.current || locked || isPurchase) return;
     creatingRef.current = true;
     setCreating(true);
     try {
@@ -58,19 +61,26 @@ export default function DesktopPartySearch({ cmpId, party, locked }) {
     }
   };
   return <div className="sales-party-search">
-    <label htmlFor="desktop-sale-party">Customer</label>
-    <CreatableSelect inputId="desktop-sale-party" instanceId="desktop-sale-party"
-      placeholder={creating ? "Adding customer…" : "Search or add customer…"} isClearable isDisabled={locked || creating}
+    <label htmlFor="desktop-sale-party">{isPurchase ? "Supplier" : "Customer"}</label>
+    <div className="sales-party-control">
+    <CreatableSelect ref={partySelectRef} inputId="desktop-sale-party" instanceId="desktop-sale-party"
+      placeholder={creating ? "Adding customer…" : isPurchase ? "Search supplier…" : "Search or add customer…"} isClearable isDisabled={locked || creating}
       value={party?._id ? party : null} options={input === search ? data : []}
       getOptionLabel={option => option.__isNew__ ? option.label : option.partyName} getOptionValue={option => option.__isNew__ ? option.value : option._id}
       inputValue={input} filterOption={null} onInputChange={setInput} isLoading={creating || isFetching || input !== search}
+      isValidNewOption={isPurchase ? () => false : (name => !!name.trim() && !creating && !isFetching && !isError && input === search && !data.some(customer => customer.partyName?.trim().toLowerCase() === name.trim().toLowerCase()))}
       createOptionPosition="last" formatCreateLabel={name => `+ Add customer “${name.trim()}” · Sundry Debtors`}
-      isValidNewOption={name => !!name.trim() && !creating && !isFetching && !isError && input === search && !data.some(customer => customer.partyName?.trim().toLowerCase() === name.trim().toLowerCase())}
+
       onCreateOption={createCustomer}
-      noOptionsMessage={() => isError ? "Unable to load customers. Try searching again." : "No customers found"}
+      noOptionsMessage={() => isError ? "Unable to load parties. Try searching again." : isPurchase ? "No suppliers found" : "No customers found"}
       onChange={selectParty}
       menuPortalTarget={document.body} menuPosition="fixed" maxMenuHeight={240}
       styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }), control: base => ({ ...base, fontSize: 12, minHeight: 30 }), valueContainer: base => ({ ...base, padding: "0 6px" }), indicatorsContainer: base => ({ ...base, height: 28 }), option: base => ({ ...base, fontSize: 12, padding: "7px 10px" }) }}
     />
+    {party?._id && <div className="desktop-party-actions">
+      {!isPurchase && <button type="button" onClick={() => partySelectRef.current?.focus()} disabled={locked}>Change customer</button>}
+      <Link to={`/sUsers/billTo${isPurchase ? "Purchase" : "Sales"}/${party._id}`}><span>Bill To address</span></Link>
+    </div>}
+    </div>
   </div>;
 }
