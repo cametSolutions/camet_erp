@@ -130,6 +130,8 @@ export function DesktopSalesTotals({ subtotal, charges, total, received, balance
 
 export function DesktopRecentSales({ cmpId, isAdmin, onEdit, voucherType = "sales" }) {
   const isPurchase = voucherType === "purchase";
+  const isCreditNote = voucherType === "creditNote";
+  const transactionLabel = isPurchase ? "purchase" : isCreditNote ? "credit note" : "sale";
   const [search, setSearch] = useState("");
   const printFormat = useSelector(state => state.secSelectedOrganization.secSelectedOrg?.configurations?.[0]?.printConfiguration?.find(config => config.voucher === "sale")?.printFormat || "a4");
   const { data = [], isLoading, error, refetch, isFetching, dataUpdatedAt } = useQuery({
@@ -144,14 +146,14 @@ export function DesktopRecentSales({ cmpId, isAdmin, onEdit, voucherType = "sale
     refetchInterval: isAdmin ? 5 * 60 * 1000 : false,
     retry: 1,
   });
-  const sales = data.filter(item => (isPurchase ? item.type === "Purchase" : item.type === "Tax Invoice") &&
+  const sales = data.filter(item => (isPurchase ? item.type === "Purchase" : isCreditNote ? item.type === "Credit Note" : item.type === "Tax Invoice") &&
     [item.party_name, item.voucherNumber, item.type].some(value => String(value || "").toLowerCase().includes(search.toLowerCase())));
   return <aside className="sales-recent-panel">
-    <header><h2>{isPurchase ? "Recent Purchases" : "Recent Transactions"}</h2><span>{sales.length} records</span></header>
+    <header><h2>{isPurchase ? "Recent Purchases" : isCreditNote ? "Recent Credit Notes" : "Recent Transactions"}</h2><span>{sales.length} records</span></header>
     <label className="sales-recent-search"><Search size={20} /><input aria-label="Search recent sales" placeholder="Search by party, document, or type..." value={search} onChange={event => setSearch(event.target.value)} /></label>
     <div className="sales-recent-scroll"><table className="sales-desktop-table"><thead><tr>{["BILL NO", "DATE", "PARTY", "NET", "PRINT"].map(label => <th key={label}>{label}</th>)}</tr></thead><tbody>
-      {sales.map(sale => <tr key={sale._id} onDoubleClick={() => !sale.isCancelled && onEdit?.(sale)} className={!sale.isCancelled ? "sales-recent-editable" : undefined} title={!sale.isCancelled ? `Double-click to edit this ${isPurchase ? "purchase" : "sale"}` : `Cancelled ${isPurchase ? "purchase" : "sale"}`}><td><Link to={isPurchase ? `/sUsers/purchaseDetails/${sale._id}` : `/sUsers/salesDetails/${sale._id}`} state={{ from: "dashboard" }}>{sale.voucherNumber}</Link></td><td>{new Date(sale.date).toLocaleDateString("en-GB")}</td><td>{sale.party_name}{sale.isCancelled && <small>Cancelled</small>}</td><td>{money(sale.enteredAmount)}</td><td><Link aria-label={`Print sale ${sale.voucherNumber} as ${printFormat === "thermal" ? "thermal receipt" : "A4 invoice"}`} to={isPurchase ? `/sUsers/sharepurchase/${sale._id}` : printFormat === "thermal" ? `/sUsers/sharesalesThreeInch/${sale._id}` : `/sUsers/sharesales/${sale._id}`}><Printer size={17} /></Link></td></tr>)}
-      {(isLoading || error || !sales.length) && <tr><td colSpan={5} className="sales-status">{isLoading ? "Loading transactions…" : error ? <><p>Unable to load transactions.</p><button type="button" disabled={isFetching} onClick={() => refetch()}>Retry</button></> : search ? "No matching transactions" : isPurchase ? "No purchases today" : "No sales today"}</td></tr>}
+      {sales.map(sale => <tr key={sale._id} onDoubleClick={() => !sale.isCancelled && onEdit?.(sale)} className={!sale.isCancelled ? "sales-recent-editable" : undefined} title={!sale.isCancelled ? `Double-click to edit this ${transactionLabel}` : `Cancelled ${transactionLabel}`}><td><Link to={isPurchase ? `/sUsers/purchaseDetails/${sale._id}` : isCreditNote ? `/sUsers/creditNoteDetails/${sale._id}` : `/sUsers/salesDetails/${sale._id}`} state={{ from: "dashboard" }}>{sale.voucherNumber}</Link></td><td>{new Date(sale.date).toLocaleDateString("en-GB")}</td><td>{sale.party_name}{sale.isCancelled && <small>Cancelled</small>}</td><td>{money(sale.enteredAmount)}</td><td><Link aria-label={`Print sale ${sale.voucherNumber} as ${printFormat === "thermal" ? "thermal receipt" : "A4 invoice"}`} to={isPurchase ? `/sUsers/sharepurchase/${sale._id}` : isCreditNote ? `/sUsers/shareCreditNote/${sale._id}` : printFormat === "thermal" ? `/sUsers/sharesalesThreeInch/${sale._id}` : `/sUsers/sharesales/${sale._id}`}><Printer size={17} /></Link></td></tr>)}
+      {(isLoading || error || !sales.length) && <tr><td colSpan={5} className="sales-status">{isLoading ? "Loading transactions…" : error ? <><p>Unable to load transactions.</p><button type="button" disabled={isFetching} onClick={() => refetch()}>Retry</button></> : search ? "No matching transactions" : isPurchase ? "No purchases today" : isCreditNote ? "No credit notes today" : "No sales today"}</td></tr>}
     </tbody></table></div>
     <footer>{dataUpdatedAt ? `Last updated: ${new Date(dataUpdatedAt).toLocaleTimeString()}` : "Today's sales"}</footer>
   </aside>;

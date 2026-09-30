@@ -326,18 +326,19 @@ function VoucherInitialPage() {
 
   const loadDesktopTransactionForEdit = async (transaction) => {
     const isPurchase = voucherTypeFromRedux === "purchase";
-    const transactionName = isPurchase ? "purchase" : "sale";
+    const isCreditNote = voucherTypeFromRedux === "creditNote";
+    const transactionName = isPurchase ? "purchase" : isCreditNote ? "credit note" : "sale";
     try {
       setIsLoading(true);
-      const response = await api.get(`/api/sUsers/${isPurchase ? "getPurchaseDetails" : "getSalesDetails"}/${transaction._id}`, { withCredentials: true });
+      const response = await api.get(`/api/sUsers/${isPurchase ? "getPurchaseDetails" : isCreditNote ? "getCreditNoteDetails" : "getSalesDetails"}/${transaction._id}`, { withCredentials: true });
       const data = response.data.data;
       if (data.isCancelled || data.isEditable === false) {
-        toast.error(data.isEditable === false ? "This purchase has payments applied and cannot be edited." : `Cancelled ${transactionName}s cannot be edited.`);
+        toast.error(data.isEditable === false ? `This ${transactionName} has payments applied and cannot be edited.` : `Cancelled ${transactionName}s cannot be edited.`);
         return;
       }
-      const documentNumber = data.purchaseNumber || data.salesNumber || "";
+      const documentNumber = data.purchaseNumber || data.creditNoteNumber || data.salesNumber || "";
       dispatch(removeAll());
-      dispatch(addVoucherType(isPurchase ? "purchase" : "sales"));
+      dispatch(addVoucherType(isPurchase ? "purchase" : isCreditNote ? "creditNote" : "sales"));
       dispatch(addMode("edit"));
       dispatch(saveId(data._id));
       dispatch(addVoucherNumber(documentNumber));
@@ -363,21 +364,22 @@ function VoucherInitialPage() {
       setIsLoading(false);
     }
   };
-  const cancelDesktopSale = async () => {
+  const cancelDesktopTransaction = async () => {
     if (!idFromRedux) return;
-    if (!window.confirm("Cancel this sale? Stock and outstanding balance will be reversed.")) return;
+    const transactionName = voucherTypeFromRedux === "purchase" ? "purchase" : voucherTypeFromRedux === "creditNote" ? "credit note" : "sale";
+    const cancelEndpoint = voucherTypeFromRedux === "purchase" ? "cancelPurchase" : voucherTypeFromRedux === "creditNote" ? "cancelCreditNote" : "cancelSales";
+    if (!window.confirm(`Cancel this ${transactionName}? Stock and outstanding balance will be reversed.`)) return;
     try {
       setSubmitLoading(true);
-      const response = await api.put(`/api/sUsers/cancelSales/${idFromRedux}`, { cancelReason: "Cancelled from desktop sales" }, { withCredentials: true });
-      toast.success(response.data.message || "Sale cancelled.");
+      const response = await api.put(`/api/sUsers/${cancelEndpoint}/${idFromRedux}`, { cancelReason: `Cancelled from desktop ${transactionName}` }, { withCredentials: true });
+      toast.success(response.data.message || `${transactionName[0].toUpperCase()}${transactionName.slice(1)} cancelled.`);
       handleDesktopTransactionSaved();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Unable to cancel sale.");
+      toast.error(error.response?.data?.message || `Unable to cancel ${transactionName}.`);
     } finally {
       setSubmitLoading(false);
     }
   };
-
   const submitHandler = async () => {
     // Validation
     if (
@@ -511,7 +513,7 @@ function VoucherInitialPage() {
     }
   };
 
-  const desktopSales = desktopViewport && ["sales", "purchase"].includes(voucherTypeFromRedux);
+  const desktopSales = desktopViewport && ["sales", "purchase", "creditNote"].includes(voucherTypeFromRedux);
 
   return (
     <div className={`mb-14 sm:mb-0 ${desktopSales ? `desktop-sales ${voucherTypeFromRedux === "purchase" ? "desktop-purchase" : ""}` : ""}`}>
@@ -565,7 +567,7 @@ function VoucherInitialPage() {
               convertedFrom={convertedFrom}
             />
           )}
-          {desktopSales && voucherTypeFromRedux === "sales" && <div className="sales-party-values"><DesktopPriceLevel cmpId={cmp_id} locked={convertedFrom.length > 0} /></div>}
+          {desktopSales && ["sales", "creditNote"].includes(voucherTypeFromRedux) && <div className="sales-party-values"><DesktopPriceLevel cmpId={cmp_id} locked={convertedFrom.length > 0} /></div>}
           </div>
 
           {/* Despatch details */}
@@ -634,7 +636,7 @@ function VoucherInitialPage() {
           </div>}
 
           <div className="sales-footer">
-          {desktopSales && <button type="button" className="sales-cancel" disabled={submitLoading} onClick={mode === "edit" && idFromRedux ? cancelDesktopSale : () => dispatch(removeAll())}>{mode === "edit" && idFromRedux ? "× Cancel Sale" : "× Clear"}</button>}
+          {desktopSales && <button type="button" className="sales-cancel" disabled={submitLoading} onClick={mode === "edit" && idFromRedux ? cancelDesktopTransaction : () => dispatch(removeAll())}>{mode === "edit" && idFromRedux ? `× Cancel ${formatVoucherType(voucherTypeFromRedux)}` : "× Clear"}</button>}
           <FooterButton
             submitHandler={submitHandler}
             title={formatVoucherType(voucherTypeFromRedux)}

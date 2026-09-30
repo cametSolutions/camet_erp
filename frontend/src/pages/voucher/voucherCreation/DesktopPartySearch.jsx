@@ -11,6 +11,7 @@ import { addParty, addBillToParty, addShipToParty, removeParty } from "../../../
 
 export default function DesktopPartySearch({ cmpId, party, locked, voucherType = "sales" }) {
   const isPurchase = voucherType === "purchase";
+  const billToVoucher = isPurchase ? "Purchase" : voucherType === "creditNote" ? "CreditNote" : "Sales";
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
   const creatingRef = useRef(false);
@@ -78,8 +79,7 @@ export default function DesktopPartySearch({ cmpId, party, locked, voucherType =
       styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }), control: base => ({ ...base, fontSize: 12, minHeight: 30 }), valueContainer: base => ({ ...base, padding: "0 6px" }), indicatorsContainer: base => ({ ...base, height: 28 }), option: base => ({ ...base, fontSize: 12, padding: "7px 10px" }) }}
     />
     {party?._id && <div className="desktop-party-actions">
-      {!isPurchase && <button type="button" onClick={() => partySelectRef.current?.focus()} disabled={locked}>Change customer</button>}
-      <Link to={`/sUsers/billTo${isPurchase ? "Purchase" : "Sales"}/${party._id}`}><span>Bill To address</span></Link>
+      <Link to={`/sUsers/billTo${billToVoucher}/${party._id}`}><span>Bill To address</span></Link>
     </div>}
     </div>
   </div>;

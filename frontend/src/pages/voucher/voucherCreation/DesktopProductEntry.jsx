@@ -73,6 +73,7 @@ export default function DesktopProductEntry({ locked }) {
     enabled: !!company._id && !disabled,
   });
   const options = data?.pages.flatMap(page => page.productData || []) || [];
+  const productOptions = input === search ? [...options, { _id: "__add_product__", product_name: "+ Add new product", product_code: "" }] : [];
   const stock = product?.GodownList?.[stockIndex];
   const valid = product && stock && Number(quantity) > 0 && rate !== "" && Number(rate) >= 0;
   const canAddBatch = voucherType === "purchase" && product && stockIndex !== "" && (product.batchEnabled === true || product.GodownList?.some((row) => Boolean(row?.batch)));
@@ -102,15 +103,15 @@ export default function DesktopProductEntry({ locked }) {
     <div className="sales-product-fields">
       <div className="sales-product-search"><label htmlFor="desktop-sale-product">Code / Product</label>
         <Select ref={searchRef} inputId="desktop-sale-product" instanceId="desktop-sale-product" value={product}
-          options={input === search ? options : []} filterOption={null} isClearable isDisabled={disabled}
+          options={productOptions} filterOption={null} isClearable isDisabled={disabled}
           getOptionLabel={item => `${item.product_code || ""} ${item.product_name}`.trim()}
           getOptionValue={item => item._id} placeholder="Search code or name…"
           onInputChange={setInput} isLoading={isFetching || input !== search}
-          onChange={value => { setProduct(value); setStockIndex(value?.GodownList?.length === 1 ? "0" : ""); setError(""); focusNext("desktop-stock-row"); }}
+          onChange={value => { if (value?._id === "__add_product__") { navigate("/sUsers/addProduct"); return; } setProduct(value); setStockIndex(value?.GodownList?.length === 1 ? "0" : ""); setError(""); focusNext("desktop-stock-row"); }}
           onMenuScrollToBottom={() => { if (hasNextPage && !isFetching) fetchNextPage(); }}
           noOptionsMessage={() => isError ? "Unable to load products" : "No products found"}
           menuPortalTarget={document.body} menuPosition="fixed" maxMenuHeight={230}
-          styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }), control: base => ({ ...base, minHeight: 30, fontSize: 12 }), valueContainer: base => ({ ...base, padding: "0 6px" }), indicatorsContainer: base => ({ ...base, height: 28 }), option: base => ({ ...base, fontSize: 12, padding: "7px 10px" }) }}
+          styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }), control: base => ({ ...base, minHeight: 30, fontSize: 12 }), valueContainer: base => ({ ...base, padding: "0 6px" }), indicatorsContainer: base => ({ ...base, height: 28 }), option: (base, state) => ({ ...base, fontSize: 12, padding: "7px 10px", color: state.data?._id === "__add_product__" ? "#2563eb" : base.color, fontWeight: state.data?._id === "__add_product__" ? 600 : base.fontWeight }) }}
         />
       </div>
       <div className="sales-product-stock"><label htmlFor="desktop-stock-row">Godown / Batch</label><select id="desktop-stock-row" value={stockIndex} disabled={disabled || !product} required onChange={selectStockRow} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); focusNext("desktop-product-qty"); } }}>
