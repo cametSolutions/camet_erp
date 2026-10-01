@@ -63,7 +63,7 @@ const salesTiles = [
     voucherType: "performaInvoice",
   },
   {
-    title: "Quotation",
+    title: "Sale Order",
     icon: Quotation,
     to: "/sUsers/invoice",
     active: true,
