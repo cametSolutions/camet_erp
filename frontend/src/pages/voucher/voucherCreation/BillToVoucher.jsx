@@ -26,7 +26,7 @@ function BillToVoucher() {
   );
 
   // const ship to
-  const voucherType = location.pathname.includes("billToPurchase") ? "purchase" : "sale";
+  const voucherType = location.pathname.includes("billToPurchase") || location.pathname.includes("billToDebitNote") ? "purchase" : location.pathname.includes("billToSalesOrder") ? "saleOrder" : "sale";
   const showShipTo = voucherType !== "purchase" && (configurations[0]?.enableShipTo?.[voucherType] ?? configurations[0]?.enableShipTo?.sale ?? false);
 
 

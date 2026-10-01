@@ -48,6 +48,16 @@ import { DesktopSalesItems, DesktopSalesTotals, DesktopRecentSales } from "./Des
 import "./desktopSales.css";
 import DesktopSalesOptions from "./DesktopSalesOptions";
 
+const formatVoucherSeriesNumber = (series) => {
+  if (!series) return "";
+
+  const currentNumber = Number(series.currentNumber ?? 1);
+  const width = Math.max(1, Number(series.widthOfNumericalPart) || 1);
+  const paddedNumber = String(Number.isFinite(currentNumber) ? currentNumber : 1).padStart(width, "0");
+
+  return `${series.prefix || ""}${paddedNumber}${series.suffix || ""}`;
+};
+
 function VoucherInitialPage() {
   const [optionsTab, setOptionsTab] = useState(null);
   const [recentSalesVersion, setRecentSalesVersion] = useState(0);
@@ -162,6 +172,10 @@ function VoucherInitialPage() {
 
   const [openAdditionalTile, setOpenAdditionalTile] = useState(false);
 
+  useEffect(() => {
+    if (voucherNumberFromRedux) setVoucherNumber(voucherNumberFromRedux);
+  }, [voucherNumberFromRedux]);
+
   // Calculated values
   const subTotal = useMemo(() => {
     return items.reduce((acc, curr) => acc + (parseFloat(curr.total) || 0), 0);
@@ -233,7 +247,24 @@ function VoucherInitialPage() {
         const configData = responses.configNumberRequest.data;
 
         if (isMounted.current && voucherSeriesFromRedux === null) {
-          dispatch(addVoucherSeries(configData.series));
+          const availableSeries = Array.isArray(configData?.series)
+            ? configData.series
+            : [];
+          const initialSeries =
+            availableSeries.find((series) => series.currentlySelected === true) ||
+            availableSeries[0];
+
+          dispatch(addVoucherSeries(availableSeries));
+
+          // Select the initial series here, instead of waiting for the modal
+          // to mount. This makes the voucher series and number available in
+          // the desktop header as soon as the page loads.
+          if (initialSeries) {
+            const initialNumber = formatVoucherSeriesNumber(initialSeries);
+            dispatch(addSelectedVoucherSeries(initialSeries));
+            dispatch(addVoucherNumber(initialNumber));
+            setVoucherNumber(initialNumber);
+          }
         }
       }
 
@@ -327,18 +358,20 @@ function VoucherInitialPage() {
   const loadDesktopTransactionForEdit = async (transaction) => {
     const isPurchase = voucherTypeFromRedux === "purchase";
     const isCreditNote = voucherTypeFromRedux === "creditNote";
-    const transactionName = isPurchase ? "purchase" : isCreditNote ? "credit note" : "sale";
+    const isSaleOrder = voucherTypeFromRedux === "saleOrder";
+    const isDebitNote = voucherTypeFromRedux === "debitNote";
+    const transactionName = isPurchase ? "purchase" : isCreditNote ? "credit note" : isDebitNote ? "debit note" : isSaleOrder ? "sale order" : "sale";
     try {
       setIsLoading(true);
-      const response = await api.get(`/api/sUsers/${isPurchase ? "getPurchaseDetails" : isCreditNote ? "getCreditNoteDetails" : "getSalesDetails"}/${transaction._id}`, { withCredentials: true });
+      const response = await api.get(`/api/sUsers/${isPurchase ? "getPurchaseDetails" : isCreditNote ? "getCreditNoteDetails" : isDebitNote ? "getDebitNoteDetails" : isSaleOrder ? "getSaleOrderDetails" : "getSalesDetails"}/${transaction._id}`, { withCredentials: true });
       const data = response.data.data;
       if (data.isCancelled || data.isEditable === false) {
         toast.error(data.isEditable === false ? `This ${transactionName} has payments applied and cannot be edited.` : `Cancelled ${transactionName}s cannot be edited.`);
         return;
       }
-      const documentNumber = data.purchaseNumber || data.creditNoteNumber || data.salesNumber || "";
+      const documentNumber = data.purchaseNumber || data.creditNoteNumber || data.debitNoteNumber || data.orderNumber || data.salesNumber || "";
       dispatch(removeAll());
-      dispatch(addVoucherType(isPurchase ? "purchase" : isCreditNote ? "creditNote" : "sales"));
+      dispatch(addVoucherType(isPurchase ? "purchase" : isCreditNote ? "creditNote" : isDebitNote ? "debitNote" : isSaleOrder ? "saleOrder" : "sales"));
       dispatch(addMode("edit"));
       dispatch(saveId(data._id));
       dispatch(addVoucherNumber(documentNumber));
@@ -366,8 +399,8 @@ function VoucherInitialPage() {
   };
   const cancelDesktopTransaction = async () => {
     if (!idFromRedux) return;
-    const transactionName = voucherTypeFromRedux === "purchase" ? "purchase" : voucherTypeFromRedux === "creditNote" ? "credit note" : "sale";
-    const cancelEndpoint = voucherTypeFromRedux === "purchase" ? "cancelPurchase" : voucherTypeFromRedux === "creditNote" ? "cancelCreditNote" : "cancelSales";
+    const transactionName = voucherTypeFromRedux === "purchase" ? "purchase" : voucherTypeFromRedux === "creditNote" ? "credit note" : voucherTypeFromRedux === "debitNote" ? "debit note" : "sale";
+    const cancelEndpoint = voucherTypeFromRedux === "purchase" ? "cancelPurchase" : voucherTypeFromRedux === "creditNote" ? "cancelCreditNote" : voucherTypeFromRedux === "debitNote" ? "cancelDebitNote" : "cancelSales";
     if (!window.confirm(`Cancel this ${transactionName}? Stock and outstanding balance will be reversed.`)) return;
     try {
       setSubmitLoading(true);
@@ -513,10 +546,10 @@ function VoucherInitialPage() {
     }
   };
 
-  const desktopSales = desktopViewport && ["sales", "purchase", "creditNote"].includes(voucherTypeFromRedux);
+  const desktopSales = desktopViewport && ["sales", "purchase", "creditNote", "debitNote", "saleOrder"].includes(voucherTypeFromRedux);
 
   return (
-    <div className={`mb-14 sm:mb-0 ${desktopSales ? `desktop-sales ${voucherTypeFromRedux === "purchase" ? "desktop-purchase" : ""}` : ""}`}>
+    <div className={`mb-14 sm:mb-0 ${desktopSales ? `desktop-sales ${["purchase", "debitNote"].includes(voucherTypeFromRedux) ? "desktop-purchase" : ""}` : ""}`}>
       <div className="flex-1 bg-slate-100 h -screen ">
         <TitleDiv
           title={desktopSales ? `${mode === "edit" ? "Edit" : "New"} ${formatVoucherType(voucherTypeFromRedux)}` : formatVoucherType(voucherTypeFromRedux)}
@@ -532,7 +565,7 @@ function VoucherInitialPage() {
 
           <div className="sales-header"><HeaderTile
             title={formatVoucherType(voucherTypeFromRedux)}
-            number={voucherNumberFromRedux}
+            number={voucherNumber || voucherNumberFromRedux || "—"}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             dispatch={dispatch}
@@ -567,7 +600,7 @@ function VoucherInitialPage() {
               convertedFrom={convertedFrom}
             />
           )}
-          {desktopSales && ["sales", "creditNote"].includes(voucherTypeFromRedux) && <div className="sales-party-values"><DesktopPriceLevel cmpId={cmp_id} locked={convertedFrom.length > 0} /></div>}
+          {desktopSales && ["sales", "creditNote", "saleOrder"].includes(voucherTypeFromRedux) && <div className="sales-party-values"><DesktopPriceLevel cmpId={cmp_id} locked={convertedFrom.length > 0} /></div>}
           </div>
 
           {/* Despatch details */}

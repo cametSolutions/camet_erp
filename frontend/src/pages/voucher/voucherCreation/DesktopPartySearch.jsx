@@ -10,8 +10,8 @@ import { createDesktopCustomer } from "./createDesktopCustomer";
 import { addParty, addBillToParty, addShipToParty, removeParty } from "../../../../slices/voucherSlices/commonVoucherSlice";
 
 export default function DesktopPartySearch({ cmpId, party, locked, voucherType = "sales" }) {
-  const isPurchase = voucherType === "purchase";
-  const billToVoucher = isPurchase ? "Purchase" : voucherType === "creditNote" ? "CreditNote" : "Sales";
+  const isPurchase = ["purchase", "debitNote"].includes(voucherType);
+  const billToVoucher = voucherType === "debitNote" ? "DebitNote" : isPurchase ? "Purchase" : voucherType === "creditNote" ? "CreditNote" : voucherType === "saleOrder" ? "SalesOrder" : "Sales";
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
   const creatingRef = useRef(false);
