@@ -1080,6 +1080,8 @@ const RestaurantPOS = () => {
 
     isGeneratingKotRef.current = true;
     setIsGeneratingKot(true);
+    let newOrder;
+    let kotSaved = false;
 
     try {
     let roomObj = roomSelected ? roomSelected : roomDetails;
@@ -1240,7 +1242,12 @@ const RestaurantPOS = () => {
         withCredentials: true,
       });
       if (response.data?.success) {
+        kotSaved = true;
+        // Close order-detail overlays before opening either QZ or the browser print dialog.
+        setShowKOTModal(false);
+        setShowFullTableSelection(false);
         handleKotPrint(response.data?.data, roomObj);
+        setOrderItems([]);
         console.log(selectedTableNumber);
         if (orderType === "dine-in") {
           await api.put(
@@ -1259,28 +1266,33 @@ const RestaurantPOS = () => {
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.response.data.message);
-    } finally {
-      setOrders([...orders, newOrder]);
-      setOrderItems([]);
-      setOrderNumber(orderNumber + 1);
-      setShowKOTModal(false);
-      setIsEdit(false);
-      setCustomerDetails({
-        name: "",
-        phone: "",
-        address: "",
-        tableNumber: "10",
-      });
-      setSearch("");
-      setShowResults(true);
-      setRoomDetails({});
-      toast.success(
-        kotDataForEdit
-          ? "KOT updated successfully!"
-          : "KOT generated successfully!",
+      toast.error(
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          "Unable to generate KOT.",
       );
-      navigate(location.pathname, { replace: true, state: {} });
+    } finally {
+      if (kotSaved && newOrder) {
+        setOrders((currentOrders) => [...currentOrders, newOrder]);
+        setOrderNumber((currentOrderNumber) => currentOrderNumber + 1);
+        setShowKOTModal(false);
+        setIsEdit(false);
+        setCustomerDetails({
+          name: "",
+          phone: "",
+          address: "",
+          tableNumber: "10",
+        });
+        setSearch("");
+        setShowResults(true);
+        setRoomDetails({});
+        toast.success(
+          kotDataForEdit
+            ? "KOT updated successfully!"
+            : "KOT generated successfully!",
+        );
+        navigate(location.pathname, { replace: true, state: {} });
+      }
 
       // Keep Confirm KOT locked until the modal-close update has rendered.
       requestAnimationFrame(() => {
@@ -2311,8 +2323,7 @@ const RestaurantPOS = () => {
               onClick={() => {
                 setShowFullTableSelection(false);
                 if (
-                  !kotDataForEdit &&
-                  Object.keys(kotDataForEdit).length <= 0
+                  !kotDataForEdit
                 ) {
                   setRoomDetails({});
                 }
@@ -2323,8 +2334,7 @@ const RestaurantPOS = () => {
                 onClick={() => {
                   setShowFullTableSelection(false);
                   if (
-                    !kotDataForEdit &&
-                    Object.keys(kotDataForEdit).length <= 0
+                    !kotDataForEdit
                   ) {
                     setRoomDetails({});
                   }
