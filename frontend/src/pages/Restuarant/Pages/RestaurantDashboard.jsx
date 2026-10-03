@@ -1218,7 +1218,7 @@ const RestaurantPOS = () => {
 
     console.log(orderCustomerDetails);
 
-    const newOrder = {
+    newOrder = {
       id: orderNumber,
       items: [...finalProductData],
       type: orderType,
@@ -1272,7 +1272,9 @@ const RestaurantPOS = () => {
           "Unable to generate KOT.",
       );
     } finally {
+      console.log(newOrder,kotSaved)
       if (kotSaved && newOrder) {
+
         setOrders((currentOrders) => [...currentOrders, newOrder]);
         setOrderNumber((currentOrderNumber) => currentOrderNumber + 1);
         setShowKOTModal(false);
