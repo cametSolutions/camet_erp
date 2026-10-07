@@ -12,7 +12,7 @@ test("quick customer creation uses the company's Sundry Debtors ID and trimmed n
     },
     post: async (url, body, options) => {
       calls.push({ url, body, options });
-      return { data: { result: { _id: "new-customer", partyName: body.partyName, accountGroup_id: body.accountGroup } } };
+      return { data: { result: { _id: "new-customer", partyName: body.partyName, accountGroup: body.accountGroup } } };
     },
   };
   const customer = await createDesktopCustomer(api, "company", "  New Customer  ");
@@ -21,6 +21,8 @@ test("quick customer creation uses the company's Sundry Debtors ID and trimmed n
   assert.deepEqual(calls[1].body, { cpm_id: "company", partyName: "New Customer", accountGroup: "debtors", openingBalanceAmount: 0, isHotelAgent: false });
   assert.equal(calls[1].options.withCredentials, true);
   assert.equal(customer._id, "new-customer");
+  assert.equal(customer.accountGroup_id, "debtors");
+  assert.equal(customer.accountGroupName, "Sundry Debtors");
   assert.equal(customer.partyType, "party");
   assert.equal(customer.totalOutstanding, 0);
 });

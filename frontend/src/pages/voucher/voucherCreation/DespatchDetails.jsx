@@ -14,7 +14,7 @@ function DespatchDetails({ embedded = false } = {}) {
   /// find voucher to get corresponding despatch details from configurations
 
   let voucher;
-  if (voucherType === "sales") {
+  if (voucherType === "sales" || voucherType === "performaInvoice") {
     voucher = "sale";
   } else if (voucherType === "saleOrder") {
     voucher = "saleOrder";

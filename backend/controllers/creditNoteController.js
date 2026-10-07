@@ -1,3 +1,4 @@
+import { prepareVoucherParty } from "../helpers/voucherPartyHelper.js";
 import { formatToLocalDate, truncateToNDecimals } from "../helpers/helper.js";
 import {
   createCreditNoteRecord,
@@ -28,6 +29,7 @@ import { createAdvancePaymentsFromAppliedPayments } from "../helpers/receiptHelp
 // @desc create credit note
 // route GET/api/sUsers/createCreditNote
 export const createCreditNote = async (req, res) => {
+  if (!await prepareVoucherParty(req, res)) return;
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -238,6 +240,7 @@ export const cancelCreditNote = async (req, res) => {
 // route GET/api/sUsers/editCreditNote
 
 export const editCreditNote = async (req, res) => {
+  if (!await prepareVoucherParty(req, res)) return;
   const session = await mongoose.startSession();
   session.startTransaction();
   try {

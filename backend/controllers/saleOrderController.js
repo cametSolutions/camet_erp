@@ -1,3 +1,4 @@
+import { prepareVoucherParty } from "../helpers/voucherPartyHelper.js";
 import { checkForNumberExistence } from "../helpers/secondaryHelper.js";
 import {
   calculateAdditionalCharges,
@@ -23,6 +24,7 @@ import {
  */
 
 export const createInvoice = async (req, res) => {
+  if (!await prepareVoucherParty(req, res)) return;
   const Secondary_user_id = req.sUserId;
   const owner = req.owner.toString();
   const maxRetries = 5;
@@ -138,6 +140,7 @@ console.log("line saleorder")
  * @access Public
  */
 export const editInvoice = async (req, res) => {
+  if (!await prepareVoucherParty(req, res)) return;
   const session = await mongoose.startSession();
   let retries = 3; // Retry up to 3 times
 

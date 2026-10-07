@@ -35,7 +35,7 @@ function EditItemVoucher({ itemId, godownIndex, onClose } = {}) {
 
   let modifiedVoucherType = voucherType;
   /// for sales and van sale both we have to check sale configuration
-  if (voucherType === "sales" || voucherType === "vanSale") {
+  if (voucherType === "sales" || voucherType === "vanSale" || voucherType === "performaInvoice") {
     modifiedVoucherType = "sale";
   }
 

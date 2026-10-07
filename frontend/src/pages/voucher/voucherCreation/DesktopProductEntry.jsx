@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../api/api";
 import { addItem, resetPaymentSplit } from "../../../../slices/voucherSlices/commonVoucherSlice";
-import { addDesktopStockRow, priceLevelRate } from "./desktopSaleItemState";
+import { addDesktopStockRow, priceLevelRate, desktopTaxInclusive } from "./desktopSaleItemState";
 
 export default function DesktopProductEntry({ locked }) {
   const dispatch = useDispatch();
@@ -21,6 +21,11 @@ export default function DesktopProductEntry({ locked }) {
   const [stockIndex, setStockIndex] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [rate, setRate] = useState("");
+  const [isTaxInclusive, setIsTaxInclusive] = useState(false);
+  useEffect(() => {
+    const existing = items.find(item => item._id === product?._id);
+    setIsTaxInclusive(desktopTaxInclusive(product, existing, stockIndex));
+  }, [product, stockIndex, items]);
   const [error, setError] = useState("");
   const focusNext = id => setTimeout(() => document.getElementById(id)?.focus(), 0);
   const disabled = locked || !party?._id || (voucherType !== "purchase" && priceLevels === null);
@@ -77,7 +82,7 @@ export default function DesktopProductEntry({ locked }) {
   const stock = product?.GodownList?.[stockIndex];
   const valid = product && stock && Number(quantity) > 0 && rate !== "" && Number(rate) >= 0;
   const canAddBatch = voucherType === "purchase" && product && stockIndex !== "" && (product.batchEnabled === true || product.GodownList?.some((row) => Boolean(row?.batch)));
-  const preview = valid ? addDesktopStockRow(product, null, Number(stockIndex), Number(quantity), Number(rate)).total : 0;
+  const preview = valid ? addDesktopStockRow(product, null, Number(stockIndex), Number(quantity), Number(rate), isTaxInclusive).total : 0;
   const selectStockRow = (event) => {
     const value = event.target.value;
     if (value === "__add_batch__") {
@@ -94,7 +99,7 @@ export default function DesktopProductEntry({ locked }) {
       setError("Enter a valid quantity and rate."); return;
     }
     const existing = items.find(item => item._id === product._id);
-    dispatch(addItem({ payload: addDesktopStockRow(product, existing, Number(stockIndex), Number(quantity), Number(rate)), moveToTop: false }));
+    dispatch(addItem({ payload: addDesktopStockRow(product, existing, Number(stockIndex), Number(quantity), Number(rate), isTaxInclusive), moveToTop: false }));
     dispatch(resetPaymentSplit());
     setProduct(null); setStockIndex(""); setQuantity("1"); setError("");
     searchRef.current?.focus();
@@ -124,6 +129,10 @@ export default function DesktopProductEntry({ locked }) {
       <div><label htmlFor="desktop-product-amount">Amount</label><output id="desktop-product-amount">{preview.toFixed(2)}</output></div>
       <button type="submit" className="sales-product-add" disabled={disabled || !valid} aria-label="Add product to sale"><Plus size={18} />Add</button>
     </div>
+    <label className="sales-tax-inclusive" htmlFor="desktop-product-tax-inclusive">
+      <input id="desktop-product-tax-inclusive" type="checkbox" checked={isTaxInclusive} disabled={disabled || !product} onChange={event => setIsTaxInclusive(event.target.checked)} />
+      Tax Inclusive
+    </label>
     {(error || stock || isError) && <div className="sales-product-hint" aria-live="polite">{error || (stock ? `Available stock: ${stock.balance_stock ?? 0} ${product.unit || ""}` : "")}
       {isError && <button type="button" onClick={() => refetch()}>Retry products</button>}
     </div>}

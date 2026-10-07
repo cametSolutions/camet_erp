@@ -38,7 +38,9 @@ function VoucherPdfInitiator() {
   let voucherType = null;
   const params = {};
 
-  if (pathname.toLowerCase().includes("/susers/sharesales/")) {
+  if (pathname.toLowerCase().includes("/susers/shareperformainvoice/")) {
+    voucherType = "performaInvoice";
+  } else if (pathname.toLowerCase().includes("/susers/sharesales/")) {
     voucherType = "sales";
   } else if (pathname.toLowerCase().includes("/susers/sharepurchase/")) {
     voucherType = "purchase";

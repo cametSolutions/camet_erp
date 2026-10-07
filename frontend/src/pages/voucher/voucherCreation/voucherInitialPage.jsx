@@ -85,7 +85,7 @@ function VoucherInitialPage() {
     if (voucherTypeFromRedux) return;
     /// if the voucherType is not present in redux then we will take it from the location state
     /// voucher type is assigned from the select voucher page to this page
-    let currentVoucher = "sales";
+    let currentVoucher = location.pathname.toLowerCase().includes("performainvoice") ? "performaInvoice" : "sales";
     if (location && location.state && location.state.voucherType) {
       currentVoucher = location.state.voucherType;
     }
@@ -98,7 +98,7 @@ function VoucherInitialPage() {
     if (!voucherTypeFromRedux) return "";
     if (
       voucherTypeFromRedux === "sales" ||
-      voucherTypeFromRedux === "vanSale"
+      voucherTypeFromRedux === "vanSale" || voucherTypeFromRedux === "performaInvoice"
     ) {
       return "salesNumber";
     } else {
@@ -259,7 +259,7 @@ function VoucherInitialPage() {
           // Select the initial series here, instead of waiting for the modal
           // to mount. This makes the voucher series and number available in
           // the desktop header as soon as the page loads.
-          if (initialSeries) {
+          if (initialSeries && !(mode === "edit" && selectedVoucherSeriesFromRedux?._id)) {
             const initialNumber = formatVoucherSeriesNumber(initialSeries);
             dispatch(addSelectedVoucherSeries(initialSeries));
             dispatch(addVoucherNumber(initialNumber));
@@ -359,11 +359,12 @@ function VoucherInitialPage() {
     const isPurchase = voucherTypeFromRedux === "purchase";
     const isCreditNote = voucherTypeFromRedux === "creditNote";
     const isSaleOrder = voucherTypeFromRedux === "saleOrder";
+    const isProforma = voucherTypeFromRedux === "performaInvoice";
     const isDebitNote = voucherTypeFromRedux === "debitNote";
-    const transactionName = isPurchase ? "purchase" : isCreditNote ? "credit note" : isDebitNote ? "debit note" : isSaleOrder ? "sale order" : "sale";
+    const transactionName = isPurchase ? "purchase" : isCreditNote ? "credit note" : isDebitNote ? "debit note" : isSaleOrder ? "sale order" : isProforma ? "proforma invoice" : "sale";
     try {
       setIsLoading(true);
-      const response = await api.get(`/api/sUsers/${isPurchase ? "getPurchaseDetails" : isCreditNote ? "getCreditNoteDetails" : isDebitNote ? "getDebitNoteDetails" : isSaleOrder ? "getSaleOrderDetails" : "getSalesDetails"}/${transaction._id}`, { withCredentials: true });
+      const response = await api.get(`/api/sUsers/${isPurchase ? "getPurchaseDetails" : isCreditNote ? "getCreditNoteDetails" : isDebitNote ? "getDebitNoteDetails" : isSaleOrder ? "getSaleOrderDetails" : isProforma ? "getPerformaInvoiceDetails" : "getSalesDetails"}/${transaction._id}`, { withCredentials: true });
       const data = response.data.data;
       if (data.isCancelled || data.isEditable === false) {
         toast.error(data.isEditable === false ? `This ${transactionName} has payments applied and cannot be edited.` : `Cancelled ${transactionName}s cannot be edited.`);
@@ -371,7 +372,7 @@ function VoucherInitialPage() {
       }
       const documentNumber = data.purchaseNumber || data.creditNoteNumber || data.debitNoteNumber || data.orderNumber || data.salesNumber || "";
       dispatch(removeAll());
-      dispatch(addVoucherType(isPurchase ? "purchase" : isCreditNote ? "creditNote" : isDebitNote ? "debitNote" : isSaleOrder ? "saleOrder" : "sales"));
+      dispatch(addVoucherType(isPurchase ? "purchase" : isCreditNote ? "creditNote" : isDebitNote ? "debitNote" : isSaleOrder ? "saleOrder" : isProforma ? "performaInvoice" : "sales"));
       dispatch(addMode("edit"));
       dispatch(saveId(data._id));
       dispatch(addVoucherNumber(documentNumber));
@@ -399,9 +400,9 @@ function VoucherInitialPage() {
   };
   const cancelDesktopTransaction = async () => {
     if (!idFromRedux) return;
-    const transactionName = voucherTypeFromRedux === "purchase" ? "purchase" : voucherTypeFromRedux === "creditNote" ? "credit note" : voucherTypeFromRedux === "debitNote" ? "debit note" : "sale";
-    const cancelEndpoint = voucherTypeFromRedux === "purchase" ? "cancelPurchase" : voucherTypeFromRedux === "creditNote" ? "cancelCreditNote" : voucherTypeFromRedux === "debitNote" ? "cancelDebitNote" : "cancelSales";
-    if (!window.confirm(`Cancel this ${transactionName}? Stock and outstanding balance will be reversed.`)) return;
+    const transactionName = voucherTypeFromRedux === "performaInvoice" ? "proforma invoice" : voucherTypeFromRedux === "purchase" ? "purchase" : voucherTypeFromRedux === "creditNote" ? "credit note" : voucherTypeFromRedux === "debitNote" ? "debit note" : "sale";
+    const cancelEndpoint = voucherTypeFromRedux === "performaInvoice" ? "cancelPerformaInvoice" : voucherTypeFromRedux === "purchase" ? "cancelPurchase" : voucherTypeFromRedux === "creditNote" ? "cancelCreditNote" : voucherTypeFromRedux === "debitNote" ? "cancelDebitNote" : "cancelSales";
+    if (!window.confirm(voucherTypeFromRedux === "performaInvoice" ? "Cancel this proforma invoice?" : `Cancel this ${transactionName}? Stock and outstanding balance will be reversed.`)) return;
     try {
       setSubmitLoading(true);
       const response = await api.put(`/api/sUsers/${cancelEndpoint}/${idFromRedux}`, { cancelReason: `Cancelled from desktop ${transactionName}` }, { withCredentials: true });
@@ -495,7 +496,7 @@ function VoucherInitialPage() {
           subTotal: Number(subTotalFromRedux.toFixed(2)),
           totalAdditionalCharges: Number(totalAdditionalChargesFromRedux.toFixed(2)),
           totalWithAdditionalCharges: Number(totalWithAdditionalChargesFromRedux.toFixed(2)),
-          totalPaymentSplits: Number(totalPaymentSplitsFromRedux.toFixed(2)),
+          totalPaymentSplits: voucherTypeFromRedux === "performaInvoice" ? 0 : Number(totalPaymentSplitsFromRedux.toFixed(2)),
           party,
           items,
           note: noteFromRedux,
@@ -503,7 +504,7 @@ function VoucherInitialPage() {
           priceLevelFromRedux,
           additionalChargesFromRedux,
           selectedGodownDetails: vanSaleGodownFromRedux,
-          paymentSplittingData: paymentSplittingDataFromRedux,
+          paymentSplittingData: voucherTypeFromRedux === "performaInvoice" ? [] : paymentSplittingDataFromRedux,
         };
       }
 
@@ -546,10 +547,10 @@ function VoucherInitialPage() {
     }
   };
 
-  const desktopSales = desktopViewport && ["sales", "purchase", "creditNote", "debitNote", "saleOrder"].includes(voucherTypeFromRedux);
+  const desktopSales = desktopViewport && ["sales", "purchase", "creditNote", "debitNote", "saleOrder", "performaInvoice"].includes(voucherTypeFromRedux);
 
   return (
-    <div className={`mb-14 sm:mb-0 ${desktopSales ? `desktop-sales ${["purchase", "debitNote"].includes(voucherTypeFromRedux) ? "desktop-purchase" : ""}` : ""}`}>
+    <div className={`mb-14 sm:mb-0 ${voucherTypeFromRedux === "performaInvoice" ? "proforma-invoice" : ""} ${desktopSales ? `desktop-sales ${["purchase", "debitNote"].includes(voucherTypeFromRedux) ? "desktop-purchase" : ""}` : ""}`}>
       <div className="flex-1 bg-slate-100 h -screen ">
         <TitleDiv
           title={desktopSales ? `${mode === "edit" ? "Edit" : "New"} ${formatVoucherType(voucherTypeFromRedux)}` : formatVoucherType(voucherTypeFromRedux)}
@@ -600,7 +601,7 @@ function VoucherInitialPage() {
               convertedFrom={convertedFrom}
             />
           )}
-          {desktopSales && ["sales", "creditNote", "saleOrder"].includes(voucherTypeFromRedux) && <div className="sales-party-values"><DesktopPriceLevel cmpId={cmp_id} locked={convertedFrom.length > 0} /></div>}
+          {desktopSales && ["sales", "creditNote", "saleOrder", "performaInvoice"].includes(voucherTypeFromRedux) && <div className="sales-party-values"><DesktopPriceLevel cmpId={cmp_id} locked={convertedFrom.length > 0} /></div>}
           </div>
 
           {/* Despatch details */}
@@ -644,7 +645,7 @@ function VoucherInitialPage() {
 
           {/* we will show receive amount section as button at header and footer if it is compulsory */}
 
-          {totalAmount > 0 && !enablePaymentSplittingAsCompulsory && (
+          {voucherTypeFromRedux !== "performaInvoice" && totalAmount > 0 && !enablePaymentSplittingAsCompulsory && (
             <ReceiveAmount />
           )}
 
@@ -658,7 +659,7 @@ function VoucherInitialPage() {
           </details>
           </div></>)}
 
-          {desktopSales ? <DesktopSalesTotals onEditCharges={() => setOptionsTab("charges")} onOpenOptions={() => setOptionsTab("charges")} onApplyReceived={handleDesktopReceivedAmount} subtotal={subTotal} charges={totalAdditionalChargesFromRedux} total={totalAmount} received={{ cash: Number((paymentSplittingDataFromRedux || []).find(payment => payment.type === "cash")?.amount || 0), cashSource: (paymentSplittingDataFromRedux || []).find(payment => payment.type === "cash")?.ref_id || "", upi: Number((paymentSplittingDataFromRedux || []).find(payment => payment.type === "upi")?.amount || 0), upiSource: (paymentSplittingDataFromRedux || []).find(payment => payment.type === "upi")?.ref_id || "", cheque: Number((paymentSplittingDataFromRedux || []).find(payment => payment.type === "cheque")?.amount || 0), chequeSource: (paymentSplittingDataFromRedux || []).find(payment => payment.type === "cheque")?.ref_id || "" }} balance={Math.max(Number(totalAmount || 0) - (paymentSplittingDataFromRedux || []).filter(payment => payment.type !== "credit").reduce((sum, payment) => sum + Number(payment.amount || 0), 0), 0)} /> : <div className="flex justify-between items-center bg-white mt-2 p-3">
+          {desktopSales ? <DesktopSalesTotals allowReceivePayment={voucherTypeFromRedux !== "performaInvoice"} onEditCharges={() => setOptionsTab("charges")} onOpenOptions={() => setOptionsTab("charges")} onApplyReceived={handleDesktopReceivedAmount} subtotal={subTotal} charges={totalAdditionalChargesFromRedux} total={totalAmount} received={{ cash: Number((paymentSplittingDataFromRedux || []).find(payment => payment.type === "cash")?.amount || 0), cashSource: (paymentSplittingDataFromRedux || []).find(payment => payment.type === "cash")?.ref_id || "", upi: Number((paymentSplittingDataFromRedux || []).find(payment => payment.type === "upi")?.amount || 0), upiSource: (paymentSplittingDataFromRedux || []).find(payment => payment.type === "upi")?.ref_id || "", cheque: Number((paymentSplittingDataFromRedux || []).find(payment => payment.type === "cheque")?.amount || 0), chequeSource: (paymentSplittingDataFromRedux || []).find(payment => payment.type === "cheque")?.ref_id || "" }} balance={Math.max(Number(totalAmount || 0) - (paymentSplittingDataFromRedux || []).filter(payment => payment.type !== "credit").reduce((sum, payment) => sum + Number(payment.amount || 0), 0), 0)} /> : <div className="flex justify-between items-center bg-white mt-2 p-3">
             <p className="font-bold text-md">Total Amount</p>
             <div className="flex flex-col items-center">
               <p className="font-bold text-md">
@@ -679,13 +680,13 @@ function VoucherInitialPage() {
               enablePaymentSplittingAsCompulsory
             }
             openAdditionalTile={openAdditionalTile}
-            onReceivePayment={desktopSales ? () => setOptionsTab("payment") : undefined}
+            onReceivePayment={desktopSales && voucherTypeFromRedux !== "performaInvoice" ? () => setOptionsTab("payment") : undefined}
             desktopLabel={desktopSales ? (mode === "edit" ? "Update Transaction" : "Save Transaction") : undefined}
             loading={desktopSales ? submitLoading || isLoading : undefined}
           />
           </div>
           </div>
-          {desktopSales && <DesktopRecentSales key={recentSalesVersion} cmpId={cmp_id} isAdmin={isAdmin} voucherType={voucherTypeFromRedux} onEdit={loadDesktopTransactionForEdit} />}
+          {(desktopSales || voucherTypeFromRedux === "performaInvoice") && <DesktopRecentSales key={recentSalesVersion} cmpId={cmp_id} isAdmin={isAdmin} voucherType={voucherTypeFromRedux} onEdit={loadDesktopTransactionForEdit} />}
         </div>
       </div>
     </div>
