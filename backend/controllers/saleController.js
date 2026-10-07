@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { prepareVoucherParty } from "../helpers/voucherPartyHelper.js";
 import {
   createSaleRecord,
   handleSaleStockUpdates,
@@ -31,6 +32,8 @@ import kotModal from "../models/kotModal.js";
  */
 
 export const createSale = async (req, res) => {
+  if (!await prepareVoucherParty(req, res)) return;
+  if (req.body.voucherType === "performaInvoice") return res.status(400).json({ message: "Use the proforma invoice endpoint" });
   const session = await mongoose.startSession();
 
   session.startTransaction();
@@ -193,6 +196,7 @@ const MAX_RETRIES = 5;
 const RETRY_DELAY_MS = 1000;
 
 export const editSale = async (req, res) => {
+  if (!await prepareVoucherParty(req, res)) return;
   const saleId = req.params.id;
   const {
     orgId,

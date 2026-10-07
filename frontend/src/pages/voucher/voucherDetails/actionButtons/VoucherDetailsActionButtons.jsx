@@ -80,7 +80,7 @@ export default function VoucherDetailsActionButtons({
       icon: MdPrint,
       title: "Print",
       color: "text-orange-600",
-      active: isneedReceipt,
+      active: isneedReceipt && voucherType !== "performaInvoice",
       onClick: handlereceipt,
     },
 
@@ -128,10 +128,10 @@ export default function VoucherDetailsActionButtons({
         data={data}
       />
 
-      
+
       <div className="flex justify-center space-x-8">
-        { (secondaryUserRole == "admin" || 
-        (permission?.cancelSale && voucherType == "sales") || 
+        { (secondaryUserRole == "admin" ||
+        (permission?.cancelSale && (voucherType == "sales" || voucherType == "performaInvoice")) ||
         (permission?.cancelReceipt && voucherType == "receipt")) && (
         <CancelButton
           id={_id}

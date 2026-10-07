@@ -1,3 +1,4 @@
+import { saveProformaInvoice, getProformaInvoiceDetails, listProformaInvoices, cancelProformaInvoice } from "../controllers/proformaInvoiceController.js";
 import express from 'express'
 const router = express.Router();
 import {
@@ -147,6 +148,11 @@ router.post('/addAditionalCharge/:cmp_id', authSecondary, secondaryIsBlocked, co
 router.delete('/deleteAdditionalCharge/:id/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, deleteAdditionalCharge)
 router.put('/EditAditionalCharge/:id/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, EditAditionalCharge)
 router.post('/addconfigurations/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, addconfigurations)
+router.post('/createPerformaInvoice', authSecondary, secondaryIsBlocked, saveProformaInvoice);
+router.post('/editPerformaInvoice/:id', authSecondary, secondaryIsBlocked, saveProformaInvoice);
+router.get('/getPerformaInvoiceDetails/:id', authSecondary, secondaryIsBlocked, getProformaInvoiceDetails);
+router.get('/performaInvoices/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, listProformaInvoices);
+router.put('/cancelPerformaInvoice/:id', authSecondary, secondaryIsBlocked, cancelProformaInvoice);
 router.post('/createSales', authSecondary, secondaryIsBlocked, createSale)
 router.post('/createVanSale', authSecondary, secondaryIsBlocked, createSale)
 router.get('/getSalesDetails/:id', authSecondary, secondaryIsBlocked, getSalesDetails)

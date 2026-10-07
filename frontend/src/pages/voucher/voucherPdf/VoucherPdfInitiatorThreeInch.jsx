@@ -29,7 +29,9 @@ function VoucherPdfInitiatorThreeInch() {
   let voucherType = null;
   const params = {};
 
-  if (pathname.toLowerCase().includes("/susers/sharesalesthreeinch/")) {
+  if (pathname.toLowerCase().includes("/susers/shareperformainvoicethreeinch/")) {
+    voucherType = "performaInvoice";
+  } else if (pathname.toLowerCase().includes("/susers/sharesalesthreeinch/")) {
     voucherType = "sales";
   } else if (pathname.toLowerCase().includes("/susers/sharepurchasethreeinch/")) {
     voucherType = "purchase";

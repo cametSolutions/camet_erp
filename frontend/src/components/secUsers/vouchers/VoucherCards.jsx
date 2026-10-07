@@ -55,10 +55,10 @@ const salesTiles = [
     voucherType: "creditNote",
   },
   {
-    title: "Perfoma Invoice",
+    title: "Proforma Invoice",
     icon: PerformaInvoice,
-    to: "/sUsers/creditnote",
-    active: false,
+    to: "/sUsers/performaInvoice",
+    active: true,
     subtitle: "Draft pre-invoice documents",
     voucherType: "performaInvoice",
   },

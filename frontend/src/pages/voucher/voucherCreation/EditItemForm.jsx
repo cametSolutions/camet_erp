@@ -102,6 +102,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading, ite
 
   const normalizedVoucherType = {
     sales: "sale",
+    performaInvoice: "sale",
     saleOrder: "saleOrder",
   }[voucherTypeFromRedux];
 
@@ -237,7 +238,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading, ite
         addlCessAmt: Number(additionalCessAmount?.toFixed(2)),
         individualTotal: Number(individualTotal?.toFixed(2)),
         quantity: Number(quantity?.toFixed(2)),
-        taxInclusive: Boolean(taxInclusive),
+        taxInclusive: Boolean(item?.isTaxInclusive),
       });
     });
 
@@ -328,11 +329,9 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading, ite
 
     // log
 
-    if (taxInclusive) {
-      setIsTaxInclusive(
-        selectedGodown?.isTaxInclusive || selectedItem[0]?.taxInclusive
-      );
-    }
+    setIsTaxInclusive(Boolean(
+      selectedItem[0]?.isTaxInclusive ?? selectedGodown?.isTaxInclusive ?? selectedItem[0]?.taxInclusive ?? false
+    ));
   }, [selectedItem[0], enableActualAndBilledQuantity]);
 
   useEffect(() => {
@@ -750,7 +749,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading, ite
                       />
                     </div>
 
-                    {taxInclusive &&
+                    {from !== "stockTransfer" &&
                       isTaxInclusive !== null &&
                       isTaxInclusive !== undefined && (
                         <div className="flex items-center gap-3 ml-1">

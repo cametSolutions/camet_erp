@@ -9,5 +9,5 @@ export async function createDesktopCustomer(api, cmpId, enteredName) {
     openingBalanceAmount: 0, isHotelAgent: false,
   }, { withCredentials: true });
   if (!response.data.result?._id) throw new Error("The server did not return the new customer. Search the name again before retrying.");
-  return { ...response.data.result, partyType: response.data.result.partyType || "party", totalOutstanding: 0 };
+  return { ...response.data.result, accountGroup_id: debtors._id, accountGroupName: debtors.accountGroup, partyType: response.data.result.partyType || "party", totalOutstanding: 0 };
 }

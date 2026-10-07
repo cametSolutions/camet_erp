@@ -1,4 +1,5 @@
 import productModel from "../models/productModel.js";
+import { resolveVoucherParty } from "./voucherPartyHelper.js";
 import salesModel from "../models/salesModel.js";
 import TallyData from "../models/TallyData.js";
 import vanSaleModel from "../models/vanSaleModel.js";
@@ -394,13 +395,13 @@ export const createSaleRecord = async (
       note,
     } = req.body;
 
-    console.log(party);
+    const voucherParty = await resolveVoucherParty(party, orgId, req.owner, session);
     
 
     const Primary_user_id = req.owner;
     const Secondary_user_id = req.sUserId;
 
-    const model = req.query.vanSale === "true" ? vanSaleModel : salesModel;
+    const model = req.voucherModel || (req.query.vanSale === "true" ? vanSaleModel : salesModel);
 
     const lastSale = await model.findOne(
       { cmp_id: orgId }, // Filter by cmp_id
@@ -437,8 +438,8 @@ export const createSaleRecord = async (
       voucherType,
       userLevelSerialNumber: newUserLevelSerial,
       cmp_id: orgId,
-      partyAccount: party?.partyName,
-      party,
+      partyAccount: voucherParty?.partyName,
+      party: voucherParty,
       despatchDetails,
       items: updatedItems,
       selectedPriceLevel: req.body.priceLevelFromRedux,
@@ -446,7 +447,6 @@ export const createSaleRecord = async (
       finalOutstandingAmount: req.body.finalOutstandingAmount,
       subTotal: req.body.subTotal,
       totalAdditionalCharges: req.body.totalAdditionalCharges,
-      totalPaymentSplits: req.body.totalPaymentSplittingAmount,
       totalWithAdditionalCharges: req.body.totalWithAdditionalCharges,
       totalPaymentSplits: req.body.totalPaymentSplits,
       note,

@@ -36,7 +36,11 @@ export function applyDesktopPriceLevel(item, level) {
   })) });
 }
 
-export function addDesktopStockRow(product, existing, stockIndex, quantity, rate) {
+export function desktopTaxInclusive(product, existing, stockIndex) {
+  return Boolean(existing?.isTaxInclusive ?? existing?.taxInclusive ?? product?.GodownList?.[stockIndex]?.isTaxInclusive ?? product?.isTaxInclusive ?? product?.taxInclusive ?? false);
+}
+
+export function addDesktopStockRow(product, existing, stockIndex, quantity, rate, taxInclusive) {
   const stock = product.GodownList[stockIndex];
   const item = existing || { ...product, GodownList: product.GodownList.map(row => ({
     ...row, count: 0, actualCount: 0, added: false,
@@ -51,5 +55,11 @@ export function addDesktopStockRow(product, existing, stockIndex, quantity, rate
     actualCount: Number((Number(row.actualCount || row.count || 0) + quantity).toFixed(3)),
     selectedPriceRate: rate,
   };
+  if (taxInclusive !== undefined) {
+    return recalculateDesktopItem({
+      ...item, isTaxInclusive: Boolean(taxInclusive), taxInclusive: Boolean(taxInclusive),
+      GodownList: rows.map(row => ({ ...row, isTaxInclusive: Boolean(taxInclusive) })),
+    });
+  }
   return recalculateDesktopItem({ ...item, GodownList: rows });
 }

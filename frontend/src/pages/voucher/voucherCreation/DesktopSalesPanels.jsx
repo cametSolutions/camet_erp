@@ -52,7 +52,7 @@ export function DesktopSalesItems({ items, convertedFrom, voucherType }) {
   );
 }
 
-export function DesktopSalesTotals({ subtotal, charges, total, received, balance, onEditCharges, onOpenOptions, onApplyReceived }) {
+export function DesktopSalesTotals({ subtotal, charges, total, received, balance, onEditCharges, onOpenOptions, onApplyReceived, allowReceivePayment = true }) {
   const company = useSelector(state => state.secSelectedOrganization.secSelectedOrg);
   const party = useSelector(state => state.commonVoucherSlice.party);
   const [receiveOpen, setReceiveOpen] = useState(false);
@@ -66,11 +66,11 @@ export function DesktopSalesTotals({ subtotal, charges, total, received, balance
   const { data: sources = { cashs: [], banks: [] }, isLoading: sourcesLoading } = useQuery({
     queryKey: ["bankAndCashSources", company?._id],
     queryFn: async () => (await api.get(`/api/sUsers/getBankAndCashSources/${company._id}`, { withCredentials: true })).data.data,
-    enabled: receiveOpen && !!company?._id,
+    enabled: allowReceivePayment && receiveOpen && !!company?._id,
     staleTime: 60_000,
   });
   const openReceive = () => {
-    if (Number(total) <= 0) return;
+    if (!allowReceivePayment || Number(total) <= 0) return;
     setCashValue(String(Number(received?.cash || 0).toFixed(2)));
     setUpiValue(String(Number(received?.upi || 0).toFixed(2)));
     setChequeValue(String(Number(received?.cheque || 0).toFixed(2)));
@@ -103,12 +103,12 @@ export function DesktopSalesTotals({ subtotal, charges, total, received, balance
   };
   const receivedTotal = Number(received?.cash || 0) + Number(received?.upi || 0) + Number(received?.cheque || 0);
   const enteredTotal = Number(cashValue || 0) + Number(upiValue || 0) + Number(chequeValue || 0);
-  return <div className="sales-desktop-totals">
+  return <div className={`sales-desktop-totals ${allowReceivePayment ? "" : "sales-desktop-totals-without-payment"}`}>
     <div className="sales-options-total"><span>Options</span><button type="button" onClick={onOpenOptions} aria-haspopup="dialog">More options</button></div>
     {[
-    ["Subtotal", subtotal], ["Additional charges", charges], ["Net Amount", total], ["Received", received], ["Balance", balance],
+    ["Subtotal", subtotal], ["Additional charges", charges], ["Net Amount", total], ...(allowReceivePayment ? [["Received", received], ["Balance", balance]] : []),
     ].map(([label, value]) => <div key={label}><span>{label}</span>{label === "Additional charges" ? <button type="button" className="sales-charge-total" onClick={onEditCharges} aria-label="Edit additional charges" aria-haspopup="dialog"><span>₹</span>{money(value)}</button> : label === "Received" ? <button type="button" className="sales-received-total" disabled={Number(total) <= 0} onClick={openReceive} aria-haspopup="dialog"><span>₹</span>{money(receivedTotal)}</button> : <output><span>₹</span>{money(value)}</output>}</div>)}
-    <Dialog open={receiveOpen} onOpenChange={setReceiveOpen}>
+    {allowReceivePayment && <Dialog open={receiveOpen} onOpenChange={setReceiveOpen}>
       <DialogContent className="sales-receive-dialog">
         <DialogTitle>Receive payment</DialogTitle>
         <DialogDescription>Enter the amount received for this sale.</DialogDescription>
@@ -124,7 +124,7 @@ export function DesktopSalesTotals({ subtotal, charges, total, received, balance
           <footer><button type="button" onClick={() => setReceiveOpen(false)}>Cancel</button><button type="submit">Apply</button></footer>
         </form>
       </DialogContent>
-    </Dialog>
+    </Dialog>}
   </div>;
 }
 
@@ -132,15 +132,16 @@ export function DesktopRecentSales({ cmpId, isAdmin, onEdit, voucherType = "sale
   const isPurchase = voucherType === "purchase";
   const isCreditNote = voucherType === "creditNote";
   const isSaleOrder = voucherType === "saleOrder";
+  const isProforma = voucherType === "performaInvoice";
   const isDebitNote = voucherType === "debitNote";
-  const transactionLabel = isPurchase ? "purchase" : isCreditNote ? "credit note" : isDebitNote ? "debit note" : isSaleOrder ? "sale order" : "sale";
+  const transactionLabel = isProforma ? "proforma invoice" : isPurchase ? "purchase" : isCreditNote ? "credit note" : isDebitNote ? "debit note" : isSaleOrder ? "sale order" : "sale";
   const [search, setSearch] = useState("");
   const printFormat = useSelector(state => state.secSelectedOrganization.secSelectedOrg?.configurations?.[0]?.printConfiguration?.find(config => config.voucher === (isSaleOrder ? "saleOrder" : "sale"))?.printFormat || "a4");
   const { data = [], isLoading, error, refetch, isFetching, dataUpdatedAt } = useQuery({
-    queryKey: ["todaysTransaction", cmpId, isAdmin],
+    queryKey: ["todaysTransaction", cmpId, isAdmin, ...(isProforma ? ["performaInvoice"] : [])],
     queryFn: async () => {
-      const response = await api.get(`/api/sUsers/transactions/${cmpId}?todayOnly=true&isAdmin=${isAdmin}`, { withCredentials: true });
-      return response.data.data.combined;
+      const response = await api.get(isProforma ? `/api/sUsers/performaInvoices/${cmpId}` : `/api/sUsers/transactions/${cmpId}?todayOnly=true&isAdmin=${isAdmin}`, { withCredentials: true });
+      return isProforma ? response.data.data : response.data.data.combined;
     },
     enabled: !!cmpId,
     refetchOnWindowFocus: false,
@@ -148,14 +149,14 @@ export function DesktopRecentSales({ cmpId, isAdmin, onEdit, voucherType = "sale
     refetchInterval: isAdmin ? 5 * 60 * 1000 : false,
     retry: 1,
   });
-  const sales = data.filter(item => (isPurchase ? item.type === "Purchase" : isCreditNote ? item.type === "Credit Note" : isDebitNote ? item.type === "Debit Note" : isSaleOrder ? item.type === "Sale Order" : item.type === "Tax Invoice") &&
+  const sales = data.filter(item => (isProforma ? item.type === "Proforma Invoice" : isPurchase ? item.type === "Purchase" : isCreditNote ? item.type === "Credit Note" : isDebitNote ? item.type === "Debit Note" : isSaleOrder ? item.type === "Sale Order" : item.type === "Tax Invoice") &&
     [item.party_name, item.voucherNumber, item.type].some(value => String(value || "").toLowerCase().includes(search.toLowerCase())));
   return <aside className="sales-recent-panel">
-    <header><h2>{isPurchase ? "Recent Purchases" : isCreditNote ? "Recent Credit Notes" : isDebitNote ? "Recent Debit Notes" : isSaleOrder ? "Recent Sale Orders" : "Recent Transactions"}</h2><span>{sales.length} records</span></header>
+    <header><h2>{isProforma ? "Recent Proforma Invoices" : isPurchase ? "Recent Purchases" : isCreditNote ? "Recent Credit Notes" : isDebitNote ? "Recent Debit Notes" : isSaleOrder ? "Recent Sale Orders" : "Recent Transactions"}</h2><span>{sales.length} records</span></header>
     <label className="sales-recent-search"><Search size={20} /><input aria-label="Search recent sales" placeholder="Search by party, document, or type..." value={search} onChange={event => setSearch(event.target.value)} /></label>
     <div className="sales-recent-scroll"><table className="sales-desktop-table"><thead><tr>{["BILL NO", "DATE", "PARTY", "NET", "PRINT"].map(label => <th key={label}>{label}</th>)}</tr></thead><tbody>
-      {sales.map(sale => <tr key={sale._id} onDoubleClick={() => !sale.isCancelled && onEdit?.(sale)} className={!sale.isCancelled ? "sales-recent-editable" : undefined} title={!sale.isCancelled ? `Double-click to edit this ${transactionLabel}` : `Cancelled ${transactionLabel}`}><td><Link to={isPurchase ? `/sUsers/purchaseDetails/${sale._id}` : isCreditNote ? `/sUsers/creditNoteDetails/${sale._id}` : isDebitNote ? `/sUsers/debitNoteDetails/${sale._id}` : isSaleOrder ? `/sUsers/saleOrderDetails/${sale._id}` : `/sUsers/salesDetails/${sale._id}`} state={{ from: "dashboard" }}>{sale.voucherNumber}</Link></td><td>{new Date(sale.date).toLocaleDateString("en-GB")}</td><td>{sale.party_name}{sale.isCancelled && <small>Cancelled</small>}</td><td>{money(sale.enteredAmount)}</td><td><Link aria-label={`Print sale ${sale.voucherNumber} as ${printFormat === "thermal" ? "thermal receipt" : "A4 invoice"}`} to={isPurchase ? `/sUsers/sharepurchase/${sale._id}` : isCreditNote ? `/sUsers/shareCreditNote/${sale._id}` : isDebitNote ? `/sUsers/shareDebitNote/${sale._id}` : isSaleOrder ? (printFormat === "thermal" ? `/sUsers/sharesaleOrderThreeInch/${sale._id}` : `/sUsers/shareSaleOrder/${sale._id}`) : printFormat === "thermal" ? `/sUsers/sharesalesThreeInch/${sale._id}` : `/sUsers/sharesales/${sale._id}`}><Printer size={17} /></Link></td></tr>)}
-      {(isLoading || error || !sales.length) && <tr><td colSpan={5} className="sales-status">{isLoading ? "Loading transactions…" : error ? <><p>Unable to load transactions.</p><button type="button" disabled={isFetching} onClick={() => refetch()}>Retry</button></> : search ? "No matching transactions" : isPurchase ? "No purchases today" : isCreditNote ? "No credit notes today" : isDebitNote ? "No debit notes today" : isSaleOrder ? "No sale orders today" : "No sales today"}</td></tr>}
+      {sales.map(sale => <tr key={sale._id} onDoubleClick={() => !sale.isCancelled && onEdit?.(sale)} className={!sale.isCancelled ? "sales-recent-editable" : undefined} title={!sale.isCancelled ? `Double-click to edit this ${transactionLabel}` : `Cancelled ${transactionLabel}`}><td><Link to={isProforma ? `/sUsers/performaInvoiceDetails/${sale._id}` : isPurchase ? `/sUsers/purchaseDetails/${sale._id}` : isCreditNote ? `/sUsers/creditNoteDetails/${sale._id}` : isDebitNote ? `/sUsers/debitNoteDetails/${sale._id}` : isSaleOrder ? `/sUsers/saleOrderDetails/${sale._id}` : `/sUsers/salesDetails/${sale._id}`} state={{ from: "dashboard" }}>{sale.voucherNumber}</Link></td><td>{new Date(sale.date).toLocaleDateString("en-GB")}</td><td>{sale.party_name}{sale.isCancelled && <small>Cancelled</small>}</td><td>{money(sale.enteredAmount)}</td><td><Link aria-label={`Print sale ${sale.voucherNumber} as ${printFormat === "thermal" ? "thermal receipt" : "A4 invoice"}`} to={isProforma ? (printFormat === "thermal" ? `/sUsers/shareperformaInvoiceThreeInch/${sale._id}` : `/sUsers/shareperformaInvoice/${sale._id}`) : isPurchase ? `/sUsers/sharepurchase/${sale._id}` : isCreditNote ? `/sUsers/shareCreditNote/${sale._id}` : isDebitNote ? `/sUsers/shareDebitNote/${sale._id}` : isSaleOrder ? (printFormat === "thermal" ? `/sUsers/sharesaleOrderThreeInch/${sale._id}` : `/sUsers/shareSaleOrder/${sale._id}`) : printFormat === "thermal" ? `/sUsers/sharesalesThreeInch/${sale._id}` : `/sUsers/sharesales/${sale._id}`}><Printer size={17} /></Link></td></tr>)}
+      {(isLoading || error || !sales.length) && <tr><td colSpan={5} className="sales-status">{isLoading ? "Loading transactions…" : error ? <><p>Unable to load transactions.</p><button type="button" disabled={isFetching} onClick={() => refetch()}>Retry</button></> : search ? "No matching transactions" : isProforma ? "No proforma invoices" : isPurchase ? "No purchases today" : isCreditNote ? "No credit notes today" : isDebitNote ? "No debit notes today" : isSaleOrder ? "No sale orders today" : "No sales today"}</td></tr>}
     </tbody></table></div>
     <footer>{dataUpdatedAt ? `Last updated: ${new Date(dataUpdatedAt).toLocaleTimeString()}` : "Today's sales"}</footer>
   </aside>;

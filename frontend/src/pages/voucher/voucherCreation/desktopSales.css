@@ -249,3 +249,30 @@
   .desktop-party-actions a { display: inline-flex; height: 26px; align-items: center; border: 1px solid #cbd5e1; border-radius: 3px; padding: 3px 7px; background: #f8fafc; color: #2563eb; font-size: 11px; }
   .desktop-party-actions a:hover { background: #eff6ff; border-color: #93c5fd; }
 }
+@media (max-width: 1023px) {
+  .proforma-invoice .sales-recent-panel { margin: 12px; padding: 12px; background: white; border-radius: 6px; }
+  .proforma-invoice .sales-recent-panel header { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+  .proforma-invoice .sales-recent-search { display: flex; align-items: center; gap: 8px; margin: 12px 0; }
+  .proforma-invoice .sales-recent-search input { min-width: 0; width: 100%; padding: 6px; border: 1px solid #cbd5e1; }
+  .proforma-invoice .sales-recent-scroll { overflow-x: auto; }
+  .proforma-invoice .sales-recent-panel table { width: 100%; min-width: 440px; font-size: 12px; text-align: left; }
+  .proforma-invoice .sales-recent-panel th, .proforma-invoice .sales-recent-panel td { padding: 8px 6px; border-bottom: 1px solid #e2e8f0; }
+  .proforma-invoice .sales-recent-panel a { color: #195cff; }
+  .proforma-invoice .sales-recent-panel small { display: block; color: #b91c1c; }
+  .proforma-invoice .sales-recent-panel footer { font-size: 10px; color: #64748b; margin-top: 8px; }
+}
+
+@media (min-width: 1024px) {
+  .desktop-sales .sales-desktop-totals-without-payment {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .desktop-sales .sales-desktop-totals-without-payment > div:last-child output {
+    background: #f8fafc;
+    color: #155dfb;
+    border-color: #cbd5e1;
+    font-weight: 400;
+  }
+}
+
+.desktop-sales .sales-tax-inclusive { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; cursor: pointer; width: fit-content; }
+.desktop-sales .sales-tax-inclusive input { width: 14px; height: 14px; accent-color: #195cff; }

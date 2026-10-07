@@ -10,11 +10,12 @@ const sections = [["charges", "Additional charges"], ["despatch", "Despatch deta
 export default function DesktopSalesOptions({ tab, onTabChange, openAdditionalTile, setOpenAdditionalTile, onTransactionSaved }) {
   const dispatch = useDispatch();
   const note = useSelector(state => state.commonVoucherSlice.note);
+  const isProforma = useSelector(state => state.commonVoucherSlice.voucherType === "performaInvoice");
   return <div className="sales-options">
     <Dialog open={tab !== null} onOpenChange={open => { if (!open) onTabChange(null); }}>
       <DialogContent className="sales-options-dialog">
         <DialogTitle>Sale options</DialogTitle>
-        <DialogDescription>Update sale details here. Apply payment changes using the payment button.</DialogDescription>
+        <DialogDescription>{isProforma ? "Update charges, despatch details, and notes." : "Update sale details here. Apply payment changes using the payment button."}</DialogDescription>
         <nav className="sales-options-nav" aria-label="Sale options">
           {sections.map(([id, label]) => <button type="button" key={id} aria-pressed={tab === id} onClick={() => onTabChange(id)}>{label}</button>)}
         </nav>

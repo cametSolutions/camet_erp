@@ -60,7 +60,7 @@ function PaymentSplitting({ embedded = false, onSaved, onTransactionSaved } = {}
   const { _id: cmp_id, configurations } = useSelector(
     (state) => state.secSelectedOrganization.secSelectedOrg,
   );
-  const { enablePaymentSplittingAsCompulsory = false } = configurations[0];
+  const { enablePaymentSplittingAsCompulsory: configuredPaymentCompulsory = false } = configurations[0];
 
   //// check if the user is admin
   const isAdmin =
@@ -390,10 +390,12 @@ function PaymentSplitting({ embedded = false, onSaved, onTransactionSaved } = {}
 
   console.log(_idFromRedux);
 
+  const enablePaymentSplittingAsCompulsory = configuredPaymentCompulsory && voucherTypeFromRedux !== "performaInvoice";
+
   const getApiEndPoint = () => {
     if (voucherTypeFromRedux) {
       if (modeFromRedux == "edit") {
-        return `editSales/${_idFromRedux}`;
+        return voucherTypeFromRedux === "performaInvoice" ? `editPerformaInvoice/${_idFromRedux}` : `editSales/${_idFromRedux}`;
       }
       return `create${voucherTypeFromRedux
         ?.split("")[0]
@@ -528,6 +530,10 @@ function PaymentSplitting({ embedded = false, onSaved, onTransactionSaved } = {}
   };
 
   console.log(paymentSplittingData);
+
+  if (voucherTypeFromRedux === "performaInvoice") {
+    return <div className="p-4"><p>Proforma invoices do not receive payments.</p><button type="button" onClick={() => navigate(-1)}>Back to invoice</button></div>;
+  }
 
   return (
     <div className={embedded ? "sales-payment-embedded" : "min-h-screen bg-gray-50 w-full"}>
