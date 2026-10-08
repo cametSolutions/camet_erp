@@ -1,3 +1,4 @@
+import { voucherCancelEndpoint } from "../../../../utils/voucherEndpoints";
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -401,7 +402,7 @@ function VoucherInitialPage() {
   const cancelDesktopTransaction = async () => {
     if (!idFromRedux) return;
     const transactionName = voucherTypeFromRedux === "performaInvoice" ? "proforma invoice" : voucherTypeFromRedux === "purchase" ? "purchase" : voucherTypeFromRedux === "creditNote" ? "credit note" : voucherTypeFromRedux === "debitNote" ? "debit note" : "sale";
-    const cancelEndpoint = voucherTypeFromRedux === "performaInvoice" ? "cancelPerformaInvoice" : voucherTypeFromRedux === "purchase" ? "cancelPurchase" : voucherTypeFromRedux === "creditNote" ? "cancelCreditNote" : voucherTypeFromRedux === "debitNote" ? "cancelDebitNote" : "cancelSales";
+    const cancelEndpoint = voucherCancelEndpoint(voucherTypeFromRedux);
     if (!window.confirm(voucherTypeFromRedux === "performaInvoice" ? "Cancel this proforma invoice?" : `Cancel this ${transactionName}? Stock and outstanding balance will be reversed.`)) return;
     try {
       setSubmitLoading(true);

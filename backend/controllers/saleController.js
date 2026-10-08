@@ -1,3 +1,4 @@
+import { voucherEditError } from "../helpers/voucherLifecycleHelper.js";
 import mongoose from "mongoose";
 import { prepareVoucherParty } from "../helpers/voucherPartyHelper.js";
 import {
@@ -237,6 +238,12 @@ export const editSale = async (req, res) => {
           .json({ success: false, message: "Sale not found" });
       }
 
+      const editError = !isVanSale ? await voucherEditError(existingSale, session) : null;
+      if (editError) {
+        await session.abortTransaction();
+        return res.status(409).json({ success: false, message: editError });
+      }
+
       const secondaryUser = await secondaryUserModel
         .findById(req.sUserId)
         .session(session);
@@ -277,7 +284,7 @@ export const editSale = async (req, res) => {
         note,
         finalAmount: lastAmount,
         Primary_user_id: req.owner,
-        Secondary_user_id: req.secondaryUserId,
+        Secondary_user_id: req.sUserId,
         salesNumber,
         series_id,
         usedSeriesNumber,
@@ -405,6 +412,12 @@ export const cancelSale = async (req, res) => {
         .json({ success: false, message: "Sale not found" });
     }
 
+    if (vanSaleQuery !== "true" && sale.isCancelled) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(200).json({ success: true, message: "Voucher is already cancelled", data: sale });
+    }
+
     // Revert stock updates
     !sale.checkOutId && (await revertSaleStockUpdates(sale.items, session)); // Ensure stock updates use session
 
@@ -476,16 +489,17 @@ export const cancelSale = async (req, res) => {
     await session.commitTransaction();
     session.endSession(); // End the session
 
+    try {
     let primaryUserData = await primaryUserModel.findById(req.owner);
 
     if (!primaryUserData || !primaryUserData?.email) {
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: "Sale cancelled successfully but email not sent",
         data: sale,
       });
     }
-const kotIds = sale.convertedFrom.map(item => item.id);
+const kotIds = (sale.convertedFrom || []).map(item => item.id);
 const kotObjectIds = kotIds.map(id => new mongoose.Types.ObjectId(id));
 let kots = await kotModal.find({
   _id: { $in: kotObjectIds }   // or kotIds if they are already ObjectId
@@ -549,6 +563,9 @@ await sendMail({
   data: sale,
 });
 
+    } catch (notificationError) {
+      console.error("Sale cancelled; notification failed:", notificationError);
+    }
     res.status(200).json({
       success: true,
       message: "Sale canceled and stock reverted successfully",

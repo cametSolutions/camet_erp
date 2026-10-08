@@ -1,3 +1,4 @@
+import { voucherEditError } from "../helpers/voucherLifecycleHelper.js";
 import { prepareVoucherParty } from "../helpers/voucherPartyHelper.js";
 import { formatToLocalDate, truncateToNDecimals } from "../helpers/helper.js";
 import {
@@ -156,6 +157,11 @@ export const cancelDebitNote = async (req, res) => {
         .json({ success: false, message: "Purchase not found" });
     }
 
+    if (existingDebitNote.isCancelled) {
+      await session.abortTransaction();
+      return res.status(200).json({ success: true, message: "Voucher is already cancelled", data: existingDebitNote });
+    }
+
     // Revert existing stock updates
     await revertDebitNoteStockUpdates(existingDebitNote.items, session);
 
@@ -252,6 +258,13 @@ export const editDebitNote = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Debit Note not found" });
+    }
+
+    const editError = await voucherEditError(existingDebitNote, session);
+    if (editError) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(409).json({ success: false, message: editError });
     }
 
     if (existingDebitNote?.series_id?.toString() !== series_id?.toString()) {
