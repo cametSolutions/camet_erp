@@ -1,3 +1,4 @@
+import { voucherEditError } from "../helpers/voucherLifecycleHelper.js";
 import { prepareVoucherParty } from "../helpers/voucherPartyHelper.js";
 import { formatToLocalDate, truncateToNDecimals } from "../helpers/helper.js";
 import {
@@ -158,6 +159,12 @@ export const cancelCreditNote = async (req, res) => {
           .json({ success: false, message: "Credit note not found" });
       }
 
+      if (existingCreditNote.isCancelled) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(200).json({ success: true, message: "Voucher is already cancelled", data: existingCreditNote });
+      }
+
       // Revert existing stock updates
       await revertCreditNoteStockUpdates(existingCreditNote.items, session);
 
@@ -273,6 +280,13 @@ export const editCreditNote = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Purchase not found" });
+    }
+
+    const editError = await voucherEditError(existingCreditNote, session);
+    if (editError) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(409).json({ success: false, message: editError });
     }
 
     if (existingCreditNote?.series_id?.toString() !== series_id?.toString()) {

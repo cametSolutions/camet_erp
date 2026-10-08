@@ -63,11 +63,11 @@ export function DesktopSalesTotals({ subtotal, charges, total, received, balance
   const [upiSource, setUpiSource] = useState("");
   const [chequeSource, setChequeSource] = useState("");
   const [receiveError, setReceiveError] = useState("");
-  const { data: sources = { cashs: [], banks: [] }, isLoading: sourcesLoading } = useQuery({
+  const { data: sources = { cashs: [], banks: [] }, isLoading: sourcesLoading, isError: sourcesFailed, error: sourcesError, refetch: reloadSources } = useQuery({
     queryKey: ["bankAndCashSources", company?._id],
     queryFn: async () => (await api.get(`/api/sUsers/getBankAndCashSources/${company._id}`, { withCredentials: true })).data.data,
     enabled: allowReceivePayment && receiveOpen && !!company?._id,
-    staleTime: 60_000,
+    staleTime: 0,
   });
   const openReceive = () => {
     if (!allowReceivePayment || Number(total) <= 0) return;
@@ -82,6 +82,10 @@ export function DesktopSalesTotals({ subtotal, charges, total, received, balance
   };
   const applyReceived = event => {
     event.preventDefault();
+    if (sourcesLoading || sourcesFailed) {
+      setReceiveError("Wait for payment sources to load successfully.");
+      return;
+    }
     const cash = Number(cashValue);
     const upi = Number(upiValue);
     const cheque = Number(chequeValue);
@@ -118,10 +122,13 @@ export function DesktopSalesTotals({ subtotal, charges, total, received, balance
           <div className="sales-receive-method"><label htmlFor="desktop-upi-source">NEFT / UPI / Card / Bank</label><select id="desktop-upi-source" value={upiSource} onChange={event => setUpiSource(event.target.value)}><option value="">Select bank</option>{sources.banks?.map(source => <option key={source.bank_id || source._id} value={source.bank_id || source._id}>{source.bank_ledname}</option>)}</select><div><span>₹</span><input id="desktop-upi-amount" type="number" min="0" max={total} step="0.01" value={upiValue} onChange={event => setUpiValue(event.target.value)} /></div></div>
           <div className="sales-receive-method"><label htmlFor="desktop-cheque-source">Cheque</label><select id="desktop-cheque-source" value={chequeSource} onChange={event => setChequeSource(event.target.value)}><option value="">Select bank</option>{sources.banks?.map(source => <option key={source.bank_id || source._id} value={source.bank_id || source._id}>{source.bank_ledname}</option>)}</select><div><span>₹</span><input id="desktop-cheque-amount" type="number" min="0" max={total} step="0.01" value={chequeValue} onChange={event => setChequeValue(event.target.value)} /></div></div>
           <div className="sales-receive-method sales-receive-credit"><label>Credit</label><output>{party?.partyName || "No customer selected"}</output><output>₹ {money(Math.max(0, Number(total || 0) - enteredTotal))}</output></div>
-          {sourcesLoading && <p>Loading payment sources…</p>}
+          {sourcesLoading && <p role="status">Loading payment sources…</p>}
+          {sourcesFailed && <div role="alert" className="sales-receive-error"><p>{sourcesError?.response?.data?.message || "Unable to load cash and bank accounts. Check your connection or account access."}</p><button type="button" onClick={() => reloadSources()}>Retry loading accounts</button></div>}
+          {!sourcesLoading && !sourcesFailed && !sources.cashs?.length && <p>No cash ledger exists for this company. Create or import a cash account in Masters.</p>}
+          {!sourcesLoading && !sourcesFailed && !sources.banks?.length && <p>No bank ledger exists for this company. Create or import a bank account in Masters.</p>}
           {receiveError && <p className="sales-receive-error">{receiveError}</p>}
           <p>Net amount: ₹ {money(total)} · Received: ₹ {money(enteredTotal)} · Balance: ₹ {money(Math.max(0, Number(total || 0) - enteredTotal))}</p>
-          <footer><button type="button" onClick={() => setReceiveOpen(false)}>Cancel</button><button type="submit">Apply</button></footer>
+          <footer><button type="button" onClick={() => setReceiveOpen(false)}>Cancel</button><button type="submit" disabled={sourcesLoading || sourcesFailed}>Apply</button></footer>
         </form>
       </DialogContent>
     </Dialog>}

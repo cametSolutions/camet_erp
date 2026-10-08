@@ -390,6 +390,7 @@ function VoucherAddCount() {
 
         if (
           voucherTypeFromRedux === "purchase" ||
+          voucherTypeFromRedux === "debitNote" ||
           voucherTypeFromRedux === "stockTransfer"
         ) {
           defaultPriceLevel = {

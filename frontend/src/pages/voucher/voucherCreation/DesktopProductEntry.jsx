@@ -28,7 +28,8 @@ export default function DesktopProductEntry({ locked }) {
   }, [product, stockIndex, items]);
   const [error, setError] = useState("");
   const focusNext = id => setTimeout(() => document.getElementById(id)?.focus(), 0);
-  const disabled = locked || !party?._id || (voucherType !== "purchase" && priceLevels === null);
+  const usesManualRate = voucherType === "purchase" || voucherType === "debitNote";
+  const disabled = locked || !party?._id || (!usesManualRate && priceLevels === null);
   useEffect(() => {
     const timer = setTimeout(() => setSearch(input), 250);
     return () => clearTimeout(timer);
@@ -38,13 +39,13 @@ export default function DesktopProductEntry({ locked }) {
       setRate("");
       return;
     }
-    if (voucherType === "purchase") {
+    if (usesManualRate) {
       const selectedRate = product.GodownList?.[stockIndex]?.selectedPriceRate;
       setRate(selectedRate === undefined || selectedRate === null || selectedRate === "" ? "" : String(selectedRate));
       return;
     }
     setRate(String(priceLevelRate(product, selectedPriceLevel)));
-  }, [product, stockIndex, selectedPriceLevel, voucherType]);
+  }, [product, stockIndex, selectedPriceLevel, voucherType, usesManualRate]);
   useEffect(() => {
     setProduct(null); setStockIndex(""); setError("");
   }, [company._id, party?._id]);
@@ -70,7 +71,7 @@ export default function DesktopProductEntry({ locked }) {
     initialPageParam: 1,
     queryFn: async ({ signal, pageParam }) => {
       const response = await api.get(`/api/sUsers/getProducts/${company._id}`, {
-        params: { voucherType: voucherType === "purchase" ? "purchase" : "sales", page: pageParam, limit: 30, search }, withCredentials: true, signal,
+        params: { voucherType: usesManualRate ? voucherType : "sales", page: pageParam, limit: 30, search }, withCredentials: true, signal,
       });
       return response.data;
     },

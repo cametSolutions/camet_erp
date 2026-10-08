@@ -45,6 +45,10 @@ export default function VoucherDetailsActionButtons({
   const handleEditClick = () => {
     if (!voucherType) return;
 
+    if (isCancelled || isConverted || isEditable === false) {
+      window.alert(isCancelled ? "Cancelled vouchers cannot be edited" : isConverted ? "Converted vouchers cannot be edited" : "This voucher has payments applied and cannot be edited");
+      return;
+    }
     // if (isEditable !== undefined && isEditable === false) {
     //   window.alert(
     //     "You can't edit this voucher since it has been used to generate receipts or payments"

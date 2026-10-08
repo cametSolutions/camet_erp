@@ -98,7 +98,7 @@ function PaymentSplitting({ embedded = false, onSaved, onTransactionSaved } = {}
     queryFn: () => fetchBankAndCashSources(cmp_id),
     enabled: !!cmp_id,
     refetchOnWindowFocus: false,
-    staleTime: 1000 * 60,
+    staleTime: 0,
   });
 
   useEffect(() => {
