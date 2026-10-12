@@ -76,7 +76,7 @@ function EditItemForm({ ItemsFromRedux, from, taxInclusive = false, loading, ite
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const selectedItem = ItemsFromRedux.filter((el) => el._id === id);
+  const selectedItem = ItemsFromRedux.filter((el) => (el._voucherLineId || el._id) === id);
   const selectedGodown =
     index !== "null"
       ? selectedItem[0]?.GodownList[index]

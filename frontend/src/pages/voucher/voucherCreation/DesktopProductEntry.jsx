@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../api/api";
 import { addItem, resetPaymentSplit } from "../../../../slices/voucherSlices/commonVoucherSlice";
-import { addDesktopStockRow, priceLevelRate, desktopTaxInclusive } from "./desktopSaleItemState";
+import { addDesktopStockRow, priceLevelRate, desktopTaxInclusive, matchingSaleRateItem } from "./desktopSaleItemState";
 
 export default function DesktopProductEntry({ locked }) {
   const dispatch = useDispatch();
@@ -99,8 +99,12 @@ export default function DesktopProductEntry({ locked }) {
     if (!Number.isFinite(Number(quantity)) || !Number.isFinite(Number(rate))) {
       setError("Enter a valid quantity and rate."); return;
     }
-    const existing = items.find(item => item._id === product._id);
-    dispatch(addItem({ payload: addDesktopStockRow(product, existing, Number(stockIndex), Number(quantity), Number(rate), isTaxInclusive), moveToTop: false }));
+    const existing = voucherType === "sales"
+      ? matchingSaleRateItem(items, product, Number(stockIndex), rate, isTaxInclusive)
+      : items.find(item => item._id === product._id);
+    const added = addDesktopStockRow(product, existing, Number(stockIndex), Number(quantity), Number(rate), isTaxInclusive);
+    if (voucherType === "sales") added._voucherLineId = existing?._voucherLineId || (existing ? undefined : "sale-line-" + crypto.randomUUID());
+    dispatch(addItem({ payload: added, moveToTop: false }));
     dispatch(resetPaymentSplit());
     setProduct(null); setStockIndex(""); setQuantity("1"); setError("");
     searchRef.current?.focus();
@@ -127,13 +131,13 @@ export default function DesktopProductEntry({ locked }) {
       </select></div>
       <div><label htmlFor="desktop-product-qty">Qty{product?.unit ? ` (${product.unit})` : ""}</label><input id="desktop-product-qty" type="number" min="0.001" step="0.001" required value={quantity} disabled={disabled || !product} onChange={event => setQuantity(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); focusNext("desktop-product-rate"); } }} /></div>
       <div><label htmlFor="desktop-product-rate">Rate</label><input id="desktop-product-rate" type="number" min="0" step="any" required value={rate} disabled={disabled || !product} onChange={event => setRate(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} /></div>
-      <div><label htmlFor="desktop-product-amount">Amount</label><output id="desktop-product-amount">{preview.toFixed(2)}</output></div>
-      <button type="submit" className="sales-product-add" disabled={disabled || !valid} aria-label="Add product to sale"><Plus size={18} />Add</button>
-    </div>
-    <label className="sales-tax-inclusive" htmlFor="desktop-product-tax-inclusive">
+      <label className="sales-tax-inclusive" htmlFor="desktop-product-tax-inclusive">
       <input id="desktop-product-tax-inclusive" type="checkbox" checked={isTaxInclusive} disabled={disabled || !product} onChange={event => setIsTaxInclusive(event.target.checked)} />
       Tax Inclusive
     </label>
+      <div><label htmlFor="desktop-product-amount">Amount</label><output id="desktop-product-amount">{preview.toFixed(2)}</output></div>
+      <button type="submit" className="sales-product-add" disabled={disabled || !valid} aria-label="Add product to sale"><Plus size={18} />Add</button>
+    </div>
     {(error || stock || isError) && <div className="sales-product-hint" aria-live="polite">{error || (stock ? `Available stock: ${stock.balance_stock ?? 0} ${product.unit || ""}` : "")}
       {isError && <button type="button" onClick={() => refetch()}>Retry products</button>}
     </div>}

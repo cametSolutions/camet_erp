@@ -17,7 +17,7 @@
   .desktop-sales .sales-party-values label { display: block; font-size: 11px; margin-bottom: 4px; }
   .desktop-sales .sales-party-values select { width: 100%; min-width: 0; height: 30px; border: 1px solid #cbd5e1; border-radius: 3px; background: white; padding: 4px 6px; font-size: 12px; }
   .desktop-sales .sales-product-entry { flex-shrink: 0; padding: 7px 10px; border-bottom: 1px solid #e2e8f0; }
-  .desktop-sales .sales-product-fields { display: grid; grid-template-columns: minmax(150px, 2fr) minmax(120px, 1.5fr) minmax(60px, .65fr) minmax(65px, .8fr) minmax(70px, .8fr) auto; gap: 8px; align-items: end; }
+  .desktop-sales .sales-product-fields { display: grid; grid-template-columns: minmax(150px, 2fr) minmax(120px, 1.5fr) minmax(60px, .65fr) minmax(65px, .8fr) auto minmax(70px, .8fr) auto; gap: 8px; align-items: end; }
   .desktop-sales .sales-product-fields > div { min-width: 0; }
   .desktop-sales .sales-product-fields label { display: block; font-size: 11px; margin-bottom: 4px; }
   .desktop-sales .sales-product-fields > div > input, .desktop-sales .sales-product-fields select, .desktop-sales .sales-product-fields output { display: block; width: 100%; min-width: 0; height: 30px; border: 1px solid #cbd5e1; border-radius: 3px; padding: 4px 6px; font-size: 12px; }
@@ -274,5 +274,20 @@
   }
 }
 
-.desktop-sales .sales-tax-inclusive { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; cursor: pointer; width: fit-content; }
+.desktop-sales .sales-product-fields .sales-tax-inclusive { display: flex; align-items: center; gap: 6px; height: 30px; margin: 0; font-size: 11px; white-space: nowrap; cursor: pointer; width: fit-content; }
 .desktop-sales .sales-tax-inclusive input { width: 14px; height: 14px; accent-color: #195cff; }
+
+.credit-note-party-picker { display: flex; align-items: center; gap: 8px; }
+.credit-note-party-select { flex: 1; min-width: 0; }
+.credit-note-sales-button { border: 1px solid #93c5fd; border-radius: 4px; padding: 5px 12px; color: #195cff; background: #eff6ff; font-size: 12px; }
+.credit-note-sales-button:disabled { opacity: .5; cursor: not-allowed; }
+.credit-note-sales-dialog { width: min(850px, calc(100vw - 24px)); max-width: 850px; max-height: 90dvh; overflow-y: auto; background: white; }
+.credit-note-sales-scroll { overflow: auto; max-height: 55dvh; }
+.credit-note-sales-dialog table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+.credit-note-sales-dialog th, .credit-note-sales-dialog td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
+.credit-note-sales-dialog th { background: #46566d; color: white; }
+.credit-note-sales-dialog small { display: block; color: #64748b; }
+.credit-note-sales-dialog input { width: 95px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; }
+.credit-note-sales-dialog button { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; color: #195cff; }
+.credit-note-sales-dialog button:disabled { opacity: .5; }
+.credit-note-sales-dialog footer, .credit-note-sales-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; }

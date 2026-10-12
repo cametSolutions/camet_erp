@@ -1,3 +1,4 @@
+import CreditNotePartySales from "./CreditNotePartySales";
 import { voucherCancelEndpoint } from "../../../../utils/voucherEndpoints";
 /* eslint-disable react/no-unescaped-entities */
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
@@ -604,6 +605,8 @@ function VoucherInitialPage() {
           )}
           {desktopSales && ["sales", "creditNote", "saleOrder", "performaInvoice"].includes(voucherTypeFromRedux) && <div className="sales-party-values"><DesktopPriceLevel cmpId={cmp_id} locked={convertedFrom.length > 0} /></div>}
           </div>
+
+          {!desktopSales && voucherTypeFromRedux === "creditNote" && party?._id && <CreditNotePartySales key={party?._id || "none"} cmpId={cmp_id} party={party} locked={convertedFrom.length > 0} />}
 
           {/* Despatch details */}
 

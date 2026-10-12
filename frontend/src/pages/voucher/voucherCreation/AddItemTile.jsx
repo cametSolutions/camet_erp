@@ -83,7 +83,7 @@ function AddItemTile({
                   {!el?.hasGodownOrBatch && (
                     <div
                       onClick={() => {
-                        dispatch(removeItem(el?._id));
+                        dispatch(removeItem(el?._voucherLineId || el?._id));
                         dispatch(resetPaymentSplit());
                       }}
                       className="text-gray-500 text-sm cursor-pointer"
@@ -134,7 +134,7 @@ function AddItemTile({
                                 onClick={() => {
                                   dispatch(
                                     removeGodownOrBatch({
-                                      id: el?._id,
+                                      id: el?._voucherLineId || el?._id,
                                       idx: idx,
                                     })
                                   );
@@ -208,7 +208,7 @@ function AddItemTile({
                                   <p
                                     onClick={() => {
                                       navigate(
-                                        `${urlToEditItem}/${el._id}/${idx}`,
+                                        `${urlToEditItem}/${el._voucherLineId || el._id}/${idx}`,
                                         {
                                           state: { from: type },
                                         }
@@ -258,7 +258,7 @@ function AddItemTile({
                         <div className="flex items-center gap-2">
                           <p
                             onClick={() => {
-                              navigate(`${urlToEditItem}/${el._id}/null`, {
+                              navigate(`${urlToEditItem}/${el._voucherLineId || el._id}/null`, {
                                 state: { from: "sales" },
                               });
                             }}
