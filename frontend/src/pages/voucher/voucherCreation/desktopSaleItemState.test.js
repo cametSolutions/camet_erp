@@ -89,3 +89,16 @@ test("entry loads the edit modal's saved flag before product defaults", () => {
   assert.equal(desktopTaxInclusive({ ...product, isTaxInclusive: true }, { isTaxInclusive: false }, 0), false);
   assert.equal(desktopTaxInclusive({ ...product, GodownList: [{ isTaxInclusive: true }] }, null, 0), true);
 });
+
+import { matchingSaleRateItem } from './desktopSaleItemState.js';
+test('sale rate matching separates different rates, tax flags and discounted rows', () => {
+ const product={_id:'p1',igst:5,GodownList:[{godown_id:'g1',batch:'A'}]};
+ const first=addDesktopStockRow(product,null,0,2,100,false);
+ const second=addDesktopStockRow(product,null,0,1,80,false);
+ assert.equal(matchingSaleRateItem([first,second],product,0,80,false),second);
+ assert.equal(matchingSaleRateItem([first,second],product,0,90,false),undefined);
+ assert.equal(matchingSaleRateItem([first],product,0,100,true),undefined);
+ const discounted={...first,GodownList:first.GodownList.map(row=>({...row,discountPercentage:10}))};
+ assert.equal(matchingSaleRateItem([discounted],product,0,100,false),undefined);
+ assert.equal(addDesktopStockRow(product,second,0,3,80,false).totalCount,4);
+});

@@ -63,3 +63,13 @@ export function addDesktopStockRow(product, existing, stockIndex, quantity, rate
   }
   return recalculateDesktopItem({ ...item, GodownList: rows });
 }
+
+export function matchingSaleRateItem(items, product, stockIndex, rate, taxInclusive) {
+  const stock = product.GodownList[stockIndex];
+  return items.find(item => item._id === product._id &&
+    Boolean(item.isTaxInclusive) === Boolean(taxInclusive) &&
+    ["igst", "cgst", "sgst", "cess", "addl_cess"].every(field => Number(item[field] || 0) === Number(product[field] || 0)) &&
+    item.GodownList.filter(row => row.added).every(row => Number(row.selectedPriceRate || 0) === Number(rate)) &&
+    item.GodownList.filter(row => row.added && sameStockRow(row, stock)).every(row =>
+      !Number(row.discountAmount || 0) && !Number(row.discountPercentage || 0)));
+}

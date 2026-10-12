@@ -1,3 +1,4 @@
+import { getPartySales } from "../controllers/partySalesController.js";
 import { saveProformaInvoice, getProformaInvoiceDetails, listProformaInvoices, cancelProformaInvoice } from "../controllers/proformaInvoiceController.js";
 import express from 'express'
 const router = express.Router();
@@ -155,6 +156,7 @@ router.get('/performaInvoices/:cmp_id', authSecondary, secondaryIsBlocked, compa
 router.put('/cancelPerformaInvoice/:id', authSecondary, secondaryIsBlocked, cancelProformaInvoice);
 router.post('/createSales', authSecondary, secondaryIsBlocked, createSale)
 router.post('/createVanSale', authSecondary, secondaryIsBlocked, createSale)
+router.get('/partySales/:cmp_id/:partyId', authSecondary, secondaryIsBlocked, companyAuthentication, getPartySales);
 router.get('/getSalesDetails/:id', authSecondary, secondaryIsBlocked, getSalesDetails)
 router.post('/saveSalesNumber/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, saveSalesNumber)
 router.get('/fetchAdditionalDetails/:cmp_id', authSecondary, secondaryIsBlocked, companyAuthentication, fetchAdditionalDetails)

@@ -28,13 +28,13 @@ export function DesktopSalesItems({ items, convertedFrom, voucherType }) {
           <colgroup><col style={{ width: 32 }} /><col style={{ width: 68 }} /><col /><col style={{ width: 45 }} /><col style={{ width: 55 }} /><col style={{ width: 75 }} /><col style={{ width: 85 }} /><col style={{ width: 65 }} /></colgroup>
           <thead><tr>{["SL", "Code", "Item", "Unit", "Qty", "Rate", "Amount", "Action"].map(label => <th key={label}>{label}</th>)}</tr></thead>
           <tbody>{rows.map(({ item, batch, index }, row) => (
-            <tr key={`${item._id}-${index}`}>
+            <tr key={`${item._voucherLineId || item._id}-${index}`}>
               <td>{row + 1}</td><td>{item.product_code || "—"}</td>
               <td><div className="sales-item-description" title={`${item.product_name} · ${[batch.batch, batch.godown].filter(Boolean).join(" · ")} · Tax ${item.igst || 0}%${batch.discountType === "amount" ? ` · Discount ₹${money(batch.discountAmount)}` : batch.discountPercentage ? ` · Discount ${batch.discountPercentage}%` : ""}`}><strong>{item.product_name}</strong><small>{[batch.batch, batch.godown].filter(Boolean).join(" · ")} · Tax {item.igst || 0}%{batch.discountType === "amount" ? ` · Discount ₹${money(batch.discountAmount)}` : batch.discountPercentage ? ` · Discount ${batch.discountPercentage}%` : ""}</small></div></td>
               <td>{item.unit}</td><td>{batch.count}</td><td>{money(batch.selectedPriceRate)}</td><td>{money(batch.individualTotal ?? item.total)}</td>
-              <td><div className="sales-row-actions"><button type="button" aria-label={`Edit ${item.product_name} ${batch.godown || batch.batch || ""}`} disabled={locked} onClick={() => setEditing({ id: item._id, index, name: item.product_name, godown: batch.godown, batch: batch.batch })}><Pencil size={15} /></button>
+              <td><div className="sales-row-actions"><button type="button" aria-label={`Edit ${item.product_name} ${batch.godown || batch.batch || ""}`} disabled={locked} onClick={() => setEditing({ id: item._voucherLineId || item._id, index, name: item.product_name, godown: batch.godown, batch: batch.batch })}><Pencil size={15} /></button>
                 <button type="button" disabled={locked} aria-label={`Remove ${item.product_name}`} onClick={() => {
-                  dispatch(item.hasGodownOrBatch ? removeGodownOrBatch({ id: item._id, idx: index }) : removeItem(item._id));
+                  dispatch(item.hasGodownOrBatch ? removeGodownOrBatch({ id: item._voucherLineId || item._id, idx: index }) : removeItem(item._voucherLineId || item._id));
                   dispatch(resetPaymentSplit());
                 }}><Trash2 size={15} /></button></div></td>
             </tr>
