@@ -3,7 +3,6 @@ import TouchInput from "@/components/common/touchKeyboard/TouchInput";
 import { useState, useEffect, useCallback, useRef } from "react";
 import dayjs from "dayjs";
 import useFetch from "@/customHook/useFetch";
-import { useQueryClient } from "@tanstack/react-query";
 import { useSelector, useDispatch } from "react-redux";
 import { useLocation } from "react-router-dom";
 import PrintModal from "@/pages/Hotel/Components/PrintModal";
@@ -168,7 +167,6 @@ const permission = useSelector((state) => state.permissionData?.permissions);
   const toggleExpand = (id) =>
     setExpandedOrders((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  // const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const { _id: cmp_id, name: companyName } = useSelector(
@@ -183,7 +181,6 @@ const permission = useSelector((state) => state.permissionData?.permissions);
     org?.configurations?.[0]?.discountBasedOnGrossAmount ?? false;
   const complementaryWithTax =
     org?.configurations?.[0]?.complementaryWithTax ?? false;
-  const queryClient = useQueryClient(); // ✅ uncomment/move this to here
   const params = new URLSearchParams({
     date: selectedDate,
     fromDate: selectedFromDate,
@@ -202,7 +199,7 @@ const permission = useSelector((state) => state.permissionData?.permissions);
     }
   }, [autoFetch, cmp_id]);
 
-  const { data, refetch: refreshHook } = useQuery({
+  const { data } = useQuery({
     queryKey: ["kotDash", cmp_id, selectedDate, selectedFromDate],
 
     queryFn: async () => {
@@ -212,7 +209,12 @@ const permission = useSelector((state) => state.permissionData?.permissions);
       );
       return res.data;
     },
-    staleTime: 5000,
+    // KOT is intentionally loaded only for the selected date/company. Do not
+    // revalidate it in the background while an operator is working with it.
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     enabled: !!cmp_id,
   });
 
@@ -522,9 +524,6 @@ const permission = useSelector((state) => state.permissionData?.permissions);
             };
           }),
         );
-        queryClient.invalidateQueries({
-          queryKey: ["kotDash", cmp_id, selectedDate, selectedFromDate],
-        });
       }
     } catch (error) {
       console.error(
@@ -594,9 +593,6 @@ const permission = useSelector((state) => state.permissionData?.permissions);
         setOrders((prevOrders) =>
           prevOrders.filter((kot) => kot._id !== selectedOrderForCancel._id),
         );
-        queryClient.invalidateQueries({
-          queryKey: ["kotDash", cmp_id, selectedDate, selectedFromDate],
-        });
         setShowCancelModal(false);
         setCancelReason(""); // clear reason field
         setSelectedOrderForCancel(null);
@@ -932,9 +928,6 @@ const permission = useSelector((state) => state.permissionData?.permissions);
       setSaveLoader(false);
       setCashAmount(0);
       setOnlineAmount(0);
-      queryClient.invalidateQueries({
-        queryKey: ["kotDash", cmp_id, selectedDate, selectedFromDate],
-      });
       setPaymentMode("single");
       setSelectedCreditor("");
       setSelectedKot([]);
@@ -1128,9 +1121,6 @@ const permission = useSelector((state) => state.permissionData?.permissions);
   }, [paymentMethod, selectedCash, selectedBank, isForComp]);
 
   const handleSaveSales = (status) => {
-    queryClient.invalidateQueries({
-      queryKey: ["kotDash", cmp_id, selectedDate, selectedFromDate],
-    }); // ✅
     setConformationModal(false);
     setSelectedDataForPayment(previewForSales);
     if (isPostToRoom && status) {
@@ -2258,7 +2248,6 @@ const permission = useSelector((state) => state.permissionData?.permissions);
                     <button
                       onClick={() => {
                         setSelectedKot([]);
-                        refreshHook();
                       }}
                       className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-all"
                     >
@@ -2523,10 +2512,7 @@ const permission = useSelector((state) => state.permissionData?.permissions);
                           <input
                             type="checkbox"
                             checked={isSpecific}
-                            onChange={(e) => {
-                              refreshHook();
-                              setIsSpecific(e.target.checked);
-                            }}
+                            onChange={(e) => setIsSpecific(e.target.checked)}
                             className="mt-1 w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 flex-shrink-0"
                           />
                           <span className="text-sm font-semibold text-green-700">
@@ -2563,7 +2549,6 @@ const permission = useSelector((state) => state.permissionData?.permissions);
                     <button
                       onClick={() => {
                         setSelectedKot([]);
-                        refreshHook();
                       }}
                       className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all duration-200"
                     >
