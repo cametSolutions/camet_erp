@@ -32,7 +32,7 @@ import { Check, CreditCard, X, Banknote, Plus } from "lucide-react";
 import { generateAndPrintKOT } from "@/pages/Restuarant/Helper/kotPrintHelper";
 import { useNavigate } from "react-router-dom";
 // import VoucherPdf from "@/pages/voucher/voucherPdf/indian/VoucherPdf";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { FaRegEdit } from "react-icons/fa";
 import VoucherThreeInchPdf from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdf";
 import VoucherThreeInchPdfFormat2 from "@/pages/voucher/voucherPdf/threeInchPdf/VoucherThreeInchPdfFormat2";
@@ -209,10 +209,11 @@ const permission = useSelector((state) => state.permissionData?.permissions);
       );
       return res.data;
     },
-    // KOT is intentionally loaded only for the selected date/company. Do not
-    // revalidate it in the background while an operator is working with it.
+    // Always fetch the latest KOTs when this screen is opened. Background
+    // revalidation remains disabled so an operator's active work is not
+    // interrupted while they stay on the page.
     staleTime: Infinity,
-    refetchOnMount: false,
+    refetchOnMount: "always",
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     enabled: !!cmp_id,
@@ -986,13 +987,54 @@ const permission = useSelector((state) => state.permissionData?.permissions);
     }
   };
 
-  const handleSalesPreview = (postToRoom) => {
+  const handleSalesPreview = async (postToRoom) => {
+    if (postToRoom) {
+      const selectedRoomKot = selectedKot[0];
+      const roomId = selectedRoomKot?.roomId;
+      const checkInNumber = selectedRoomKot?.checkInNumber;
+
+      if (!roomId || !checkInNumber) {
+        toast.error("This KOT is not linked to an active room check-in.");
+        return;
+      }
+
+      try {
+        const response = await api.get(
+          `/api/sUsers/getallnoncheckoutCheckins/${cmp_id}`,
+          { withCredentials: true },
+        );
+        const activeCheckIn = (response.data?.data || []).find(
+          (checkIn) =>
+            String(checkIn?.voucherNumber) === String(checkInNumber) &&
+            checkIn?.selectedRooms?.some(
+              (room) =>
+                String(room?.roomId?._id || room?.roomId) ===
+                  String(roomId) && !room?.isCheckedOut,
+            ),
+        );
+
+        if (!activeCheckIn) {
+          toast.error(
+            "This room's check-in has already been checked out. Post to Room is unavailable.",
+          );
+          return;
+        }
+      } catch (error) {
+        toast.error(
+          error.response?.data?.message ||
+            "This room has already been checked out. Post to Room is unavailable.",
+        );
+        return;
+      }
+    }
+
     setIsPostToRooms(postToRoom);
     let kotVoucherNumberArray = [];
 
     let roomDetails = null;
     let itemList = selectedKot.flatMap((item) => {
       let findOne = filteredOrders.find((order) => order._id == item.id);
+      console.log(findOne);
       if (findOne) {
         if (!roomDetails && findOne.roomId) {
           roomDetails = {
