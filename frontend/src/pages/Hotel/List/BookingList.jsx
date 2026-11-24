@@ -458,7 +458,7 @@ function BookingList() {
           const ids = [];
           res.data.data.forEach((item) => {
             item.selectedRooms?.forEach((room) => {
-              if (room.roomId) {
+              if (room.roomId && !room.isSwapped ) {
                 ids.push(room.roomId);
               }
             });

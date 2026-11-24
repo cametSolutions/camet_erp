@@ -4,6 +4,9 @@
   "description": "Cash collection application",
   "type": "module",
   "main": "index.js",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
     "start": "nodemon backend/server.js "
   },
