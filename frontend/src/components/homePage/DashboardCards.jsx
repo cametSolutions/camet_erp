@@ -10,7 +10,9 @@ import product from "../../assets/images/product.png";
 import reportImg from "../../assets/images/reports.png";
 import hotelImg from "../../assets/images/hotel.png";
 import restaurantImg from "../../assets/images/restaurant.png";
+import Mixologist from "../../assets/images/Mixologist.jpg"
 import api from "@/api/api";
+import { BEVERAGE_INDUSTRY_CODE } from "../../../constants/industries.js";
 
 // API function to fetch dashboard counts
 const fetchDashboardCounts = async (cmp_id) => {
@@ -20,6 +22,8 @@ const fetchDashboardCounts = async (cmp_id) => {
 
   return response.data.data;
 };
+
+
 
 const DashboardCards = ({
   userType,
@@ -149,7 +153,28 @@ if (organization?.industry === 6) {
       link: "/sUsers/reports",
     },
   ];
+}else if (organization?.industry === 9) {
+  secondary = [
+   
+    {
+      icon: Mixologist,
+      subtitle: "Bar Management",
+      link: "/sUsers/BarDashboard",
+    },
+    {
+      icon: vouchers,
+      subtitle: "Vouchers",
+      link: "/sUsers/selectVouchers",
+    },
+    {
+      icon: reportImg,
+      title: `₹${receiptTotal.toFixed(2)}`,
+      subtitle: "Reports",
+      link: "/sUsers/reports",
+    },
+  ];
 }
+
 else {
   secondary = [
     {
@@ -180,6 +205,14 @@ else {
   ];
 }
 
+  // if (organization?.industry === BEVERAGE_INDUSTRY_CODE) {
+  //   secondary.push({
+  //     icon: product,
+  //     subtitle: "Beverage",
+  //     link: "/sUsers/productList",
+  //   });
+  // }
+
   const cardData = {
     primary,
     secondary,
@@ -189,7 +222,7 @@ else {
 
   return (
     <div
-      className={`grid grid-cols-2 md:grid-cols-4 p-6 lg:px-6 gap-4 md:gap-6  w-full md:w-6.5/12  `}
+      className={`grid grid-cols-2 ${ cards.length >= 5 ? "md:grid-cols-5" : "md:grid-cols-4" } p-6 lg:px-6 gap-4 md:gap-6  w-full md:w-6.5/12  `}
     >
       {cards.map((card, index) => (
         <div
